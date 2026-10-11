@@ -16,7 +16,7 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) analyzes five supported s
 | Language | Extraction |
 | --- | --- |
 | GitHub Actions | Workflow source, without a build |
-| C/C++ | Project-owned source, without a build |
+| C/C++ | Project-owned source, without a build for every pull request and from a traced Bazel build for the default branch |
 | Go | Manual builds of every command and internal package in helpers/ |
 | Java/Kotlin | Manual Gradle compilation of ProjectSystem, Analyzer, Formatter, and Linter |
 | JavaScript/TypeScript | Editor integration source, without a build |
@@ -26,11 +26,25 @@ compiler packages retain Cabal tests, HPC coverage, and ordinary review instead 
 workflow runs for pushes, pull requests, and a weekly schedule. A successful scan means the configured analysis
 completed, not that the code is free of vulnerabilities. Review alerts in the repository's code-scanning interface.
 
-C and C++ are analysed without a build: the extractor reads the sources and guesses how they would be compiled, which
-needs no LLVM on the runner and can analyse less than the repository has without saying so. The `c-cpp` job therefore
-measures what it covered. It compares the native sources the repository owns under `Compiler/` and `Interactive/` with
-the sources the CodeQL database holds, and fails below 95 percent. It also writes the extractor's own summary and
-telemetry to the job summary, among them the includes it could not resolve; those figures have no floor yet.
+C and C++ are analysed twice. The `c-cpp` job runs for every pull request without a build: the extractor reads the
+sources and guesses how they would be compiled. That needs no LLVM on the runner and is quick, but the guess resolves
+few includes. Measured on this repository, every native source reached the database, while 30 percent of the
+`#include` directives were resolved, no compilation was free of errors and half of the expressions had a known type.
+Such an analysis finds what can be seen in one file and little that depends on types or on calls.
+
+The `c-cpp-traced` job is the analysis that compiles. CodeQL observes the compiler while Bazel compiles every native
+target without a cache and without linking, so each source is read with the include paths, definitions and language
+options it is really compiled with. It costs a full compilation, so it runs when the default branch changes, once a
+week and on request, and for a pull request only when that carries the label `codeql-traced`. Its results are
+recorded under a category of their own, `/language:c-cpp/build:traced`. Its first run resolved all 5 730 `#include`
+directives, compiled all 179 compilations without an error and recorded 280 698 calls, where the analysis without a
+build recorded 1 009. The job fails when fewer than 95 percent of the includes are resolved or fewer than 95 percent
+of the compilations are free of errors.
+
+Both jobs run [the same measurement](../.github/codeql/Measure-CppAnalysis.ps1). It compares the native sources the
+repository owns under `Compiler/` and `Interactive/` with the sources the CodeQL database holds and fails below
+95 percent. It also writes the share of resolved includes and of compilations without errors, with the extractor's
+own summary and telemetry, to the job summary and to the log.
 
 ## Dependency and additional quality analysis
 
