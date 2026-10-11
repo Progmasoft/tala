@@ -66,7 +66,8 @@ go run ./helpers/cmd/prebuild install
 
 Windows installation uses exact winget package identities, including Temurin JDK 25, plus the official GHCup bootstrap. macOS uses Homebrew and the
 Xcode Command Line Tools installer. Ubuntu/Fedora use apt/dnf and GHCup; enable Adoptium's signed repository before
-installing Temurin 25 on Linux. The Windows SDK/CRT workload supplies link resources only; Visual X# still selects
+installing Temurin 25 on Linux. `prebuild` and `optional-packages` also prepare Debian 13, with apt as on Ubuntu; no
+workflow builds on Debian, so it is not one of the official hosts. The Windows SDK/CRT workload supplies link resources only; Visual X# still selects
 ClangCL and LLD. Open a new terminal after installation, then run `go run ./helpers/cmd/develop doctor`.
 
 ## Build

@@ -26,6 +26,9 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- `prebuild` and `optional-packages` support Debian 13, with apt as on
+  Ubuntu. Debian's own repositories have no .NET SDK; `optional-packages`
+  says so there and installs the rest.
 - The fuzz corpora are larger. The lexer, parser and source targets are seeded
   with the Visual X# sources the repository already holds, more than two
   hundred programs, read where they are. The command-line, project, REPL,

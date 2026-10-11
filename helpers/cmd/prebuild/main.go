@@ -25,8 +25,8 @@ import (
 
 const prebuildUsage = `Visual X# development-host bootstrap
 
-Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, and
-Fedora 43 (N-1 as of September 2026). The installed
+Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
+Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
 toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Temurin JDK 25, Git, and the
 platform link resources. Visual X# uses ClangCL/LLD on Windows, not MSVC.`
 
@@ -38,6 +38,7 @@ const (
 	bootstrapMacOS
 	bootstrapUbuntu
 	bootstrapFedora
+	bootstrapDebian
 )
 
 type bootstrapRunner interface {
@@ -279,8 +280,10 @@ func classifyBootstrapLinux(release string) (bootstrapHost, error) {
 		return bootstrapUbuntu, nil
 	case fields["ID"] == "fedora" && fields["VERSION_ID"] == "43":
 		return bootstrapFedora, nil
+	case fields["ID"] == "debian" && fields["VERSION_ID"] == "13":
+		return bootstrapDebian, nil
 	default:
-		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS or Fedora 43 (N-1)", fields["ID"], fields["VERSION_ID"])
+		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS, Fedora 43 (N-1) or Debian 13", fields["ID"], fields["VERSION_ID"])
 	}
 }
 
@@ -470,7 +473,8 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 	if _, err := runner.LookPath(manager); err != nil {
 		return fmt.Errorf("%s is required on %s", manager, bootstrapHostName(host))
 	}
-	if host == bootstrapUbuntu {
+	// apt installs from the package lists it has, on Ubuntu and on Debian.
+	if host == bootstrapUbuntu || host == bootstrapDebian {
 		if err := runLinuxPackageManager(runner, manager, []string{"update"}); err != nil {
 			return err
 		}
@@ -719,6 +723,10 @@ func bootstrapHostName(host bootstrapHost) string {
 		return "Ubuntu 26.04 LTS (Tier 2)"
 	case bootstrapFedora:
 		return "Fedora 43 (Tier 3, N-1)"
+	case bootstrapDebian:
+		// The workflows build on Ubuntu and Fedora; Debian shares Ubuntu's
+		// packages and is prepared the same way, without a tier of its own.
+		return "Debian 13"
 	default:
 		return "unsupported"
 	}

@@ -79,6 +79,8 @@ func TestClassifyBootstrapLinuxUsesPinnedTierReleases(t *testing.T) {
 		want    bootstrapHost
 	}{
 		{`ID=ubuntu` + "\n" + `VERSION_ID="26.04"`, bootstrapUbuntu},
+		{`ID=debian` + "\n" + `VERSION_ID="13"`, bootstrapDebian},
+		{`PRETTY_NAME="Debian GNU/Linux 13 (trixie)"` + "\n" + `ID=debian` + "\n" + `VERSION_ID="13"` + "\n" + `VERSION_CODENAME=trixie`, bootstrapDebian},
 		{`ID=fedora` + "\n" + `VERSION_ID=43`, bootstrapFedora},
 	} {
 		got, err := classifyBootstrapLinux(test.release)
@@ -101,7 +103,7 @@ func TestLLVMRequirementIsHostSpecific(t *testing.T) {
 	if !reflect.DeepEqual(macOS, []string{"llvm-config", "clang++"}) {
 		t.Fatalf("macOS LLVM tools = %#v", macOS)
 	}
-	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora} {
+	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora, bootstrapDebian} {
 		if got := requirementExecutables(host, llvm); !reflect.DeepEqual(got, []string{"llvm-config", "clang++"}) {
 			t.Fatalf("Linux LLVM tools = %#v", got)
 		}
@@ -115,6 +117,7 @@ func TestLinuxPackageMappingsKeepClangAndLLVMDevelopmentLibraries(t *testing.T) 
 		want string
 	}{
 		{bootstrapUbuntu, "llvm-dev"},
+		{bootstrapDebian, "llvm-dev"},
 		{bootstrapFedora, "llvm-static"},
 	} {
 		packages := linuxRequirementPackages(test.host, llvm)
