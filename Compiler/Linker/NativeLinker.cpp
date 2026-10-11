@@ -17,6 +17,17 @@
 #    endif
 #    include <process.h>
 #    include <windows.h>
+#else
+#    include <spawn.h>
+#    include <sys/wait.h>
+#    ifdef __APPLE__
+#        include <cstdint>
+#        include <mach-o/dyld.h>
+#    endif
+
+// The environment of the process, which the linker driver inherits.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+extern char **environ;
 #endif
 
 namespace Visual::XSharp::Driver
@@ -35,8 +46,16 @@ namespace Visual::XSharp::Driver
             if (request.objectPaths.empty())
                 return "native executable link requires at least one object "
                        "file";
+#if defined(_WIN32)
             if (request.objectFormat != Backend::LLVM::ObjectFormat::Coff)
                 return "the Windows native linker requires COFF object input";
+#elif defined(__APPLE__)
+            if (request.objectFormat != Backend::LLVM::ObjectFormat::MachO)
+                return "the macOS native linker requires Mach-O object input";
+#else
+            if (request.objectFormat != Backend::LLVM::ObjectFormat::Elf)
+                return "the Linux native linker requires ELF object input";
+#endif
             for (const auto &object : request.objectPaths)
             {
                 std::error_code error;
@@ -184,6 +203,92 @@ namespace Visual::XSharp::Driver
             }
             return library;
         }
+#else
+        /// The name the runtime library is installed by, beside the compiler.
+        constexpr const char *kRuntimeLibraryName = "libvxs-runtime.a";
+
+        /// The driver that links: the C compiler of the system. It knows
+        /// where the C library, its start-up objects and, on macOS, the
+        /// system libraries are, which a linker started directly would have
+        /// to be told for every distribution.
+        constexpr const char *kLinkerDriver = "cc";
+
+        /// The directory of the running program.
+        [[nodiscard]] auto
+        ProgramDirectory() -> std::optional<std::filesystem::path>
+        {
+#    ifdef __APPLE__
+            std::uint32_t size = 0U;
+            _NSGetExecutablePath(nullptr, &size);
+            std::string buffer(size, '\0');
+            if (_NSGetExecutablePath(buffer.data(), &size) != 0)
+                return std::nullopt;
+            buffer.resize(std::char_traits<char>::length(buffer.c_str()));
+            std::error_code error;
+            auto resolved = std::filesystem::canonical(buffer, error);
+            if (error)
+                return std::nullopt;
+            return resolved.parent_path();
+#    else
+            std::error_code error;
+            auto resolved
+                = std::filesystem::read_symlink("/proc/self/exe", error);
+            if (error)
+                return std::nullopt;
+            return resolved.parent_path();
+#    endif
+        }
+
+        /// The runtime library, when it stands beside the running program.
+        [[nodiscard]] auto
+        RuntimeLibrary() -> std::optional<std::filesystem::path>
+        {
+            const auto directory = ProgramDirectory();
+            if (!directory)
+                return std::nullopt;
+            auto candidate = *directory / kRuntimeLibraryName;
+            std::error_code error;
+            if (!std::filesystem::is_regular_file(candidate, error) || error)
+                return std::nullopt;
+            return candidate;
+        }
+
+        /// Runs the linker driver with the given arguments and waits for it.
+        /// Gives its exit status, or -1 with `errno` set when it could not
+        /// be started or did not exit by itself.
+        [[nodiscard]] auto
+        RunLinker(std::vector<std::string> options) -> int
+        {
+            std::string program = kLinkerDriver;
+            std::vector<char *> arguments;
+            arguments.reserve(options.size() + 2U);
+            arguments.push_back(program.data());
+            for (auto &option : options)
+                arguments.push_back(option.data());
+            arguments.push_back(nullptr);
+            pid_t process{};
+            const int spawned = posix_spawnp(&process,
+                                             program.c_str(),
+                                             nullptr,
+                                             nullptr,
+                                             arguments.data(),
+                                             environ);
+            if (spawned != 0)
+            {
+                errno = spawned;
+                return -1;
+            }
+            int status{};
+            while (waitpid(process, &status, 0) < 0)
+                if (errno != EINTR)
+                    return -1;
+            if (!WIFEXITED(status))
+            {
+                errno = ECHILD;
+                return -1;
+            }
+            return WEXITSTATUS(status);
+        }
 #endif
     } // namespace
 
@@ -268,9 +373,63 @@ namespace Visual::XSharp::Driver
                      "lld-link did not produce a non-empty .vxse executable" };
         return { 0, {} };
 #else
-        return { -1,
-                 "native executable linking is currently implemented for "
-                 "Windows COFF targets" };
+        std::error_code removeError;
+        // Replacement starts only after all inputs pass validation. If the
+        // link fails, no stale `.vxse` remains that could be mistaken for
+        // the current build.
+        std::filesystem::remove(request.outputPath, removeError);
+        if (removeError)
+            return { -1,
+                     "could not replace the existing native executable: "
+                         + removeError.message() };
+
+        // The entry of a program is `main`, which the start-up code of the
+        // C library calls. What a program needs beyond its own code is the
+        // Visual X# runtime library and, through it, the C library.
+        std::vector<std::string> options{ "-o", request.outputPath.string() };
+        options.reserve(options.size() + request.objectPaths.size() + 1U);
+        for (const auto &object : request.objectPaths)
+            options.push_back(object.string());
+
+        // A program that creates no closure, uses no string and writes
+        // nothing calls nothing of the runtime. When the library is not
+        // installed, such a program still links; any other fails at an
+        // unresolved runtime symbol, which the diagnostic below explains.
+        const auto runtime = RuntimeLibrary();
+        if (runtime)
+            options.push_back(runtime->string());
+
+        const auto status = RunLinker(std::move(options));
+        if (status == -1)
+            return {
+                -1,
+                std::string("could not run the linker driver '") + kLinkerDriver
+                    + "': "
+                    + std::error_code(errno, std::generic_category()).message()
+                    + "; a native executable is linked by the C compiler of "
+                      "the system"
+            };
+        if (status != 0)
+            return {
+                status,
+                std::string("the linker driver '") + kLinkerDriver
+                    + "' failed with exit code " + std::to_string(status)
+                    + (runtime ? std::string()
+                               : std::string("; the Visual X# runtime library ")
+                                     + kRuntimeLibraryName
+                                     + " was not found beside the compiler, "
+                                       "and a program that uses strings, "
+                                       "closures or the console needs it")
+            };
+
+        std::error_code sizeError;
+        const auto size
+            = std::filesystem::file_size(request.outputPath, sizeError);
+        if (sizeError || size == 0U)
+            return { -1,
+                     "the linker driver did not produce a non-empty .vxse "
+                     "executable" };
+        return { 0, {} };
 #endif
     }
 } // namespace Visual::XSharp::Driver

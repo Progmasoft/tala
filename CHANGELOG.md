@@ -17,6 +17,15 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   second. The lowered program is the same. Coverage-guided fuzzing found it
   as a timeout; a shorter program of the same shape is kept as a seed.
 
+### Native executables
+
+- `vxs build` and `vxs run` produce a native executable on Linux and macOS,
+  as they did on Windows. The program is linked by the C compiler of the
+  system with `libvxs-runtime.a`, which stands beside the compiler, and with
+  the C library; objects for ELF and Mach-O are position independent. A
+  program that stops is reported by `vxs run` as 128 and the number of the
+  signal that ended it.
+
 ### Command line
 
 - `-File` with a path that is not well-formed UTF-8 is reported as an invalid

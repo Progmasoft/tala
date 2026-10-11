@@ -131,6 +131,14 @@
             "WriteFile"
           ]
         }
+      },
+      "linux": {
+        "linker": "cc",
+        "runtime_library": "libvxs-runtime.a"
+      },
+      "macos": {
+        "linker": "cc",
+        "runtime_library": "libvxs-runtime.a"
       }
     }
   }

@@ -99,20 +99,23 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 }
 
 // The runtime library a native executable is linked with. The compiler looks
-// for it beside its own executable under the name it is installed by. Native
-// executables are linked on Windows only, so the library exists there only.
-const runtimeLibraryName = "vxs-runtime.lib"
+// for it beside its own executable under the name it is installed by. On
+// Windows an executable carries no C runtime and the library is built for
+// that; on Linux and macOS it is linked with the C library of the system.
+var runtimeLibraryName, runtimeLibraryTarget, runtimeLibraryOutput = runtimeLibraryFor(runtime.GOOS)
 
-var runtimeLibraryTarget = func() string {
-	if runtime.GOOS == "windows" {
-		return "//Compiler/Runtime/Freestanding:vxs_runtime"
+// runtimeLibraryFor names, for a host, the file the compiler looks for, the
+// Bazel target that builds it, and where Bazel leaves it below bazel-bin.
+func runtimeLibraryFor(goos string) (name string, target string, output string) {
+	if goos == "windows" {
+		return "vxs-runtime.lib", "//Compiler/Runtime/Freestanding:vxs_runtime", "Compiler/Runtime/Freestanding/vxs_runtime.lib"
 	}
-	return ""
-}()
+	return "libvxs-runtime.a", "//Compiler/Runtime/Hosted:vxs_runtime", "Compiler/Runtime/Hosted/libvxs_runtime.a"
+}
 
 // builtRuntimeLibrary is where Bazel leaves the archive of runtimeLibraryTarget.
 func builtRuntimeLibrary(repository string) string {
-	return filepath.Join(repository, "bazel-bin", "Compiler", "Runtime", "Freestanding", "vxs_runtime.lib")
+	return filepath.Join(repository, "bazel-bin", filepath.FromSlash(runtimeLibraryOutput))
 }
 
 // stageRuntimeForBuildOutputs puts the runtime library beside every program
