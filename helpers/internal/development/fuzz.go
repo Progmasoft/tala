@@ -127,6 +127,17 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 		if err := syncSeedCorpus(filepath.Join(repository, "Compiler", "Fuzzing", "Corpus", stage), corpus); err != nil {
 			return fmt.Errorf("could not synchronize the versioned %s seed corpus: %w", stage, err)
 		}
+		if readsSourceText(stage) {
+			limit, err := strconv.Atoi(target.maxLength)
+			if err != nil {
+				return fmt.Errorf("fuzz target %s has no numeric input limit: %q", stage, target.maxLength)
+			}
+			held, err := syncRepositorySources(repository, corpus, limit)
+			if err != nil {
+				return fmt.Errorf("could not seed the %s corpus from the repository's sources: %w", stage, err)
+			}
+			fmt.Printf("The %s corpus holds %d of the repository's Visual X# sources as seeds.\n", stage, held)
+		}
 	}
 	wireGenerated := filepath.Join(work, "generated-wire-corpus")
 	smoke := filepath.Join(repository, "bazel-bin", "Compiler", "Fuzzing", "wire_fuzz_smoke"+currentHost.executable)
