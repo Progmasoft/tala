@@ -191,6 +191,9 @@ jobs:
             "The database holds no summary or telemetry results to show." >> $summary
           }
 
+          # The job summary is only shown on the page of the run. The log gets
+          # the same text, so that the figures can be read from it as well.
+          Get-Content -LiteralPath $summary | ForEach-Object { Write-Host $_ }
           Write-Host "C++ analysis: $seen of $($owned.Count) native sources are in the database ($share %)."
           if ($share -lt $floor) {
             throw "CodeQL analysed $share % of the native sources; the floor is $floor %."
