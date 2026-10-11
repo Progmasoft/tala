@@ -611,6 +611,67 @@ namespace
         return Failure(std::move(options), std::move(message));
     }
 
+    // Whether the bytes are well-formed UTF-8: no stray or missing
+    // continuation byte, no overlong form, no surrogate and nothing above
+    // U+10FFFF. The ranges are those of the Unicode standard's table of
+    // well-formed byte sequences.
+    [[nodiscard]] bool
+    IsWellFormedUtf8(std::string_view value)
+    {
+        const auto byteAt = [value](std::size_t index) {
+            return static_cast<unsigned char>(value[index]);
+        };
+        for (std::size_t index = 0U; index < value.size();)
+        {
+            const auto first = byteAt(index);
+            if (first <= 0x7fU)
+            {
+                ++index;
+                continue;
+            }
+            std::size_t width{};
+            unsigned char lowest = 0x80U;
+            unsigned char highest = 0xbfU;
+            if (first >= 0xc2U && first <= 0xdfU)
+                width = 2U;
+            else if (first >= 0xe0U && first <= 0xefU)
+            {
+                width = 3U;
+                if (first == 0xe0U)
+                    lowest = 0xa0U;
+                else if (first == 0xedU)
+                    highest = 0x9fU;
+            }
+            else if (first >= 0xf0U && first <= 0xf4U)
+            {
+                width = 4U;
+                if (first == 0xf0U)
+                    lowest = 0x90U;
+                else if (first == 0xf4U)
+                    highest = 0x8fU;
+            }
+            else
+                return false;
+            if (width > value.size() - index)
+                return false;
+            const auto second = byteAt(index + 1U);
+            if (second < lowest || second > highest)
+                return false;
+            for (std::size_t offset = 2U; offset < width; ++offset)
+            {
+                const auto continuation = byteAt(index + offset);
+                if (continuation < 0x80U || continuation > 0xbfU)
+                    return false;
+            }
+            index += width;
+        }
+        return true;
+    }
+
+    // The caller has checked that the bytes are well-formed UTF-8. The
+    // standard library converts them to the native encoding of the host and
+    // reports bytes it cannot convert by throwing, which this code, built
+    // without exceptions, cannot answer.
     [[nodiscard]] std::filesystem::path
     Utf8Path(std::string_view value)
     {
@@ -793,7 +854,7 @@ namespace
         switch (spec.option)
         {
             case Option::File:
-                if (value.empty())
+                if (value.empty() || !IsWellFormedUtf8(value))
                     return ApplyResult::Invalid;
                 options.filePath = Utf8Path(value);
                 return ApplyResult::Applied;

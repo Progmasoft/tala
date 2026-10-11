@@ -182,6 +182,23 @@ that directory fails the campaign instead of starting from nothing. Set `VXS_FUZ
 corpora across local runs. Updated versioned seeds are added without overwriting
 older discovered inputs; conflicting contents under a stable hash fail closed.
 
+The targets that read source text, the lexer, the parser and the source
+target, are seeded with the repository's own Visual X# sources as well: the
+examples, the samples of the specification and the fixtures of the driver and
+analyzer tests, more than two hundred programs. They are read where they are,
+so no second copy has to be kept in step, and a source that is added is a seed
+from the next campaign on. A seed is named after its content; a source that
+changes adds a seed and replaces none. A source longer than the input limit of
+a target is left out.
+
+The other corpora hold bytes in the form their harness reads, and their
+directories are marked as binary so that no line ending is converted. A seed
+of `Corpus/cli` is a list of arguments separated by NUL. A seed of
+`Corpus/project` is a project record of NUL-terminated fields, or a selector
+byte followed by the text that replaces the selected field. A seed of
+`Corpus/repl` is up to eight selector bytes, and one of `Corpus/ownership` is a
+worker count and an iteration count.
+
 GitHub Actions restores a per-platform corpus cache and saves a unique cache
 version for each run. It also uploads campaign artifacts on success or failure.
 Reports contain the target, duration, RSS limit, selected sanitizer, native
@@ -333,9 +350,12 @@ negative constant patterns, and for blocks used as values that leave with
 The differential generator selects one of fourteen program shapes from the
 byte after its generated expression, modulo the shape count. Adding a shape
 therefore changes which shape an existing seed selects, so the seeds in
-`Corpus/differential` are rewritten together with the count: each is a leaf
-selector, a shape byte and a limit byte, and its name states the shape it is
-meant to reach. Set
+`Corpus/differential` are rewritten together with the count. The older ones
+are a leaf selector, a shape byte and a limit byte, and their names state the
+shape they are meant to reach. The `shape-NN` seeds cover every shape three
+times: with a leaf, and with an expression of full depth before a trip count
+of zero and of eleven. An expression of full depth is thirty-one selectors of
+which the fifteen inner ones are not multiples of four. Set
 `VXS_FUZZ_TRACE=1` to print each generated source with its reference and
 optimized LLVM IR.
 
