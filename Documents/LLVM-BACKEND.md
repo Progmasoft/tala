@@ -22,6 +22,24 @@ produces structured `VXP` or `VXL` issues and no LLVM artifact.
 The canonical C++ spelling is `Visual::XSharp`, with PascalCase namespace segments, classes, and functions. Renewed and
 existing C++ subsystems migrate toward that spelling without recreating the removed Rust naming or implementation layer.
 
+## Sources
+
+The lowering lives in `Compiler/Backend/LLVM`, one source for each thing it lowers:
+
+| Source | Holds |
+| --- | --- |
+| `Codegen.cpp` | `Lower`, the public entry: verification, the module, the order of the steps, the artifact |
+| `Generator.hpp` | the generator the sources below share, with its type lowering and per-function state |
+| `Generator.cpp` | declaring and defining functions, symbol names, the entry of an executable |
+| `GeneratorValues.cpp` | literals, loads, calls and the ownership operations |
+| `GeneratorArithmetic.cpp` | rounded division, integer powers and the checks that make an operation computable |
+| `GeneratorObjects.cpp` | objects the runtime owns: closures, their thunks and destructors, memoized values |
+| `GeneratorInstructions.cpp` | one Xmm instruction or terminator at a time, and runtime calls |
+| `Emission.hpp`, `Emission.cpp` | optimization, the target machine and machine code |
+
+`Generator.hpp` and `Emission.hpp` are private to the backend. Its public interface is
+`Visual/XSharp/Backend/LLVM.hpp`.
+
 ## Supported values
 
 The connected slice lowers the scalar catalog, `String`, opaque nominal AARC pointers, direct calls, closure allocation,

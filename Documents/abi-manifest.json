@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "description": "The binary interfaces of Visual X#: what one build of the compiler promises another program or another stage, by name and by number. `go run ./helpers/cmd/verify-abi` compares every entry with the sources.",
+  "frontend_library": {
+    "abi_version": 2,
+    "header": "Compiler/Headers/Visual/XSharp/Frontend.h",
+    "libraries": {
+      "windows": "vxs-frontend.dll",
+      "macos": "libvxs-frontend.dylib",
+      "linux": "libvxs-frontend.so"
+    },
+    "symbols": [
+      "vxs_frontend_abi_version",
+      "vxs_frontend_compile_source",
+      "vxs_frontend_execute",
+      "vxs_frontend_fuzz_compile",
+      "vxs_frontend_fuzz_syntax",
+      "vxs_frontend_initialize",
+      "vxs_frontend_shutdown"
+    ],
+    "output_kinds": {
+      "VXS_FRONTEND_CORE_WIRE": 0,
+      "VXS_FRONTEND_PROJECT_SOURCE_LIST": 1,
+      "VXS_FRONTEND_DIAGNOSTIC_WIRE": 2,
+      "VXS_FRONTEND_ERROR_TEXT": 3,
+      "VXS_FRONTEND_COREPREP_WIRE": 4,
+      "VXS_FRONTEND_WARNING_TEXT": 5
+    },
+    "statuses": {
+      "VXS_FRONTEND_OK": 0,
+      "VXS_FRONTEND_DIAGNOSTICS": 1,
+      "VXS_FRONTEND_INVALID_REQUEST": 2,
+      "VXS_FRONTEND_INTERNAL_ERROR": 3,
+      "VXS_FRONTEND_OUTPUT_REJECTED": 4
+    }
+  },
+  "runtime": {
+    "ownership": {
+      "abi_version": 2,
+      "header": "Compiler/Headers/Visual/XSharp/Runtime/AARC.h",
+      "symbols": [
+        "vxs_aarc_abi_version",
+        "vxs_aarc_allocate",
+        "vxs_aarc_copy_unowned",
+        "vxs_aarc_copy_weak",
+        "vxs_aarc_is_exact_type",
+        "vxs_aarc_load_unowned",
+        "vxs_aarc_lock_weak",
+        "vxs_aarc_make_unowned",
+        "vxs_aarc_make_weak",
+        "vxs_aarc_release_strong",
+        "vxs_aarc_release_unowned",
+        "vxs_aarc_release_weak",
+        "vxs_aarc_retain_strong",
+        "vxs_aarc_string_literal"
+      ],
+      "type_metadata": [
+        "abiVersion",
+        "flags",
+        "typeIdentity",
+        "instanceSize",
+        "instanceAlignment",
+        "destructor",
+        "typeName"
+      ]
+    },
+    "text": {
+      "header": "Compiler/Headers/Visual/XSharp/Runtime/Text.h",
+      "symbols": [
+        "vxs_console_write",
+        "vxs_text_concat",
+        "vxs_text_equals",
+        "vxs_text_format_char",
+        "vxs_text_format_floating",
+        "vxs_text_format_signed",
+        "vxs_text_format_string",
+        "vxs_text_format_unsigned",
+        "vxs_text_from_bool",
+        "vxs_text_from_char",
+        "vxs_text_from_signed",
+        "vxs_text_from_unsigned",
+        "vxs_text_newline"
+      ],
+      "constants": {
+        "VXS_TEXT_FLAG_LEFT": 1,
+        "VXS_TEXT_FLAG_ZERO": 2,
+        "VXS_TEXT_FLAG_PLUS": 4,
+        "VXS_TEXT_FLAG_SPACE": 8,
+        "VXS_TEXT_FLAG_ALTERNATE": 16,
+        "VXS_TEXT_FLAG_GROUP": 32,
+        "VXS_TEXT_FLAG_HEXADECIMAL": 64,
+        "VXS_TEXT_ABSENT": -1,
+        "VXS_CONSOLE_OUTPUT": 0,
+        "VXS_CONSOLE_OUTPUT_LINE": 1,
+        "VXS_CONSOLE_ERROR": 2,
+        "VXS_CONSOLE_ERROR_LINE": 3
+      }
+    }
+  },
+  "wire_formats": [
+    { "name": "Core", "magic": "VXCR", "version": 10 },
+    { "name": "CorePrep", "magic": "VXCP", "version": 8 },
+    { "name": "Xpp", "magic": "VXPP", "version": 7 },
+    { "name": "Xmm", "magic": "VXMM", "version": 7 }
+  ],
+  "executable": {
+    "extension": ".vxse",
+    "source_entry": "a parameterless `public static void Main()`",
+    "entry_symbols": {
+      "windows": "mainCRTStartup",
+      "linux": "main",
+      "macos": "main"
+    },
+    "object_formats": {
+      "windows": "COFF",
+      "linux": "ELF",
+      "macos": "Mach-O"
+    },
+    "native_linking": {
+      "windows": {
+        "linker": "lld-link",
+        "runtime_library": "vxs-runtime.lib",
+        "system_imports": {
+          "KERNEL32.dll": [
+            "GetConsoleMode",
+            "GetProcessHeap",
+            "GetStdHandle",
+            "HeapAlloc",
+            "HeapFree",
+            "WriteConsoleW",
+            "WriteFile"
+          ]
+        }
+      }
+    }
+  }
+}

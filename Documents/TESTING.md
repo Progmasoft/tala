@@ -48,6 +48,7 @@ go -C helpers vet ./...
 go -C helpers test ./internal/development
 go run ./helpers/cmd/repo-info --json
 go run ./helpers/cmd/verify-examples --root .
+go run ./helpers/cmd/verify-abi --root .
 go run ./helpers/cmd/verify-benchmarks --root .
 ```
 
