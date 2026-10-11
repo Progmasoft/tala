@@ -1,26 +1,98 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-# Coverage starts with the Haskell-owned frontend. Keep its status separate from
-# the rest of the monorepo until native and Kotlin reports are available.
+# Coverage is followed for each language on its own. The repository holds a
+# Haskell frontend, a C++ backend and runtime, four Kotlin components and Go
+# tools; one figure for all of them hides a fall in one behind a rise in
+# another. Every upload carries a flag, and each flag has a status of its own
+# for the whole of its sources and for the lines a pull request changes.
+#
+# The statuses are informational: they show on a pull request and never fail
+# it. A threshold that fails a pull request is a decision to make once the
+# figures have been watched for a while.
 coverage:
   status:
     project:
+      default:
+        informational: true
       haskell-frontend:
         flags:
           - haskell-frontend
+        informational: true
+      native-cpp:
+        flags:
+          - native-cpp
+        informational: true
+      kotlin:
+        flags:
+          - kotlin-project-system
+          - kotlin-analyzer
+          - kotlin-formatter
+          - kotlin-linter
+        informational: true
+      go-tools:
+        flags:
+          - go-tools
         informational: true
     patch:
+      default:
+        informational: true
       haskell-frontend:
         flags:
           - haskell-frontend
         informational: true
+      native-cpp:
+        flags:
+          - native-cpp
+        informational: true
+      kotlin:
+        flags:
+          - kotlin-project-system
+          - kotlin-analyzer
+          - kotlin-formatter
+          - kotlin-linter
+        informational: true
+      go-tools:
+        flags:
+          - go-tools
+        informational: true
 
+# The sources each flag answers for. A report is only counted for the paths
+# of its flag, so that a file is never measured by a suite that does not own
+# it. A flag whose suite did not run for a commit keeps its last figure
+# instead of dropping to nothing; the Haskell suite runs for every commit and
+# needs no such memory.
 flags:
   haskell-frontend:
     paths:
       - Compiler/Haskell/
     carryforward: false
+  native-cpp:
+    paths:
+      - Compiler/
+      - Interactive/
+      - "!Compiler/Haskell/"
+    carryforward: true
+  kotlin-project-system:
+    paths:
+      - ProjectSystem/
+    carryforward: true
+  kotlin-analyzer:
+    paths:
+      - Analyzer/
+    carryforward: true
+  kotlin-formatter:
+    paths:
+      - Formatter/
+    carryforward: true
+  kotlin-linter:
+    paths:
+      - Linter/
+    carryforward: true
+  go-tools:
+    paths:
+      - helpers/
+    carryforward: true
 
 comment:
   layout: "reach, diff, flags, files"

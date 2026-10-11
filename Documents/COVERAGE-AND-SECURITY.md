@@ -26,6 +26,12 @@ compiler packages retain Cabal tests, HPC coverage, and ordinary review instead 
 workflow runs for pushes, pull requests, and a weekly schedule. A successful scan means the configured analysis
 completed, not that the code is free of vulnerabilities. Review alerts in the repository's code-scanning interface.
 
+C and C++ are analysed without a build: the extractor reads the sources and guesses how they would be compiled, which
+needs no LLVM on the runner and can analyse less than the repository has without saying so. The `c-cpp` job therefore
+measures what it covered. It compares the native sources the repository owns under `Compiler/` and `Interactive/` with
+the sources the CodeQL database holds, and fails below 95 percent. It also writes the extractor's own summary and
+telemetry to the job summary, among them the includes it could not resolve; those figures have no floor yet.
+
 ## Dependency and additional quality analysis
 
 [Renovate](../.github/renovate.json5) proposes version updates for GitHub Actions, Bazel module dependencies, all four
@@ -57,6 +63,12 @@ Coverage uploads carry separate flags so one component's result cannot be mistak
 | `kotlin-formatter` | Formatter Gradle tests | JaCoCo XML |
 | `kotlin-linter` | Linter Gradle tests | JaCoCo XML |
 | `go-tools` | All helper command and internal package tests | Go cover profiles |
+
+Each language has a status of its own on a pull request, for the whole of its sources and for the lines the pull request
+changes: `haskell-frontend`, `native-cpp`, `kotlin` (the four Kotlin flags together) and `go-tools`, beside the figure
+for the repository as a whole. [`codecov.yml`](../codecov.yml) gives each flag the paths it answers for, so a file is
+never measured by a suite that does not own it. The statuses are informational: they show a fall and do not fail a
+pull request. A flag whose suite did not run for a commit keeps its last figure.
 
 The [Haskell coverage workflow](../.github/workflows/haskell-coverage.yml) still owns HPC conversion. The
 [component coverage workflow](../.github/workflows/coverage.yml) owns the remaining reports. Both upload through

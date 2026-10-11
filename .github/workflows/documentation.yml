@@ -36,7 +36,7 @@ jobs:
           doxygen --version
 
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
