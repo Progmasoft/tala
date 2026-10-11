@@ -26,6 +26,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- `Documents/abi-manifest.json` states the binary interfaces of the compiler in
+  one place: the C functions of the frontend library and of the runtime, the
+  numbers they exchange, the versions of the four wire formats, and how an
+  executable is entered and linked. `verify-abi` reads every entry back from
+  the header or source that defines it and fails on a difference in either
+  direction; the compiler workflows run it.
 - The fuzz corpora are larger. The lexer, parser and source targets are seeded
   with the Visual X# sources the repository already holds, more than two
   hundred programs, read where they are. The command-line, project, REPL,

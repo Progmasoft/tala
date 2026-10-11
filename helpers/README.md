@@ -22,8 +22,10 @@ helpers/
 │   ├── verify-helpers/     module-wide developer-tool quality gates
 │   ├── verify-docs/        strict Doxygen and Haddock API documentation checks
 │   ├── verify-examples/    example inventory and source-file contracts
+│   ├── verify-abi/         the ABI manifest against the sources it describes
 │   └── verify-benchmarks/  benchmark report/index consistency
 └── internal/
+    ├── abimanifest/       what the ABI manifest states, read back from the sources
     ├── development/       host, process, build, bundle, fuzz, and release logic
     └── repository/        shared checkout-boundary discovery
 ```
@@ -47,6 +49,7 @@ go run ./helpers/cmd/develop test
 go run ./helpers/cmd/develop fuzz-stress --asan
 go run ./helpers/cmd/verify-helpers
 go run ./helpers/cmd/verify-examples
+go run ./helpers/cmd/verify-abi
 go run ./helpers/cmd/verify-benchmarks
 go run ./helpers/cmd/verify-docs
 ```

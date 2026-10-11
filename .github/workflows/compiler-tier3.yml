@@ -69,6 +69,7 @@ jobs:
           go run ./helpers/cmd/develop doctor
           go run ./helpers/cmd/verify-helpers
           go run ./helpers/cmd/verify-examples
+          go run ./helpers/cmd/verify-abi
           go run ./helpers/cmd/verify-benchmarks
           go run ./helpers/cmd/execution-cases check
 
