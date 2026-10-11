@@ -735,25 +735,43 @@ lowerExpression :: Expression ResolvedName Type -> Lower Lowered
 lowerExpression expression = do
     deferred <- gets lowerDeferred
     needs <- gets (argumentNeeds . lowerNeeds)
-    case neededTwice needs (map fst deferred) expression of
-        [] -> lowerOperands expression
+    -- Whether the reads of this expression are looked through here; they
+    -- are when a value by need exists and the expression may be deferred.
+    let searched = not (null deferred) && deferrableExpression expression
+    case if searched then neededTwice needs (map fst deferred) expression else [] of
+        [] -> lowerOperands searched expression
         shared -> do
             -- Each read of a value by need carries the computation of that
             -- value. An expression that is certain to read one several
             -- times computes it once, ahead of itself, and then reads it as
             -- an ordinary local; otherwise a chain of such values would
             -- grow with a power of its length.
-            forced <- concat <$> mapM (fmap fst . lowerOperands . snd) shared
+            forced <- concat <$> mapM (fmap fst . lowerOperands False . snd) shared
             modify
                 ( \current ->
                     current {lowerDeferred = filter ((`notElem` map (resolvedSymbol . fst) shared) . fst) deferred}
                 )
-            (prefix, lowered) <- lowerOperands expression
+            (prefix, lowered) <- lowerOperands True expression
             modify (\current -> current {lowerDeferred = deferred})
             pure (forced ++ prefix, lowered)
 
-lowerOperands :: Expression ResolvedName Type -> Lower Lowered
-lowerOperands expression = case expression of
+{- | Lower an operand that its expression evaluates whenever it is itself
+evaluated: the operand of a unary operator, both operands of an operator
+that does not short-circuit, and the left operand of one that does.
+
+When the reads of the expression have been looked through, those of such an
+operand need no second look. A value by need that the operand is certain to
+read twice is one the expression is certain to read twice, and it has been
+computed ahead of the expression. Looking again at every operand would walk
+a chain of operators once for each of its operators.
+-}
+lowerCertainOperand :: Bool -> Expression ResolvedName Type -> Lower Lowered
+lowerCertainOperand searched
+    | searched = lowerOperands True
+    | otherwise = lowerExpression
+
+lowerOperands :: Bool -> Expression ResolvedName Type -> Lower Lowered
+lowerOperands searched expression = case expression of
     -- A read of a local whose value is computed by need computes it if no
     -- earlier read has, and reads it.
     NameExpression _ name valueType -> do
@@ -831,9 +849,9 @@ lowerOperands expression = case expression of
         loweredArguments <- mapM lowerExpression arguments
         (prefix, calleeValue, argumentValues) <- sequenceAfter loweredCallee loweredArguments
         pure (prefix, CoreApply calleeValue argumentValues (lowerBoundaryType valueType))
-    UnaryExpression _ UnaryPlus value _ -> lowerExpression value
+    UnaryExpression _ UnaryPlus value _ -> lowerCertainOperand searched value
     UnaryExpression _ operator value valueType -> do
-        (prefix, lowered) <- lowerExpression value
+        (prefix, lowered) <- lowerCertainOperand searched value
         pure (prefix, CorePrimitive (lowerUnary operator) [lowered] (lowerBoundaryType valueType))
     BinaryExpression _ operator left right valueType
         -- A right operand that never completes leaves when it is
@@ -841,13 +859,13 @@ lowerOperands expression = case expression of
         -- skips it, and that value is known: false for `&&`, true for `||`.
         | operator `elem` [LogicalAnd, LogicalOr]
         , doesNotComplete right -> do
-            (leftPrefix, loweredLeft) <- lowerExpression left
+            (leftPrefix, loweredLeft) <- lowerCertainOperand searched left
             leaving <- branching (`lowerNeverCompleting` right)
             let conjunction = operator == LogicalAnd
                 skip = if conjunction then CoreIf loweredLeft leaving [] else CoreIf loweredLeft [] leaving
             pure (leftPrefix ++ [skip], CoreLiteral (CoreBoolean (not conjunction)) boolType)
         | operator `elem` [LogicalAnd, LogicalOr] -> do
-            (leftPrefix, loweredLeft) <- lowerExpression left
+            (leftPrefix, loweredLeft) <- lowerCertainOperand searched left
             loweredRight <- lowerExpression right
             if null (fst loweredRight)
                 then
@@ -860,8 +878,8 @@ lowerOperands expression = case expression of
                     let (statements, value) = decideLogical (operator == LogicalAnd) result loweredLeft loweredRight
                     pure (leftPrefix ++ statements, value)
         | otherwise -> do
-            loweredLeft <- lowerExpression left
-            loweredRight <- lowerExpression right
+            loweredLeft <- lowerCertainOperand searched left
+            loweredRight <- lowerCertainOperand searched right
             (prefix, leftValue, rightValues) <- sequenceAfter loweredLeft [loweredRight]
             pure (prefix, CorePrimitive (lowerBinary operator) (leftValue : rightValues) (lowerBoundaryType valueType))
     IsPatternExpression _ subject patternValue _ -> do
@@ -1137,7 +1155,7 @@ suspend loweredType value = do
                 []
                 [seen | seen <- expressionNames value, resolvedSymbol (fst seen) `elem` map fst deferred]
     forced <-
-        concat <$> mapM (\(name, nameType) -> fst <$> lowerOperands (NameExpression (expressionSourceSpan value) name nameType)) framed
+        concat <$> mapM (\(name, nameType) -> fst <$> lowerOperands False (NameExpression (expressionSourceSpan value) name nameType)) framed
     modify (\current -> current {lowerDeferred = filter ((`notElem` map (resolvedSymbol . fst) framed) . fst) deferred})
     following <- gets lowerFollowing
     modify (\current -> current {lowerFollowing = []})

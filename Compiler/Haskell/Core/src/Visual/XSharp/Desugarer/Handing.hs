@@ -275,10 +275,15 @@ statementExpressions statement = case statement of
 evaluation: operands, arms, capture initializers and the expression body of
 a callable. The statements an expression holds are reached through
 'statementsWithin'.
+
+Each expression is put in front of the ones that follow it. Appending the
+expressions of one operand to those of another would copy the expressions
+of a chain of operators once for each operator of the chain.
 -}
 within :: Expression name annotation -> [Expression name annotation]
-within expression = expression : concatMap within (children expression)
+within expression = collect expression []
     where
+        collect value following = value : foldr collect following (children value)
         children value = case value of
             NameExpression {} -> []
             LiteralExpression {} -> []

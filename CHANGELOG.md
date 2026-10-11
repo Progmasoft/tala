@@ -7,6 +7,16 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Compiler
+
+- A local whose value is computed by need no longer makes a long chain of
+  operators slow to compile. The lowering looked through the whole operand
+  tree again at every operator while such a local was in scope, so the time
+  grew with the cube of the length of the chain: a chain of 3 940 terms that
+  held one division did not finish in five minutes and now takes about a
+  second. The lowered program is the same. Coverage-guided fuzzing found it
+  as a timeout; a shorter program of the same shape is kept as a seed.
+
 ### Command line
 
 - `-File` with a path that is not well-formed UTF-8 is reported as an invalid
