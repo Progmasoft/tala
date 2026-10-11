@@ -28,6 +28,8 @@ module Visual.XSharp.Desugarer.Laziness
     , neededNext
     ) where
 
+import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Visual.XSharp.AST
 import Visual.XSharp.Core
 
@@ -75,16 +77,28 @@ worthDeferring expression = case expression of
 
 -- | The names an expression that may be deferred reads, with their types.
 expressionNames :: Expression name annotation -> [(name, annotation)]
-expressionNames expression = case expression of
-    NameExpression _ name annotation -> [(name, annotation)]
-    MemberAccessExpression _ receiver _ _ -> expressionNames receiver
-    MethodReferenceExpression _ receiver _ _ -> expressionNames receiver
-    CallExpression _ callee arguments _ -> concatMap expressionNames (callee : arguments)
-    UnaryExpression _ _ value _ -> expressionNames value
-    BinaryExpression _ _ left right _ -> expressionNames left ++ expressionNames right
-    IsPatternExpression _ subject _ _ -> expressionNames subject
-    ConditionalExpression _ condition first second _ -> concatMap expressionNames [condition, first, second]
-    _ -> []
+expressionNames expression = [(name, annotation) | NameExpression _ name annotation <- nameReads expression]
+
+{- | The reads of a name in an expression that may be deferred, in the order
+they are written.
+
+The reads are gathered in front of the ones that follow them. Appending the
+reads of a right operand to those of a left one would copy the reads of a
+chain of operators once for each operator of the chain.
+-}
+nameReads :: Expression name annotation -> [Expression name annotation]
+nameReads expression = collect expression []
+    where
+        collect value following = case value of
+            NameExpression {} -> value : following
+            MemberAccessExpression _ receiver _ _ -> collect receiver following
+            MethodReferenceExpression _ receiver _ _ -> collect receiver following
+            CallExpression _ callee arguments _ -> foldr collect following (callee : arguments)
+            UnaryExpression _ _ operand _ -> collect operand following
+            BinaryExpression _ _ left right _ -> collect left (collect right following)
+            IsPatternExpression _ subject _ _ -> collect subject following
+            ConditionalExpression _ condition first second _ -> foldr collect following [condition, first, second]
+            _ -> following
 
 {- | Replace the names an expression that may be deferred reads. A name that
 has no replacement is kept.
@@ -162,28 +176,22 @@ neededTwice ::
     [(ResolvedName, Expression ResolvedName annotation)]
 neededTwice needs deferred expression
     | null deferred || not (deferrableExpression expression) = []
-    | otherwise = go [] (nameReads expression)
+    | otherwise = go Set.empty namesRead
     where
+        namesRead = [(name, found) | found@(NameExpression _ name _) <- nameReads expression]
+        byNeed = Set.fromList deferred
+        -- How often each value by need is read. Looking for a second read
+        -- among the reads that follow would walk them for every name.
+        counts = Map.fromListWith (+) [(symbol, 1 :: Int) | (name, _) <- namesRead, let symbol = resolvedSymbol name, Set.member symbol byNeed]
         go _ [] = []
         go seen ((name, found) : remaining)
-            | symbol `elem` seen = go seen remaining
-            | symbol `elem` deferred
-            , symbol `elem` map (resolvedSymbol . fst) remaining
+            | Set.member symbol seen = go seen remaining
+            | Map.findWithDefault 0 symbol counts > 1
             , alwaysReads needs name expression =
-                (name, found) : go (symbol : seen) remaining
-            | otherwise = go (symbol : seen) remaining
+                (name, found) : go (Set.insert symbol seen) remaining
+            | otherwise = go (Set.insert symbol seen) remaining
             where
                 symbol = resolvedSymbol name
-        nameReads value = case value of
-            NameExpression _ name _ -> [(name, value)]
-            MemberAccessExpression _ receiver _ _ -> nameReads receiver
-            MethodReferenceExpression _ receiver _ _ -> nameReads receiver
-            CallExpression _ callee arguments _ -> concatMap nameReads (callee : arguments)
-            UnaryExpression _ _ operand _ -> nameReads operand
-            BinaryExpression _ _ left right _ -> nameReads left ++ nameReads right
-            IsPatternExpression _ subject _ _ -> nameReads subject
-            ConditionalExpression _ condition first second _ -> concatMap nameReads [condition, first, second]
-            _ -> []
 
 {- | Whether the statement that follows a binding is certain to read it.
 
