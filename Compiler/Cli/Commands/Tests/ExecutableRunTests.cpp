@@ -20,6 +20,17 @@
 #        define NOMINMAX
 #    endif
 #    include <windows.h>
+#else
+#    include <csignal>
+#    include <fcntl.h>
+#    include <spawn.h>
+#    include <sys/wait.h>
+#    include <unistd.h>
+
+// The environment of the process, which a started program inherits. macOS
+// does not declare it in a header; glibc does.
+// NOLINTNEXTLINE(readability-redundant-declaration)
+extern char **environ;
 #endif
 
 // Programs built into native executables and run as processes.
@@ -90,10 +101,39 @@ namespace
                                         arguments.data());
     }
 
-#ifdef _WIN32
     /// The status of a process that executed an instruction the processor
-    /// refuses, which is how generated code stops.
+    /// refuses, which is how generated code stops. Windows reports the
+    /// exception. Elsewhere the process is ended by a signal, which is
+    /// reported the way a shell reports it, 128 and the signal: the
+    /// processor's refusal on x86, and a breakpoint on Arm, whose trap
+    /// instruction is one.
+#if defined(_WIN32)
     constexpr int kStopped = static_cast<int>(0xC000001DU);
+#elif defined(__aarch64__) || defined(__arm64__)
+    constexpr int kStopped = 128 + SIGTRAP;
+#else
+    constexpr int kStopped = 128 + SIGILL;
+#endif
+
+    /// Expected output is written here with the line ending of Windows,
+    /// which is what a program writes there. Elsewhere a line ends with a
+    /// line feed alone, and the expectation is read without the carriage
+    /// returns.
+    [[nodiscard]] auto
+    Lines(std::string_view expected) -> std::string
+    {
+#ifdef _WIN32
+        return std::string(expected);
+#else
+        std::string result;
+        result.reserve(expected.size());
+        for (std::size_t index = 0U; index < expected.size(); ++index)
+            if (expected[index] != '\r' || index + 1U == expected.size()
+                || expected[index + 1U] != '\n')
+                result.push_back(expected[index]);
+        return result;
+#endif
+    }
 
     [[nodiscard]] auto
     Run(std::string_view name, std::string_view members) -> int
@@ -117,6 +157,7 @@ namespace
                  std::istreambuf_iterator<char>() };
     }
 
+#ifdef _WIN32
     /// A file a child process may write to through an inherited handle.
     [[nodiscard]] auto
     InheritableFile(const std::filesystem::path &path) -> HANDLE
@@ -180,6 +221,52 @@ namespace
                  ReadAll(outputPath),
                  ReadAll(errorPath) };
     }
+#else
+    /// Builds the program into an executable, runs the executable with its
+    /// standard streams sent to files, and returns what it wrote.
+    [[nodiscard]] auto
+    RunCapturing(std::string_view name, std::string_view members) -> Outcome
+    {
+        REQUIRE(Drive("build", name, members) == 0);
+        const auto executable = Directory() / (std::string(name) + ".vxse");
+        const auto outputPath = Directory() / (std::string(name) + ".out");
+        const auto errorPath = Directory() / (std::string(name) + ".err");
+        REQUIRE(std::filesystem::is_regular_file(executable));
+
+        posix_spawn_file_actions_t actions{};
+        REQUIRE(posix_spawn_file_actions_init(&actions) == 0);
+        REQUIRE(posix_spawn_file_actions_addopen(&actions,
+                                                 STDOUT_FILENO,
+                                                 outputPath.c_str(),
+                                                 O_WRONLY | O_CREAT | O_TRUNC,
+                                                 0600)
+                == 0);
+        REQUIRE(posix_spawn_file_actions_addopen(&actions,
+                                                 STDERR_FILENO,
+                                                 errorPath.c_str(),
+                                                 O_WRONLY | O_CREAT | O_TRUNC,
+                                                 0600)
+                == 0);
+        auto program = executable.string();
+        std::vector<char *> arguments{ program.data(), nullptr };
+        pid_t process{};
+        const int spawned = posix_spawn(&process,
+                                        program.c_str(),
+                                        &actions,
+                                        nullptr,
+                                        arguments.data(),
+                                        environ);
+        posix_spawn_file_actions_destroy(&actions);
+        REQUIRE(spawned == 0);
+        int status{};
+        REQUIRE(waitpid(process, &status, 0) == process);
+        // A program a signal ended is reported the way `vxs run` reports
+        // it, so that both ways of running one agree on a status.
+        const int reported = WIFEXITED(status)     ? WEXITSTATUS(status)
+                             : WIFSIGNALED(status) ? 128 + WTERMSIG(status)
+                                                   : -1;
+        return { reported, ReadAll(outputPath), ReadAll(errorPath) };
+    }
 #endif
 } // namespace
 
@@ -192,10 +279,6 @@ TEST_CASE("every program of this file passes the checks before code "
           == 0);
     std::filesystem::remove_all(Directory());
 }
-
-// The native linker is the Windows one; elsewhere `vxs` does not produce an
-// executable yet.
-#ifdef _WIN32
 
 TEST_CASE("a program whose Main ends without a return runs to its end")
 {
@@ -360,7 +443,7 @@ TEST_CASE("an executable writes to standard output")
                        " + \"!\");\n"
                        "    }\n");
     CHECK(hello.status == 0);
-    CHECK(hello.output == "Hello from Visual X#!\r\n");
+    CHECK(hello.output == Lines("Hello from Visual X#!\r\n"));
     CHECK(hello.error.empty());
 
     // Print ends no line, Println ends one with the line terminator of the
@@ -375,7 +458,7 @@ TEST_CASE("an executable writes to standard output")
                                     "        Console.Println('x');\n"
                                     "    }\n");
     CHECK(lines.status == 0);
-    CHECK(lines.output == "ab\r\n42\r\ntrue\r\nx\r\n");
+    CHECK(lines.output == Lines("ab\r\n42\r\ntrue\r\nx\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -390,8 +473,8 @@ TEST_CASE("an executable keeps standard output and standard error apart")
                        "        Console.Errorfn(\"error %d\", 2);\n"
                        "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "out one, out two\r\n");
-    CHECK(outcome.error == "error one\r\nerror 2\r\n");
+    CHECK(outcome.output == Lines("out one, out two\r\n"));
+    CHECK(outcome.error == Lines("error one\r\nerror 2\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -407,7 +490,7 @@ TEST_CASE("an executable writes to a file as UTF-8")
     CHECK(outcome.status == 0);
     // The width counts characters, not bytes: three spaces before one
     // character of two bytes.
-    CHECK(outcome.output == "\xc3\xa9\xe2\x82\xac\r\n   \xc3\xa9|");
+    CHECK(outcome.output == Lines("\xc3\xa9\xe2\x82\xac\r\n   \xc3\xa9|"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -431,15 +514,15 @@ TEST_CASE("an executable applies the conversions of a format")
         "    }\n");
     CHECK(outcome.status == 0);
     CHECK(outcome.output
-          == "gcd(1071, 462) = 21\r\n"
-             "   42|42   |-0042\r\n"
-             "+42 -1'234'567\r\n"
-             "ff 0xff -ff\r\n"
-             "4294967295 ffffffff\r\n"
-             "       abc|abc       |ab\r\n"
-             "q  q|true  false|\r\n"
-             "50% done\r\nnext\r\n"
-             "   42|3.14|    3.14|\r\n");
+          == Lines("gcd(1071, 462) = 21\r\n"
+                   "   42|42   |-0042\r\n"
+                   "+42 -1'234'567\r\n"
+                   "ff 0xff -ff\r\n"
+                   "4294967295 ffffffff\r\n"
+                   "       abc|abc       |ab\r\n"
+                   "q  q|true  false|\r\n"
+                   "50% done\r\nnext\r\n"
+                   "   42|3.14|    3.14|\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -458,12 +541,12 @@ TEST_CASE("an executable writes floating-point numbers exactly")
         "    }\n");
     CHECK(outcome.status == 0);
     CHECK(outcome.output
-          == "12.500000\r\n"
-             "12.50 2 4\r\n"
-             "000003.142|3.142     |\r\n"
-             "1'234'567.50\r\n"
-             "0.10000000000000000555\r\n"
-             "Price: 19.99\r\n");
+          == Lines("12.500000\r\n"
+                   "12.50 2 4\r\n"
+                   "000003.142|3.142     |\r\n"
+                   "1'234'567.50\r\n"
+                   "0.10000000000000000555\r\n"
+                   "Price: 19.99\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -489,10 +572,10 @@ TEST_CASE("an executable joins and compares strings")
         "    }\n");
     CHECK(outcome.status == 0);
     CHECK(outcome.output
-          == "xy3xy3\r\n"
-             "n=5 b=true c=z\r\n"
-             "true\r\nfalse\r\nfalse\r\n"
-             "00042-ab\r\n");
+          == Lines("xy3xy3\r\n"
+                   "n=5 b=true c=z\r\n"
+                   "true\r\nfalse\r\nfalse\r\n"
+                   "00042-ab\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -513,7 +596,7 @@ TEST_CASE("an executable writes where the program says, in the order it "
         "        Console.Println(Pick(0, never));\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "1\r\n5\r\n7\r\n3\r\n4\r\n  4|\r\n7\r\n");
+    CHECK(outcome.output == Lines("1\r\n5\r\n7\r\n3\r\n4\r\n  4|\r\n7\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -529,7 +612,7 @@ TEST_CASE("an executable has written what came before it stopped")
                        "        Console.Println(\"after\");\n"
                        "    }\n");
     CHECK(outcome.status == kStopped);
-    CHECK(outcome.output == "before\r\n");
+    CHECK(outcome.output == Lines("before\r\n"));
     CHECK(outcome.error == "also before");
     std::filesystem::remove_all(Directory());
 }
@@ -552,7 +635,7 @@ TEST_CASE("an executable releases the strings it makes")
         "        Console.Println(total);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "1000000\r\n");
+    CHECK(outcome.output == Lines("1000000\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -573,7 +656,7 @@ TEST_CASE("an executable calls a method held as a value where the call "
         "        Console.Println(9);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "1\r\n3\r\n9\r\n");
+    CHECK(outcome.output == Lines("1\r\n3\r\n9\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -594,7 +677,8 @@ TEST_CASE("an executable passes strings through callables")
         "        Console.Println(all == \"\");\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "Visual X#: 1\r\n1,2,Visual X#: 4\r\nfalse\r\n");
+    CHECK(outcome.output
+          == Lines("Visual X#: 1\r\n1,2,Visual X#: 4\r\nfalse\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -610,7 +694,7 @@ TEST_CASE("an executable that appends keeps the string another name holds")
                        "        Console.Println(s + \"|\" + t);\n"
                        "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "ab7|a\r\n");
+    CHECK(outcome.output == Lines("ab7|a\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -625,7 +709,7 @@ TEST_CASE("an executable that shifts by the width of the type stops")
                        "        Console.Println(\"after\");\n"
                        "    }\n");
     CHECK(outcome.status == kStopped);
-    CHECK(outcome.output == "true\r\n");
+    CHECK(outcome.output == Lines("true\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -640,7 +724,7 @@ TEST_CASE("an executable that only reports writes nothing to standard "
                        "    }\n");
     CHECK(outcome.status == 0);
     CHECK(outcome.output.empty());
-    CHECK(outcome.error == "code: 7\r\ndone");
+    CHECK(outcome.error == Lines("code: 7\r\ndone"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -687,7 +771,7 @@ TEST_CASE("an executable selects one of two strings")
         "        Console.Println(evens);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "b\r\nVisual X#\r\n500000\r\n");
+    CHECK(outcome.output == Lines("b\r\nVisual X#\r\n500000\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -716,7 +800,7 @@ TEST_CASE("an executable yields strings from match, if and loops")
         "        Console.Println(threes);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "zero|not zero|at 3\r\n333334\r\n");
+    CHECK(outcome.output == Lines("zero|not zero|at 3\r\n333334\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -746,7 +830,8 @@ TEST_CASE("an executable matches strings by the characters they hold")
         "        Console.Println(total);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "1\r\ntrue\r\nfalse\r\ntrue\r\n11100000\r\n");
+    CHECK(outcome.output
+          == Lines("1\r\ntrue\r\nfalse\r\ntrue\r\n11100000\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -766,7 +851,7 @@ TEST_CASE("an executable names methods through the namespace and the type")
         "        Console.Println(9);\n"
         "    }\n");
     CHECK(outcome.status == 0);
-    CHECK(outcome.output == "1\r\n3\r\n5\r\n9\r\n");
+    CHECK(outcome.output == Lines("1\r\n3\r\n5\r\n9\r\n"));
     std::filesystem::remove_all(Directory());
 }
 
@@ -782,9 +867,7 @@ TEST_CASE("an executable writes many lines")
     CHECK(outcome.status == 0);
     std::string expected;
     for (int index = 0; index < 20000; ++index)
-        expected += "line " + std::to_string(index) + "\r\n";
+        expected += "line " + std::to_string(index) + Lines("\r\n");
     CHECK(outcome.output == expected);
     std::filesystem::remove_all(Directory());
 }
-
-#endif

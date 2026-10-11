@@ -70,9 +70,15 @@ jobs:
 
           # The developer helper owns the component suite matrix. Only build flags
           # differ from the normal native test gate.
+          #
+          # The runtime library of a native executable is not instrumented.
+          # It is linked into the programs the suites build, by the C
+          # compiler of the system and without a profile runtime, so an
+          # instrumented copy would leave every such program unlinked.
           go run ./helpers/cmd/develop test -- \
             --copt=-fprofile-instr-generate \
             --copt=-fcoverage-mapping \
+            '--per_file_copt=^Compiler/Runtime/Hosted/.*@-fno-profile-instr-generate,-fno-coverage-mapping' \
             --linkopt=-fprofile-instr-generate
 
           profiles=("$report_dir"/*.profraw)

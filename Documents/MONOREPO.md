@@ -110,7 +110,7 @@ documentation claims.
 
 ## Project-system ownership
 
-`ProjectSystem/` owns `Visual.XSharp.kts`, plugin loading, immutable plan construction, dependency declarations, lockfile
+`ProjectSystem/` owns `BUILD.kts`, plugin loading, immutable plan construction, dependency declarations, lockfile
 persistence, and VXDC. `Compiler/ProjectSystem/Bridge/` is only the native transport/launch boundary. Keeping these apart
 prevents the C++ driver from becoming a second implementation of Kotlin validation rules.
 

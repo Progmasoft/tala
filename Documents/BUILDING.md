@@ -48,7 +48,7 @@ Install missing prerequisites on a supported host:
 go run ./helpers/cmd/prebuild install
 ```
 
-On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, and Eclipse Temurin JDK 25. GHCup has no
+On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, Podman, and Eclipse Temurin JDK 25. GHCup has no
 official winget package, so the script uses Haskell.org's documented non-interactive HTTPS PowerShell bootstrap and then
 asks GHCup to select recommended GHC and Cabal releases. If Windows SDK or CRT/C++ link libraries are absent, it installs
 the Build Tools workload solely for those headers and libraries; Bazel continues to select standalone ClangCL and LLD.
@@ -56,7 +56,7 @@ the Build Tools workload solely for those headers and libraries; Bazel continues
 On macOS the bootstrap requires Homebrew, installs the corresponding formulas and Temurin JDK 25 cask, requests Xcode
 Command Line Tools when missing, and delegates Haskell versions to GHCup. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
-absolute path into the repository. On Ubuntu/Fedora, the bootstrap uses apt/dnf for native dependencies and the official
+absolute path into the repository. On Ubuntu, Debian 13 and Fedora, the bootstrap uses apt/dnf for native dependencies and the official
 GHCup bootstrap for Haskell. Temurin 25 requires Eclipse Adoptium's signed package repository to be enabled first;
 `prebuild.go` reports that prerequisite instead of silently substituting another JDK. Installation never edits tracked
 build configuration.

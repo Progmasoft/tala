@@ -171,7 +171,7 @@ unit.
 | callable that remembers its result | connected | Core, CorePrep, Xpp, Xmm and LLVM carry `Memoize`; the frontend produces it for arguments passed by need |
 | runtime calls | connected | one operation with a catalog of functions in Core, CorePrep, Xpp, Xmm and LLVM |
 | console output, string concatenation and equality | connected | `Console.Print`, `Println`, `Printf`, `Printfn`, the four `Error` forms and `Format`; see [Console output and strings](CONSOLE-IO.md) |
-| the runtime in a native executable | connected | `vxs-runtime.lib`, the ownership and text runtime without a C runtime, linked with every executable |
+| the runtime in a native executable | connected | `vxs-runtime.lib` on Windows, without a C runtime, and `libvxs-runtime.a` on Linux and macOS, over the C library; the ownership and text runtime, linked with every executable |
 | integer division by zero and shifts outside the width | connected | a check before the instruction stops the program |
 | recursive constructed-type classification | Haskell/native semantic models complete, process connection pending | frontend and Core nominal catalogs |
 | Xpp/Xmm disk codecs | connected | bounded v7 `VXPP`/`VXMM` readers and writers |

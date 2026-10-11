@@ -17,6 +17,15 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   second. The lowered program is the same. Coverage-guided fuzzing found it
   as a timeout; a shorter program of the same shape is kept as a seed.
 
+### Native executables
+
+- `vxs build` and `vxs run` produce a native executable on Linux and macOS,
+  as they did on Windows. The program is linked by the C compiler of the
+  system with `libvxs-runtime.a`, which stands beside the compiler, and with
+  the C library; objects for ELF and Mach-O are position independent. A
+  program that stops is reported by `vxs run` as 128 and the number of the
+  signal that ended it.
+
 ### Command line
 
 - `-File` with a path that is not well-formed UTF-8 is reported as an invalid
@@ -32,6 +41,17 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   executable is entered and linked. `verify-abi` reads every entry back from
   the header or source that defines it and fails on a difference in either
   direction; the compiler workflows run it.
+- `prebuild` and `optional-packages` support Debian 13, with apt as on
+  Ubuntu. Debian's own repositories have no .NET SDK; `optional-packages`
+  says so there and installs the rest.
+- `cross-platform-test` checks a branch on the platforms a developer is not
+  sitting at, before a pull request exists. `ci` starts the compiler
+  workflows for the current branch, on real Windows, macOS and Linux
+  machines, and can follow them to their end; the workflows can now be
+  started by hand for that. `run` uses Podman containers on the developer's
+  machine instead, for Ubuntu 26.04 and Fedora 43: macOS and Windows do not
+  run in a container and are listed with the reason. `prebuild` now checks
+  for and installs Podman.
 - The fuzz corpora are larger. The lexer, parser and source targets are seeded
   with the Visual X# sources the repository already holds, more than two
   hundred programs, read where they are. The command-line, project, REPL,

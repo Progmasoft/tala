@@ -159,6 +159,11 @@ seven functions of kernel32. The linker makes the import library for those
 seven from a list of names, so linking a program needs neither a C runtime
 nor a Windows SDK. `AARC-ABI.md` describes the ownership side.
 
+On Linux and macOS the library is `libvxs-runtime.a`. An executable there is
+linked with the C library of the system: memory comes from `malloc` and
+output goes to the standard descriptors through `write`. A line ends with a
+line feed alone there, and with a carriage return and a line feed on Windows.
+
 The runtime keeps no buffer. Every write reaches the stream before the call
 returns, so output appears in the order it was written and nothing is lost
 when a program stops. To a Windows console a string is written as UTF-16; to

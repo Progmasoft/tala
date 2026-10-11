@@ -170,12 +170,20 @@ namespace Visual::XSharp::Backend::LLVM::Generation
         // `generic` avoids silently selecting host-only CPU extensions that
         // could make a produced executable fail on another machine of the
         // same target.
+        // ELF and Mach-O objects are position independent: the linkers of
+        // those systems make position-independent executables by default
+        // and refuse an object that is not. COFF keeps the default of its
+        // target.
+        const std::optional<llvm::Reloc::Model> relocation
+            = triple.isOSBinFormatCOFF()
+                  ? std::nullopt
+                  : std::optional<llvm::Reloc::Model>(llvm::Reloc::PIC_);
         auto machine = std::unique_ptr<llvm::TargetMachine>(
             target->createTargetMachine(triple,
                                         "generic",
                                         "",
                                         targetOptions,
-                                        std::nullopt,
+                                        relocation,
                                         std::nullopt,
                                         CodeGenerationLevel(optimization)));
         if (!machine)

@@ -488,7 +488,14 @@ namespace
         int status{};
         if (waitpid(process, &status, 0) < 0)
             return -1;
-        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+        if (WIFEXITED(status))
+            return WEXITSTATUS(status);
+        // A program a signal ended has no exit status of its own. It is
+        // reported the way a shell reports it, 128 and the signal, so that a
+        // program that stopped is told apart from one that did not start.
+        if (WIFSIGNALED(status))
+            return 128 + WTERMSIG(status);
+        return -1;
 #endif
     }
 
@@ -630,11 +637,21 @@ namespace
             return 2;
         }
         const auto executable = OutputPath(object, ".vxse");
-        const Visual::XSharp::Driver::NativeLinkRequest request{
-            executable,
-            { object },
-            Visual::XSharp::Backend::LLVM::ObjectFormat::Coff
-        };
+        // An object given on the command line is taken to be one of this
+        // host: nothing else can be linked here.
+#if defined(_WIN32)
+        const auto hostFormat
+            = Visual::XSharp::Backend::LLVM::ObjectFormat::Coff;
+#elif defined(__APPLE__)
+        const auto hostFormat
+            = Visual::XSharp::Backend::LLVM::ObjectFormat::MachO;
+#else
+        const auto hostFormat
+            = Visual::XSharp::Backend::LLVM::ObjectFormat::Elf;
+#endif
+        const Visual::XSharp::Driver::NativeLinkRequest request{ executable,
+                                                                 { object },
+                                                                 hostFormat };
         const auto linked
             = Visual::XSharp::Driver::LinkNativeExecutable(request);
         if (!linked)

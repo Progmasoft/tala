@@ -414,5 +414,33 @@ func Verify(repository string) ([]string, error) {
 	} else {
 		source.problems = append(source.problems, "the manifest does not say how an executable is linked on Windows")
 	}
+	// Linux and macOS share one branch of the linker: the C compiler of the
+	// system as the driver, and one name for the runtime library.
+	driver := regexp.MustCompile(`kLinkerDriver = "([A-Za-z0-9_+-]+)"`).FindStringSubmatch(linker)
+	library := regexp.MustCompile(`kRuntimeLibraryName = "([A-Za-z0-9_.+-]+)"`).FindStringSubmatch(linker)
+	for _, platform := range []string{"linux", "macos"} {
+		stated, linked := executable.NativeLinking[platform]
+		switch {
+		case !linked:
+			source.problems = append(source.problems, "the manifest does not say how an executable is linked on "+platform)
+		case driver == nil || library == nil:
+			source.problems = append(source.problems, "the linker driver or the runtime library of "+platform+" was not found in the native linker")
+		default:
+			if stated.Linker != driver[1] {
+				source.differ("linker on "+platform, stated.Linker, driver[1])
+			}
+			if stated.RuntimeLibrary != library[1] {
+				source.differ("runtime library on "+platform, stated.RuntimeLibrary, library[1])
+			}
+			if len(stated.SystemImports) != 0 {
+				source.problems = append(source.problems, "system imports are stated for "+platform+", where the C library is linked whole and none are listed")
+			}
+		}
+	}
+	for platform := range executable.NativeLinking {
+		if platform != "windows" && platform != "linux" && platform != "macos" {
+			source.problems = append(source.problems, "native linking is stated for "+platform+", which this tool knows no source for")
+		}
+	}
 	return source.problems, nil
 }

@@ -165,10 +165,12 @@ when no candidate exists or the program has already broken the candidate cycle.
 
 ## Native executables
 
-A native executable is linked without a C runtime. What its code calls of the
-runtime, it finds in `vxs-runtime.lib`, which the compiler links from the
-directory of its own executable: the ownership runtime of this document and
-the text and console runtime, as one object.
+On Windows a native executable is linked without a C runtime. What its code
+calls of the runtime, it finds in `vxs-runtime.lib`, which the compiler links
+from the directory of its own executable: the ownership runtime of this
+document and the text and console runtime, as one object. On Linux and macOS
+the library is `libvxs-runtime.a`, and the executable is linked with the C
+library of the system as well.
 
 That object is built from the sources a host process links,
 `Compiler/Runtime/AARC` and `Compiler/Runtime/Text`, in one translation unit

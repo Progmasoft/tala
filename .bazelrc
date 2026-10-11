@@ -91,19 +91,23 @@ build:asan-ubsan-windows --config=asan-windows
 build:asan-ubsan-windows --config=ubsan-windows
 build:asan-ubsan-windows '--per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=address\\,undefined'
 
-build:asan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=address
+# The runtime library of a native executable on macOS and Linux is linked
+# into programs that are not sanitizer builds, by the C compiler of the
+# system and without a sanitizer runtime. It is therefore never instrumented,
+# like its Windows counterpart above.
+build:asan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=address
 build:asan-macos --linkopt=-fsanitize=address
-build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=undefined
-build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-sanitize-recover=all
+build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=undefined
+build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fno-sanitize-recover=all
 build:ubsan-macos --linkopt=-fsanitize=undefined
-build:tsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=thread
+build:tsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=thread
 build:tsan-macos --linkopt=-fsanitize=thread
-build:asan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=address
+build:asan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=address
 build:asan-linux --linkopt=-fsanitize=address
-build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=undefined
-build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-sanitize-recover=all
+build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=undefined
+build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fno-sanitize-recover=all
 build:ubsan-linux --linkopt=-fsanitize=undefined
-build:tsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=thread
+build:tsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=thread
 build:tsan-linux --linkopt=-fsanitize=thread
 build:asan-ubsan-macos --config=asan-macos
 build:asan-ubsan-macos --config=ubsan-macos
@@ -116,16 +120,16 @@ build:asan-ubsan-linux --linkopt=-fsanitize=address,undefined
 # then link libFuzzer's main only into the dedicated driver binary.
 build:fuzz-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=fuzzer-no-link
 build:fuzz-windows --linkopt=/DEFAULTLIB:clang_rt.fuzzer-x86_64.lib
-build:fuzz-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=fuzzer-no-link
-build:fuzz-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=fuzzer-no-link
+build:fuzz-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
+build:fuzz-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --linkopt=-fsanitize=fuzzer
 # The host's Homebrew LLVM runtime is resolved by the developer helper. Bazel's macOS
 # linker can be Apple Clang, whose Xcode package omits libFuzzer's main.
 
 # Source-based coverage instruments project-owned C++ code in each native test
 # binary. The coverage workflow executes the same suite matrix as develop test.
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fprofile-instr-generate
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fcoverage-mapping
+build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fprofile-instr-generate
+build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fcoverage-mapping
 build:coverage-macos --linkopt=-fprofile-instr-generate
 
 test --test_output=errors

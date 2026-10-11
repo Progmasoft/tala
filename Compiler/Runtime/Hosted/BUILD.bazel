@@ -1,0 +1,30 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "vxs_runtime",
+    srcs = ["Hosted.cpp"],
+    # The library is linked into executables that carry no C++ runtime: no
+    # type information, which lives there, and no guard for a static local,
+    # which is a call into it. It is linked into position-independent
+    # executables, which is what the systems' linkers make by default.
+    copts = [
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-fPIC",
+    ],
+    linkstatic = True,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    textual_hdrs = [
+        "//Compiler/Runtime/AARC:sources",
+        "//Compiler/Runtime/Text:sources",
+    ],
+    deps = [
+        "//Compiler/Headers/Visual/XSharp/Runtime:aarc_api",
+        "//Compiler/Headers/Visual/XSharp/Runtime:text_api",
+    ],
+)

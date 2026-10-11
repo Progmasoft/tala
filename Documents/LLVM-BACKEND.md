@@ -130,13 +130,35 @@ Target-machine creation owns:
 
 - target lookup and diagnostic text;
 - data layout and target triple on the module;
-- relocation/code model defaults until public settings exist;
+- the relocation model: position-independent code for ELF and Mach-O, whose linkers make position-independent
+  executables by default and refuse an object that is not, and the default of the target for COFF;
 - assembly/object file selection;
-- Windows COFF emission for the supported host target; and
+- COFF, ELF and Mach-O emission for the host target; and
 - propagation of backend emission errors without leaving a plausible output.
 
 Windows SDK and MSVC CRT/C++ development libraries are link inputs/toolchain resources. They do not make the Visual Studio
 compiler or IDE part of the build architecture. ClangCL/LLD remain the native toolchain.
+
+## Linking an executable
+
+`vxs build` and `vxs run` link a `.vxse` executable on every host. The entry of a program is a bridge the backend
+adds for an executable and for nothing else: it calls the program's `Main` and returns zero.
+
+| Host | Entry symbol | Linked by | Runtime library | Takes from the system |
+| --- | --- | --- | --- | --- |
+| Windows | `mainCRTStartup` | `lld-link`, started directly | `vxs-runtime.lib` | seven functions of kernel32, through an import library made for the link |
+| Linux | `main` | `cc`, the C compiler of the system, as the driver | `libvxs-runtime.a` | the C library |
+| macOS | `main` | `cc`, the C compiler of the system, as the driver | `libvxs-runtime.a` | the system library |
+
+On Windows an executable carries no C runtime. On Linux and macOS it is linked with the C library, which every such
+system has, and with nothing of C++: the runtime library defines the allocation functions it uses over `malloc` and
+`free`. The driver is used and not a linker started directly because it knows where the C library, its start-up
+objects and, on macOS, the system libraries are, which differs between distributions and releases. The runtime
+library stands beside the compiler under the name of the table; `develop build` puts it there.
+
+A program that needs a value that cannot be computed stops at an instruction the processor refuses. Windows reports
+the exception as the status of the process. Elsewhere the process is ended by a signal, and `vxs run` reports it the
+way a shell does, 128 and the number of the signal.
 
 ## Artifacts
 
