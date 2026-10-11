@@ -70,6 +70,7 @@ jobs:
           cache: false
 
       - name: Initialize CodeQL
+        id: init
         uses: github/codeql-action/init@7999b86c43a865dc79d8923397f35af22de63401 # v4
         with:
           languages: ${{ matrix.language }}
@@ -114,3 +115,83 @@ jobs:
         uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401 # v4
         with:
           category: /language:${{ matrix.language }}
+
+      # C and C++ are analysed without a build: the extractor reads the
+      # sources and guesses how they would be compiled. That is fast and
+      # needs no LLVM on the runner, and it can silently analyse less than
+      # the repository has. This step measures what the analysis saw.
+      #
+      # It fails when fewer of the native sources reached the database than
+      # the floor allows. The other figures, the includes the extractor could
+      # not resolve and its own quality report, are written to the job
+      # summary; they have no floor until they have been seen for a while.
+      - name: Measure what the C++ analysis covered
+        if: matrix.language == 'c-cpp'
+        shell: pwsh
+        env:
+          CODEQL: ${{ steps.init.outputs.codeql-path }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $database = Join-Path $env:RUNNER_TEMP 'codeql_databases/cpp'
+          $summary = $env:GITHUB_STEP_SUMMARY
+
+          # The native sources the repository owns.
+          $owned = @(git ls-files -- 'Compiler/*.cpp' 'Compiler/*.hpp' 'Compiler/*.h' 'Compiler/*.inc' `
+              'Interactive/*.cpp' 'Interactive/*.hpp' 'Interactive/*.h' |
+              Where-Object { $_ -notlike 'Compiler/Haskell/*' })
+          if ($owned.Count -eq 0) { throw 'no native sources were found to compare with' }
+
+          # The sources the database holds: every file the extractor read is
+          # kept in its source archive.
+          $archive = Join-Path $database 'src.zip'
+          if (-not (Test-Path -LiteralPath $archive)) { throw "the CodeQL database has no source archive at $archive" }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+          try { $held = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') }) } finally { $zip.Dispose() }
+
+          $missing = @($owned | Where-Object { $path = "/$_"; -not ($held | Where-Object { $_.EndsWith($path) } | Select-Object -First 1) })
+          $seen = $owned.Count - $missing.Count
+          $share = [math]::Round(100.0 * $seen / $owned.Count, 1)
+          $floor = 95.0
+
+          "## C++ analysis coverage" >> $summary
+          "" >> $summary
+          "| Measure | Value |" >> $summary
+          "| --- | --- |" >> $summary
+          "| Native sources in the repository | $($owned.Count) |" >> $summary
+          "| Of them in the CodeQL database | $seen ($share %) |" >> $summary
+          "| Floor | $floor % |" >> $summary
+          if ($missing.Count -gt 0) {
+            "" >> $summary
+            "Not in the database:" >> $summary
+            "" >> $summary
+            $missing | Select-Object -First 50 | ForEach-Object { "- ``$_``" >> $summary }
+          }
+
+          # What the extractor reports about itself. Each result set is one
+          # query of the CodeQL C++ pack; the names are the pack's.
+          $results = Join-Path $database 'results'
+          $reports = @()
+          if (Test-Path -LiteralPath $results) {
+            $reports = @(Get-ChildItem -LiteralPath $results -Recurse -Filter *.bqrs |
+                Where-Object { $_.FullName -match '[\\/](Summary|Telemetry|Diagnostics)[\\/]' } | Sort-Object FullName)
+          }
+          foreach ($report in $reports) {
+            $rows = @(& $env:CODEQL bqrs decode --format=csv --rows=40 -- $report.FullName 2>$null)
+            if ($LASTEXITCODE -ne 0 -or $rows.Count -eq 0) { continue }
+            "" >> $summary
+            "### $($report.Directory.Name) / $($report.BaseName)" >> $summary
+            "" >> $summary
+            '```text' >> $summary
+            $rows | ForEach-Object { $_ >> $summary }
+            '```' >> $summary
+          }
+          if ($reports.Count -eq 0) {
+            "" >> $summary
+            "The database holds no summary or telemetry results to show." >> $summary
+          }
+
+          Write-Host "C++ analysis: $seen of $($owned.Count) native sources are in the database ($share %)."
+          if ($share -lt $floor) {
+            throw "CodeQL analysed $share % of the native sources; the floor is $floor %."
+          }
