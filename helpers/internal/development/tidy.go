@@ -317,6 +317,36 @@ func reportTidyOutcomes(outcomes []tidyOutcome, executionRoot string) error {
 	return nil
 }
 
+// compiledUnits builds the native targets and recovers from Bazel the
+// first-party translation units with the command each is compiled with, and
+// the execution root those commands are relative to.
+func compiledUnits(repository string, runner commandRunner, bazelArguments []string) ([]tidyUnit, string, error) {
+	// The build produces generated headers, fetches dependency headers and,
+	// on Windows, writes the parameter files that hold the commands.
+	if err := buildTargets(repository, runner, "", bazelArguments); err != nil {
+		return nil, "", err
+	}
+	bazel, err := findBazel(runner)
+	if err != nil {
+		return nil, "", err
+	}
+	executionRoot, err := captureStandardOutput(repository, bazel, "info", "execution_root")
+	if err != nil {
+		return nil, "", fmt.Errorf("Bazel execution root is not available: %w", err)
+	}
+	root := strings.TrimSpace(string(executionRoot))
+	query := append([]string{"aquery", tidyActionQuery(tidyTargets()), "--output=jsonproto"}, bazelArguments...)
+	graph, err := captureStandardOutput(repository, bazel, query...)
+	if err != nil {
+		return nil, "", fmt.Errorf("Bazel action query failed: %w", err)
+	}
+	units, err := tidyUnitsFromActions(graph, root)
+	if err != nil {
+		return nil, "", err
+	}
+	return units, root, nil
+}
+
 // runTidy builds the native targets, recovers their compile commands from
 // Bazel and runs clang-tidy with the repository configuration over every
 // first-party translation unit.
@@ -329,26 +359,7 @@ func runTidy(repository string, runner commandRunner, bazelArguments []string) e
 	if err != nil {
 		return err
 	}
-	// The build produces generated headers, fetches dependency headers and,
-	// on Windows, writes the parameter files that hold the commands.
-	if err := buildTargets(repository, runner, "", bazelArguments); err != nil {
-		return err
-	}
-	bazel, err := findBazel(runner)
-	if err != nil {
-		return err
-	}
-	executionRoot, err := captureStandardOutput(repository, bazel, "info", "execution_root")
-	if err != nil {
-		return fmt.Errorf("Bazel execution root is not available: %w", err)
-	}
-	root := strings.TrimSpace(string(executionRoot))
-	query := append([]string{"aquery", tidyActionQuery(tidyTargets()), "--output=jsonproto"}, bazelArguments...)
-	graph, err := captureStandardOutput(repository, bazel, query...)
-	if err != nil {
-		return fmt.Errorf("Bazel action query failed: %w", err)
-	}
-	units, err := tidyUnitsFromActions(graph, root)
+	units, root, err := compiledUnits(repository, runner, bazelArguments)
 	if err != nil {
 		return err
 	}

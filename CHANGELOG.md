@@ -19,6 +19,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- `develop analyze` runs the Clang Static Analyzer over every first-party
+  C++ translation unit with the command Bazel compiles it with: the stable
+  checkers that have to be asked for beside the default ones, and a set of
+  checkers still in development whose findings are reported and do not fail
+  the run. A new workflow runs it for every pull request and uploads the
+  findings, with the path of each, to code scanning.
 - Every command of `helpers/` defines its command line with Cobra.
   `verify-benchmarks` and `verify-examples` take the checkout as `--root`;
   their earlier `-Root` and `-Help` are rejected. `prebuild` and

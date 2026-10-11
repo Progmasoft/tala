@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+name: Clang Static Analyzer
+
+on:
+  pull_request:
+  # The default branch only. A branch that has a pull request is analysed by
+  # the pull request; analysing its pushes as well ran every job twice.
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clang-static-analyzer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Ubuntu 26.04 Clang Static Analyzer
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      # The findings are uploaded to code scanning, where each is shown with
+      # the steps of the path that leads to it.
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Configure Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.26.x
+          cache: false
+
+      - name: Configure Bazel
+        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: compiler-ubuntu-2604-clang
+          repository-cache: true
+
+      - name: Install LLVM development and link packages
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
+          llvm_root="$(llvm-config --prefix)"
+          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+          test -f "$(clang -print-resource-dir)/include/stddef.h"
+          clang --version
+
+      - name: Install GHC and Cabal
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
+        with:
+          ghc: 9.10.3
+          cabal: 3.16.1.0
+
+      - name: Resolve frontend package index
+        shell: bash
+        working-directory: Compiler
+        run: cabal update
+
+      # The helper builds the native targets first: the analyzer needs the
+      # generated and fetched headers, and it analyzes each translation unit
+      # with the compiler and the command Bazel compiled it with.
+      #
+      # A finding of a stable checker fails the step. A finding of a checker
+      # LLVM still develops is reported and uploaded, and does not.
+      - name: Analyze first-party C++ path by path
+        shell: bash
+        env:
+          VXS_ANALYZE_SARIF: ${{ runner.temp }}/clang-static-analyzer.sarif
+        run: go run ./helpers/cmd/develop analyze
+
+      # Uploaded whether the analysis passed or not, so that what failed it
+      # can be read in code scanning. A pull request from a fork has no
+      # permission to upload; the log of the step above holds the same text.
+      - name: Upload the findings to code scanning
+        if: always() && hashFiles(format('{0}/clang-static-analyzer.sarif', runner.temp)) != ''
+        continue-on-error: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
+        uses: github/codeql-action/upload-sarif@7999b86c43a865dc79d8923397f35af22de63401 # v4
+        with:
+          sarif_file: ${{ runner.temp }}/clang-static-analyzer.sarif
+          category: clang-static-analyzer
+          checkout_path: ${{ github.workspace }}
+
+  required:
+    name: Clang Static Analyzer Required
+    runs-on: ubuntu-26.04
+    if: always()
+    needs: [analyze]
+    steps:
+      - name: Require a clean analysis
+        run: test '${{ needs.analyze.result }}' = success
