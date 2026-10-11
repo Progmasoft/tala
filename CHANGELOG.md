@@ -17,8 +17,22 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   second. The lowered program is the same. Coverage-guided fuzzing found it
   as a timeout; a shorter program of the same shape is kept as a seed.
 
+### Command line
+
+- `-File` with a path that is not well-formed UTF-8 is reported as an invalid
+  value. On Windows the conversion to a native path threw, and `vxs`, which
+  is built without exceptions, stopped without a diagnostic. The new
+  command-line seeds found it in their first campaign.
+
 ### Verification and tooling
 
+- The fuzz corpora are larger. The lexer, parser and source targets are seeded
+  with the Visual X# sources the repository already holds, more than two
+  hundred programs, read where they are. The command-line, project, REPL,
+  ownership and differential corpora grow from 13 seeds to 107, written in the
+  form each harness reads; the one command-line seed there was separated its
+  arguments with line breaks, which the harness does not split on, and is
+  replaced.
 - CodeQL analyses C and C++ from a real build as well. The analysis without a
   build, which runs for every pull request, holds every native source but
   resolved 30 percent of their includes; the new `c-cpp-traced` job observes
