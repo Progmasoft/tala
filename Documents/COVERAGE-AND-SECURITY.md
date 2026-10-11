@@ -64,6 +64,14 @@ repository added in Codacy before its hosted analysis runs. No Codacy API token 
 coverage remains with Codecov rather than being uploaded twice. Until the first Codacy analysis is visible, the
 configuration is only prepared, not a verified scan.
 
+Codacy reads C++ with pattern checkers, which look at one statement or one function body at a time. What depends on
+the path taken through a function, a pointer that is null on one branch and dereferenced after the branches join, a
+value that one path leaves unwritten, memory one path frees twice, is outside what they can see. The
+[Clang Static Analyzer workflow](../.github/workflows/clang-static-analyzer.yml) covers that part: it runs
+`develop analyze`, described in [BUILDING.md](BUILDING.md#static-analysis), for every pull request and for the default
+branch, fails on a finding of a stable checker, and uploads every finding to code scanning under the category
+`clang-static-analyzer`, where each is shown with the steps of its path.
+
 ## Codecov ownership
 
 Coverage uploads carry separate flags so one component's result cannot be mistaken for another's:

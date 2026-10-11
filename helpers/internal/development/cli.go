@@ -39,6 +39,7 @@ func newCommand(runner commandRunner, output, errorOutput io.Writer) *cobra.Comm
 		{"test", "Build and execute every native contract suite.", 0, true},
 		{"sanitize", "Run address, undefined, address-undefined, or thread sanitizer suites, or all the host has.", 1, true},
 		{"tidy", "Run clang-tidy over every first-party C++ translation unit.", 0, true},
+		{"analyze", "Run the Clang Static Analyzer over every first-party C++ translation unit.", 0, true},
 		{"version", "Validate major.minor.patch[.revision] release metadata.", 1, false},
 		{"incremental-clean-build", "Rebuild while preserving downloaded dependencies.", 0, false},
 		{"cold-clean-build", "Expunge Bazel state and rebuild the compiler.", 0, false},

@@ -289,6 +289,39 @@ without an attributable diagnostic, and an action graph without first-party sour
 passing as clean. One analyzer process runs per logical processor; set `VXS_TIDY_JOBS` to change that. Bazel options
 may follow a `--` separator.
 
+```powershell
+go run ./helpers/cmd/develop analyze
+```
+
+This runs the Clang Static Analyzer itself over the same translation units, each with the compiler and the command
+Bazel compiles it with. The analyzer follows the paths through each function and reports the ones on which something
+goes wrong: a null pointer that is dereferenced, a value read before it is written, memory freed twice or never.
+`clang-tidy` already runs the analyzer's default checkers as one group among its own. This command adds the stable
+checkers that have to be asked for, among them `security.ArrayBound`, `optin.cplusplus.UninitializedObject`,
+`optin.cplusplus.VirtualCall` and the nullability checkers, and a set of checkers LLVM still develops. It prints the
+steps of the path under each finding.
+
+A finding of a stable checker fails the run. A finding of a checker in development, whose name begins with `alpha.`,
+is printed under its own heading and does not: such a checker finds what no stable one looks for and is wrong more
+often. Three groups are not run, because all they report on this code is wrong: the iterator checkers, which also
+stop the analyzer in comparisons the test framework wraps, `alpha.security.ReturnPtrRange` and
+`alpha.core.StoreToImmutable`. Checkers are renamed between LLVM releases, so the command asks the compiler which of
+them it has and runs those.
+
+Before the real run the command analyzes a six-line program with a null dereference every version of the analyzer
+reports, with the same compiler, checkers and options, and stops unless that finding comes back. A clean result is
+only worth believing from an analyzer that is known to report. A finding in a public header is attributed to the
+header in the repository and not to the copy Bazel exposes below its output tree.
+
+A finding is silenced by the comment that silences clang-tidy, with the name clang-tidy gives the checker:
+`// NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)` on the line before, or `// NOLINT(...)` on the line itself. One
+comment answers both tools. Findings in dependency headers are counted and not reported, and a unit the analyzer
+could not compile, or on which it stopped, fails the run, as for `tidy`.
+
+`VXS_ANALYZE_JOBS` sets the number of analyzer processes, `VXS_ANALYZE_FILTER` limits the run to the units whose path
+contains its value, and `VXS_ANALYZE_SARIF` names a file that receives every finding as SARIF, with the path of each
+as a code flow.
+
 The libFuzzer entry points and benchmark programs are outside the built target set and are not analyzed by this
 command. The `Clang-Tidy` workflow runs it on Ubuntu for every pull request and push.
 
