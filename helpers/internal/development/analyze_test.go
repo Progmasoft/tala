@@ -170,12 +170,32 @@ func TestFilterUnitsKeepsMatchingPaths(t *testing.T) {
 	}
 }
 
+func TestAnalyzerFindingsAreReadInTheFormOfClangCl(t *testing.T) {
+	report := "Compiler\\Core\\Verifier.cpp(6,12): warning: Dereference of null pointer (loaded from variable 'chosen') [core.NullDereference]\n" +
+		"    6 |     return *chosen;\n" +
+		"Compiler\\Core\\Verifier.cpp(3,19): note: Assuming 'flag' is false\n" +
+		"C:\\work\\execroot\\_main\\Compiler\\Core\\Verifier.cpp(3,5): note: 'chosen' initialized to a null pointer value\n" +
+		"external\\llvm\\include\\llvm\\ADT\\SmallVector.h(9,3): warning: Called C++ object pointer is null [core.CallAndMessage]\n" +
+		"Compiler\\Core\\Verifier.cpp(2,1): error: unknown type name 'Thing'\n"
+	ours, foreign, compileErrors := analyzerFindings(report, `C:\work\execroot\_main`)
+	if len(ours) != 1 || foreign != 1 || len(compileErrors) != 1 {
+		t.Fatalf("findings %+v, foreign %d, compile errors %v", ours, foreign, compileErrors)
+	}
+	finding := ours[0]
+	if finding.File != "Compiler/Core/Verifier.cpp" || finding.Line != 6 || finding.Column != 12 || finding.Checker != "core.NullDereference" {
+		t.Fatalf("finding = %+v", finding)
+	}
+	if len(finding.Steps) != 2 || finding.Steps[0].Line != 3 || finding.Steps[0].Column != 19 || finding.Steps[1].File != "Compiler/Core/Verifier.cpp" {
+		t.Fatalf("steps = %+v", finding.Steps)
+	}
+}
+
 func TestACompilerErrorMeansTheUnitWasNotAnalyzed(t *testing.T) {
 	report := "Compiler/Core/Verifier.cpp:3:10: fatal error: 'missing.hpp' file not found\n" +
 		"Compiler/Core/Verifier.cpp:9:1: error: unknown type name 'Thing'\n" +
 		"Compiler/Core/Verifier.cpp:9:1: note: did you mean 'Think'?\n"
 	ours, foreign, compileErrors := analyzerFindings(report, "")
-	if len(ours) != 0 || foreign != 0 || len(compileErrors) != 1 {
+	if len(ours) != 0 || foreign != 0 || len(compileErrors) != 2 {
 		t.Fatalf("findings %v, foreign %d, compile errors %v", ours, foreign, compileErrors)
 	}
 }

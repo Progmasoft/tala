@@ -154,10 +154,14 @@ func analyzerCommand(compile []string, source string, checkers []string) []strin
 	return arguments
 }
 
-// analyzerDiagnostic matches the first line of a report or of a note:
-// path:line:column: severity: message, with the checker in brackets on a
-// report.
-var analyzerDiagnostic = regexp.MustCompile(`^(.+?):(\d+):(\d+): (error|warning|note): (.*?)(?: \[([A-Za-z0-9_.,-]+)\])?$`)
+// analyzerDiagnostic matches the first line of a report or of a note: a
+// place, a severity and a message, with the checker in brackets on a report.
+// The place is path:line:column from the clang driver and path(line,column)
+// from clang-cl, which writes diagnostics the way the Microsoft compiler
+// does. A report in a form this does not match would be a finding that is
+// never counted.
+var analyzerDiagnostic = regexp.MustCompile(
+	`^(.+?)(?::(\d+):(\d+)|\((\d+),(\d+)\)): (fatal error|error|warning|note): (.*?)(?: \[([A-Za-z0-9_.,-]+)\])?$`)
 
 // analyzerFindings reads the analyzer's text report. It returns the findings
 // located in first-party code, how many were located elsewhere, and the
@@ -179,20 +183,21 @@ func analyzerFindings(output, executionRoot string) (ours []analyzerFinding, for
 			continue
 		}
 		path := relative(match[1])
-		lineNumber, _ := strconv.Atoi(match[2])
-		column, _ := strconv.Atoi(match[3])
-		switch match[4] {
+		lineNumber, _ := strconv.Atoi(match[2] + match[4])
+		column, _ := strconv.Atoi(match[3] + match[5])
+		message, checker := match[7], match[8]
+		switch match[6] {
 		case "note":
 			if keep {
 				last := &ours[len(ours)-1]
-				last.Steps = append(last.Steps, analyzerStep{File: path, Line: lineNumber, Column: column, Message: match[5]})
+				last.Steps = append(last.Steps, analyzerStep{File: path, Line: lineNumber, Column: column, Message: message})
 			}
-		case "error":
+		case "error", "fatal error":
 			keep = false
 			compileErrors = append(compileErrors, line)
 		default:
 			keep = false
-			if match[6] == "" || strings.HasPrefix(match[6], "-W") {
+			if checker == "" || strings.HasPrefix(checker, "-W") {
 				continue
 			}
 			if !isFirstPartyLocation(path) {
@@ -200,7 +205,7 @@ func analyzerFindings(output, executionRoot string) (ours []analyzerFinding, for
 				continue
 			}
 			keep = true
-			ours = append(ours, analyzerFinding{File: path, Line: lineNumber, Column: column, Checker: match[6], Message: match[5]})
+			ours = append(ours, analyzerFinding{File: path, Line: lineNumber, Column: column, Checker: checker, Message: message})
 		}
 	}
 	return ours, foreign, compileErrors
