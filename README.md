@@ -122,7 +122,7 @@ The reliable single-file validation form is:
 .\bazel-bin\Compiler\Cli\vxs.exe check -File .\path\to\Main.vxs
 ```
 
-From a directory containing `Visual.XSharp.kts`, project validation uses the configured source roots and namespace-qualified
+From a directory containing `BUILD.kts`, project validation uses the configured source roots and namespace-qualified
 entry directly:
 
 ```powershell
@@ -143,7 +143,7 @@ See [CLI](Documents/CLI.md) for the exact accepted surface and implementation st
 
 ## Project files
 
-A Visual X# project uses one `Visual.XSharp.kts` file. `sources.executable.entry` names a namespace-qualified class; its final
+A Visual X# project uses one `BUILD.kts` file. `sources.executable.entry` names a namespace-qualified class; its final
 segment is a class name and need not be `Main` or `Program`. The selected class must provide a parameterless
 `public static void Main()` method; a top-level runtime function is not an entry point.
 The entry is resolved from namespace and type identity. It does not name a source file, and source file names or directory
@@ -170,7 +170,7 @@ sources {
 See [Project files](Documents/PROJECT_FILES.md) for the current Kotlin DSL.
 
 The binary project lockfile can be inspected without changing the normal project-evaluation output. The separate `vxdc`
-tool evaluates `Visual.XSharp.kts` and writes deterministic, replayable SQL to the requested output path. VXDC does not
+tool evaluates `BUILD.kts` and writes deterministic, replayable SQL to the requested output path. VXDC does not
 require a particular output filename extension.
 
 ## Language specification examples

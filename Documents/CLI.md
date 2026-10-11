@@ -63,7 +63,7 @@ The no-argument form opens the persistent REPL. One-shot `-Eval` runs a Visual X
 by `vxsi`, not consumed by the outer compiler parser. The native bundle places `vxsi` beside `vxs`, so add that install
 directory to `PATH` before invoking the command. Direct `vxsi` invocation remains available for development and IDEs.
 
-`check`, `build`, `run`, and `test` accept either a discovered `Visual.XSharp.kts` project or a `.vxs` file selected with
+`check`, `build`, `run`, and `test` accept either a discovered `BUILD.kts` project or a `.vxs` file selected with
 `-File`.
 
 `format` and `lint` are project-only commands. They evaluate the project source policy, apply its roots and exclusions,
@@ -148,7 +148,7 @@ Option and value spelling is case-sensitive.
 For every scalar compiler setting, the driver resolves values in this order, from strongest to weakest:
 
 1. an option explicitly supplied in the current `vxs` command;
-2. the value produced by the project's `Visual.XSharp.kts` evaluation;
+2. the value produced by the project's `BUILD.kts` evaluation;
 3. the Kotlin DSL's built-in default for that value;
 4. the CLI fallback used when no project is being evaluated.
 
@@ -292,7 +292,7 @@ The CLI reserves the renewed artifact vocabulary before all routes are implement
 `resolve` and `update` evaluate the project configuration and refresh `Visual.XSharp.Lockfile.sqlite3`.
 
 Lockfile text export is deliberately not a `vxs` command. The separately installed `vxdc` tool evaluates an exact
-`Visual.XSharp.kts` and creates a deterministic SQL dump:
+`BUILD.kts` and creates a deterministic SQL dump:
 
 ```powershell
 vxdc -Projectfile .\Visual.XSharp.kts -Output .\Project.sqlite3.dump
@@ -336,7 +336,7 @@ add another user-facing command.
 ## Filesystem and overwrite behavior
 
 Paths are interpreted by the owning command. Project discovery begins at the current/requested location and walks upward for
-`Visual.XSharp.kts`; `-File` names one explicit input. The project evaluator and Haskell source loader canonicalize contained
+`BUILD.kts`; `-File` names one explicit input. The project evaluator and Haskell source loader canonicalize contained
 roots rather than trusting textual prefixes.
 
 `vxs build` replaces the artifact selected for the current invocation when that build succeeds. It does not preserve an old

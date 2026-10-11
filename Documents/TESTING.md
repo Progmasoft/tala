@@ -52,6 +52,68 @@ go run ./helpers/cmd/verify-abi --root .
 go run ./helpers/cmd/verify-benchmarks --root .
 ```
 
+## Other platforms from one machine
+
+`cross-platform-test` answers one question before a pull request exists: does this branch work on the platforms the
+developer is not sitting at. It has two ways of answering.
+
+### On the workflows' machines
+
+```powershell
+go run ./helpers/cmd/cross-platform-test ci
+go run ./helpers/cmd/cross-platform-test ci --target windows,macos-26 --watch
+go run ./helpers/cmd/cross-platform-test ci --list
+```
+
+`ci` starts the compiler workflows for the current branch: Windows, macOS 15 and 26, Ubuntu 26.04 and Fedora 43, on
+machines GitHub runs. These are real Windows and macOS machines, which no container gives, and nothing runs or is
+stored on the developer's. The workflows start by themselves for a pull request; `ci` starts them for a branch that
+has none. It needs the GitHub command line, signed in. The branch has to be pushed and the working tree clean, and
+`ci` refuses otherwise, because a workflow tests what the remote has and not what is on the disk. `--target` names
+platforms; several share a workflow, so asking for one runs the others of that workflow as well. `--watch` follows the
+runs to their end and fails if one fails.
+
+### In containers on this machine
+
+```powershell
+go run ./helpers/cmd/cross-platform-test targets
+go run ./helpers/cmd/cross-platform-test suites
+go run ./helpers/cmd/cross-platform-test run
+go run ./helpers/cmd/cross-platform-test run --target fedora-43 --suite native --jobs 2
+go run ./helpers/cmd/cross-platform-test run --target ubuntu-26.04 --command "go run ./helpers/cmd/develop doctor"
+```
+
+`run` executes the repository's own commands in a container Podman starts, without a push and without a network
+round trip, and reaches the Linux hosts only. `prebuild` installs Podman; on Windows and macOS it also needs its Linux machine, `podman machine init` once
+and `podman machine start`.
+
+| Target | From | What runs |
+| --- | --- | --- |
+| `ubuntu-26.04` | every host | Ubuntu 26.04 LTS with the distribution's Clang and LLVM, as the workflows install it |
+| `fedora-43` | every host | Fedora 43 with the distribution's Clang and LLVM, as the workflows install it |
+| `macos` | nowhere | macOS does not run in a container: there is no image and no license for one outside Apple hardware |
+| `windows` | nowhere | Podman starts Linux containers only, on every host |
+
+The two that cannot run are listed by `targets` with the reason, and asking `run` for one is an error: a run that
+leaves out what was asked for must not pass. They are tested on their own hosts and by their jobs in the workflows.
+
+A run builds the image of a target once, from `helpers/containers/<target>/Containerfile`, and names it after the
+content of that file. The sources reach the container as an archive of what Git would commit, tracked files and new
+files that are not ignored, so a run tests the working tree as it is and writes nothing into it. Downloads and build
+output are kept in a volume for each target, `visual-xsharp-cross-<target>`; the first run of the `native` suite
+builds LLVM-dependent code and the Haskell frontend from nothing and takes a long time, and later runs rebuild what
+changed. `--jobs` limits how many compilers Bazel starts at once, because a container has the memory of Podman's
+machine, not of the host. Without `--target`, every target that runs is run; a failure of one does not stop the
+others, and the command fails if any failed.
+
+This costs disk space and it is not little. The image of a target is about 3 GB; building it also pulls the official
+Haskell image, 3.5 GB, from which GHC is copied; and the cache of a full native build is several gigabytes more. On
+Windows and macOS all of it lives in the disk file of Podman's machine, which grows as it is used and does not shrink
+when its contents are removed. `usage` shows what the tool keeps and `clean` removes its images and caches; giving the
+space back to the host takes removing the machine, `podman machine rm`, and creating it again. A container may use two
+processors and 3 GB of memory unless `--cpus` and `--memory` say otherwise, so that a run does not take the desktop it
+runs on.
+
 For module-only validation without the workspace, set `GOWORK=off` and run
 `go -C helpers test ./...`. Module-wide coverage uses one profile containing
 command packages and internal implementation packages; it does not substitute

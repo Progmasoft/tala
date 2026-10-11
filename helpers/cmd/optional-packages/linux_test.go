@@ -53,6 +53,7 @@ func TestThePlatformsAreThoseOfPrebuild(t *testing.T) {
 		{"windows", "", platformWindows},
 		{"darwin", "", platformMacOS},
 		{"linux", ubuntu, platformUbuntu},
+		{"linux", "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nID=debian\nVERSION_ID=\"13\"\n", platformDebian},
 		{"linux", fedora, platformFedora},
 	}
 	for _, entry := range cases {
@@ -66,13 +67,14 @@ func TestThePlatformsAreThoseOfPrebuild(t *testing.T) {
 func TestOtherHostsAreRefusedWithTheHostsThatAreSupported(t *testing.T) {
 	refused := map[string]func() (string, error){
 		"an older Ubuntu":      release("ID=ubuntu\nVERSION_ID=\"24.04\"\n"),
+		"an older Debian":      release("ID=debian\nVERSION_ID=\"12\"\n"),
 		"a newer Fedora":       release("ID=fedora\nVERSION_ID=44\n"),
-		"another distribution": release("ID=debian\nVERSION_ID=\"13\"\n"),
+		"another distribution": release("ID=arch\nBUILD_ID=rolling\n"),
 		"an empty description": release(""),
 	}
 	for name, read := range refused {
 		_, err := optionalPlatform("linux", read)
-		if err == nil || !strings.Contains(err.Error(), "Ubuntu 26.04 LTS, and Fedora 43") {
+		if err == nil || !strings.Contains(err.Error(), "Ubuntu 26.04 LTS, Fedora 43, and Debian 13") {
 			t.Errorf("%s: error = %v, want one that lists the supported hosts", name, err)
 		}
 	}
@@ -133,6 +135,35 @@ func TestLinuxInstallNeedsTheManagerAndAWayToBecomeRoot(t *testing.T) {
 	}
 	if len(runner.commands) != 0 {
 		t.Fatalf("a host without sudo ran %v", runner.commands)
+	}
+}
+
+func TestDebianInstallsWithAptAndReportsWhatItsRepositoriesLack(t *testing.T) {
+	if linuxManager(platformDebian) != "apt-get" || !usesApt(platformDebian) || !isLinux(platformDebian) || !supportedPlatform(platformDebian) {
+		t.Fatal("Debian is not an apt host")
+	}
+	absent := 0
+	for _, item := range optionalPackages {
+		if item.aptPackage == "" {
+			continue
+		}
+		if item.absentFromDebian {
+			absent++
+			if linuxPackage(item, platformDebian) != "" || linuxPackage(item, platformUbuntu) != item.aptPackage {
+				t.Fatalf("%s: Debian = %q, Ubuntu = %q", item.name, linuxPackage(item, platformDebian), linuxPackage(item, platformUbuntu))
+			}
+			err := installOneForOS(&fakePackageRunner{paths: map[string][]string{"apt-get": {"apt-get"}, "sudo": {"sudo"}}}, item, platformDebian)
+			if err == nil || !strings.Contains(err.Error(), "Debian's own repositories") || !strings.Contains(err.Error(), item.aptPackage) {
+				t.Fatalf("%s on Debian: %v", item.name, err)
+			}
+			continue
+		}
+		if linuxPackage(item, platformDebian) != item.aptPackage {
+			t.Fatalf("%s has no package on Debian", item.name)
+		}
+	}
+	if absent != 1 {
+		t.Fatalf("%d packages are marked absent from Debian, want the .NET SDK alone", absent)
 	}
 }
 

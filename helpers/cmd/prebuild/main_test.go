@@ -79,6 +79,8 @@ func TestClassifyBootstrapLinuxUsesPinnedTierReleases(t *testing.T) {
 		want    bootstrapHost
 	}{
 		{`ID=ubuntu` + "\n" + `VERSION_ID="26.04"`, bootstrapUbuntu},
+		{`ID=debian` + "\n" + `VERSION_ID="13"`, bootstrapDebian},
+		{`PRETTY_NAME="Debian GNU/Linux 13 (trixie)"` + "\n" + `ID=debian` + "\n" + `VERSION_ID="13"` + "\n" + `VERSION_CODENAME=trixie`, bootstrapDebian},
 		{`ID=fedora` + "\n" + `VERSION_ID=43`, bootstrapFedora},
 	} {
 		got, err := classifyBootstrapLinux(test.release)
@@ -101,7 +103,7 @@ func TestLLVMRequirementIsHostSpecific(t *testing.T) {
 	if !reflect.DeepEqual(macOS, []string{"llvm-config", "clang++"}) {
 		t.Fatalf("macOS LLVM tools = %#v", macOS)
 	}
-	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora} {
+	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora, bootstrapDebian} {
 		if got := requirementExecutables(host, llvm); !reflect.DeepEqual(got, []string{"llvm-config", "clang++"}) {
 			t.Fatalf("Linux LLVM tools = %#v", got)
 		}
@@ -115,6 +117,7 @@ func TestLinuxPackageMappingsKeepClangAndLLVMDevelopmentLibraries(t *testing.T) 
 		want string
 	}{
 		{bootstrapUbuntu, "llvm-dev"},
+		{bootstrapDebian, "llvm-dev"},
 		{bootstrapFedora, "llvm-static"},
 	} {
 		packages := linuxRequirementPackages(test.host, llvm)
@@ -131,7 +134,7 @@ func TestMissingToolsRequiresCompleteLLVMAndTemurinVendor(t *testing.T) {
 	runner := &bootstrapFakeRunner{
 		paths: map[string]string{
 			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
-			"clang-cl": "clang-cl", "ghcup": "ghcup", "java": "java",
+			"clang-cl": "clang-cl", "ghcup": "ghcup", "java": "java", "podman": "podman",
 		},
 		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
 	}
@@ -144,6 +147,32 @@ func TestMissingToolsRequiresCompleteLLVMAndTemurinVendor(t *testing.T) {
 	missing = missingTools(bootstrapWindows, runner)
 	if len(missing) != 1 || missing[0].name != "Temurin JDK 25" {
 		t.Fatalf("non-Temurin JDK was accepted: %#v", missing)
+	}
+}
+
+func TestPodmanIsARequiredToolOnEveryHost(t *testing.T) {
+	var podman toolRequirement
+	for _, requirement := range bootstrapTools {
+		if requirement.name == "Podman" {
+			podman = requirement
+		}
+	}
+	if podman.wingetPackageID != "RedHat.Podman" || podman.homebrewFormula != "podman" ||
+		len(podman.aptPackages) != 1 || podman.aptPackages[0] != "podman" ||
+		len(podman.dnfPackages) != 1 || podman.dnfPackages[0] != "podman" {
+		t.Fatalf("Podman requirement = %#v", podman)
+	}
+	// Everything but Podman is present: it is the one tool reported.
+	runner := &bootstrapFakeRunner{
+		paths: map[string]string{
+			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
+			"clang-cl": "clang-cl", "lld-link": "lld-link", "ghcup": "ghcup", "java": "java",
+		},
+		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
+	}
+	missing := missingTools(bootstrapWindows, runner)
+	if len(missing) != 1 || missing[0].name != "Podman" {
+		t.Fatalf("missing groups = %#v", missing)
 	}
 }
 

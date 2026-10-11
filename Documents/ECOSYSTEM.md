@@ -24,7 +24,7 @@ integration work. A checked-in DSL type alone must not be described as proof of 
 
 ## Shared project source policy
 
-`vxs format` and `vxs lint` operate on the complete project. They evaluate `Visual.XSharp.kts`, obtain the same main source
+`vxs format` and `vxs lint` operate on the complete project. They evaluate `BUILD.kts`, obtain the same main source
 roots and exclusions used by the compiler, and ask the Haskell source-discovery layer for the deterministic `.vxs` list.
 They do not independently search for files in Kotlin.
 
@@ -168,7 +168,7 @@ vxs install -Global Progmasoft.VisualLinter
 
 ## Configuration independence
 
-Formatter and Linter configurations are not sections of `Visual.XSharp.kts`. Their defaulting rules are:
+Formatter and Linter configurations are not sections of `BUILD.kts`. Their defaulting rules are:
 
 1. use the tool configuration file in the project root when it exists;
 2. otherwise use the installed tool's default configuration; and

@@ -62,7 +62,7 @@ for a project merely to reinterpret that file, although project-independent CLI 
 
 ### Project source set
 
-Without `-File`, source commands discover `Visual.XSharp.kts` by walking from the requested working directory toward the
+Without `-File`, source commands discover `BUILD.kts` by walking from the requested working directory toward the
 filesystem root. The Kotlin evaluator returns a typed project plan containing source roots, exclusions, entry identity,
 compiler settings, targets, test suites, output directories, and package metadata.
 

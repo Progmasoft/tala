@@ -10,6 +10,9 @@ on:
   push:
     branches:
       - main
+  # By hand, for a branch that has no pull request yet:
+  # `go run ./helpers/cmd/cross-platform-test ci`.
+  workflow_dispatch:
 
 permissions:
   contents: read

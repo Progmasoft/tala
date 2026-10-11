@@ -3,7 +3,7 @@
 
 # Visual X# Kotlin project evaluator
 
-This Java 25/Kotlin component evaluates the single `Visual.XSharp.kts` project file used by `vxs`. It resolves source roots,
+This Java 25/Kotlin component evaluates the single `BUILD.kts` project file used by `vxs`. It resolves source roots,
 compiler settings, targets, dependencies, named test suites, and publication metadata into the native compiler plan. It has
 no standalone launcher: `vxs` invokes its main class directly from the bundled JVM classpath. `vxdc` remains a separate
 command and shares the same libraries.
@@ -20,7 +20,7 @@ digest verification. Explicit `dependency("local") { path = "dependency.vipkg" }
 Visual X# package separately from ViGet coordinates.
 
 Split project scripts and separate module scripts are not supported. Project discovery walks from the requested path toward
-the filesystem root until it finds `Visual.XSharp.kts`.
+the filesystem root until it finds `BUILD.kts`.
 
 Dependency resolution writes `Visual.XSharp.Lockfile.sqlite3` as binary SQLite data. Human-readable dumps belong to the
 separate `vxdc` tool and are not emitted during ordinary project evaluation.
