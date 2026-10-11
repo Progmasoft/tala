@@ -69,7 +69,7 @@ jobs:
           (Join-Path $llvmRoot "bin") | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
@@ -186,7 +186,7 @@ jobs:
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
 
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0

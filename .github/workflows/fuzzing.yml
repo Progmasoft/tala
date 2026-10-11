@@ -76,7 +76,7 @@ jobs:
           "LLVM_ROOT=$llvmRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
           (Join-Path $llvmRoot "bin") | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
@@ -144,7 +144,7 @@ jobs:
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
@@ -214,7 +214,7 @@ jobs:
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
@@ -285,7 +285,7 @@ jobs:
             vxs-fuzz-fedora-43-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}
             vxs-fuzz-fedora-43-
       - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # ghcup-setup
+        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
