@@ -180,6 +180,33 @@ func TestTheProbeIsRecognizedInBothFormsAndNothingElseIs(t *testing.T) {
 	}
 }
 
+func TestAFindingInAnExposedHeaderBelongsToTheHeaderInTheRepository(t *testing.T) {
+	repository := t.TempDir()
+	writeAnalyzedSource(t, repository, "Compiler/Headers/Visual/XSharp/Core/IR.hpp", "#pragma once\n")
+	writeAnalyzedSource(t, repository, "Interactive/Headers/Visual/XSharp/Interactive/Session.hpp", "#pragma once\n")
+	cases := map[string]string{
+		"bazel-out/x64_windows-fastbuild/bin/_virtual_includes/5e79d2ff/Visual/XSharp/Core/IR.hpp":   "Compiler/Headers/Visual/XSharp/Core/IR.hpp",
+		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Interactive/Session.hpp": "Interactive/Headers/Visual/XSharp/Interactive/Session.hpp",
+		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Missing.hpp":             "bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Missing.hpp",
+		"bazel-out/k8-fastbuild/bin/Compiler/Generated/Table.hpp":                                    "bazel-out/k8-fastbuild/bin/Compiler/Generated/Table.hpp",
+		"Compiler/Core/Verifier.cpp":                   "Compiler/Core/Verifier.cpp",
+		"external/llvm/include/llvm/ADT/SmallVector.h": "external/llvm/include/llvm/ADT/SmallVector.h",
+	}
+	for path, want := range cases {
+		if got := sourceLocation(repository, path); got != want {
+			t.Fatalf("sourceLocation(%q) = %q, want %q", path, got, want)
+		}
+	}
+	findings := inRepository(repository, []analyzerFinding{{
+		File:  "bazel-out/k8-fastbuild/bin/_virtual_includes/a/Visual/XSharp/Core/IR.hpp",
+		Steps: []analyzerStep{{File: "bazel-out/k8-fastbuild/bin/_virtual_includes/b/Visual/XSharp/Core/IR.hpp"}, {File: "Compiler/Core/Verifier.cpp"}},
+	}})
+	if findings[0].File != "Compiler/Headers/Visual/XSharp/Core/IR.hpp" || findings[0].Steps[0].File != findings[0].File ||
+		findings[0].Steps[1].File != "Compiler/Core/Verifier.cpp" {
+		t.Fatalf("findings = %+v", findings)
+	}
+}
+
 func TestFilterUnitsKeepsMatchingPaths(t *testing.T) {
 	units := []tidyUnit{{File: "Compiler/Core/Verifier.cpp"}, {File: "Interactive/Session.cpp"}, {File: "Compiler/Core/Tests/CoreTests.cpp"}}
 	if kept := filterUnits(units, "Compiler/Core/"); len(kept) != 2 {

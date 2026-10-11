@@ -303,9 +303,15 @@ steps of the path under each finding.
 
 A finding of a stable checker fails the run. A finding of a checker in development, whose name begins with `alpha.`,
 is printed under its own heading and does not: such a checker finds what no stable one looks for and is wrong more
-often. The iterator checkers are not run; on this code they stop the analyzer in comparisons the test framework wraps
-and report the erase of what `std::ranges::unique` returns several hundred times. Checkers are renamed between LLVM
-releases, so the command asks the compiler which of them it has and runs those.
+often. Three groups are not run, because all they report on this code is wrong: the iterator checkers, which also
+stop the analyzer in comparisons the test framework wraps, `alpha.security.ReturnPtrRange` and
+`alpha.core.StoreToImmutable`. Checkers are renamed between LLVM releases, so the command asks the compiler which of
+them it has and runs those.
+
+Before the real run the command analyzes a six-line program with a null dereference every version of the analyzer
+reports, with the same compiler, checkers and options, and stops unless that finding comes back. A clean result is
+only worth believing from an analyzer that is known to report. A finding in a public header is attributed to the
+header in the repository and not to the copy Bazel exposes below its output tree.
 
 A finding is silenced by the comment that silences clang-tidy, with the name clang-tidy gives the checker:
 `// NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)` on the line before, or `// NOLINT(...)` on the line itself. One

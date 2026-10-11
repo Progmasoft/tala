@@ -47,20 +47,21 @@ var analyzerOptInCheckers = []string{
 // are wrong more often. Their findings are reported and never fail the
 // command.
 //
-// The iterator checkers are left out. On this code they stop the analyzer
-// itself in comparisons the test framework wraps, and what they do report,
-// several hundred times, is the erase of what std::ranges::unique returns.
+// Three groups are left out because all they report on this code is wrong.
+// The iterator checkers stop the analyzer itself in comparisons the test
+// framework wraps, and report, several hundred times, the erase of what
+// std::ranges::unique returns. alpha.security.ReturnPtrRange reports the
+// move assignment std::ranges::reverse performs on a vector's elements, and
+// alpha.core.StoreToImmutable the constructor of an object declared const.
 var analyzerAlphaCheckers = []string{
 	"alpha.core.BoolAssignment",
 	"alpha.core.Conversion",
 	"alpha.core.PointerArithm",
 	"alpha.core.StdVariant",
-	"alpha.core.StoreToImmutable",
 	"alpha.core.TestAfterDivZero",
 	"alpha.cplusplus.DeleteWithNonVirtualDtor",
 	"alpha.cplusplus.SmartPtr",
 	"alpha.security.ArrayBoundV2",
-	"alpha.security.ReturnPtrRange",
 	"alpha.unix.cstring.BufferOverlap",
 	"alpha.unix.cstring.OutOfBounds",
 	"alpha.unix.cstring.UninitializedRead",
@@ -237,6 +238,45 @@ func uniqueFindings(findings []analyzerFinding) []analyzerFinding {
 		return first.Checker < second.Checker
 	})
 	return unique
+}
+
+// publicHeader matches a first-party header as a translation unit sees it:
+// the copy Bazel exposes below its output tree, under a directory named
+// after the target that owns it.
+var publicHeader = regexp.MustCompile(`^bazel-out/[^/]+/bin/_virtual_includes/[^/]+/(.+)$`)
+
+// headerRoots are the directories whose headers Bazel exposes that way.
+var headerRoots = []string{"Compiler/Headers", "Interactive/Headers"}
+
+// sourceLocation returns the file in the repository a location names. A
+// header below the output tree is the copy of a header under one of the
+// header roots; the finding belongs to that header, where its suppression
+// comments are and where code scanning can show it. Any other location, and
+// a copy whose original is not found, is returned as it is.
+func sourceLocation(repository string, path string) string {
+	match := publicHeader.FindStringSubmatch(path)
+	if match == nil {
+		return path
+	}
+	for _, root := range headerRoots {
+		candidate := root + "/" + match[1]
+		if info, err := os.Stat(filepath.Join(repository, filepath.FromSlash(candidate))); err == nil && info.Mode().IsRegular() {
+			return candidate
+		}
+	}
+	return path
+}
+
+// inRepository rewrites the places of findings and of their steps to the
+// files of the repository.
+func inRepository(repository string, findings []analyzerFinding) []analyzerFinding {
+	for index := range findings {
+		findings[index].File = sourceLocation(repository, findings[index].File)
+		for step := range findings[index].Steps {
+			findings[index].Steps[step].File = sourceLocation(repository, findings[index].Steps[step].File)
+		}
+	}
+	return findings
 }
 
 // analyzerSuppression matches the comment that silences a clang-tidy check
@@ -419,7 +459,7 @@ func runAnalyze(repository string, runner commandRunner, bazelArguments []string
 			fmt.Printf("\n%s was not analyzed: %v\n%s\n", outcome.file, outcome.err, strings.TrimSpace(outcome.output))
 		}
 	}
-	findings, suppressed := withoutSuppressed(repository, uniqueFindings(findings))
+	findings, suppressed := withoutSuppressed(repository, uniqueFindings(inRepository(repository, findings)))
 	blocking, advisory := 0, 0
 	for _, finding := range findings {
 		if finding.advisory() {
