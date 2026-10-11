@@ -9,6 +9,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- CodeQL analyses C and C++ from a real build as well. The analysis without a
+  build, which runs for every pull request, holds every native source but
+  resolved 30 percent of their includes; the new `c-cpp-traced` job observes
+  a Bazel compilation of every native target. It runs for the default
+  branch, weekly, on request, and for a pull request labelled
+  `codeql-traced`.
 - Every command of `helpers/` defines its command line with Cobra.
   `verify-benchmarks` and `verify-examples` take the checkout as `--root`;
   their earlier `-Root` and `-Help` are rejected. `prebuild` and
