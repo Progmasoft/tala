@@ -38,7 +38,7 @@ following vocabulary:
 | Measure compiler throughput | [Benchmarking](BENCHMARKING.md) and [recorded baselines](../Benchmarks/README.md) |
 | Use `vxs` | [CLI](CLI.md) |
 | Use or implement the REPL | [Visual X# Interactive](INTERACTIVE.md) |
-| Write `Visual.XSharp.kts` | [Project files](PROJECT_FILES.md) |
+| Write `BUILD.kts` | [Project files](PROJECT_FILES.md) |
 | Understand per-source object and assembly outputs | [Project native artifacts](PROJECT-ARTIFACTS.md) |
 | Understand diagnostics and exit behavior | [Diagnostics](DIAGNOSTICS.md) |
 | Use Analyzer, Formatter, or Linter | [Ecosystem tools](ECOSYSTEM.md) |

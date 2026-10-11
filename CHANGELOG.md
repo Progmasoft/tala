@@ -26,6 +26,9 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- `prebuild` and `optional-packages` support Debian 13, with apt as on
+  Ubuntu. Debian's own repositories have no .NET SDK; `optional-packages`
+  says so there and installs the rest.
 - `cross-platform-test` checks a branch on the platforms a developer is not
   sitting at, before a pull request exists. `ci` starts the compiler
   workflows for the current branch, on real Windows, macOS and Linux

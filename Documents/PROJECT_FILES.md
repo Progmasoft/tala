@@ -5,7 +5,7 @@
 
 ## Discovery
 
-Each project has one `Visual.XSharp.kts`. Project discovery walks from the requested location toward the filesystem root until
+Each project has one `BUILD.kts`. Project discovery walks from the requested location toward the filesystem root until
 it finds that file. Split module scripts, compatibility setters, and separate project-state files are not supported.
 
 ## Minimal project
@@ -283,7 +283,7 @@ project {
 
 Project evaluation is an ordered operation rather than serialization of an arbitrary object graph:
 
-1. the native driver discovers the exact `Visual.XSharp.kts`;
+1. the native driver discovers the exact `BUILD.kts`;
 2. the plugin preamble is parsed early enough to resolve trusted Kotlin plugin JARs;
 3. the full script executes with the project DSL;
 4. typed scopes validate and produce an immutable plan;
@@ -292,7 +292,7 @@ Project evaluation is an ordered operation rather than serialization of an arbit
 7. the native driver consumes the plan and starts the requested compiler/tool route.
 
 The plan transport is an implementation boundary, not a second user manifest. Projects do not contain `MANIFEST.TOML`, and
-`.vipkg` packages keep the project script at their root as `Visual.XSharp.kts` rather than under an extra `XSHARP/`
+`.vipkg` packages keep the project script at their root as `BUILD.kts` rather than under an extra `XSHARP/`
 directory. Test source files are not included in a published `.vipkg`.
 
 Plugin code is trusted build logic with full JVM access. Safety comes from exact identity, contained local paths, descriptor

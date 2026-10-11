@@ -56,7 +56,7 @@ the Build Tools workload solely for those headers and libraries; Bazel continues
 On macOS the bootstrap requires Homebrew, installs the corresponding formulas and Temurin JDK 25 cask, requests Xcode
 Command Line Tools when missing, and delegates Haskell versions to GHCup. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
-absolute path into the repository. On Ubuntu/Fedora, the bootstrap uses apt/dnf for native dependencies and the official
+absolute path into the repository. On Ubuntu, Debian 13 and Fedora, the bootstrap uses apt/dnf for native dependencies and the official
 GHCup bootstrap for Haskell. Temurin 25 requires Eclipse Adoptium's signed package repository to be enabled first;
 `prebuild.go` reports that prerequisite instead of silently substituting another JDK. Installation never edits tracked
 build configuration.
