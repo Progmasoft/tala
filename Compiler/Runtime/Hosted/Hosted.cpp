@@ -34,6 +34,23 @@ namespace std
     // The tag object of the non-throwing allocation functions, which a C++
     // runtime library defines.
     const nothrow_t nothrow{};
+
+#ifdef __GLIBCXX__
+    // Where a distribution builds with the assertions of libstdc++, a
+    // checked operation of the standard library, an index into an array
+    // among them, reports its failure through this function, which the C++
+    // runtime library defines. A failed assertion stops the program, as any
+    // other value that cannot be computed does.
+    // NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl58-cpp)
+    [[noreturn]] void
+    __glibcxx_assert_fail(const char * /*file*/,
+                          int /*line*/,
+                          const char * /*function*/,
+                          const char * /*condition*/) noexcept
+    {
+        __builtin_trap();
+    }
+#endif
 } // namespace std
 
 // Memory comes from the C library. Only the non-throwing forms are defined:
