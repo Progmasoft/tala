@@ -15,11 +15,11 @@ on:
       - main
   schedule:
     - cron: '23 4 * * 1'
+  workflow_dispatch:
 
+# Each job asks for what it needs: both upload their results to code scanning.
 permissions:
-  actions: read
   contents: read
-  security-events: write
 
 concurrency:
   group: codeql-${{ github.ref }}
@@ -30,6 +30,10 @@ jobs:
     name: ${{ matrix.language }}
     runs-on: windows-2025
     timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -71,7 +75,7 @@ jobs:
 
       - name: Initialize CodeQL
         id: init
-        uses: github/codeql-action/init@7999b86c43a865dc79d8923397f35af22de63401 # v4
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build_mode }}
@@ -112,89 +116,114 @@ jobs:
           }
 
       - name: Analyze
-        uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401 # v4
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           category: /language:${{ matrix.language }}
 
-      # C and C++ are analysed without a build: the extractor reads the
-      # sources and guesses how they would be compiled. That is fast and
-      # needs no LLVM on the runner, and it can silently analyse less than
-      # the repository has. This step measures what the analysis saw.
-      #
-      # It fails when fewer of the native sources reached the database than
-      # the floor allows. The other figures, the includes the extractor could
-      # not resolve and its own quality report, are written to the job
-      # summary; they have no floor until they have been seen for a while.
+      # C and C++ are analysed here without a build: the extractor reads the
+      # sources and guesses how they would be compiled. That is fast enough
+      # for every pull request and needs no LLVM on the runner, but it
+      # resolves few includes and so understands little of what it reads;
+      # the `c-cpp-traced` job is the analysis that compiles. This step only
+      # requires that the sources reached the database, and prints the rest.
       - name: Measure what the C++ analysis covered
         if: matrix.language == 'c-cpp'
         shell: pwsh
         env:
           CODEQL: ${{ steps.init.outputs.codeql-path }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $database = Join-Path $env:RUNNER_TEMP 'codeql_databases/cpp'
-          $summary = $env:GITHUB_STEP_SUMMARY
+          ./.github/codeql/Measure-CppAnalysis.ps1 `
+            -Database (Join-Path $env:RUNNER_TEMP 'codeql_databases/cpp') `
+            -Codeql $env:CODEQL
 
-          # The native sources the repository owns.
-          $owned = @(git ls-files -- 'Compiler/*.cpp' 'Compiler/*.hpp' 'Compiler/*.h' 'Compiler/*.inc' `
-              'Interactive/*.cpp' 'Interactive/*.hpp' 'Interactive/*.h' |
-              Where-Object { $_ -notlike 'Compiler/Haskell/*' })
-          if ($owned.Count -eq 0) { throw 'no native sources were found to compare with' }
+  # C and C++ analysed from a real build. CodeQL watches the compiler while
+  # Bazel compiles every native target, so each source is read with the
+  # include paths, definitions and language options it is really compiled
+  # with, and the standard library and LLVM are resolved.
+  #
+  # That costs a full compilation without any cache, so it does not run for
+  # every pull request: it runs when the default branch changes, once a week,
+  # on request, and for a pull request that carries the label
+  # `codeql-traced`, which is how a change of this job is tried.
+  cpp-traced:
+    name: c-cpp-traced
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'codeql-traced')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+          persist-credentials: false
 
-          # The sources the database holds: every file the extractor read is
-          # kept in its source archive.
-          $archive = Join-Path $database 'src.zip'
-          if (-not (Test-Path -LiteralPath $archive)) { throw "the CodeQL database has no source archive at $archive" }
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
-          try { $held = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\', '/') }) } finally { $zip.Dispose() }
+      # No disk cache: an object taken from a cache is not compiled, and a
+      # source that is not compiled is not seen.
+      - name: Configure Bazel
+        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
 
-          $missing = @($owned | Where-Object { $path = "/$_"; -not ($held | Where-Object { $_.EndsWith($path) } | Select-Object -First 1) })
-          $seen = $owned.Count - $missing.Count
-          $share = [math]::Round(100.0 * $seen / $owned.Count, 1)
-          $floor = 95.0
+      - name: Install LLVM development and link packages
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
+          llvm_root="$(llvm-config --prefix)"
+          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
+          test -f "$(clang -print-resource-dir)/include/stddef.h"
 
-          "## C++ analysis coverage" >> $summary
-          "" >> $summary
-          "| Measure | Value |" >> $summary
-          "| --- | --- |" >> $summary
-          "| Native sources in the repository | $($owned.Count) |" >> $summary
-          "| Of them in the CodeQL database | $seen ($share %) |" >> $summary
-          "| Floor | $floor % |" >> $summary
-          if ($missing.Count -gt 0) {
-            "" >> $summary
-            "Not in the database:" >> $summary
-            "" >> $summary
-            $missing | Select-Object -First 50 | ForEach-Object { "- ``$_``" >> $summary }
-          }
+      - name: Initialize CodeQL
+        id: init
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          languages: c-cpp
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+          queries: security-extended
 
-          # What the extractor reports about itself. Each result set is one
-          # query of the CodeQL C++ pack; the names are the pack's.
-          $results = Join-Path $database 'results'
-          $reports = @()
-          if (Test-Path -LiteralPath $results) {
-            $reports = @(Get-ChildItem -LiteralPath $results -Recurse -Filter *.bqrs |
-                Where-Object { $_.FullName -match '[\\/](Summary|Telemetry|Diagnostics)[\\/]' } | Sort-Object FullName)
-          }
-          foreach ($report in $reports) {
-            $rows = @(& $env:CODEQL bqrs decode --format=csv --rows=40 -- $report.FullName 2>$null)
-            if ($LASTEXITCODE -ne 0 -or $rows.Count -eq 0) { continue }
-            "" >> $summary
-            "### $($report.Directory.Name) / $($report.BaseName)" >> $summary
-            "" >> $summary
-            '```text' >> $summary
-            $rows | ForEach-Object { $_ >> $summary }
-            '```' >> $summary
-          }
-          if ($reports.Count -eq 0) {
-            "" >> $summary
-            "The database holds no summary or telemetry results to show." >> $summary
-          }
+      # Every native target is compiled and none is linked: the analysis
+      # reads compilations, and the fuzz targets link only under their own
+      # configuration. Actions run outside the sandbox and take nothing from
+      # a cache, so that each compiler invocation is one CodeQL observes.
+      - name: Compile every native target for extraction
+        shell: bash
+        run: |
+          bazel shutdown
+          bazel build \
+            --spawn_strategy=local \
+            --nouse_action_cache \
+            --noremote_accept_cached \
+            --noremote_upload_local_results \
+            --disk_cache= \
+            --output_groups=compilation_outputs \
+            -- //Compiler/... //Interactive/...
+          bazel shutdown
 
-          # The job summary is only shown on the page of the run. The log gets
-          # the same text, so that the figures can be read from it as well.
-          Get-Content -LiteralPath $summary | ForEach-Object { Write-Host $_ }
-          Write-Host "C++ analysis: $seen of $($owned.Count) native sources are in the database ($share %)."
-          if ($share -lt $floor) {
-            throw "CodeQL analysed $share % of the native sources; the floor is $floor %."
-          }
+      - name: Analyze
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          category: /language:c-cpp/build:traced
+
+      # The floors are what makes this job worth its time: with a build the
+      # extractor has to resolve the includes and compile the sources, and a
+      # run that does not is the shallow analysis under another name. The
+      # first traced run resolved every include and compiled every source
+      # without an error, and held all native sources but the one that is
+      # compiled for Windows only.
+      - name: Measure what the C++ analysis covered
+        shell: pwsh
+        env:
+          CODEQL: ${{ steps.init.outputs.codeql-path }}
+        run: |
+          ./.github/codeql/Measure-CppAnalysis.ps1 `
+            -Database (Join-Path $env:RUNNER_TEMP 'codeql_databases/cpp') `
+            -Codeql $env:CODEQL `
+            -IncludeFloor 95 `
+            -CompilationFloor 95
