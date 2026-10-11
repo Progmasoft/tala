@@ -33,6 +33,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   form each harness reads; the one command-line seed there was separated its
   arguments with line breaks, which the harness does not split on, and is
   replaced.
+- CodeQL analyses C and C++ from a real build as well. The analysis without a
+  build, which runs for every pull request, holds every native source but
+  resolved 30 percent of their includes; the new `c-cpp-traced` job observes
+  a Bazel compilation of every native target. It runs for the default
+  branch, weekly, on request, and for a pull request labelled
+  `codeql-traced`.
 - `develop analyze` runs the Clang Static Analyzer over every first-party
   C++ translation unit with the command Bazel compiles it with: the stable
   checkers that have to be asked for beside the default ones, and a set of
