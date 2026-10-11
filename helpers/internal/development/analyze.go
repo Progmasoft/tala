@@ -296,6 +296,53 @@ func withoutSuppressed(repository string, findings []analyzerFinding) ([]analyze
 	return kept, dropped
 }
 
+// analyzerProbe is a program with one defect every version of the analyzer
+// reports: on the path where flag is false, a null pointer is dereferenced.
+const analyzerProbe = `int Read(int *pointer, bool flag)
+{
+    int *chosen = flag ? pointer : nullptr;
+    if (flag)
+        return 1;
+    return *chosen;
+}
+`
+
+// probeReported reports whether the analyzer's output for the probe holds
+// its defect in a form this command reads.
+func probeReported(output string) bool {
+	for _, line := range strings.Split(strings.ReplaceAll(output, "\r\n", "\n"), "\n") {
+		match := analyzerDiagnostic.FindStringSubmatch(line)
+		if match != nil && match[6] == "warning" && match[8] == "core.NullDereference" {
+			return true
+		}
+	}
+	return false
+}
+
+// proveAnalyzerReports analyzes the probe with the compiler, the checkers
+// and the options of the real run, and fails unless its defect comes back.
+// A run that finds nothing is only worth believing when the same analyzer,
+// asked the same way, is known to find something: a compiler that does not
+// analyze, an option it ignores or a report in a form this command cannot
+// read would otherwise look like clean code.
+func proveAnalyzerReports(runner commandRunner, compiler string, checkers []string) error {
+	directory, err := os.MkdirTemp("", "vxs-analyze-probe-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(directory)
+	source := filepath.Join(directory, "probe.cpp")
+	if err := os.WriteFile(source, []byte(analyzerProbe), 0o600); err != nil {
+		return err
+	}
+	output, err := runner.OutputIn(directory, compiler, analyzerCommand([]string{"probe.cpp"}, "probe.cpp", checkers)...)
+	if !probeReported(output) {
+		return fmt.Errorf("the analyzer of %q did not report the defect of the probe program, so a clean result from it would mean nothing (%v):\n%s",
+			compiler, err, strings.TrimSpace(output))
+	}
+	return nil
+}
+
 // filterUnits keeps the units whose path contains the given text.
 func filterUnits(units []tidyUnit, filter string) []tidyUnit {
 	var kept []tidyUnit
@@ -350,6 +397,10 @@ func runAnalyze(repository string, runner commandRunner, bazelArguments []string
 	if len(checkers) == 0 {
 		return fmt.Errorf("the compiler %q lists none of the analyzer's checkers; it is not Clang, or it was built without the static analyzer", compiler)
 	}
+	if err := proveAnalyzerReports(runner, compiler, checkers); err != nil {
+		return err
+	}
+	fmt.Printf("The analyzer reported the defect of the probe program.\n")
 	fmt.Printf("Analyzing %d first-party translation units with %d analyzer processes and %d checkers beyond the default ones...\n",
 		len(units), jobs, len(checkers))
 	outcomes := runTidyUnits(units, jobs, func(unit tidyUnit) (string, error) {

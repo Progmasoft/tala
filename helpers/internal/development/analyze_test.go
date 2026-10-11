@@ -160,6 +160,26 @@ func TestSuppressedFindingsAreDroppedAndCounted(t *testing.T) {
 	}
 }
 
+func TestTheProbeIsRecognizedInBothFormsAndNothingElseIs(t *testing.T) {
+	clang := "probe.cpp:6:12: warning: Dereference of null pointer (loaded from variable 'chosen') [core.NullDereference]\n"
+	clangCl := "probe.cpp(6,12): warning: Dereference of null pointer (loaded from variable 'chosen') [core.NullDereference]\r\n"
+	if !probeReported(clang) || !probeReported(clangCl) {
+		t.Fatal("the defect of the probe is not recognized")
+	}
+	for _, silent := range []string{
+		"",
+		"1 warning generated.\n",
+		"probe.cpp:6:12: note: Dereference of null pointer [core.NullDereference]\n",
+		"probe.cpp:6:12: warning: unused variable 'chosen' [-Wunused-variable]\n",
+		"probe.cpp:6:12: warning: Division by zero [core.DivideZero]\n",
+		"clang: error: unsupported option '--analyze'\n",
+	} {
+		if probeReported(silent) {
+			t.Fatalf("%q counts as the defect of the probe", silent)
+		}
+	}
+}
+
 func TestFilterUnitsKeepsMatchingPaths(t *testing.T) {
 	units := []tidyUnit{{File: "Compiler/Core/Verifier.cpp"}, {File: "Interactive/Session.cpp"}, {File: "Compiler/Core/Tests/CoreTests.cpp"}}
 	if kept := filterUnits(units, "Compiler/Core/"); len(kept) != 2 {

@@ -77,18 +77,21 @@ jobs:
       - name: Analyze first-party C++ path by path
         shell: bash
         env:
-          VXS_ANALYZE_SARIF: ${{ runner.temp }}/clang-static-analyzer.sarif
+          VXS_ANALYZE_SARIF: ${{ github.workspace }}/clang-static-analyzer.sarif
         run: go run ./helpers/cmd/develop analyze
 
+      # The report is written into the checkout because `hashFiles` only
+      # sees files there; it is never committed.
+      #
       # Uploaded whether the analysis passed or not, so that what failed it
       # can be read in code scanning. A pull request from a fork has no
       # permission to upload; the log of the step above holds the same text.
       - name: Upload the findings to code scanning
-        if: always() && hashFiles(format('{0}/clang-static-analyzer.sarif', runner.temp)) != ''
+        if: always() && hashFiles('clang-static-analyzer.sarif') != ''
         continue-on-error: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
-          sarif_file: ${{ runner.temp }}/clang-static-analyzer.sarif
+          sarif_file: ${{ github.workspace }}/clang-static-analyzer.sarif
           category: clang-static-analyzer
           checkout_path: ${{ github.workspace }}
 
