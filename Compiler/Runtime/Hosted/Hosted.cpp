@@ -41,8 +41,11 @@ namespace std
     // among them, reports its failure through this function, which the C++
     // runtime library defines. A failed assertion stops the program, as any
     // other value that cannot be computed does.
+    // The attribute that says it does not return is on the declaration of
+    // the library where the library gives one, and may not be added to a
+    // later declaration where it does not.
     // NOLINTNEXTLINE(bugprone-reserved-identifier,cert-dcl58-cpp)
-    [[noreturn]] void
+    void
     __glibcxx_assert_fail(const char * /*file*/,
                           int /*line*/,
                           const char * /*function*/,
