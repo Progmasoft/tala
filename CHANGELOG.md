@@ -26,6 +26,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Verification and tooling
 
+- `cross-platform-test` runs the repository's checks for another platform in
+  a Podman container: Ubuntu 26.04 and Fedora 43 from every host, built as
+  the workflows install them. The sources are sent as Git would commit them,
+  so the working tree is tested as it is and nothing is written into it.
+  macOS and Windows do not run in a container and are listed with the
+  reason. `prebuild` now checks for and installs Podman.
 - The fuzz corpora are larger. The lexer, parser and source targets are seeded
   with the Visual X# sources the repository already holds, more than two
   hundred programs, read where they are. The command-line, project, REPL,

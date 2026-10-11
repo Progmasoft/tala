@@ -48,7 +48,7 @@ Install missing prerequisites on a supported host:
 go run ./helpers/cmd/prebuild install
 ```
 
-On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, and Eclipse Temurin JDK 25. GHCup has no
+On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, Podman, and Eclipse Temurin JDK 25. GHCup has no
 official winget package, so the script uses Haskell.org's documented non-interactive HTTPS PowerShell bootstrap and then
 asks GHCup to select recommended GHC and Cabal releases. If Windows SDK or CRT/C++ link libraries are absent, it installs
 the Build Tools workload solely for those headers and libraries; Bazel continues to select standalone ClangCL and LLD.

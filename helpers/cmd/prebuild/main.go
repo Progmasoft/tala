@@ -185,6 +185,7 @@ var bootstrapTools = []toolRequirement{
 	{name: "Bazelisk", executables: []string{"bazelisk"}, wingetPackageID: "Bazel.Bazelisk", homebrewFormula: "bazelisk"},
 	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "llvm-dev", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "llvm-devel", "llvm-static", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
 	{name: "GHCup", executables: []string{"ghcup"}, homebrewFormula: "ghcup"},
+	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}},
 	{name: "Temurin JDK 25", executables: []string{"java"}, wingetPackageID: "EclipseAdoptium.Temurin.25.JDK", homebrewFormula: "temurin@25", aptPackages: []string{"temurin-25-jdk"}, dnfPackages: []string{"temurin-25-jdk"}},
 }
 

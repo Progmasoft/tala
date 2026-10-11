@@ -131,7 +131,7 @@ func TestMissingToolsRequiresCompleteLLVMAndTemurinVendor(t *testing.T) {
 	runner := &bootstrapFakeRunner{
 		paths: map[string]string{
 			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
-			"clang-cl": "clang-cl", "ghcup": "ghcup", "java": "java",
+			"clang-cl": "clang-cl", "ghcup": "ghcup", "java": "java", "podman": "podman",
 		},
 		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
 	}
@@ -144,6 +144,32 @@ func TestMissingToolsRequiresCompleteLLVMAndTemurinVendor(t *testing.T) {
 	missing = missingTools(bootstrapWindows, runner)
 	if len(missing) != 1 || missing[0].name != "Temurin JDK 25" {
 		t.Fatalf("non-Temurin JDK was accepted: %#v", missing)
+	}
+}
+
+func TestPodmanIsARequiredToolOnEveryHost(t *testing.T) {
+	var podman toolRequirement
+	for _, requirement := range bootstrapTools {
+		if requirement.name == "Podman" {
+			podman = requirement
+		}
+	}
+	if podman.wingetPackageID != "RedHat.Podman" || podman.homebrewFormula != "podman" ||
+		len(podman.aptPackages) != 1 || podman.aptPackages[0] != "podman" ||
+		len(podman.dnfPackages) != 1 || podman.dnfPackages[0] != "podman" {
+		t.Fatalf("Podman requirement = %#v", podman)
+	}
+	// Everything but Podman is present: it is the one tool reported.
+	runner := &bootstrapFakeRunner{
+		paths: map[string]string{
+			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
+			"clang-cl": "clang-cl", "lld-link": "lld-link", "ghcup": "ghcup", "java": "java",
+		},
+		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
+	}
+	missing := missingTools(bootstrapWindows, runner)
+	if len(missing) != 1 || missing[0].name != "Podman" {
+		t.Fatalf("missing groups = %#v", missing)
 	}
 }
 

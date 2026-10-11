@@ -15,6 +15,7 @@ helpers/
 ├── go.mod, go.sum          independently pinned dependency graph
 ├── cmd/
 │   ├── develop/            native build, test, fuzz, bundle, and cleanup
+│   ├── cross-platform-test/ the repository's checks for other platforms, in Podman containers
 │   ├── githelper/          guarded staging, commit, and push
 │   ├── prebuild/           required toolchain checks and installation
 │   ├── optional-packages/  optional example and comparison toolchains
@@ -23,7 +24,9 @@ helpers/
 │   ├── verify-docs/        strict Doxygen and Haddock API documentation checks
 │   ├── verify-examples/    example inventory and source-file contracts
 │   └── verify-benchmarks/  benchmark report/index consistency
+├── containers/             the images of the cross-platform targets
 └── internal/
+    ├── crossplatform/     targets, the archive of the sources, and the Podman runs
     ├── development/       host, process, build, bundle, fuzz, and release logic
     └── repository/        shared checkout-boundary discovery
 ```
@@ -49,6 +52,8 @@ go run ./helpers/cmd/verify-helpers
 go run ./helpers/cmd/verify-examples
 go run ./helpers/cmd/verify-benchmarks
 go run ./helpers/cmd/verify-docs
+go run ./helpers/cmd/cross-platform-test targets
+go run ./helpers/cmd/cross-platform-test run --target ubuntu-26.04 --suite native
 ```
 
 Every command of this module defines its command line with Cobra: generated
