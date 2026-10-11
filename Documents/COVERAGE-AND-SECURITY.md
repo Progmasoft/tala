@@ -36,7 +36,10 @@ The `c-cpp-traced` job is the analysis that compiles. CodeQL observes the compil
 target without a cache and without linking, so each source is read with the include paths, definitions and language
 options it is really compiled with. It costs a full compilation, so it runs when the default branch changes, once a
 week and on request, and for a pull request only when that carries the label `codeql-traced`. Its results are
-recorded under a category of their own, `/language:c-cpp/build:traced`.
+recorded under a category of their own, `/language:c-cpp/build:traced`. Its first run resolved all 5 730 `#include`
+directives, compiled all 179 compilations without an error and recorded 280 698 calls, where the analysis without a
+build recorded 1 009. The job fails when fewer than 95 percent of the includes are resolved or fewer than 95 percent
+of the compilations are free of errors.
 
 Both jobs run [the same measurement](../.github/codeql/Measure-CppAnalysis.ps1). It compares the native sources the
 repository owns under `Compiler/` and `Interactive/` with the sources the CodeQL database holds and fails below

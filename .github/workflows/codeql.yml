@@ -213,7 +213,10 @@ jobs:
 
       # The floors are what makes this job worth its time: with a build the
       # extractor has to resolve the includes and compile the sources, and a
-      # run that does not is the shallow analysis under another name.
+      # run that does not is the shallow analysis under another name. The
+      # first traced run resolved every include and compiled every source
+      # without an error, and held all native sources but the one that is
+      # compiled for Windows only.
       - name: Measure what the C++ analysis covered
         shell: pwsh
         env:
@@ -222,5 +225,5 @@ jobs:
           ./.github/codeql/Measure-CppAnalysis.ps1 `
             -Database (Join-Path $env:RUNNER_TEMP 'codeql_databases/cpp') `
             -Codeql $env:CODEQL `
-            -IncludeFloor 0 `
-            -CompilationFloor 0
+            -IncludeFloor 95 `
+            -CompilationFloor 95
