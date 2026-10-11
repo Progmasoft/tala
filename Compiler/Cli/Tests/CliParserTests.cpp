@@ -296,6 +296,29 @@ TEST_CASE("schema enforces arity command scope and duplicate policy",
 {
     REQUIRE(ParsedInvocation{ "vxs", "build", "-File" }.Result()
             == CliParseResult::kError);
+    // A path that is not well-formed UTF-8 is a diagnostic. Converting it
+    // to a native path would throw in a program built without exceptions.
+    for (const char *malformed : { "Program\xff.vxs",
+                                   "\x80.vxs",
+                                   "Stray\xbf",
+                                   "Truncated\xe2\x82",
+                                   "Overlong\xc0\xaf.vxs",
+                                   "Overlong\xe0\x80\xaf.vxs",
+                                   "Surrogate\xed\xa0\x80.vxs",
+                                   "Beyond\xf4\x90\x80\x80.vxs",
+                                   "Beyond\xf5\x80\x80\x80.vxs" })
+    {
+        const ParsedInvocation rejected{ "vxs", "build", "-File", malformed };
+        REQUIRE(rejected.Result() == CliParseResult::kError);
+        REQUIRE_FALSE(rejected.Diagnostic().empty());
+    }
+    for (const char *wellFormed : { "Pro\xc3\xa7gram.vxs",
+                                    "\xe0\xa0\x80.vxs",
+                                    "\xed\x9f\xbf.vxs",
+                                    "\xf0\x90\x80\x80.vxs",
+                                    "\xf4\x8f\xbf\xbf.vxs" })
+        REQUIRE(ParsedInvocation{ "vxs", "build", "-File", wellFormed }.Result()
+                == CliParseResult::kReady);
     REQUIRE(ParsedInvocation{ "vxs", "check", "-Emit", "core" }.Result()
             == CliParseResult::kError);
     REQUIRE(
