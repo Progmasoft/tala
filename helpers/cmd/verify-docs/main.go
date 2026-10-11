@@ -9,6 +9,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,10 +34,37 @@ type moduleCoverage struct {
 }
 
 func main() {
-	if err := verify(); err != nil {
+	if err := execute(os.Args[1:], os.Stdout, os.Stderr, verify); err != nil {
 		fmt.Fprintln(os.Stderr, "API documentation verification failed:", err)
 		os.Exit(1)
 	}
+}
+
+// newCommand owns the command line. The verification is handed in, so that
+// parsing can be tested without Doxygen or Cabal.
+func newCommand(output, errorOutput io.Writer, check func() error) *cobra.Command {
+	command := &cobra.Command{
+		Use:   "verify-docs",
+		Short: "Verify that the public C++ and Haskell APIs are documented.",
+		Long: `Verify that the public C++ and Haskell APIs are documented.
+
+Doxygen must report no warning for the public C++ headers, and Haddock must
+report every exported entry of the compiler packages as documented.`,
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          func(cmd *cobra.Command, args []string) error { return check() },
+	}
+	command.SetOut(output)
+	command.SetErr(errorOutput)
+	command.CompletionOptions.DisableDefaultCmd = true
+	return command
+}
+
+func execute(arguments []string, output, errorOutput io.Writer, check func() error) error {
+	command := newCommand(output, errorOutput, check)
+	command.SetArgs(arguments)
+	return command.Execute()
 }
 
 func verify() error {

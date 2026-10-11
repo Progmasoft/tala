@@ -45,6 +45,18 @@ func runThreadFuzzCampaign(repository string, currentHost host, runner commandRu
 	if len(targets) == 0 {
 		return errors.New("no threaded fuzz target is registered")
 	}
+	// A selection names targets of the whole inventory; here it can only
+	// keep threaded ones. The Haskell campaign has no thread campaign.
+	if selection := os.Getenv(fuzzTargetsVariable); selection != "" {
+		selected, _, err := selectFuzzTargets(targets, selection)
+		if err != nil {
+			return fmt.Errorf("fuzz-thread runs threaded targets only: %w", err)
+		}
+		if len(selected) == 0 {
+			return errors.New("fuzz-thread runs threaded targets only; the selection names none")
+		}
+		targets = selected
+	}
 	bazel, err := findBazel(runner)
 	if err != nil {
 		return err

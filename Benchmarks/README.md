@@ -26,6 +26,33 @@ go run ./helpers/cmd/develop benchmark
 
 The command builds native benchmarks with Bazel's optimized configuration. Criterion uses the package's `-O2` benchmark
 stanza. Bazel options may be appended after `--`, but platform configuration remains owned by the developer command.
+The command has options of its own, written before `--`:
+
+| Flag | Meaning |
+| --- | --- |
+| `--output DIR` | also write the times to `DIR` as a result set |
+| `--filter REGEX` | run only the native benchmarks whose name matches |
+| `--repetitions N` | run each native benchmark `N` times, 1 to 100, and report the median |
+| `--native-only`, `--haskell-only` | leave the other half out |
+
+A result set is a directory with one Google Benchmark JSON file for each native program and one Criterion CSV file,
+`haskell.csv`. Two commands read it and start nothing:
+
+```powershell
+go run ./helpers/cmd/develop benchmark --output results/before --repetitions 5
+go run ./helpers/cmd/develop benchmark-report results/before --markdown before.md
+go run ./helpers/cmd/develop benchmark-compare results/before results/after --threshold 10
+```
+
+`benchmark-report` prints a result set as a Markdown table. `benchmark-compare` sets a candidate against a baseline: a
+benchmark is slower or faster when its time moved by more than the threshold, in percent (10 unless given), and
+unchanged inside it. The command fails when a benchmark is slower; `--informational` reports without failing. A
+benchmark only one of the two sets has is listed as added or removed and never fails the comparison. With repetitions
+the median is compared, which one slow run does not move.
+
+Two result sets are comparable only when they were made on the same machine under the same load. Times from different
+machines measure the machines.
+
 Individual binaries and Criterion selectors remain available for focused investigations:
 
 ```powershell

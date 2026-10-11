@@ -7,8 +7,9 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/spf13/cobra"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -21,37 +22,48 @@ const examplesDirectoryName = "Examples"
 var comparativeSourceExtensions = []string{".vxs", ".cs", ".cpp", ".java", ".rs"}
 
 func main() {
-	root := flag.String("Root", ".", "repository root containing Examples/ and Examples/README.md")
-	help := flag.Bool("Help", false, "print usage information")
-	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), `Verify the comparative Visual X# example catalogue.
-
-Usage:
-  go run ./helpers/cmd/verify-examples [-Root repository-path]
-  go run ./helpers/cmd/verify-examples -Help
-
-The check compares the program names in Examples/README.md with the immediate
-program directories under Examples/ and requires matching .vxs, .cs, .cpp,
-.java, and .rs source files in every program directory.`)
-	}
-	flag.Parse()
-	if *help {
-		flag.Usage()
-		return
-	}
-	if flag.NArg() != 0 {
-		flag.Usage()
-		fmt.Fprintln(os.Stderr, "unexpected positional arguments")
-		os.Exit(2)
-	}
-
-	count, err := verifyExamples(*root)
-	if err != nil {
+	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Verified %d comparative programs across %d source languages.\n",
-		count, len(comparativeSourceExtensions))
+}
+
+// newCommand owns the command line. Parsing is separate from the check so
+// that an invalid invocation reads nothing.
+func newCommand(output, errorOutput io.Writer) *cobra.Command {
+	root := "."
+	command := &cobra.Command{
+		Use:   "verify-examples",
+		Short: "Verify the comparative Visual X# example catalogue.",
+		Long: `Verify the comparative Visual X# example catalogue.
+
+The check compares the program names in Examples/README.md with the immediate
+program directories under Examples/ and requires matching .vxs, .cs, .cpp,
+.java, and .rs source files in every program directory.`,
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			count, err := verifyExamples(root)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Verified %d comparative programs across %d source languages.\n",
+				count, len(comparativeSourceExtensions))
+			return nil
+		},
+	}
+	command.Flags().StringVar(&root, "root", ".", "repository root containing Examples/ and Examples/README.md")
+	command.SetOut(output)
+	command.SetErr(errorOutput)
+	command.CompletionOptions.DisableDefaultCmd = true
+	return command
+}
+
+func run(arguments []string, output, errorOutput io.Writer) error {
+	command := newCommand(output, errorOutput)
+	command.SetArgs(arguments)
+	return command.Execute()
 }
 
 // verifyExamples reports all catalogue and filesystem mismatches in one pass

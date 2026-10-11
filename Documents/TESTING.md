@@ -47,8 +47,8 @@ go -C helpers test ./...
 go -C helpers vet ./...
 go -C helpers test ./internal/development
 go run ./helpers/cmd/repo-info --json
-go run ./helpers/cmd/verify-examples -Root .
-go run ./helpers/cmd/verify-benchmarks -Root .
+go run ./helpers/cmd/verify-examples --root .
+go run ./helpers/cmd/verify-benchmarks --root .
 ```
 
 For module-only validation without the workspace, set `GOWORK=off` and run

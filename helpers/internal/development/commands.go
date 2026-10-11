@@ -61,7 +61,7 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 		if err := requireBuildTools(currentHost, runner); err != nil {
 			return err
 		}
-		return runBenchmarks(repository, currentHost, runner, bazelArguments)
+		return runBenchmarks(repository, currentHost, runner, bazelArguments, benchmarkOptions{})
 	case "bundle":
 		if len(commandArguments) != 0 {
 			return errors.New("bundle accepts Bazel options only after --")
@@ -87,8 +87,8 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 		}
 		return runThreadFuzzCampaign(repository, currentHost, runner)
 	case "fuzz-stress":
-		if len(bazelArguments) != 0 || (len(commandArguments) != 0 && !(len(commandArguments) == 1 && strings.EqualFold(commandArguments[0], "--asan"))) {
-			return errors.New("fuzz-stress accepts only the optional --asan flag")
+		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
+			return errors.New("fuzz-stress does not accept arguments")
 		}
 		if err := requireBuildTools(currentHost, runner); err != nil {
 			return err
@@ -120,31 +120,27 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 		return runTidy(repository, runner, bazelArguments)
 	case "sanitize":
 		if len(commandArguments) != 1 {
-			return errors.New("sanitize requires exactly one kind: address, undefined, address-undefined, or thread")
+			return errors.New("sanitize requires exactly one kind: address, undefined, address-undefined, thread, or all")
+		}
+		kinds := []string{commandArguments[0]}
+		if strings.EqualFold(commandArguments[0], allSanitizers) {
+			kinds = comprehensiveSanitizers(currentHost)
+		} else if _, err := selectSanitizer(currentHost, commandArguments[0]); err != nil {
+			// A kind this host does not have is refused before a tool is
+			// looked for or a build is started.
+			return err
 		}
 		if err := requireBuildTools(currentHost, runner); err != nil {
 			return err
 		}
-		selected, err := selectSanitizer(currentHost, commandArguments[0])
-		if err != nil {
-			return err
+		return runSanitizerSuites(kinds, os.Stdout, func(kind string) error {
+			return runSanitizerSuite(repository, currentHost, runner, kind, bazelArguments)
+		})
+	case "sanitizers":
+		if len(commandArguments) > 1 || len(bazelArguments) != 0 {
+			return errors.New("sanitizers accepts only the optional --json flag")
 		}
-		fmt.Printf("Sanitizer: %s\nHost: %s\n\n", selected.name, currentHost.name)
-		if err := buildTargets(repository, runner, selected.config, bazelArguments); err != nil {
-			return fmt.Errorf("%s sanitizer build failed: %w", selected.name, err)
-		}
-		selected.environment, err = sanitizerEnvironment(currentHost, selected, runner)
-		if err != nil {
-			return err
-		}
-		if err := verifySanitizerRuntime(repository, currentHost, runner, selected); err != nil {
-			return err
-		}
-		if err := runTests(repository, currentHost, runner, selected.environment); err != nil {
-			return fmt.Errorf("%s sanitizer found a failure: %w", selected.name, err)
-		}
-		fmt.Printf("\n%s sanitizer completed without a reported violation.\n", selected.name)
-		return nil
+		return writeSanitizers(os.Stdout, currentHost, len(commandArguments) == 1 && commandArguments[0] == "--json")
 	case "clean":
 		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
 			return errors.New("clean does not accept arguments")
@@ -161,6 +157,49 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 	default:
 		return fmt.Errorf("unknown command %q; run with help to see the supported workflow", arguments[0])
 	}
+}
+
+// runSanitizerSuite builds the native suites with one sanitizer, proves that
+// its runtime reports a violation, and runs every suite under it.
+func runSanitizerSuite(repository string, currentHost host, runner commandRunner, kind string, bazelArguments []string) error {
+	selected, err := selectSanitizer(currentHost, kind)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Sanitizer: %s\nHost: %s\n\n", selected.name, currentHost.name)
+	if err := buildTargets(repository, runner, selected.config, bazelArguments); err != nil {
+		return fmt.Errorf("%s sanitizer build failed: %w", selected.name, err)
+	}
+	selected.environment, err = sanitizerEnvironment(currentHost, selected, runner)
+	if err != nil {
+		return err
+	}
+	if err := verifySanitizerRuntime(repository, currentHost, runner, selected); err != nil {
+		return err
+	}
+	if err := runTests(repository, currentHost, runner, selected.environment); err != nil {
+		return fmt.Errorf("%s sanitizer found a failure: %w", selected.name, err)
+	}
+	fmt.Printf("\n%s sanitizer completed without a reported violation.\n", selected.name)
+	return nil
+}
+
+// executeBenchmark runs the benchmarks with the options of the command line.
+// The options were validated by the command; this finds the checkout and the
+// tools and hands on.
+func executeBenchmark(options benchmarkOptions, bazelArguments []string, runner commandRunner) error {
+	repository, err := findRepositoryRoot()
+	if err != nil {
+		return err
+	}
+	currentHost, err := detectHost(runner)
+	if err != nil {
+		return err
+	}
+	if err := requireBuildTools(currentHost, runner); err != nil {
+		return err
+	}
+	return runBenchmarks(repository, currentHost, runner, bazelArguments, options)
 }
 
 func isHelp(argument string) bool {

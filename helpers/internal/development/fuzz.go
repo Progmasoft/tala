@@ -78,6 +78,12 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if err != nil {
 		return err
 	}
+	// A selection narrows what is run, not what is built or smoke-tested:
+	// the smoke programs are the precondition of every campaign.
+	targets, haskell, err := selectFuzzTargets(nativeFuzzTargets(), os.Getenv(fuzzTargetsVariable))
+	if err != nil {
+		return err
+	}
 	configuration, err := fuzzConfiguration(currentHost)
 	if err != nil {
 		return err
@@ -107,7 +113,7 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if err := os.Mkdir(artifacts, 0o700); err != nil {
 		return fmt.Errorf("could not create fuzz artifact directory %q: %w", work, err)
 	}
-	for _, target := range nativeFuzzTargets() {
+	for _, target := range targets {
 		stage := target.corpus
 		corpus := filepath.Join(corpusRoot, stage)
 		if err := os.MkdirAll(corpus, 0o700); err != nil {
@@ -157,8 +163,10 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if err := runner.Run(repository, selectedEnvironment, smoke, "-Write-Corpus", wireGenerated); err != nil {
 		return fmt.Errorf("could not export valid wire seeds; preserved %q: %w", work, err)
 	}
-	if err := syncSeedCorpus(wireGenerated, filepath.Join(corpusRoot, "wire")); err != nil {
-		return fmt.Errorf("could not add generated wire seeds to the persistent corpus: %w", err)
+	if fuzzTargetSelected(targets, "wire") {
+		if err := syncSeedCorpus(wireGenerated, filepath.Join(corpusRoot, "wire")); err != nil {
+			return fmt.Errorf("could not add generated wire seeds to the persistent corpus: %w", err)
+		}
 	}
 	smokeSource := filepath.Join(repository, "bazel-bin", "Compiler", "Fuzzing", "source_fuzz_smoke"+currentHost.executable)
 	if err := copyFile(frontendLibrary, filepath.Join(filepath.Dir(smokeSource), filepath.Base(frontendLibrary)), 0o755); err != nil {
@@ -205,11 +213,13 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if err != nil {
 		return err
 	}
-	if err := campaign.runAll(runner, nativeFuzzTargets(), frontendLibrary, jobs); err != nil {
+	if err := campaign.runAll(runner, targets, frontendLibrary, jobs); err != nil {
 		return err
 	}
-	if err := runHaskellFuzz(repository, corpusRoot, artifacts, duration, jobs, runner); err != nil {
-		return fmt.Errorf("Haskell feedback campaign failed; preserved %q: %w", work, err)
+	if haskell {
+		if err := runHaskellFuzz(repository, corpusRoot, artifacts, duration, jobs, runner); err != nil {
+			return fmt.Errorf("Haskell feedback campaign failed; preserved %q: %w", work, err)
+		}
 	}
 	if os.Getenv("CI") == "true" {
 		fmt.Printf("Campaign logs and coverage limits preserved in %s.\n", work)
@@ -227,8 +237,34 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if err := removeSuccessfulFuzzWork(temporaryRoot, work); err != nil {
 		return err
 	}
+	if len(targets) != len(nativeFuzzTargets()) || !haskell {
+		fmt.Printf("The selected fuzz targets completed without a reported failure: %s.\n",
+			strings.Join(selectedFuzzTargetNames(targets, haskell), ", "))
+		return nil
+	}
 	fmt.Println("All coverage-guided compiler fuzz targets completed without a reported failure.")
 	return nil
+}
+
+// fuzzTargetSelected reports whether the target of the given corpus runs.
+func fuzzTargetSelected(targets []fuzzTarget, corpus string) bool {
+	for _, target := range targets {
+		if target.corpus == corpus {
+			return true
+		}
+	}
+	return false
+}
+
+func selectedFuzzTargetNames(targets []fuzzTarget, haskell bool) []string {
+	names := make([]string, 0, len(targets)+1)
+	for _, target := range targets {
+		names = append(names, target.corpus)
+	}
+	if haskell {
+		names = append(names, haskellFuzzTarget)
+	}
+	return names
 }
 
 // fuzzCampaign carries the settings shared by every libFuzzer target of one

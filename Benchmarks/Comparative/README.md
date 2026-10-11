@@ -18,7 +18,7 @@ Google Benchmark and Haskell Criterion suites. Keep compiler flags, CPU power st
 
 ## Build commands
 
-Run from the repository root after the toolchains are installed. On Windows,
+Run from the repository root after the toolchains are installed. On Windows, macOS, Ubuntu 26.04 LTS and Fedora 43,
 `go run ./helpers/cmd/optional-packages install` installs the .NET 10 SDK and GNU Fortran, and adds `rustc`/`rust-std` to
 the active rustup toolchain when one is already installed. It can install the rustup manager with no default toolchain,
 but it never installs or selects a Rust toolchain. `check` reports whether those tools and components are available.

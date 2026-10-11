@@ -51,11 +51,14 @@ go run ./helpers/cmd/verify-benchmarks
 go run ./helpers/cmd/verify-docs
 ```
 
-`develop`, `repo-info`, and `verify-helpers` use Cobra command definitions,
-including generated `--help` / `-h`, typed flags, and argument validation.
-They do not use the compiler CLI's `-Help` spelling.
-The migrated installation and inventory tools retain their existing action
-contracts; use their own help to inspect supported options.
+Every command of this module defines its command line with Cobra: generated
+`--help` / `-h`, typed flags, and argument validation. None uses the compiler
+CLI's `-Help` spelling, and none parses `os.Args` itself. `verify-benchmarks`
+and `verify-examples` take the checkout as `--root`; their earlier `-Root` and
+`-Help` are rejected. `prebuild` and `optional-packages` take `check` or
+`install` as a command, spelled in lower case, and print their help when no
+command is given. An invocation a command does not understand fails before
+it reads, probes or installs anything; each command has tests that hold that.
 
 Compiler options, Visual.XSharp.kts evaluation, and user project configuration
 are not parsed by these developer tools.
