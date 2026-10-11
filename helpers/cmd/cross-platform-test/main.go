@@ -22,7 +22,11 @@ import (
 
 const usage = `Run the repository's checks for platforms other than this host's.
 
-Each target is a container Podman starts from an image this tool builds. The
+There are two ways. "ci" starts the compiler workflows for the current
+branch: real Windows, macOS and Linux machines, nothing on this one. "run"
+uses containers on this machine and reaches the Linux hosts only.
+
+For "run", each target is a container Podman starts from an image this tool builds. The
 sources are sent to the container as Git would commit them, tracked files and
 new files that are not ignored, so a run never writes into the working tree.
 Downloads and build output are kept in a volume for each target, which is
@@ -150,6 +154,52 @@ func newCommand(engine crossplatform.Engine, hostOS string, output, errorOutput 
 	run.Flags().StringVar(&memory, "memory", "3g", "how much memory a container may use")
 	run.Flags().BoolVar(&rebuild, "rebuild-image", false, "build the image again without its cache")
 
+	var (
+		hostedNames []string
+		watch       bool
+		hostedJSON  bool
+	)
+	ci := &cobra.Command{
+		Use:   "ci",
+		Short: "Start the compiler workflows for the current branch, on real Windows, macOS and Linux machines.",
+		Long: `Start the compiler workflows for the current branch.
+
+The workflows build and test on Windows, macOS 15 and 26, Ubuntu 26.04 and
+Fedora 43, on machines GitHub runs. They start by themselves for a pull
+request; this starts them for a branch that has none yet. Nothing runs on
+this machine and nothing is stored on it. The branch has to be pushed and the
+working tree clean, because a workflow tests what the remote has.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			hosted := crossplatform.HostedTargets()
+			if hostedJSON {
+				encoder := json.NewEncoder(output)
+				encoder.SetIndent("", "  ")
+				return encoder.Encode(hosted)
+			}
+			workflows, err := crossplatform.HostedWorkflows(hosted, hostedNames)
+			if err != nil {
+				return err
+			}
+			directory, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			checkout, err := repository.FindRoot(directory)
+			if err != nil {
+				return err
+			}
+			branch, err := crossplatform.PushedBranch(engine, checkout)
+			if err != nil {
+				return err
+			}
+			return crossplatform.Dispatch(engine, checkout, workflows, branch, watch, output, errorOutput)
+		},
+	}
+	ci.Flags().StringSliceVar(&hostedNames, "target", nil, "windows, macos-15, macos-26, ubuntu-26.04 or fedora-43; repeat or separate with commas (default: all)")
+	ci.Flags().BoolVar(&watch, "watch", false, "follow the runs to their end and fail if one fails")
+	ci.Flags().BoolVar(&hostedJSON, "list", false, "print the targets the workflows cover as JSON and start nothing")
+
 	usageCommand := &cobra.Command{
 		Use:   "usage",
 		Short: "Show the images and caches this tool keeps, and the size of Podman's storage.",
@@ -172,7 +222,7 @@ func newCommand(engine crossplatform.Engine, hostOS string, output, errorOutput 
 		},
 	}
 
-	root.AddCommand(targets, suites, run, usageCommand, clean)
+	root.AddCommand(ci, targets, suites, run, usageCommand, clean)
 	return root
 }
 

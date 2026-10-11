@@ -42,7 +42,7 @@ func execute(t *testing.T, host string, arguments ...string) (string, error) {
 }
 
 func TestHelpAndListingsStartNothing(t *testing.T) {
-	for _, arguments := range [][]string{{}, {"--help"}, {"run", "--help"}, {"targets"}, {"suites"}} {
+	for _, arguments := range [][]string{{}, {"--help"}, {"run", "--help"}, {"ci", "--help"}, {"ci", "--list"}, {"targets"}, {"suites"}} {
 		output, err := execute(t, "windows", arguments...)
 		if err != nil || output == "" {
 			t.Fatalf("%v: %q, %v", arguments, output, err)
@@ -76,6 +76,9 @@ func TestAnInvocationThatIsNotUnderstoodStartsNothing(t *testing.T) {
 		{"run", "--suite", "helpers", "--command", "true"},
 		{"run", "--command", "  "},
 		{"run", "--jobs", "0"},
+		{"ci", "--target", "solaris"},
+		{"ci", "--target", " , "},
+		{"ci", "extra"},
 		{"run", "--cpus", "0"},
 		{"run", "--memory", "lots"},
 		{"run", "--memory", "0g"},

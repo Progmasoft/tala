@@ -53,6 +53,27 @@ go run ./helpers/cmd/verify-benchmarks --root .
 
 ## Other platforms from one machine
 
+`cross-platform-test` answers one question before a pull request exists: does this branch work on the platforms the
+developer is not sitting at. It has two ways of answering.
+
+### On the workflows' machines
+
+```powershell
+go run ./helpers/cmd/cross-platform-test ci
+go run ./helpers/cmd/cross-platform-test ci --target windows,macos-26 --watch
+go run ./helpers/cmd/cross-platform-test ci --list
+```
+
+`ci` starts the compiler workflows for the current branch: Windows, macOS 15 and 26, Ubuntu 26.04 and Fedora 43, on
+machines GitHub runs. These are real Windows and macOS machines, which no container gives, and nothing runs or is
+stored on the developer's. The workflows start by themselves for a pull request; `ci` starts them for a branch that
+has none. It needs the GitHub command line, signed in. The branch has to be pushed and the working tree clean, and
+`ci` refuses otherwise, because a workflow tests what the remote has and not what is on the disk. `--target` names
+platforms; several share a workflow, so asking for one runs the others of that workflow as well. `--watch` follows the
+runs to their end and fails if one fails.
+
+### In containers on this machine
+
 ```powershell
 go run ./helpers/cmd/cross-platform-test targets
 go run ./helpers/cmd/cross-platform-test suites
@@ -61,8 +82,8 @@ go run ./helpers/cmd/cross-platform-test run --target fedora-43 --suite native -
 go run ./helpers/cmd/cross-platform-test run --target ubuntu-26.04 --command "go run ./helpers/cmd/develop doctor"
 ```
 
-`cross-platform-test` runs the repository's own commands for a platform other than the host's, in a container Podman
-starts. `prebuild` installs Podman; on Windows and macOS it also needs its Linux machine, `podman machine init` once
+`run` executes the repository's own commands in a container Podman starts, without a push and without a network
+round trip, and reaches the Linux hosts only. `prebuild` installs Podman; on Windows and macOS it also needs its Linux machine, `podman machine init` once
 and `podman machine start`.
 
 | Target | From | What runs |
