@@ -27,7 +27,7 @@ The expected values are written by hand.
 module LazyEvaluationTests (lazyEvaluationTests) where
 
 import CoreInterpreter
-import Data.List (isInfixOf)
+import Data.List (intercalate, isInfixOf)
 import Visual.XSharp.Compiler
 import Visual.XSharp.Core
 import Visual.XSharp.Core.CorePrep.Verifier
@@ -166,6 +166,17 @@ evaluationCases =
     , -- A value that needs another value twice computes it once, also
       -- through a long chain of such values.
       (sharedChain 40, [((6, 0), 7), ((6, 3), 1)])
+    , -- The operands of an operator are evaluated whenever it is, so a value
+      -- by need that one of them reads twice is computed once, ahead of the
+      -- whole expression, however deep in the operands the reads are.
+      ("int x = left / right; int y = (x + 1) * (x + 2) - x; if (right > 0) { return y; } return 7;", [((6, 0), 7), ((6, 3), 10)])
+    , ("int x = left / right; int y = -(x - -x) + left; if (right > 0) { return y; } return 7;", [((6, 0), 7), ((6, 3), 2)])
+    , -- Reads that an operand may skip are still reads of that operand alone.
+      ("int x = left / right; int y = 1 + (right > 0 ? x + x : 0) + left; return right > 1 ? y : 9;", [((6, 0), 9), ((6, 1), 9), ((6, 3), 11)])
+    , ("int x = left / right; int y = (right > 0 && x + x > 3 ? 1 : 0) + left; return y;", [((6, 0), 6), ((6, 2), 7), ((6, 6), 6)])
+    , -- A value by need whose expression is a very long chain of operators
+      -- is lowered once for each operator, not once for each pair of them.
+      (operatorChain 1500, [((6, 0), 7), ((6, 3), 18002)])
     , ("int x = left / right; int y = right > 0 ? x / 1 + x / 2 : 0; return right > 1 ? y : 9;", [((6, 0), 9), ((6, 1), 9), ((6, 3), 3)])
     , -- A value by need is computed where a loop header or a guard reads it.
         ( "int x = left / right; int t = 0; for (int i = 0; right > 0 && i < 3; i += x) { t += 1; } return t;"
@@ -229,6 +240,15 @@ sharedChain links =
         ++ "if (right > 0) { return z"
         ++ show links
         ++ "; } return 7;"
+
+{- | A value by need that adds the given number of terms, a division and
+the same number of terms again, and is read on one path only.
+-}
+operatorChain :: Int -> String
+operatorChain terms =
+    "int x = "
+        ++ intercalate " + " (replicate terms "left" ++ ["left / right"] ++ replicate terms "left")
+        ++ "; return match (right) { 0 -> 7, _ -> x };"
 
 -- | The size of the unoptimized Core of @Evaluate@ for the given body.
 coreSize :: String -> Int
