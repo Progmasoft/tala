@@ -25,8 +25,9 @@
 #        include <mach-o/dyld.h>
 #    endif
 
-// The environment of the process, which the linker driver inherits.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+// The environment of the process, which the linker driver inherits. macOS
+// does not declare it in a header; glibc does.
+// NOLINTNEXTLINE(readability-redundant-declaration)
 extern char **environ;
 #endif
 

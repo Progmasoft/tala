@@ -27,8 +27,9 @@
 #    include <sys/wait.h>
 #    include <unistd.h>
 
-// The environment of the process, which a started program inherits.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+// The environment of the process, which a started program inherits. macOS
+// does not declare it in a header; glibc does.
+// NOLINTNEXTLINE(readability-redundant-declaration)
 extern char **environ;
 #endif
 
