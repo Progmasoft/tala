@@ -41,7 +41,11 @@ go run ./helpers/cmd/optional-packages install
 go run ./helpers/cmd/optional-packages check
 ```
 
-Its Windows/macOS package-manager workflow includes just, ripgrep (`rg`)
+It supports the hosts `prebuild` supports: Windows 10/11 with WinGet, macOS
+15/26 with Homebrew, Ubuntu 26.04 LTS with apt, and Fedora 43 with dnf. On
+Linux it runs the package manager through `sudo` unless it is root, and on
+Ubuntu it refreshes the package lists once, before the first package it
+installs. Its package-manager workflow includes just, ripgrep (`rg`)
 and jq alongside the existing optional benchmark toolchains. Installed
 packages are skipped; opening a new terminal may be necessary after an
 installation changes PATH. A package being installed and its executable

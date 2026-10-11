@@ -221,7 +221,28 @@ func stageFrontendForBuildOutputs(repository string, frontendLibrary string) err
 	return nil
 }
 
-func runBenchmarks(repository string, currentHost host, runner commandRunner, bazelArguments []string) error {
+func runBenchmarks(repository string, currentHost host, runner commandRunner, bazelArguments []string, options benchmarkOptions) error {
+	results, err := options.resultDirectory()
+	if err != nil {
+		return err
+	}
+	if !options.haskellOnly {
+		if err := runNativeBenchmarks(repository, currentHost, runner, bazelArguments, options, results); err != nil {
+			return err
+		}
+	}
+	if !options.nativeOnly {
+		if err := runHaskellBenchmarks(repository, runner, options, results); err != nil {
+			return err
+		}
+	}
+	if results != "" {
+		fmt.Printf("\nBenchmark results written to %s.\n", results)
+	}
+	return nil
+}
+
+func runNativeBenchmarks(repository string, currentHost host, runner commandRunner, bazelArguments []string, options benchmarkOptions, results string) error {
 	bazel, err := findBazel(runner)
 	if err != nil {
 		return err
@@ -238,11 +259,14 @@ func runBenchmarks(repository string, currentHost host, runner commandRunner, ba
 	for index, program := range nativeBenchmarkPrograms {
 		path := filepath.Join(repository, "bazel-bin", filepath.FromSlash(program)) + currentHost.executable
 		fmt.Printf("\n[%d/%d] %s\n", index+1, len(nativeBenchmarkPrograms), filepath.Base(program))
-		if err := runner.Run(repository, nil, path); err != nil {
+		if err := runner.Run(repository, nil, path, options.nativeArguments(results, filepath.Base(program))...); err != nil {
 			return fmt.Errorf("native benchmark %s failed: %w", filepath.Base(program), err)
 		}
 	}
+	return nil
+}
 
+func runHaskellBenchmarks(repository string, runner commandRunner, options benchmarkOptions, results string) error {
 	cabal, err := runner.LookPath("cabal")
 	if err != nil {
 		return errors.New("required tool \"cabal\" was not found; install GHCup's Cabal tool to run Haskell benchmarks")
@@ -250,14 +274,15 @@ func runBenchmarks(repository string, currentHost host, runner commandRunner, ba
 	fmt.Println("\nRunning Criterion Core and CorePrep benchmarks...")
 	compilerDirectory := filepath.Join(repository, "Compiler")
 	benchmarkEnvironment := criterionEnvironment()
-	if err := runner.Run(
-		compilerDirectory,
-		benchmarkEnvironment,
-		cabal,
-		"bench",
-		"visual-xsharp-core:core-benches",
-		"--enable-benchmarks",
-	); err != nil {
+	if results != "" {
+		// Criterion appends to a report that is already there; a result set
+		// holds one run.
+		if err := os.Remove(filepath.Join(results, haskellBenchmarkReport)); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("cannot replace the earlier Haskell benchmark report: %w", err)
+		}
+	}
+	arguments := append([]string{"bench", "visual-xsharp-core:core-benches", "--enable-benchmarks"}, options.criterionArguments(results)...)
+	if err := runner.Run(compilerDirectory, benchmarkEnvironment, cabal, arguments...); err != nil {
 		return fmt.Errorf("Haskell benchmark run failed: %w", err)
 	}
 	return nil

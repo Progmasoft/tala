@@ -251,8 +251,17 @@ go run ./helpers/cmd/develop sanitize undefined
 go run ./helpers/cmd/develop sanitize thread
 ```
 
-AddressSanitizer is available on Windows, macOS, and Linux. UndefinedBehaviorSanitizer and ThreadSanitizer are exposed on
-macOS and Linux; requesting either on Windows fails before a build and explains the supported alternative. The command rebuilds all
+AddressSanitizer and UndefinedBehaviorSanitizer are available on Windows, macOS, and Linux, alone or combined as
+`address-undefined`. ThreadSanitizer is exposed on macOS and Linux; requesting it on Windows fails before a build and
+explains the supported alternative. `go run ./helpers/cmd/develop sanitizers` lists every kind with the checker and the
+Bazel configuration it selects on this host, or the reason the host does not have it; `--json` writes the list for a
+script.
+
+`go run ./helpers/cmd/develop sanitize all` runs every checker the host has, each once: the combined
+`address-undefined` build, and `thread` where it exists. A kind that fails does not stop the ones after it, because the
+checkers find different defects; the command prints a summary and fails if any kind did.
+
+The command rebuilds all
 native suites with matching compiler and linker instrumentation, sets fail-fast runtime options, identifies the exact suite
 being executed, and returns a nonzero status at the first violation. It accepts `asan`, `ubsan`, and `tsan` as convenient
 aliases.

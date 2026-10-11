@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,16 +24,6 @@ import (
 )
 
 const prebuildUsage = `Visual X# development-host bootstrap
-
-Usage:
-  go run ./helpers/cmd/prebuild check
-  go run ./helpers/cmd/prebuild install
-  go run ./helpers/cmd/prebuild help
-
-Commands:
-  check    Report missing host tools without changing the machine.
-  install  Install missing tools with winget, Homebrew, apt, or dnf.
-  help     Show this help.
 
 Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, and
 Fedora 43 (N-1 as of September 2026). The installed
@@ -204,38 +195,58 @@ func main() {
 	}
 }
 
-func runPrebuild(arguments []string, runner bootstrapRunner) error {
-	if len(arguments) == 0 || (len(arguments) == 1 && isPrebuildHelp(arguments[0])) {
-		fmt.Println(prebuildUsage)
-		return nil
+// newPrebuildCommand owns the command line. Parsing is separate from host
+// detection and installation, so an invalid invocation changes nothing and a
+// request for help works on a host the bootstrap does not support.
+func newPrebuildCommand(runner bootstrapRunner, output, errorOutput io.Writer) *cobra.Command {
+	root := &cobra.Command{
+		Use:           "prebuild",
+		Short:         "Check or install the tools a Visual X# development host needs.",
+		Long:          prebuildUsage,
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          func(cmd *cobra.Command, args []string) error { return cmd.Help() },
 	}
-	if len(arguments) != 1 {
-		return errors.New("prebuild accepts exactly one command: check or install")
-	}
-	host, err := detectBootstrapHost(runtime.GOOS)
-	if err != nil {
-		return err
-	}
-	switch strings.ToLower(arguments[0]) {
-	case "check":
-		return reportBootstrapState(host, runner)
-	case "install":
-		if err := installBootstrapTools(host, runner); err != nil {
-			return err
-		}
-		return reportPostInstallState(host, runner)
-	default:
-		return fmt.Errorf("unknown prebuild command %q; choose check or install", arguments[0])
-	}
+	root.SetOut(output)
+	root.SetErr(errorOutput)
+	root.CompletionOptions.DisableDefaultCmd = true
+	root.AddCommand(
+		&cobra.Command{
+			Use:   "check",
+			Short: "Report missing host tools without changing the machine.",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				host, err := detectBootstrapHost(runtime.GOOS)
+				if err != nil {
+					return err
+				}
+				return reportBootstrapState(host, runner)
+			},
+		},
+		&cobra.Command{
+			Use:   "install",
+			Short: "Install missing tools with winget, Homebrew, apt, or dnf.",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				host, err := detectBootstrapHost(runtime.GOOS)
+				if err != nil {
+					return err
+				}
+				if err := installBootstrapTools(host, runner); err != nil {
+					return err
+				}
+				return reportPostInstallState(host, runner)
+			},
+		},
+	)
+	return root
 }
 
-func isPrebuildHelp(argument string) bool {
-	switch strings.ToLower(argument) {
-	case "help", "-help", "--help", "-h":
-		return true
-	default:
-		return false
-	}
+func runPrebuild(arguments []string, runner bootstrapRunner) error {
+	command := newPrebuildCommand(runner, os.Stdout, os.Stderr)
+	command.SetArgs(arguments)
+	return command.Execute()
 }
 
 func detectBootstrapHost(goos string) (bootstrapHost, error) {

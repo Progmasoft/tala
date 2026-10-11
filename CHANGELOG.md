@@ -5,6 +5,31 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Changelog
 
+## Unreleased
+
+### Verification and tooling
+
+- Every command of `helpers/` defines its command line with Cobra.
+  `verify-benchmarks` and `verify-examples` take the checkout as `--root`;
+  their earlier `-Root` and `-Help` are rejected. `prebuild` and
+  `optional-packages` take `check` or `install` as a command, in lower case,
+  and print their help when no command is given. `verify-docs` rejects
+  arguments it used to ignore. An invocation a command does not understand
+  fails before it reads, probes or installs anything.
+- `develop fuzz`, `fuzz-stress` and `fuzz-thread` take `--seconds`, `--jobs`,
+  `--corpus` and `--target`, each beside the environment variable of the same
+  meaning; `VXS_FUZZ_TARGETS` is new. `develop fuzz-targets` lists the targets
+  and their limits. A selection that names an unknown target is refused before
+  a build.
+- `develop sanitizers` lists what each sanitizer kind is on the host, and
+  `develop sanitize all` runs every checker the host has and reports each.
+- `develop benchmark` takes `--output`, `--filter`, `--repetitions`,
+  `--native-only` and `--haskell-only`. `develop benchmark-report` prints a
+  result set as a table, and `develop benchmark-compare` sets one against
+  another and fails when a benchmark became slower than a threshold.
+- `optional-packages` supports the hosts `prebuild` supports: it now installs
+  on Ubuntu 26.04 LTS with apt and on Fedora 43 with dnf as well.
+
 ## 0.5.1 - 2026-10-10
 
 ### Language

@@ -6,8 +6,9 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/spf13/cobra"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -18,35 +19,46 @@ import (
 const benchmarkDirectoryName = "Benchmarks"
 
 func main() {
-	root := flag.String("Root", ".", "repository root containing Benchmarks/README.md")
-	help := flag.Bool("Help", false, "print usage information")
-	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), `Verify the committed benchmark-results index.
-
-Usage:
-  go run ./helpers/cmd/verify-benchmarks [-Root repository-path]
-  go run ./helpers/cmd/verify-benchmarks -Help
-
-Every root-level benchmark result Markdown file must be linked exactly once from
-Benchmarks/README.md, and every result link must resolve to a report file.`)
-	}
-	flag.Parse()
-	if *help {
-		flag.Usage()
-		return
-	}
-	if flag.NArg() != 0 {
-		flag.Usage()
-		fmt.Fprintln(os.Stderr, "unexpected positional arguments")
-		os.Exit(2)
-	}
-
-	count, err := verifyBenchmarkIndex(*root)
-	if err != nil {
+	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Verified %d benchmark result reports against Benchmarks/README.md.\n", count)
+}
+
+// newCommand owns the command line. Parsing is separate from the check so
+// that an invalid invocation reads nothing.
+func newCommand(output, errorOutput io.Writer) *cobra.Command {
+	root := "."
+	command := &cobra.Command{
+		Use:   "verify-benchmarks",
+		Short: "Verify the committed benchmark-results index.",
+		Long: `Verify the committed benchmark-results index.
+
+Every root-level benchmark result Markdown file must be linked exactly once from
+Benchmarks/README.md, and every result link must resolve to a report file.`,
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			count, err := verifyBenchmarkIndex(root)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Verified %d benchmark result reports against Benchmarks/README.md.\n", count)
+			return nil
+		},
+	}
+	command.Flags().StringVar(&root, "root", ".", "repository root containing Benchmarks/README.md")
+	command.SetOut(output)
+	command.SetErr(errorOutput)
+	command.CompletionOptions.DisableDefaultCmd = true
+	return command
+}
+
+func run(arguments []string, output, errorOutput io.Writer) error {
+	command := newCommand(output, errorOutput)
+	command.SetArgs(arguments)
+	return command.Execute()
 }
 
 // verifyBenchmarkIndex finds stale links as well as unindexed reports so either

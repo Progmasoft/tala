@@ -107,6 +107,30 @@ target; `fuzz-stress` defaults to 900. Set `VXS_FUZZ_SECONDS` to an integer from
 1 through 3600 to override either duration. CI uses 90 seconds per target for
 bounded campaigns and 900 for scheduled stress campaigns.
 
+Each setting of a campaign is also a flag of `fuzz`, `fuzz-stress` and
+`fuzz-thread`, and a flag that is given replaces its variable for that run:
+
+| Flag | Variable | Meaning |
+| --- | --- | --- |
+| `--seconds N` | `VXS_FUZZ_SECONDS` | time budget of each target, 1 to 3600 |
+| `--jobs N` | `VXS_FUZZ_JOBS` | targets to run at once, 1 to 64 |
+| `--corpus DIR` | `VXS_FUZZ_CORPUS` | directory that keeps the corpus between runs |
+| `--target NAME` | `VXS_FUZZ_TARGETS` | run this target only; repeat the flag, or separate names with commas in the variable |
+
+`go run ./helpers/cmd/develop fuzz-targets` lists the targets with the limits
+each runs under, and the names a selection may use: the corpus name of a
+target, its program name, or `haskell` for the Haskell feedback campaign.
+`--json` writes the same list for a script. A selection narrows what is run,
+not what is built or smoke-tested: the smoke programs are the precondition of
+every campaign. A name the inventory does not have, a duration or a job count
+outside its range, and a target without threads given to `fuzz-thread` are
+refused before anything is built.
+
+```powershell
+go run ./helpers/cmd/develop fuzz --target parser --target source --seconds 120
+go run ./helpers/cmd/develop fuzz --target haskell
+```
+
 Targets are independent processes with their own corpus, artifact directory
 and report entry, so the helper can run several at once. Concurrency is not
 free evidence: a campaign is worth the inputs it executes inside its time

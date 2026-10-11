@@ -9,6 +9,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,23 +21,117 @@ import (
 
 const optionalPackagesUsage = `Optional Visual X# developer packages
 
-Usage:
-  go run ./helpers/cmd/optional-packages install
-  go run ./helpers/cmd/optional-packages check
+Supported hosts are those of prebuild: Windows 10/11, macOS 15/26, Ubuntu
+26.04 LTS, and Fedora 43. Windows uses WinGet defaults, macOS uses Homebrew,
+Ubuntu uses apt and Fedora uses dnf. Package managers choose their recommended
+installation scope. Rustup may manage components only for an
+already-installed toolchain; this command never installs a toolchain.`
 
-Commands:
-  install  Install missing .NET 10, GNU Fortran, just, ripgrep, jq, and rustup components.
-  check    Check those tools, including rustc and rust-std on the active toolchain.
+// The hosts this command installs on. They are the hosts prebuild supports:
+// a machine that can be prepared to build the compiler can be given the
+// optional toolchains as well.
+const (
+	platformWindows = "windows"
+	platformMacOS   = "darwin"
+	platformUbuntu  = "ubuntu"
+	platformFedora  = "fedora"
+)
 
-Windows uses WinGet defaults. macOS uses Homebrew. Package managers choose
-their recommended installation scope. Rustup may manage components only for
-an already-installed toolchain; this command never installs a toolchain.`
+const supportedPlatformsText = "Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, and Fedora 43"
+
+// optionalPlatform names the host the way the installers select by. Windows
+// and macOS are their operating system; a Linux host is its distribution,
+// read from the os-release text, and only the releases prebuild supports.
+func optionalPlatform(goos string, release func() (string, error)) (string, error) {
+	switch goos {
+	case "windows":
+		return platformWindows, nil
+	case "darwin":
+		return platformMacOS, nil
+	case "linux":
+		contents, err := release()
+		if err != nil {
+			return "", fmt.Errorf("cannot identify the Linux distribution: %w", err)
+		}
+		fields := make(map[string]string)
+		for _, line := range strings.Split(contents, "\n") {
+			key, value, ok := strings.Cut(strings.TrimSpace(line), "=")
+			if ok {
+				fields[key] = strings.Trim(value, `"`)
+			}
+		}
+		switch {
+		case fields["ID"] == "ubuntu" && fields["VERSION_ID"] == "26.04":
+			return platformUbuntu, nil
+		case fields["ID"] == "fedora" && fields["VERSION_ID"] == "43":
+			return platformFedora, nil
+		}
+		return "", fmt.Errorf("unsupported Linux release %q %q; supported hosts are %s",
+			fields["ID"], fields["VERSION_ID"], supportedPlatformsText)
+	default:
+		return "", unsupportedPlatform(goos)
+	}
+}
+
+func readOSRelease() (string, error) {
+	contents, err := os.ReadFile("/etc/os-release")
+	return string(contents), err
+}
+
+func unsupportedPlatform(platform string) error {
+	return fmt.Errorf("unsupported operating system %q; supported hosts are %s", platform, supportedPlatformsText)
+}
+
+func supportedPlatform(platform string) bool {
+	switch platform {
+	case platformWindows, platformMacOS, platformUbuntu, platformFedora:
+		return true
+	default:
+		return false
+	}
+}
+
+// linuxManager is the package manager of a Linux platform.
+func linuxManager(platform string) string {
+	if platform == platformFedora {
+		return "dnf"
+	}
+	return "apt-get"
+}
+
+// linuxPackage is the distribution's package of an item, or nothing when the
+// item has none there.
+func linuxPackage(item optionalPackage, platform string) string {
+	if platform == platformFedora {
+		return item.dnfPackage
+	}
+	return item.aptPackage
+}
+
+// runLinuxManager runs the distribution's package manager, through sudo when
+// the process is not root. The manager and sudo are looked for first, so a
+// host without them gets a sentence and not a failed command.
+func runLinuxManager(runner packageRunner, platform string, arguments ...string) error {
+	manager := linuxManager(platform)
+	if len(runner.lookPaths(manager)) == 0 {
+		return fmt.Errorf("%s is required to install packages on this host", manager)
+	}
+	if os.Geteuid() == 0 {
+		return runner.run(manager, arguments...)
+	}
+	if len(runner.lookPaths("sudo")) == 0 {
+		return errors.New("sudo is required to install distribution packages as a non-root user")
+	}
+	return runner.run("sudo", append([]string{manager}, arguments...)...)
+}
 
 type optionalPackage struct {
 	name                string
 	executable          string
 	wingetID            string
 	homebrewFormula     string
+	aptPackage          string
+	dnfPackage          string
 	versionArgs         []string
 	versionPattern      *regexp.Regexp
 	versionNote         string
@@ -48,6 +144,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "Microsoft .NET 10 SDK", executable: "dotnet",
 		wingetID: "Microsoft.DotNet.SDK.10", homebrewFormula: "dotnet@10",
+		aptPackage: "dotnet-sdk-10.0", dnfPackage: "dotnet-sdk-10.0",
 		versionArgs:    []string{"--list-sdks"},
 		versionPattern: regexp.MustCompile(`(?m)^10\.[0-9]+\.[0-9]+`),
 		versionNote:    "SDK major version 10",
@@ -56,13 +153,15 @@ var optionalPackages = []optionalPackage{
 		name: "GNU Fortran", executable: "gfortran",
 		wingetID:        "BrechtSanders.WinLibs.POSIX.UCRT",
 		homebrewFormula: "gcc",
-		versionArgs:     []string{"--version"},
-		versionPattern:  regexp.MustCompile(`(?i)GNU Fortran.*(14\.[1-9]|14\.[1-9][0-9]+|1[5-9]\.[0-9]+|[2-9][0-9]\.[0-9]+)`),
-		versionNote:     "GNU Fortran 14.1+ with Fortran 2023 mode",
+		aptPackage:      "gfortran", dnfPackage: "gcc-gfortran",
+		versionArgs:    []string{"--version"},
+		versionPattern: regexp.MustCompile(`(?i)GNU Fortran.*(14\.[1-9]|14\.[1-9][0-9]+|1[5-9]\.[0-9]+|[2-9][0-9]\.[0-9]+)`),
+		versionNote:    "GNU Fortran 14.1+ with Fortran 2023 mode",
 	},
 	{
 		name: "just", executable: "just",
 		wingetID: "Casey.Just", homebrewFormula: "just",
+		aptPackage: "just", dnfPackage: "just",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^just\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:    "just recipe runner",
@@ -70,6 +169,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "ripgrep", executable: "rg",
 		wingetID: "BurntSushi.ripgrep.MSVC", homebrewFormula: "ripgrep",
+		aptPackage: "ripgrep", dnfPackage: "ripgrep",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^ripgrep\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:    "ripgrep search tool",
@@ -77,6 +177,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "jq", executable: "jq",
 		wingetID: "jqlang.jq", homebrewFormula: "jq",
+		aptPackage: "jq", dnfPackage: "jq",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^jq-[0-9]+\.[0-9]+(?:\.[0-9]+)?`),
 		versionNote:    "jq JSON processor",
@@ -84,6 +185,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "rustup, rustc, and rust-std", executable: "rustup",
 		wingetID: "Rustlang.Rustup", homebrewFormula: "rustup",
+		aptPackage: "rustup", dnfPackage: "rustup",
 		versionArgs:         []string{"--version"},
 		versionPattern:      regexp.MustCompile(`(?i)^rustup\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:         "rustup manager with rustc and host rust-std installed on the active toolchain",
@@ -183,24 +285,42 @@ func main() {
 	}
 }
 
-func runOptionalPackages(args []string, runner packageRunner) error {
-	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, optionalPackagesUsage)
-		return errors.New("expected exactly one command: install or check")
+// newOptionalPackagesCommand owns the command line. Parsing is separate from
+// the package work, so an invalid invocation installs and probes nothing.
+func newOptionalPackagesCommand(runner packageRunner, output, errorOutput io.Writer) *cobra.Command {
+	root := &cobra.Command{
+		Use:           "optional-packages",
+		Short:         "Check or install the optional Visual X# developer packages.",
+		Long:          optionalPackagesUsage,
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          func(cmd *cobra.Command, args []string) error { return cmd.Help() },
 	}
+	root.SetOut(output)
+	root.SetErr(errorOutput)
+	root.CompletionOptions.DisableDefaultCmd = true
+	root.AddCommand(
+		&cobra.Command{
+			Use:   "install",
+			Short: "Install missing .NET 10, GNU Fortran, just, ripgrep, jq, and rustup components.",
+			Args:  cobra.NoArgs,
+			RunE:  func(cmd *cobra.Command, args []string) error { return installOptionalPackages(runner) },
+		},
+		&cobra.Command{
+			Use:   "check",
+			Short: "Check those tools, including rustc and rust-std on the active toolchain.",
+			Args:  cobra.NoArgs,
+			RunE:  func(cmd *cobra.Command, args []string) error { return checkOptionalPackages(runner) },
+		},
+	)
+	return root
+}
 
-	switch args[0] {
-	case "help", "-Help", "--help":
-		fmt.Println(optionalPackagesUsage)
-		return nil
-	case "check":
-		return checkOptionalPackages(runner)
-	case "install":
-		return installOptionalPackages(runner)
-	default:
-		fmt.Fprintln(os.Stderr, optionalPackagesUsage)
-		return fmt.Errorf("unknown command %q", args[0])
-	}
+func runOptionalPackages(args []string, runner packageRunner) error {
+	command := newOptionalPackagesCommand(runner, os.Stdout, os.Stderr)
+	command.SetArgs(args)
+	return command.Execute()
 }
 
 func checkOptionalPackages(runner packageRunner) error {
@@ -277,15 +397,33 @@ func firstMatchingLine(output string, pattern *regexp.Regexp) string {
 }
 
 func installOptionalPackages(runner packageRunner) error {
-	return installOptionalPackagesForOS(runner, runtime.GOOS)
+	platform, err := optionalPlatform(runtime.GOOS, readOSRelease)
+	if err != nil {
+		return err
+	}
+	return installOptionalPackagesForOS(runner, platform)
 }
 
 // installOptionalPackagesForOS keeps platform selection explicit so the
-// package-manager workflow can be verified on every CI host without installing
-// software or pretending that Linux has a Windows/macOS installer.
+// package-manager workflow of every supported host can be verified on any of
+// them without installing software.
 func installOptionalPackagesForOS(runner packageRunner, goos string) error {
-	if goos != "windows" && goos != "darwin" {
-		return fmt.Errorf("unsupported operating system %q; supported hosts are Windows and macOS", goos)
+	if !supportedPlatform(goos) {
+		return unsupportedPlatform(goos)
+	}
+
+	// apt installs from the package lists it has; they are refreshed once,
+	// before the first package that is actually installed.
+	listsRefreshed := goos != platformUbuntu
+	refreshLists := func() error {
+		if listsRefreshed {
+			return nil
+		}
+		listsRefreshed = true
+		if err := runLinuxManager(runner, goos, "update"); err != nil {
+			return fmt.Errorf("cannot refresh the apt package lists: %w", err)
+		}
+		return nil
 	}
 
 	var failures []string
@@ -293,6 +431,9 @@ func installOptionalPackagesForOS(runner packageRunner, goos string) error {
 		if _, _, ready := findReadyTool(runner, item); ready {
 			fmt.Printf("SKIP     %s already available\n", item.name)
 			continue
+		}
+		if err := refreshLists(); err != nil {
+			return err
 		}
 		if len(item.requiredComponents) != 0 {
 			if err := installRustComponentsForOS(runner, item, goos); err != nil {
@@ -337,18 +478,36 @@ func packageAlreadyInstalled(runner packageRunner, item optionalPackage, goos st
 		}
 		_, err := runner.output("brew", arguments...)
 		return err == nil
+	case platformUbuntu:
+		name := linuxPackage(item, goos)
+		if name == "" || len(runner.lookPaths("dpkg-query")) == 0 {
+			return false
+		}
+		status, err := runner.output("dpkg-query", "--show", "--showformat=${Status}", name)
+		return err == nil && strings.Contains(status, "install ok installed")
+	case platformFedora:
+		name := linuxPackage(item, goos)
+		if name == "" || len(runner.lookPaths("rpm")) == 0 {
+			return false
+		}
+		_, err := runner.output("rpm", "--query", name)
+		return err == nil
 	default:
 		return false
 	}
 }
 
 func installRustComponents(runner packageRunner, item optionalPackage) error {
-	return installRustComponentsForOS(runner, item, runtime.GOOS)
+	platform, err := optionalPlatform(runtime.GOOS, readOSRelease)
+	if err != nil {
+		return err
+	}
+	return installRustComponentsForOS(runner, item, platform)
 }
 
 func installRustComponentsForOS(runner packageRunner, item optionalPackage, goos string) error {
-	if goos != "windows" && goos != "darwin" {
-		return fmt.Errorf("unsupported operating system %q; supported hosts are Windows and macOS", goos)
+	if !supportedPlatform(goos) {
+		return unsupportedPlatform(goos)
 	}
 	paths := runner.lookPaths("rustup")
 	if len(paths) == 0 {
@@ -372,9 +531,27 @@ func installRustComponentsForOS(runner packageRunner, item optionalPackage, goos
 				return fmt.Errorf("cannot install the rustup manager: %w", err)
 			}
 		} else {
-			return fmt.Errorf("unsupported operating system %q; supported hosts are Windows and macOS", goos)
+			if err := runLinuxManager(runner, goos, "install", "-y", linuxPackage(item, goos)); err != nil {
+				return fmt.Errorf("cannot install the rustup manager: %w", err)
+			}
+			// Some distributions package the installer of rustup and not
+			// rustup itself. The installer is told to select no toolchain,
+			// like the Windows one, and to leave the shell profile alone.
+			if len(runner.lookPaths("rustup")) == 0 && len(runner.lookPaths("rustup-init")) != 0 {
+				if err := runner.run("rustup-init", rustupInitArguments()...); err != nil {
+					return fmt.Errorf("cannot set up rustup without selecting a toolchain: %w", err)
+				}
+			}
 		}
 		paths = runner.lookPaths("rustup")
+		if len(paths) == 0 && (goos == platformUbuntu || goos == platformFedora) {
+			if home, err := os.UserHomeDir(); err == nil {
+				candidate := filepath.Join(home, ".cargo", "bin", "rustup")
+				if information, statErr := os.Stat(candidate); statErr == nil && !information.IsDir() {
+					paths = append(paths, candidate)
+				}
+			}
+		}
 		if len(paths) == 0 && goos == "windows" {
 			if home, err := os.UserHomeDir(); err == nil {
 				candidate := filepath.Join(home, ".cargo", "bin", "rustup.exe")
@@ -402,8 +579,18 @@ func rustupManagerWingetArguments(packageID string) []string {
 	}
 }
 
+// rustupInitArguments set rustup up without a toolchain and without editing
+// the shell profile of the user.
+func rustupInitArguments() []string {
+	return []string{"-y", "--default-toolchain", "none", "--no-modify-path"}
+}
+
 func installOne(runner packageRunner, item optionalPackage) error {
-	return installOneForOS(runner, item, runtime.GOOS)
+	platform, err := optionalPlatform(runtime.GOOS, readOSRelease)
+	if err != nil {
+		return err
+	}
+	return installOneForOS(runner, item, platform)
 }
 
 func installOneForOS(runner packageRunner, item optionalPackage, goos string) error {
@@ -417,8 +604,14 @@ func installOneForOS(runner packageRunner, item optionalPackage, goos string) er
 			"--accept-package-agreements",
 		}
 		return runner.run("winget", args...)
+	} else if goos == platformUbuntu || goos == platformFedora {
+		name := linuxPackage(item, goos)
+		if name == "" {
+			return fmt.Errorf("no %s package is defined for %s", item.name, goos)
+		}
+		return runLinuxManager(runner, goos, "install", "-y", name)
 	} else if goos != "darwin" {
-		return fmt.Errorf("unsupported operating system %q; supported hosts are Windows and macOS", goos)
+		return unsupportedPlatform(goos)
 	}
 	if len(runner.lookPaths("brew")) == 0 {
 		return errors.New("Homebrew is required on macOS; install it for your user, then retry")
