@@ -4,9 +4,19 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "llvm_backend",
-    srcs = ["Artifact.cpp", "Codegen.cpp", "JitSession.cpp", "Verifier.cpp"],
-    textual_hdrs = [
-        "CodegenOperations.inc",
+    srcs = [
+        "Artifact.cpp",
+        "Codegen.cpp",
+        "Emission.cpp",
+        "Emission.hpp",
+        "Generator.cpp",
+        "Generator.hpp",
+        "GeneratorArithmetic.cpp",
+        "GeneratorInstructions.cpp",
+        "GeneratorObjects.cpp",
+        "GeneratorValues.cpp",
+        "JitSession.cpp",
+        "Verifier.cpp",
     ],
     deps = [
         "//Compiler/Codegen/Xmm:xmm",
