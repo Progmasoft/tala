@@ -128,8 +128,8 @@ build:fuzz-linux --linkopt=-fsanitize=fuzzer
 
 # Source-based coverage instruments project-owned C++ code in each native test
 # binary. The coverage workflow executes the same suite matrix as develop test.
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fprofile-instr-generate
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fcoverage-mapping
+build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fprofile-instr-generate
+build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Hosted/.*@-fcoverage-mapping
 build:coverage-macos --linkopt=-fprofile-instr-generate
 
 test --test_output=errors
