@@ -22,7 +22,7 @@ Run these before expensive language-layer checks:
 
 ```powershell
 git diff --check
-rg -n "d[o]cs/" README.md Documents Spec Compiler ProjectSystem Analyzer Formatter Linter
+rg -n "d[o]cs/" README.md Documents Spec Talac Tazel Ecosystem
 ```
 
 The second command is a migration/stale-link example rather than a permanent assertion that the text `docs` can never
@@ -325,7 +325,7 @@ more boundary verification, not an exemption.
 Run the project evaluator and DSL tests with the repository wrapper:
 
 ```powershell
-.\Tazel\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p Tazel test
 ```
 
 Project-system tests should distinguish script parsing, immutable model construction, validation, lockfile persistence, and
@@ -404,7 +404,7 @@ or below 1500 lines. A simple review aid is:
 
 ```powershell
 $extensions = '*.hs','*.cpp','*.hpp','*.hh','*.kt','*.kts','*.go','*.java'
-Get-ChildItem Compiler,Interactive,ProjectSystem,Analyzer,Formatter,Linter,helpers -Recurse -File -Include $extensions |
+Get-ChildItem Talac,Interactive,Tazel,Ecosystem,helpers -Recurse -File -Include $extensions |
   Where-Object { (Get-Content -LiteralPath $_.FullName).Count -gt 1500 } |
   Select-Object FullName
 ```

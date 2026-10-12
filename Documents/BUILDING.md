@@ -150,7 +150,7 @@ Get-ChildItem Haskell -Filter *.cabal -Recurse | ForEach-Object {
 Kotlin:
 
 ```powershell
-.\Tazel\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p Tazel test
 ```
 
 The repository wrapper pins the Gradle distribution used by the project. Use it instead of a machine-global Gradle command.
@@ -333,7 +333,7 @@ Generated trees are disposable. Prefer deleting only the build system's known ou
 bazelisk clean
 Push-Location Compiler
 try { cabal clean } finally { Pop-Location }
-.\Tazel\gradlew.bat -p ProjectSystem clean
+.\Tazel\gradlew.bat -p Tazel clean
 ```
 
 For the native-only cleanup, `go run ./helpers/cmd/develop clean` performs an expunging Bazel clean.

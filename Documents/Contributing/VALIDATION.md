@@ -81,7 +81,7 @@ side can hide a shared bug.
 On Windows, run the pinned project wrapper rather than a machine-global Gradle:
 
 ```text
-.\Tazel\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p Tazel test
 ```
 
 If a DSL plan reaches the native driver, add a bridge or process-level check in addition to the Kotlin model test. For

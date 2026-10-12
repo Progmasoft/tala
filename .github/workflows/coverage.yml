@@ -236,7 +236,7 @@ jobs:
         with:
           name: kotlin-components-coverage
           path: coverage/kotlin
-      - name: Upload ProjectSystem coverage
+      - name: Upload Tazel coverage
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
         with:
           use_oidc: true

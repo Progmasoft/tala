@@ -53,7 +53,7 @@ Stage ownership is deliberate:
 | `Talac/Linker` | C++20/Bazel | typed LLD invocation and executable validation |
 | `Talac/Cli` | C++20/Bazel | command schema, dispatch, output, and exit status |
 | `Interactive/` | C++20/Bazel | `tali` REPL, isolated frontend cells, ORC LLJIT session, tests, and benchmarks |
-| `ProjectSystem` | Kotlin/Gradle | project DSL, plugins, plan, SQLite lockfile, and TADC |
+| `Tazel/` | Kotlin/Gradle | project DSL, plugins, plan, SQLite lockfile, and TADC |
 
 This table is a dependency rule as well as a directory map. The frontend must not include LLVM concepts. LLVM must not parse
 source syntax. The project evaluator must not discover `.tala` files. The CLI coordinates these owners but does not duplicate
