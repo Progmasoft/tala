@@ -566,6 +566,10 @@ A method reference `Type::Method` reports `TAT0080` when the method has several 
 the type of exactly one of them, and `TAT0081` when its receiver is a value and not a type;
 [Static member resolution](STATIC-MEMBER-RESOLUTION.md) lists the forms.
 
+A callable parameter written without a type, as in `\x -> x + 1`, is to take its type from the place that expects the
+callable. That inference is not implemented, so `TAT0082` reports every such parameter and asks for the type to be
+written: `\(int x) -> x + 1`.
+
 ## Safe output behavior
 
 Failure must not make an old file look newly built.

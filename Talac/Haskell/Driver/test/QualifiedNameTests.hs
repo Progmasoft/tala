@@ -68,6 +68,8 @@ rejections =
     , ("a method value of a private method of another class", demo, "auto f = Other::Hidden;", "TAT0033")
     , ("a method value with overloads and no expected type", demo, "auto f = Other::Pick;", "TAT0080")
     , ("a call that expects none of the overloads of a method value", demo, "Console.Println(Wide(Other::Pick));", "TAT0009")
+    , ("a callable parameter without a written type", demo, "auto f = \\x -> 7;", "TAT0082")
+    , ("a captured value beside a parameter without a written type", demo, "int s = 4; auto f = [s] \\x -> s;", "TAT0082")
     ]
 
 demo :: String -> String

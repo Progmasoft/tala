@@ -41,6 +41,12 @@ earlier releases keep the names they were written with.
 
 ### Compiler
 
+- A callable parameter written without a type, as in `\x -> x + 1`, is
+  reported as `TAT0082`. Its type was left unknown, since taking it from the
+  place that expects the callable is not implemented, and the program was
+  refused only by the LLVM lowering, with an error about the backend and no
+  place in the source. Coverage-guided fuzzing found it; the program is kept
+  as a seed.
 - A local whose value is computed by need no longer makes a long chain of
   operators slow to compile. The lowering looked through the whole operand
   tree again at every operator while such a local was in scope, so the time

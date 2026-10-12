@@ -984,6 +984,16 @@ checkExpressionExpectedWith context environment expected expression = case expre
                 CallableExpressionBody _ -> []
             captureProblems = concatMap captureDiagnostics checkedCaptures
             parameterProblems = concatMap (typeSyntaxProblemsIn context . parameterTypeSyntax) parameters
+            -- A parameter without a written type takes it from the place
+            -- that expects the callable. Until that is implemented its type
+            -- stays unknown and no later stage can lower the callable.
+            inferredProblems =
+                [ problem
+                    (parameterSpan parameter)
+                    "TAT0082"
+                    "the type of a callable parameter is not inferred from its context yet; write the type"
+                | parameter@Parameter {parameterTypeSyntax = AutoType} <- parameters
+                ]
          in ( CallableExpression
                 spanValue
                 explicit
@@ -992,7 +1002,7 @@ checkExpressionExpectedWith context environment expected expression = case expre
                 typedBody
                 callableType
             , callableType
-            , captureProblems ++ parameterProblems ++ bodyProblems ++ returnProblems
+            , captureProblems ++ parameterProblems ++ inferredProblems ++ bodyProblems ++ returnProblems
             )
 
 {- | Result type of a loop expression from the types of its break values.
