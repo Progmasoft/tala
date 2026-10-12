@@ -51,6 +51,10 @@ enum class BuildOutput : std::uint8_t
     kAssembly,
     kLlvmIr,
     kLlvmBitcode,
+    /// Check the program and write no executable: every verifier runs,
+    /// code generation does not, and a `.talameta` file records what was
+    /// checked. It is what `tazel check` asks for.
+    kMetadata,
 };
 
 /// The kind of the inputs, named by `--build`.
@@ -160,5 +164,8 @@ InputExtension(BuildInput input) noexcept;
 ParseCommandLine(int argc, char **argv);
 void
 PrintCliHelp();
+/// @brief Version of this compiler, as `--version` prints it.
+[[nodiscard]] const char *
+CliVersion() noexcept;
 void
 PrintCliVersion();

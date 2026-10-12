@@ -142,8 +142,10 @@ namespace
         { Option::Emit,
           "emit",
           '\0',
-          "executable|object|core|xpp|xmm|assembly|llvm-ir|llvm-bitcode",
-          "what is written",
+          "executable|object|core|xpp|xmm|assembly|llvm-ir|llvm-bitcode|"
+          "metadata",
+          "what is written; metadata checks the program and writes a "
+          ".talameta file and no executable",
           "executable" },
         { Option::Build,
           "build",
@@ -201,6 +203,7 @@ namespace
         Choice{ "assembly"sv, BuildOutput::kAssembly },
         Choice{ "llvm-ir"sv, BuildOutput::kLlvmIr },
         Choice{ "llvm-bitcode"sv, BuildOutput::kLlvmBitcode },
+        Choice{ "metadata"sv, BuildOutput::kMetadata },
     };
     constexpr std::array kBuildValues{
         Choice{ "tala"sv, BuildInput::kTala },
@@ -649,9 +652,10 @@ OutputExtension(BuildOutput output) noexcept
     constexpr const char *kExecutable = "";
 #endif
     constexpr const char *extensions[]
-        = { kExecutable, ".o", ".core", ".xpp", ".xmm", ".asm", ".ll", ".bc" };
+        = { kExecutable, ".o",  ".core", ".xpp",     ".xmm",
+            ".asm",      ".ll", ".bc",   ".talameta" };
     const auto index = static_cast<unsigned>(output);
-    return index < 8U ? extensions[index] : "";
+    return index < 9U ? extensions[index] : "";
 }
 
 std::string_view
@@ -778,8 +782,14 @@ PrintCliHelp()
                rendered.str());
 }
 
+const char *
+CliVersion() noexcept
+{
+    return TALA_PROJECT_VERSION;
+}
+
 void
 PrintCliVersion()
 {
-    fmt::print("talac {}\n", TALA_PROJECT_VERSION);
+    fmt::print("talac {}\n", CliVersion());
 }

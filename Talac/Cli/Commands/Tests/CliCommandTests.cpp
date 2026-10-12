@@ -73,4 +73,6 @@ TEST_CASE("the kind of the inputs decides which files and outputs fit")
     CHECK(Status({ "Main.xmm", "--build=xmm", "--emit=xpp" }) == 2);
     CHECK(Status({ "Main.core", "--build=core", "--emit=core" }) == 2);
     CHECK(Status({ "Main.o", "--build=object", "--emit=object" }) == 2);
+    // A check runs verifiers, and machine code has none left to run.
+    CHECK(Status({ "Main.o", "--build=object", "--emit=metadata" }) == 2);
 }

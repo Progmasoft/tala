@@ -281,12 +281,44 @@ namespace
 TEST_CASE("every program of this file passes the checks before code "
           "generation")
 {
-    // Xmm is the last stage before code generation; it is written only
-    // after every verifier before it has accepted the program.
-    CHECK(Drive("xmm",
+    CHECK(Drive("metadata",
                 "Checked",
                 "    public static void Main() { Check(Pick(0, 1), 7); }\n")
           == 0);
+    std::filesystem::remove_all(Directory());
+}
+
+TEST_CASE("a check writes its record and no executable")
+{
+    REQUIRE(Drive("metadata",
+                  "Quiet",
+                  "    public static void Main() {"
+                  " Console.Println(\"x\"); }\n")
+            == 0);
+    std::size_t files = 0U;
+    for (const auto &entry : std::filesystem::directory_iterator(Directory()))
+    {
+        const auto name = entry.path().filename().string();
+        CHECK((name == "Quiet.tala" || name == "Quiet.talameta"));
+        ++files;
+    }
+    CHECK(files == 2U);
+    const auto record = ReadAll(Directory() / "Quiet.talameta");
+    CHECK(record.starts_with("talameta 1\ncompiler "));
+    CHECK(record.find("\nentry Demo.Program\n") != std::string::npos);
+    CHECK(record.ends_with("Quiet.tala\n"));
+    CHECK(record.find('\\') == std::string::npos);
+    std::filesystem::remove_all(Directory());
+}
+
+TEST_CASE("a check refuses a program a build would refuse")
+{
+    CHECK(Drive("metadata",
+                "Wrong",
+                "    public static void Main() { int value = true; }\n")
+          != 0);
+    // A program that is refused leaves no record that it was checked.
+    CHECK_FALSE(std::filesystem::exists(Directory() / "Wrong.talameta"));
     std::filesystem::remove_all(Directory());
 }
 

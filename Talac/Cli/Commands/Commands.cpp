@@ -182,6 +182,7 @@ namespace
             case BuildOutput::kObject:
                 return 5;
             case BuildOutput::kExecutable:
+            case BuildOutput::kMetadata:
                 return 6;
         }
         return 6;
@@ -208,6 +209,82 @@ namespace
             || options.input == BuildInput::kLlvmBitcode)
             return "--build=llvm-ir and --build=llvm-bitcode";
         return std::nullopt;
+    }
+
+    /// Write the record of a successful check beside the first input.
+    ///
+    /// The file is text, one field to a line, and begins with the name and
+    /// the version of its format so that a reader can refuse what it does
+    /// not know. Version 1 states what was checked and with which compiler:
+    ///
+    ///     talameta 1
+    ///     compiler 0.5.2
+    ///     entry Demo.Program
+    ///     input Main.tala
+    ///
+    /// `entry` is absent when the input carries its own. An input is written
+    /// as it was named on the command line, with forward slashes.
+    [[nodiscard]] auto
+    WriteMetadata(const CliOptions &options) -> bool
+    {
+        std::string document
+            = fmt::format("talameta 1\ncompiler {}\n", CliVersion());
+        if (options.entry)
+            document += fmt::format("entry {}\n", *options.entry);
+        for (const auto &input : options.inputs)
+        {
+            auto name = PathText(input);
+            for (auto &character : name)
+            {
+                if (character == '\\')
+                    character = '/';
+            }
+            // A field ends with its line. A name that contains a line break
+            // would read back as two fields.
+            if (name.find_first_of("\r\n") != std::string::npos)
+            {
+                fmt::print(stderr,
+                           "talac: an input whose name contains a line break "
+                           "cannot be recorded in a .talameta file\n");
+                return false;
+            }
+            document += fmt::format("input {}\n", name);
+        }
+        const auto output = OutputPath(options.inputs.front(),
+                                       OutputExtension(BuildOutput::kMetadata));
+        std::ofstream stream(output, std::ios::binary | std::ios::trunc);
+        if (stream)
+            stream.write(document.data(),
+                         static_cast<std::streamsize>(document.size()));
+        if (!stream)
+        {
+            fmt::print(stderr,
+                       "talac: could not write '{}'\n",
+                       PathText(output));
+            return false;
+        }
+        fmt::print(stderr, "talac: wrote '{}'\n", PathText(output));
+        return true;
+    }
+
+    /// `--emit=metadata` runs the pipeline as a check: every verifier and no
+    /// code generation.
+    [[nodiscard]] PipelineAction
+    Action(const CliOptions &options)
+    {
+        return options.output == BuildOutput::kMetadata
+                   ? PipelineAction::kCheck
+                   : PipelineAction::kBuild;
+    }
+
+    /// The output the pipeline is asked to prepare. A check prepares what an
+    /// executable needs, so that it refuses what a build would refuse.
+    [[nodiscard]] BuildOutput
+    PipelineOutput(const CliOptions &options)
+    {
+        return options.output == BuildOutput::kMetadata
+                   ? BuildOutput::kExecutable
+                   : options.output;
     }
 
     [[nodiscard]] int
@@ -272,8 +349,8 @@ namespace
         return ProcessCoreBytesAs(core.bytes,
                                   sourceText.c_str(),
                                   sourceText.c_str(),
-                                  PipelineAction::kBuild,
-                                  options.output,
+                                  Action(options),
+                                  PipelineOutput(options),
                                   &options.compiler,
                                   options.target ? options.target->c_str()
                                                  : nullptr)
@@ -296,22 +373,22 @@ namespace
         bool built{};
         if (options.input == BuildInput::kCore)
             built = ProcessCoreArtifact(fileText.c_str(),
-                                        PipelineAction::kBuild,
-                                        options.output,
+                                        Action(options),
+                                        PipelineOutput(options),
                                         &options.compiler,
                                         target);
         else if (options.input == BuildInput::kXpp)
             built = ProcessXppArtifactAs(fileText.c_str(),
                                          fileText.c_str(),
-                                         PipelineAction::kBuild,
-                                         options.output,
+                                         Action(options),
+                                         PipelineOutput(options),
                                          &options.compiler,
                                          target);
         else
             built = ProcessXmmArtifactAs(fileText.c_str(),
                                          fileText.c_str(),
-                                         PipelineAction::kBuild,
-                                         options.output,
+                                         Action(options),
+                                         PipelineOutput(options),
                                          &options.compiler,
                                          target);
         return built ? 0 : 1;
@@ -339,9 +416,20 @@ namespace
                 return kUsageError;
             }
         }
-        if (Stage(options.output) < Stage(options.input)
-            || (Stage(options.output) == Stage(options.input)
-                && options.input != BuildInput::kTala))
+        if (options.output == BuildOutput::kMetadata
+            && options.input == BuildInput::kObject)
+        {
+            // Machine code has passed no verifier this compiler could run
+            // again; there is nothing to check in it.
+            fmt::print(stderr,
+                       "talac: --emit=metadata checks a program; an object "
+                       "cannot be checked\n");
+            return kUsageError;
+        }
+        if (options.output != BuildOutput::kMetadata
+            && (Stage(options.output) < Stage(options.input)
+                || (Stage(options.output) == Stage(options.input)
+                    && options.input != BuildInput::kTala)))
         {
             fmt::print(stderr,
                        "talac: a {} input cannot be turned into the requested "
@@ -378,7 +466,10 @@ Progmasoft::Tala::Cli::Run(int argc, char **argv) -> int
         return kUsageError;
     }
     Activity activity("compiling");
-    const int result = Compile(parsed.options);
+    int result = Compile(parsed.options);
+    if (result == 0 && parsed.options.output == BuildOutput::kMetadata
+        && !WriteMetadata(parsed.options))
+        result = 1;
     if (result == 0)
         activity.Complete("compiled");
     else

@@ -166,7 +166,8 @@ TEST_CASE("every choice of every option is spelled as documented")
             std::pair{ "--emit=xmm", BuildOutput::kXmm },
             std::pair{ "--emit=assembly", BuildOutput::kAssembly },
             std::pair{ "--emit=llvm-ir", BuildOutput::kLlvmIr },
-            std::pair{ "--emit=llvm-bitcode", BuildOutput::kLlvmBitcode } };
+            std::pair{ "--emit=llvm-bitcode", BuildOutput::kLlvmBitcode },
+            std::pair{ "--emit=metadata", BuildOutput::kMetadata } };
     for (const auto &[spelling, expected] : emits)
         CHECK(Ready({ "P.tala", "--entry=A.B", spelling }).output == expected);
 
@@ -411,6 +412,8 @@ TEST_CASE("extensions follow the kind and the host")
 #else
     CHECK(std::string_view(OutputExtension(BuildOutput::kExecutable)).empty());
 #endif
+    CHECK(std::string_view(OutputExtension(BuildOutput::kMetadata))
+          == ".talameta");
     CHECK(InputExtension(BuildInput::kTala) == ".tala");
     CHECK(InputExtension(BuildInput::kObject) == ".o");
     CHECK(InputExtension(BuildInput::kCore) == ".core");
