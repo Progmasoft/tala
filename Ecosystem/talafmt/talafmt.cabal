@@ -29,7 +29,7 @@ library
     default-language: GHC2024
 
 executable talafmt
-    main-is: Talafmt/Main.hs
+    main-is: Progmasoft/Talafmt/Main.hs
     other-modules:
         Progmasoft.Talafmt
         Progmasoft.Talafmt.Encoding

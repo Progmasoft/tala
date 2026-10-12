@@ -24,7 +24,7 @@ library
     default-language: GHC2024
 
 executable talalint
-    main-is: Talalint/Main.hs
+    main-is: Progmasoft/Talalint/Main.hs
     other-modules:
         Progmasoft.Talalint
     hs-source-dirs: sources/main/haskell
