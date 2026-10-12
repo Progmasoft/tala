@@ -10,27 +10,24 @@ pipeline. The public compiler remains the `talac` command.
 ## Invocation
 
 ```text
-talac interactive
-talac interactive --eval "5 + 5"
-talac interactive -Help
+tali
+tali --eval "5 + 5"
+tali --help
 ```
 
-`talac interactive` searches the current process `PATH` for `tali` and forwards every trailing argument unchanged. It does
-not search the current directory, derive a path beside `talac`, parse `tali` flags itself, or add a shell layer. This permits
-the REPL to be installed or updated as a separate companion while preserving one public compiler command.
+`tali` is a program of its own; the compiler has no command that starts it.
 
-The repository's native bundle stages `talac`, `tali`, and the private `tala-frontend` shared library together. Add that
-directory to `PATH` before running the public invocation. `talac` discovers `tali` through `PATH`; `tali` loads the shared
-library beside its own executable. The library is not a user-facing compiler, and an unrelated copy on `PATH` cannot
-override it.
+The repository's native bundle stages `talac`, `tali`, and the private `tala-frontend` shared library together. `tali`
+loads the shared library beside its own executable. The library is not a user-facing compiler, and an unrelated copy on
+`PATH` cannot override it.
 
-For development or editor integration, `tali` can also be run directly. Its command-line grammar is deliberately small:
+Its command-line grammar is deliberately small:
 
 | Form | Behavior |
 | --- | --- |
 | `tali` | Start the line-oriented REPL. |
 | `tali --eval <expression>` | Compile, execute, print, and exit after one expression. |
-| `tali -Help` | Print the REPL command and result-ABI help. |
+| `tali --help`, `tali -h` | Print the REPL command and result-ABI help. |
 
 Options are case-sensitive. The command accepts one `--eval` argument, so quote expressions containing spaces in the
 invoking shell. Empty expressions, extra arguments, unknown flags, and a missing expression are errors. One-shot failures
@@ -56,7 +53,7 @@ at most 256 successful evaluation inputs, not failed expressions or `:type` quer
 
 The current input contract is one source expression per line with a 1 MiB maximum. The REPL drains and rejects an
 overlong line without retaining its contents. It does not accumulate incomplete multi-line declarations or
-provide a command to define classes/functions for later cells. Use a `.tala` source file with `talac build` for declarations,
+provide a command to define classes/functions for later cells. Use a `.tala` source file with `tazel build` for declarations,
 projects, entry-point execution, or input that requires more than one expression in a cell.
 
 ## Cell compilation
@@ -188,7 +185,7 @@ launcher. The root `helpers/cmd/develop/main.go test` command includes the Inter
 The bundle command additionally builds the Cabal frontend, stages all three executables, and performs these integration
 checks:
 
-1. run `talac interactive --eval "5 + 5"` with the staged `tali` discoverable only through the bundle `PATH`;
+1. run `tali --eval "5 + 5"` with the staged `tali` discoverable only through the bundle `PATH`;
 2. check that both dispatch and direct one-shot evaluation return a typed `10` result;
 3. verify the no-`tali`-on-`PATH` diagnostic and prove the working-directory decoy is ignored;
 4. start the no-argument REPL with piped input, reject and drain an overlong line, then keep reading;
@@ -211,7 +208,7 @@ Before extending the interactive surface:
 5. Preserve the original signedness, width, and floating precision when generating `taliPrevious`.
 6. Make reset release generated code and symbols, not only user-visible state.
 7. Bound source and artifact sizes before allocation or JIT insertion.
-8. Test both direct `tali` parsing and argument-transparent `talac interactive` dispatch.
+8. Test both direct `tali` parsing and argument-transparent `tali` dispatch.
 9. Include bundle-level frontend/JIT smoke coverage for newly connected behavior.
 10. Run the benchmark in an optimized profile and report host/compiler details before comparing numbers.
 

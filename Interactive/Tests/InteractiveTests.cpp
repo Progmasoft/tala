@@ -59,8 +59,10 @@ TEST_CASE(
     REQUIRE(evaluate.Request().kind == Interactive::RequestKind::Evaluate);
     REQUIRE(evaluate.Request().expression == "5 + 5");
 
-    const Invocation help{ "-Help" };
+    const Invocation help{ "--help" };
     REQUIRE(help.Request().kind == Interactive::RequestKind::Help);
+    const Invocation shortHelp{ "-h" };
+    REQUIRE(shortHelp.Request().kind == Interactive::RequestKind::Help);
 }
 
 TEST_CASE("tali rejects truncated and ambiguous public invocations",
@@ -80,7 +82,7 @@ TEST_CASE("tali rejects truncated and ambiguous public invocations",
 
     const Invocation misplaced{ "-Bogus" };
     REQUIRE(misplaced.Request().kind == Interactive::RequestKind::Error);
-    REQUIRE(misplaced.Request().diagnostic.find("-Help") != std::string::npos);
+    REQUIRE(misplaced.Request().diagnostic.find("--help") != std::string::npos);
 }
 
 TEST_CASE("generated REPL cells use a unique namespace and preserve a typed "

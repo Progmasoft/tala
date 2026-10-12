@@ -148,7 +148,7 @@ The repository contains:
 The production frontend boundary uses public `TACR` Core. The internal `TACP` codec remains tested for in-process and golden
 contract coverage, but the CLI does not expose CorePrep. Bounded `TAPP` and `TAMM` v7 codecs now own public Xpp/Xmm disk
 artifacts and forward-only pipeline resumption. LLVM target-machine emission and typed C++20 LLD invocation produce `.o`,
-`.asm`, and `.vxse` artifacts. Project object and assembly requests produce one flattened output per source in the selected
+`.asm`, and executables. Project object and assembly requests produce one flattened output per source in the selected
 entry namespace; each owner boundary verifies the source catalog, and the driver replaces the set through a recoverable
 same-filesystem transaction. Remaining work includes cross-namespace Haskell name resolution and a multi-module Core link
 unit.
@@ -166,7 +166,7 @@ unit.
 | fixed-width scalar/call/branch/return LLVM lowering | connected for verified Xmm | LLVM backend |
 | LLVM IR and bitcode output | connected | `.ll` and `.bc` writers |
 | target object and assembly output | connected for supported values | target machine |
-| `.vxse` link | connected for supported values | entry bridge plus typed LLD driver |
+| the executable link | connected for supported values | entry bridge plus typed LLD driver |
 | closure object ABI | connected | Xpp/Xmm, LLVM, and AARC runtime boundary |
 | callable that remembers its result | connected | Core, CorePrep, Xpp, Xmm and LLVM carry `Memoize`; the frontend produces it for arguments passed by need |
 | runtime calls | connected | one operation with a catalog of functions in Core, CorePrep, Xpp, Xmm and LLVM |
@@ -187,19 +187,21 @@ versioned ABI, while its implementation, ownership, and tests are C++20.
 
 ## CLI and project evaluation
 
-The native C++20 CLI uses a declarative typed schema for command scope, option arity, duplicate rejection, defaults, and value
-conversion. It has no DIMCLI dependency. The Kotlin project evaluator continues to own project discovery, configuration, and
-the SQLite lock file. It is not a second executable: `talac` starts the evaluator main class from bundled JVM libraries. TADC
-remains a separate command.
+The compiler reads its command line with a typed schema written by hand: option arity, duplicate rejection, defaults, and
+value conversion. It has no command-line library and knows nothing about projects.
 
-`talac check` without `-File` now evaluates the project, passes its source policy to the private Haskell frontend, resolves the
-entry by namespace/class identity, and consumes verified Core through the native LLVM boundary. Project
-`build -Emit core|llvmll|llvmbc` uses the same route and writes an artifact named after the entry class. No source file is
-guessed from the entry spelling.
+Tazel is a separate Kotlin program. It owns project discovery, the project DSL, source discovery, the SQLite lock file and
+its text dump, and it starts `talac`, `talafmt` and `talalint` as programs. `tazel check` evaluates the project, collects
+the sources of each executable and starts `talac` with `--emit=metadata` and the compiler options of the project;
+`tazel build` does the same with `--emit=executable` and moves the result into the output directory. The entry is
+resolved by the frontend from namespace and class identity; no source file is guessed from the entry spelling.
+
+Tazel refuses, by name, what it cannot do yet: library targets, projects with dependencies, test suites, `.vipkg`
+creation and every command that needs ViGet.
 
 Known gaps include:
 
-- Core input can be checked through LLVM and can emit `.ll`, `.bc`, `.o`, `.asm`, or a native `.vxse`;
+- Core input can be checked through LLVM and can emit `.ll`, `.bc`, `.o`, `.asm`, or a native executable;
 - explicit Core, Xpp, and Xmm emission from source is connected;
 - Xpp and Xmm inputs decode, verify, optionally optimize, and continue forward without CorePrep exposure;
 - package publication and installation require a ViGet client not linked into this build;
@@ -225,8 +227,8 @@ without a native layout still fails before producing a misleading artifact.
 
 Analyzer, Formatter, and Linter have canonical top-level projects, separate Haskell/Kotlin ownership, and independent CI.
 Their typed Kotlin configuration models are implemented. talafmt additionally evaluates the real Kotlin receiver
-and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. `talac format` and
-`talac lint` dispatch installed tools across compiler-discovered project paths; they are not compiler-internal passes.
+and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. `tazel fmt` and
+`tazel lint` start the installed tools on the sources Tazel finds for the project; they are not compiler-internal passes.
 
 talafmt and talalint use their own version lines. tala-analyzer now provides the editor-facing
 `tala-analyzer` stdio LSP executable. It is not a compiler CLI command. See [Ecosystem tools](ECOSYSTEM.md) for the product
@@ -235,7 +237,7 @@ boundary and current configuration surfaces.
 ## Data that is intentionally not duplicated
 
 - Namespace identity is not encoded by directories.
-- The project evaluator does not expand source globs into compilation units.
+- The compiler does not read project files or expand source globs; Tazel names every input.
 - CorePrep is not serialized as a public project artifact.
 - The compiler does not contain formatter/linter rule configuration.
 - A ViGet `.vipkg` does not add a second `MANIFEST.TOML` beside `BUILD.kts`.
@@ -247,7 +249,7 @@ boundary and current configuration surfaces.
 
 GitHub CI runs:
 
-- Kotlin project-evaluator tests;
+- Tazel tests, including whole commands against stand-in tools;
 - Haskell build, behavior tests, and package checks;
 - Windows ClangCL Bazel build and native CLI contract tests; and
 - patch hygiene checks.

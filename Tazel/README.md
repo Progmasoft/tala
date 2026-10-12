@@ -5,33 +5,50 @@
 
 Tazel is the build system and package manager of Tala. The name joins Tala and Bazel.
 
-This Java 25/Kotlin component evaluates the single `BUILD.kts` project file used by `talac`. It resolves source roots,
-compiler settings, targets, dependencies, named test suites, and publication metadata into the native compiler plan. It has
-no standalone launcher: `talac` invokes its main class directly from the bundled JVM classpath. `tadc` remains a separate
-command and shares the same libraries.
+Tazel is a Kotlin program for the JVM (25 or newer). It reads the project file, finds the sources and starts the compiler,
+the formatter or the linter as separate programs: `talac`, `talafmt` and `talalint`. It compiles nothing itself and shares
+no code with them.
 
-Production Kotlin DSL plugin JARs use
-`https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/`. ViGet is the only remote source. The current host skeleton
-loads installed JARs from the project-local `.tazel/plugins` cache; this cache is not a second repository. It reads
-the `plugins` preamble before evaluating the script, verifies descriptor compatibility and artifact identity, then loads
-`ProjectPlugin` services. Plugins are trusted project code and run with full JVM access; the runtime does not impose a
-sandbox or permission model.
-
-Explicit `plugin("local") { path = "plugin.jar" }` declarations load a project-relative JAR while retaining descriptor and
-digest verification. Explicit `dependency("local") { path = "dependency.vipkg" }` declarations record a project-relative
-Tala package separately from ViGet coordinates.
-
-Split project scripts and separate module scripts are not supported. Project discovery walks from the requested path toward
-the filesystem root until it finds `BUILD.kts`.
-
-Dependency resolution writes `LOCK.sqlite3` as binary SQLite data. Human-readable dumps belong to the
-separate `tadc` tool and are not emitted during ordinary project evaluation.
-
-Run the component tests with:
-
-```text
-.\gradlew.bat check
+```powershell
+tazel check
+tazel build
+tazel run -- arguments for the program
+tazel fmt -- --check
+tazel lint -- --fix
 ```
 
-For the complete DSL contract, publishing completeness rules, local artifacts, lockfile lifecycle, and CLI precedence, see
-[Tala project files](../Documents/PROJECT_FILES.md).
+[Command-line interfaces](../Documents/CLI.md#tazel) lists every command and [Tala project files](../Documents/PROJECT_FILES.md)
+describes the project file. [`BUILD.kts`](BUILD.kts) in this directory is the whole DSL in one file; a test evaluates it.
+
+## Layout
+
+| Package | Holds |
+| --- | --- |
+| `com.progmasoft.tazel.cli` | the command line: the typed parser, the commands, `main` |
+| `com.progmasoft.tazel.dsl` | the project DSL, its model and the loader that evaluates a project file |
+| `com.progmasoft.tazel.dsl.plugin` | the plugin host: preamble, resolution, verification, activation |
+| `com.progmasoft.tazel.build` | source discovery, compiler arguments, tool lookup, workspaces |
+| `com.progmasoft.tazel.lock` | `LOCK.sqlite3` and `LOCK.dump` |
+| `com.progmasoft.api.tazel.dsl.plugin` | the API a plugin is written against |
+
+The command line is read by a parser written by hand; there is no command-line library. Terminal output goes through
+Mordant. The project file is compiled and run inside Tazel by the embedded Kotlin scripting host, so no Kotlin installation
+is needed beside the JRE.
+
+## Building and testing
+
+```powershell
+.\gradlew.bat check          # format check and tests
+.\gradlew.bat installDist    # build\install\tazel\bin\tazel(.bat)
+```
+
+Tazel finds a tool through `TAZEL_TALAC`, `TAZEL_TALAFMT` or `TAZEL_TALALINT`, then in the installation it runs from, then
+on `PATH`. To try a development build against a compiler built by Bazel:
+
+```powershell
+$env:TAZEL_TALAC = "..\bazel-bin\Talac\Cli\talac.exe"
+.\build\install\tazel\bin\tazel.bat build
+```
+
+The tests run whole commands against projects on disk with stand-in tools that record their command line, so they need no
+compiler.

@@ -26,7 +26,7 @@
 → Xmm Optimizer
 → LLVM bitcode
 → object file
-→ .vxse executable
+→ native executable
 ```
 
 Stage ownership is deliberate:
@@ -53,11 +53,11 @@ Stage ownership is deliberate:
 | `Talac/Linker` | C++20/Bazel | typed LLD invocation and executable validation |
 | `Talac/Cli` | C++20/Bazel | command schema, dispatch, output, and exit status |
 | `Interactive/` | C++20/Bazel | `tali` REPL, isolated frontend cells, ORC LLJIT session, tests, and benchmarks |
-| `Tazel/` | Kotlin/Gradle | project DSL, plugins, plan, SQLite lockfile, and TADC |
+| `Tazel/` | Kotlin/Gradle | `tazel`: project DSL, plugins, source discovery, SQLite lockfile, and the commands that start the tools |
 
 This table is a dependency rule as well as a directory map. The frontend must not include LLVM concepts. LLVM must not parse
-source syntax. The project evaluator must not discover `.tala` files. The CLI coordinates these owners but does not duplicate
-their semantic decisions.
+source syntax. The compiler must not know projects: Tazel finds the `.tala` files of a target and names them on the
+compiler's command line. Each command line coordinates its owners but does not duplicate their semantic decisions.
 
 ## Frontend stages
 
@@ -128,7 +128,7 @@ operations follow the [AARC ABI](AARC-ABI.md). LLVM types and handles do not esc
 The Bazel graph discovers LLVM through `LLVM_ROOT` or `llvm-config`. The renewed C++20 backend uses LLVM's C++ IR, bitcode, support,
 new-pass-manager, target-machine, and native-code-generation libraries; LLVM C handles do not enter this pipeline. A target
 machine emits COFF objects or target assembly from verified Xmm. The C++20 driver passes a typed argument vector directly
-to LLD, without a shell or DIMCLI, and validates the resulting `.vxse` artifact.
+to LLD, without a shell or DIMCLI, and validates the resulting executable.
 
 `Interactive/` reuses that same lowering route rather than interpreting AST nodes itself. Each input cell is wrapped in a
 compiler-valid namespace and method, parsed and type-checked by the Haskell frontend process, then moved through verified
@@ -163,17 +163,18 @@ The current public artifact names are:
 
 Normal compilation keeps these representations in memory. Haskell writes real `.core` artifacts and C++20 consumes them
 through the full verified pipeline. Explicit `.ll`, `.bc`, `.o`, and `.asm` emission is available after source or Core
-input. Binary emission adds the platform entry bridge, writes a temporary object, links one `.vxse`, and removes the
+input. Binary emission adds the platform entry bridge, writes a temporary object, links one executable, and removes the
 temporary object. Bounded Xpp/Xmm v7 readers and writers support verified forward pipeline resumption.
 
 ## Process and temporary-file model
 
-The private frontend executable is located relative to `talac` in the build or installed layout. The current working directory
+The private frontend library is located relative to `talac` in the build or installed layout. The current working directory
 is project input, not an executable search mechanism. The driver owns in-memory Core buffers plus temporary link artifacts through scoped
 cleanup objects so partial runs do not leak files or accidentally reuse an older artifact.
 
-`talac run` executes only the `.vxse` produced by its current successful build. A failed compile or link cannot fall through to
-an executable left by a previous invocation.
+`tazel run` executes only the executable produced by its current successful build. A failed compile or link cannot fall through to
+an executable left by a previous invocation. Tazel and the compiler are separate processes that share no memory and no
+private format: Tazel passes arguments and reads the exit code.
 
 ## Extension points
 
@@ -182,13 +183,14 @@ not a compiler backend API. A CMake DSL plugin may remain available for projects
 Tala compiler itself uses Bazel.
 
 Analyzer, Formatter, and Linter share frontend/source-policy contracts but remain independently versioned products. They do
-not become compiler passes merely because `talac format` and `talac lint` dispatch them for a project.
+not become compiler passes merely because `tazel fmt` and `tazel lint` dispatch them for a project.
 
 ## Architecture constraints
 
 - One shipped `talac` command coordinates frontend and backend; frontend/backend are not separate user binaries.
-- `tadc` is intentionally separate because it is a lockfile dump tool, not compilation.
-- CorePrep remains internal and cannot appear in `-Emit` or `-Build`.
+- `tazel` starts `talac`, `talafmt` and `talalint` as programs; it is never linked into them and they never read a
+  project file.
+- CorePrep remains internal and cannot appear in `--emit` or `--build`.
 - Public artifacts require an explicit, versioned reader/writer contract.
 - Machine-specific LLVM installation paths never enter tracked files.
 - Native C++ uses the LLVM C++ API and `Tala` naming for renewed code.

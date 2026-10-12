@@ -7,6 +7,63 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Every program does one job
+
+The compiler compiled, evaluated projects, formatted and linted, all behind
+one command with its own option style. The work is now split by program, and
+every command line follows the GNU form.
+
+- **`talac` is only the compiler.** `talac Program.tala --entry=Demo.Program`
+  writes `Program.exe` beside the source (no extension outside Windows; the
+  `.vxse` extension is gone). The commands `check`, `build`, `run`, `test`,
+  `format`, `lint`, `resolve`, `update`, `install`, `viget`, `version` and
+  `interactive` are removed from it. A long option takes its value after `=`
+  (`--emit=core`), a short one joined or after `=` (`-O2`, `-O=2`).
+  `-File`, `-Emit`, `-Build`, `-Help` and the `-W...` options are replaced by
+  inputs on the command line, `--emit`, `--build`, `--help` and `--warnings`.
+  Several inputs are one program.
+- `--emit=metadata` checks a program without building it and writes
+  `<name>.talameta`.
+- `--warnings=none|low|medium|all` sets the level and `--warnings=shadow` asks
+  for the shadowing warning, which no level turns on. The option is read; the
+  warning itself is not in the frontend yet.
+- An option the compiler reads and cannot carry out yet is refused by name:
+  library package types, `--header`, `--llvm-compiler=orc`, LTO, `--llvm-args`
+  and LLVM IR or bitcode as input.
+- **`tazel` is a program of its own** and runs the project commands:
+  `check`, `build`, `run`, `test`, `lock resolve`, `lock create-dump`, `fmt`,
+  `lint`, `version` and `help`. It reads the project file, finds the sources
+  and starts `talac`, `talafmt` or `talalint` as separate programs. Targets
+  are selected with `--vipkg`/`-p`, `--executable`/`-e` and `--library`/`-l`;
+  what follows `--` goes to the program a command starts
+  (`tazel lint -- --fix`).
+- A project file is evaluated inside Tazel. No Kotlin installation is needed;
+  the earlier route needed a `kotlin` command that nothing installed.
+- A project file may be named `BUILD.kts`, `BUILD.tzl`, `BUILD.tazel`, `BUILD`
+  or `Tazel.build`; the first that exists is used.
+- The project DSL changed: `compiler.standard = talaStandardOf(26)`;
+  `optLevel` and the optimization-pass switches sit directly in `compiler`;
+  `llvm { args(...) }`; `workspace { members(); defaultMembers(); exclude() }`
+  replaces `workspaces`; `localDependency`, `testDependency` and
+  `localTestDependency`; `feature = "..."` replaces `optional`;
+  `localPlugin { path }` replaces `plugin("local")`. Removed: `wexperimental`,
+  `wundef`, `unsafe {}`, `typeSafeFormat`, `compiler.version` as a setting,
+  `FAMILY`, `cfg`, `eprintln`, the bare host constants (`WINDOWS`, `X86_64`,
+  ...; compare with `OperatingSystem.WINDOWS`), and `framework` of a test
+  suite. `OS`, `ARCH`, `panic` and `eprint` remain.
+- `LOCK.sqlite3` is lockfile format 4. `tazel lock create-dump` writes
+  `LOCK.dump`; the separate `tadc` program is removed.
+- A plugin JAR describes itself in `META-INF/tazel-plugin.properties` and is
+  written against `com.progmasoft.api.tazel.dsl.plugin`.
+- Tazel refuses, by name, what cannot work yet: library targets, projects
+  with dependencies, test suites, `vipkg create`, `update`, `install` and
+  `viget push|update`.
+- `talafmt` formats in place by default and takes `--check` and
+  `--emit=files|stdout|coverage|checkstyle|json`; `talalint` takes `--fix`.
+  `-In-Place`, `-Dry-Run`, `-Fix` and `-List-Checks` are removed. Both take
+  several files, `--help`/`-h` and `--version`/`-v`.
+- `tali` takes `--help` and `-h` (was `-Help`).
+
 ## 0.5.2 - 2026-10-12
 
 ### Visual X# is now Tala

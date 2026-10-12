@@ -40,7 +40,6 @@ func checkReleaseMetadata(repository string, currentHost host, requested string,
 		checkFileLineOnce(filepath.Join(repository, "Talac", "Haskell", "Driver", "tala-compiler.cabal"), "version: "+requested, false, "Haskell compiler version"),
 		checkFileLineOnce(filepath.Join(repository, "Talac", "Cli", "Arguments", "Options.cpp"), "#    define TALA_PROJECT_VERSION \""+requested+"\"", false, "native CLI fallback version"),
 		checkFileLineOnce(filepath.Join(repository, "Tazel", "build.gradle.kts"), "version = \""+requested+"\"", false, "Kotlin project runtime version"),
-		checkFileLineOnce(filepath.Join(repository, "Tazel", "BUILD.kts"), "version = \""+requested+"\"", false, "default compiler model version"),
 	)
 
 	compiler := filepath.Join(repository, "bazel-bin", "Talac", "Cli", "talac"+currentHost.executable)

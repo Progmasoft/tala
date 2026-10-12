@@ -18,8 +18,8 @@ validator in a convenient downstream component merely because that is where a sy
 ```
 
 The frontend's current shared-library boundary uses a verified private Core transport. CorePrep adapts Core for native lowering;
-it is not a public `-Emit` format. User-visible artifact formats include `.core`, `.xpp`, `.xmm`, object, assembly, LLVM IR,
-and `.vxse` where the connected CLI supports them. [Pipeline](../COMPILER-PIPELINE.md) and [artifact wire](../ARTIFACT-WIRE.md)
+it is not a public `--emit` format. User-visible artifact formats include `.core`, `.xpp`, `.xmm`, object, assembly, LLVM IR,
+and the executable where the connected CLI supports them. [Pipeline](../COMPILER-PIPELINE.md) and [artifact wire](../ARTIFACT-WIRE.md)
 explain the contracts and implementation limits.
 
 | Change | Primary owner | Typical validation |
@@ -31,7 +31,7 @@ explain the contracts and implementation limits.
 | LLVM lowering or object emission | `Talac/Backend/LLVM` | Backend tests and native artifact smoke checks |
 | AARC runtime/ABI | `Talac/Runtime/AARC` and owned public headers | C++ runtime tests and C11 caller ABI test |
 | Native CLI spelling, precedence, help, dispatch | `Talac/Cli` | CLI tests and a `talac` process test |
-| Project file evaluation, plugins, lockfile, TADC | `Tazel/`; transport in `Talac/Tazel/Bridge` | Kotlin tests and native bridge tests |
+| Project file evaluation, plugins, lockfile, project commands | `Tazel/` | Kotlin tests, which run whole commands against stand-in tools |
 | REPL cell/session behavior | `Interactive` | `Interactive/Tests` and a `tali` smoke check |
 
 Compiler-owned C++ public headers live under `Talac/Headers/Progmasoft/Tala/`; callers include them as

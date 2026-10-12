@@ -5,7 +5,7 @@
 
 Tala uses bounded binary documents at compiler stage boundaries. They are
 compiler artifacts rather than source formats. Core, Xpp, and Xmm are public
-`-Emit`/`-Build` choices; CorePrep remains a private adapter contract.
+`--emit`/`--build` choices; CorePrep remains a private adapter contract.
 
 ## Contract families
 
@@ -507,10 +507,10 @@ instruction use.
 The CLI connects the public stage artifacts without exposing CorePrep:
 
 ```powershell
-talac build -File Main.tala -Emit xpp
-talac build -Build xpp -File Main.xpp -Emit xmm
-talac check -Build xmm -File Main.xmm
-talac build -Build xmm -File Main.xmm -Emit llvmll
+talac Main.tala --entry=Example.Program --emit=xpp
+talac Main.xpp --build=xpp --emit=xmm
+talac Main.xmm --build=xmm --emit=metadata
+talac Main.xmm --build=xmm --emit=llvm-ir
 ```
 
 An artifact can move forward or be rewritten at its current stage. It cannot

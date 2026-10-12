@@ -8,7 +8,7 @@
 ```text
 Interactive/     Tala Interactive (tali) source, owned public headers, tests, and LLJIT benchmarks
 Talac/     Native talac driver, public headers, modular C++20 implementation, Haskell packages, and build support
-Tazel/ Kotlin project evaluator, TADC, and BUILD.kts DSL
+Tazel/ Kotlin build system and package manager (tazel) and the project DSL
 Spec/         Public language-design example suites
 third_party/  Pinned source dependencies
 ```
@@ -41,8 +41,7 @@ Talac/
 │   ├── Core/              Core/CorePrep, optimization, verification, codecs
 │   └── Driver/            source loading and private frontend process
 ├── Headers/Progmasoft/Tala/ public/native interface headers
-├── Linker/                typed LLD execution
-└── Tazel/Bridge/  native-to-Kotlin project boundary
+└── Linker/                typed LLD execution
 ```
 
 The directory names are architectural seams even though `talac` is the only public compiler command. The current distribution
@@ -60,7 +59,7 @@ Project bridge -> evaluated Kotlin plan
 ```
 
 Reverse dependencies are avoided. LLVM does not call the CLI; Core does not depend on Xpp; Syntax does not depend on the
-project evaluator; public headers do not expose private LLVM handles. Shared code belongs in the narrowest package that does
+build system; public headers do not expose private LLVM handles. Shared code belongs in the narrowest package that does
 not reverse this direction.
 
 The ecosystem tools have independent ownership and build systems:
@@ -110,9 +109,9 @@ documentation claims.
 
 ## Project-system ownership
 
-`Tazel/` owns `BUILD.kts`, plugin loading, immutable plan construction, dependency declarations, lockfile
-persistence, and TADC. `Talac/Tazel/Bridge/` is only the native transport/launch boundary. Keeping these apart
-prevents the C++ driver from becoming a second implementation of Kotlin validation rules.
+`Tazel/` owns the project file, plugin loading, source discovery, dependency declarations, lockfile persistence, and
+the project commands. It is Kotlin only and reaches the compiler through its command line: no native bridge exists, so
+the C++ driver cannot become a second implementation of Kotlin validation rules.
 
 The JVM package root is `com.progmasoft.tazel.project`. Legacy `org.progmasoft` or `xs` package segments are not used
 for renewed project-system code. JVM support does not implement Xmm readers/writers; native IR ownership remains C++20.

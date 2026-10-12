@@ -3,195 +3,184 @@
 
 # Tala project files
 
+A project is described by one file, a Kotlin script that [Tazel](CLI.md#tazel) evaluates. Tazel reads it, finds the
+sources it names and starts the compiler; the compiler itself never sees a project file.
+
 ## Discovery
 
-Each project has one `BUILD.kts`. Project discovery walks from the requested location toward the filesystem root until
-it finds that file. Split module scripts, compatibility setters, and separate project-state files are not supported.
+A project file has one of five names. Tazel looks for them in this order and uses the first that exists; the others are
+not read:
+
+1. `BUILD.kts`
+2. `BUILD.tzl`
+3. `BUILD.tazel`
+4. `BUILD`
+5. `Tazel.build`
+
+The names are case-sensitive on every host, and all five hold the same syntax. A command works on the project of the
+current directory: the nearest directory, upward, that holds a project file.
+
+The script is compiled and run inside Tazel. A machine needs a JRE 25 or newer and no Kotlin installation.
 
 ## Minimal project
 
 ```kotlin
 project {
   name = "Example"
-  version = "0.1.0"
-  stability = Stability.DEV
-  description = "An example application"
-  authors("ExamplePublisher")
 }
 
 sources {
   executable {
-    name = "Example"
-    srcDir = "Sources"
-    entry = "Example.Main"
+    entry = "Example.Program"
   }
 }
 ```
 
-Every executable requires `sources.executable.entry`. The entry is a namespace-qualified class, not a function name. The final
-segment is the class name and is not restricted to `Main` or `Program`: `Namespace.Program`, `Namespace.Namespace.Program`,
-and `Company.Tool.Bootstrap` are valid. A trailing namespace such as `Namespace.` is invalid. The selected class must declare
-a parameterless `public static void Main()` method. Entry resolution uses namespace and type identity; it never derives a
-file path from the entry. File names and directory layout do not have to match namespace segments.
+```powershell
+tazel run
+```
 
-The `project` block has a publication-sensitive completeness rule. When `sources.viget.push` is `true`, `name`, `version`,
-`stability`, `description`, and at least one author are required. When pushing is disabled, the block may be absent, complete, or contain any useful
-subset; private and internal builds are not forced to invent release metadata.
+This compiles every `.tala` file below `Sources/` and writes `build/debug/Example.exe` (no extension outside Windows).
+
+[`Tazel/BUILD.kts`](../Tazel/BUILD.kts) shows the whole DSL in one file. What is not in that file is not part of the DSL.
+
+## `project`
 
 ```kotlin
 project {
-  name = "InternalTool"
-}
-
-sources {
-  executable {
-    entry = "Company.Internal.Tool"
-  }
-  viget {
-    push = false
-  }
+  name = "Example"
+  version = "0.1.0"
+  stability = Stability.STABLE // STABLE, UNSTABLE, BETA, NIGHTLY, ALPHA or DEV
+  description = "A Tala project"
+  authors("Leitwolf", "Helmut")
+  defaultFeatures("TOML")
 }
 ```
 
-## Compiler settings
+Every field is optional on its own. With `sources.viget.push = true`, `name`, `version`, `stability`, `description` and at
+least one author are required; this is checked once the whole file has run, so the order of the blocks does not matter.
+`name` is one identifier and `version` is an exact semantic version.
+
+## `compiler`
 
 ```kotlin
 compiler {
-  version = "latest"
-  standard = "latest"
+  standard = talaStandardOf(26)
   backend = Backend.LLVM
-  buildMode = BuildMode.DEBUG
-  warnings = Warnings.MEDIUM
-  werror = false
-  wexperimental = false
-  wshadow = false
-  wundef = true
-
-  unsafe {
-    typeSafeFormat = true
-    xppOptimizationPasses = true
-    xmmOptimizationPasses = true
-  }
+  buildMode = BuildMode.RELEASE
+  werror = true
+  warnings = Warnings.ALL
+  wshadow = true
+  xppOptimizationPasses = true
+  xmmOptimizationPasses = true
+  optLevel = OptLevel.O3
 
   llvm {
-    optLevel = LlvmOptLevel.O0
     compiler = LlvmCompiler.AOT
     lto = LlvmLto.NONE
+    args("-time-passes")
   }
 }
 ```
 
-`typeSafeFormat = true` is the default strict policy: compile-time-known format strings used by formatted Console APIs
-must match their argument types. `false` selects the looser C-compatible policy. The name describes strict type safety;
-it is not an opt-in to permissive formatting.
+| Setting | Values | Default | Compiler option |
+| --- | --- | --- | --- |
+| `standard` | `talaStandardOf(26)` | `talaStandardOf(26)` | `--standard` |
+| `backend` | `Backend.LLVM` | `LLVM` | `--codegen-backend` |
+| `buildMode` | `BuildMode.DEBUG`, `RELEASE` | `DEBUG` | chooses the output directory and the default `optLevel` |
+| `werror` | `true`, `false` | `false` | `--warnings-as-errors` |
+| `warnings` | `Warnings.ALL`, `MEDIUM`, `LOW`, `NONE` | `MEDIUM` | `--warnings` |
+| `wshadow` | `true`, `false` | `false` | `--warnings=shadow` |
+| `xppOptimizationPasses` | `true`, `false` | `true` | `--xpp-optimization-passes` |
+| `xmmOptimizationPasses` | `true`, `false` | `true` | `--xmm-optimization-passes` |
+| `optLevel` | `OptLevel.O0`, `O1`, `O2`, `O3`, `OG` | `O0` for `DEBUG`, `O3` for `RELEASE` | `--opt-level` |
+| `llvm.compiler` | `LlvmCompiler.AOT`, `ORC` | `AOT` | `--llvm-compiler` |
+| `llvm.lto` | `LlvmLto.FAT`, `THIN`, `NONE` | `NONE` | `--llvm-lto` |
+| `llvm.args(...)` | arguments for LLVM | none | `--llvm-args` |
 
-## Sources and tests
+Tazel writes every setting onto the compiler's command line, the ones at their default too, so a build follows from the
+project file and not from the defaults of whichever compiler is installed. A setting the compiler cannot carry out yet is
+refused by the compiler, by name; see the [compiler reference](CLI.md#not-implemented-yet).
+
+No warning level turns `wshadow` on. `wshadow = true` with `Warnings.NONE` is a contradiction and is rejected.
+
+`compiler.version` is the version of the compiler that will build the project. A project file reads it and cannot set it.
+
+## `outdirs`, `targets` and `pml`
+
+```kotlin
+outdirs {
+  release = "build/release"
+  debug = "build/debug"
+}
+
+targets {
+  target("x86_64-pc-windows-msvc", "aarch64-apple-darwin")
+}
+
+pml {
+  enabled = true
+}
+```
+
+Output directories are relative to the project file and stay inside the project. An artifact is named after its target:
+`build/debug/<name>.exe` for a build, `build/debug/<name>.talameta` for a check.
+
+`targets` lists the LLVM target triples the package is meant for; the default is the target of the host. `check`, `build`
+and `run` compile for the host. `pml.enabled = false` is meant to close the Progmasoft Library (`Progmasoft.*`) to the
+project; the setting is recorded, and the compiler has no option for it yet.
+
+## `sources`
 
 ```kotlin
 sources {
+  viget {
+    push = true
+    exclude("build/**/*")
+  }
+
   executable {
     name = "Example"
     srcDir = "Sources"
-    entry = "Example.Main"
-    exclude("Generated/**")
+    exclude("Sources/Generated")
+    entry = "Example.Program"
   }
 
   library {
     name = "ExampleLibrary"
     viPkgType(ViPkgType.TALALIB, ViPkgType.STATICLIB)
-    srcDir = "LibrarySources"
+    srcDir = "Sources"
     namespace = "Example.Library"
   }
 
-  test("unit") {
+  test("Unit") {
     testDir = "Tests/Unit"
-    framework = "tests"
-    exclude("Fixtures/**")
-  }
-
-  test("integration") {
-    testDir = "Tests/Integration"
-  }
-
-  viget {
-    push = false
-    exclude("build/**")
   }
 }
 ```
 
-Source roots must stay inside the project root. The Kotlin runtime validates the configured roots and forwards them with
-their exclusion policy; it does not walk the roots or create a `.tala` file list. Source discovery and namespace-based entry
-resolution belong to the compiler. Exclusions accept project-relative glob patterns. Each executable or library target's
-`exclude`, each named
-test suite's `exclude`, and `sources.viget.exclude` have no implicit pattern: their plan value is `null` until an
-`exclude(...)` declaration is present.
+A project has any number of executables and libraries. `name` defaults to the name of the project, so a target of a project
+without a name has to name itself; names are case-sensitive and unique within their kind. `srcDir` defaults to `Sources`.
 
-The Haskell source loader recursively discovers files whose extension is exactly `.tala`, sorts project-relative paths
-deterministically, and de-duplicates files reached through overlapping roots. Compilation decodes every selected file as
-strict UTF-8 before lexing. Tool-only source enumeration does not decode file contents: talafmt owns its configured
-input and output encodings instead. A configured root or filesystem link that escapes the project root is an error in both
-routes. Exclusions are evaluated
-against normalized project-relative paths: `*` and `?` stay within one path segment, while a complete `**` segment may span
-zero or more directories.
+`entry` names a class by its namespace: `Example.Program`. That class provides the parameterless
+`public static void Main()` that starts the program. The entry is found by namespace and class, not by file: neither file
+names nor directories have to mirror namespaces. A library has no entry; `namespace` names its root namespace.
+`viPkgType` is `TALALIB` unless the library says otherwise; `STATICLIB` and `CDYLIB` are the other kinds.
 
-Physical files are compilation units, not modules. Files with the same namespace are merged before Renamer and Name
-Resolution, regardless of their names or directory locations. Duplicate types across those files are diagnosed as duplicate
-namespace declarations. All discovered namespaces are checked through CorePrep; the namespace named by `entry` selects the
-Core module passed to the native pipeline. Cross-namespace imports and multi-module native linking remain separate compiler
-work.
+The sources of a target are every file below its `srcDir` whose name ends in `.tala`, written exactly so. Symbolic links
+are not followed. `exclude` takes patterns relative to the project file, written with `/`:
 
-Test suites have case-sensitive Tala identifiers and retain their own root, framework, and exclusion policy across the
-typed project plan and native compiler boundary. A suite defaults to `Tests/<suite-name>` when `testDir` is omitted. Duplicate
-suite names are configuration errors; suites are never flattened into one anonymous test directory.
+- `*` and `?` match within one path segment;
+- a segment that is `**` matches any number of segments;
+- a pattern that names a directory excludes everything below it.
 
-## Project plugins
+Patterns are compared the way the host compares file names: without regard to case on Windows, exactly elsewhere.
 
-Plugins are declared in a top-level preamble so the host can resolve them before Kotlin compiles the rest of the project
-script:
+`test("Name")` declares a named test suite; a name is one identifier and may be declared once. `testDir` defaults to
+`Tests/<name>`. Test sources and test artifacts never enter a `.vipkg`. `sources.viget.exclude` removes further files from
+what is packaged.
 
-```kotlin
-plugins {
-  plugin("Progmasoft") {
-    name = "CMake"
-    version = "0.1.0"
-  }
-}
-```
-
-Production Kotlin DSL plugin JARs use
-`https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/`. The catalog's version-index and JAR filename layout are not
-yet connected to this runtime. ViGet is the only remote source; there is no configurable repository list. The host currently
-loads installed artifacts from the project-local `.tazel/plugins` cache, which is not another repository. A plugin
-JAR contains
-`META-INF/tala-plugin.properties` and exactly one matching `ProjectPlugin` service. The runtime validates the
-coordinate, exact requested version, plugin API version, safe Kotlin imports, and SHA-256 identity before
-activation. An adjacent `<plugin.jar>.sha256` file makes the expected digest explicit; the digest is checked again in the
-Kotlin process before service loading.
-
-Plugins can register named DSL extensions, contribute deterministic plan metadata, and run finalization hooks. Extension
-name collisions and descriptor/service identity mismatches are errors. Plugins are trusted build logic with full JVM and
-filesystem access; this infrastructure intentionally does not sandbox or restrict them.
-
-A project can explicitly load a local Kotlin plugin JAR without introducing another repository:
-
-```kotlin
-plugins {
-  localPlugin {
-    path = "plugin.jar"
-  }
-}
-```
-
-The path is project-relative, must remain inside the project root, and must end in `.jar`. Publisher, name, version, and API
-identity still come from the verified JAR descriptor rather than the file name or project declaration.
-
-DSL plugins do not have a stability field. `stability` is neither optional nor accepted in hosted or local plugin
-declarations, descriptors, plans, or lockfiles.
-
-## Dependencies
-
-Dependencies use exact `Publisher.Name` coordinates and exact semantic versions:
+## `dependencies`
 
 ```kotlin
 dependencies {
@@ -200,128 +189,107 @@ dependencies {
     version = "1.2.3"
     stability = Stability.STABLE
   }
+
+  dependency("Publisher") {
+    name = "Toml"
+    version = "1.0.0"
+    feature = "TOML"
+    defaultFeatures = false
+    feature("Serde") { enabled = true }
+  }
+
+  localDependency { path = "Dependency.vipkg" }
+
+  testDependency("Publisher") {
+    name = "TestDep"
+    version = "0.1.0"
+  }
+
+  localTestDependency { path = "TestDependency.vipkg" }
 }
 ```
 
-Optional dependencies name a feature and record whether that feature is enabled. The current runtime validates the typed
-publisher, package name, stability, and exact version declarations, detects conflicts, and writes that direct manifest to the
-lock database. It does not call this a resolved dependency graph. A complete transitive package solver and network package
-client are separate implementation work.
+A dependency is a package of ViGet, written as a publisher, a name and an exact semantic version. `stability` defaults to
+`STABLE`. The publisher is the case-sensitive name of a Progmasoft Account. ViGet is the only remote source: there is no
+list of repositories and no way to name another one.
 
-Standard-library namespaces are not repeated as package dependencies.
+`feature = "TOML"` makes the dependency optional: it is brought in only when the feature `TOML` of this project is on.
+`defaultFeatures` and `feature("Name") { enabled = true }` choose among the features of the dependency itself.
 
-A local Tala package is an explicit file source, not a repository coordinate:
+`localDependency` names a `.vipkg` inside the project directory. `testDependency` and `localTestDependency` serve the test
+suites only. A package may be declared once per kind; two declarations of one package that differ are an error.
+
+Tazel records the declarations and does not fetch them yet, so `check`, `build` and `run` refuse a project that declares a
+dependency of the build. The namespaces of the standard library are not dependencies and are never declared.
+
+## `workspace`
 
 ```kotlin
-dependencies {
-  localDependency {
-    path = "dependency.vipkg"
+workspace {
+  members("./Server", "../Shared", "Client")
+  defaultMembers("./Server", "../Shared")
+  exclude("OldProject")
+}
+```
+
+Each member is a directory with a project file of its own, written relative to this project file. A project that only
+gathers members needs no `sources`. `defaultMembers` are the members `tazel fmt` and `tazel lint` work on at the root;
+`exclude` removes a directory from the members. See [workspaces](CLI.md#workspaces).
+
+## `plugins`
+
+Plugins extend the DSL. They are declared in a `plugins` block that Tazel reads before it compiles the rest of the file:
+
+```kotlin
+plugins {
+  plugin("Progmasoft") {
+    name = "CMake"
+    version = "0.1.0"
+  }
+
+  localPlugin {
+    path = "plugin.jar"
   }
 }
 ```
 
-Test-only package files use their own `localTestDependency` declaration and remain separate from production dependencies:
+A plugin of ViGet is found in the cache of the project, `.tazel/plugins`; fetching it from
+`https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/` is not connected yet. A local plugin is a JAR inside the
+project directory. Either way the JAR describes itself in `META-INF/tazel-plugin.properties` (publisher, name, version,
+API version, the imports it adds to the project file) and provides exactly one `ProjectPlugin` service. Tazel checks the
+coordinate, the version, the API version and the SHA-256 digest before it loads the plugin; a `<plugin>.jar.sha256` file
+beside the JAR pins the expected digest. A plugin has no stability.
+
+A plugin is written against the package `com.progmasoft.api.tazel.dsl.plugin`. It can register DSL extensions, contribute
+metadata and run a hook once the project is complete. A plugin is trusted build logic: it runs with the full access of
+the JVM, and Tazel does not sandbox it.
+
+## Host values and helpers
+
+| Name | Meaning |
+| --- | --- |
+| `OS` | the operating system Tazel runs on: `OperatingSystem.LINUX`, `MACOS`, `WINDOWS`, `FREEBSD`, `OPENBSD`, `NETBSD` or `UNKNOWN` |
+| `ARCH` | its processor architecture: `Architecture.X86_64`, `AARCH64`, `ARMV7H`, `RISCV64` or `UNKNOWN` |
+| `panic(message)` | stops the evaluation; the command fails with the message |
+| `eprint(value)` | writes to the standard error stream |
 
 ```kotlin
-dependencies {
-  localTestDependency {
-    path = "TestDependency.vipkg"
-  }
-}
+if (OS == OperatingSystem.OPENBSD) panic("this project does not build on OpenBSD")
 ```
 
-The project-relative path must stay inside the project root and use `.vipkg`. The declaration is preserved separately in the
-plan and lockfile; it is not misreported as a solved or downloaded ViGet dependency.
+After its `project` and `compiler` blocks a project file can read back what it wrote: `project.name`,
+`compiler.standard`, `compiler.version`.
 
-Tala packages are distinct from Kotlin DSL plugins. They are Tala-authored `.vipkg` artifacts cataloged under
-`https://viget.progmasoft.com/<Publisher>/<Name>/`; dependency solving and registry transport remain separate work.
+## Lockfile
 
-ViGet is the one hosted registry. These fixed paths do not create a Gradle-like `repositories` block, and the project DSL
-does not accept arbitrary remote repository URLs. Publisher identity is the case-sensitive Progmasoft Account name.
+`LOCK.sqlite3`, beside the project file, is an SQLite database that records the dependencies the project declares and the
+plugins that evaluated it. `tazel lock resolve` renews it; `check`, `build` and `run` renew it when it no longer matches
+the project file. It records declarations, not a solved dependency graph.
 
-## Lock file
+`tazel lock create-dump` writes `LOCK.dump`: the same content as SQL text, deterministic and replayable by SQLite, for
+review and for diffs.
 
-Project evaluation writes `LOCK.sqlite3`. It is a binary SQLite database, not a text or JSON lock file.
-Ordinary evaluation never emits a textual copy. Use the separate Tala Dumpfile Creator when a reviewable or
-replayable SQL representation is needed:
+## Tool configuration
 
-```powershell
-tadc -Projectfile .\BUILD.kts -Output .\Project.sqlite3.dump
-```
-
-TADC evaluates the named project, refreshes its binary lockfile, validates the lockfile format, and writes deterministic
-UTF-8 SQL. The output contains schema and quoted row data inside a transaction and can be replayed by SQLite. Its name must
-be supplied explicitly, but TADC does not impose a filename extension. It refuses to overwrite the binary lockfile with
-text.
-
-## Additional blocks
-
-The DSL also supports:
-
-- `outdirs` for Debug and Release output directories;
-- `targets` for target triples;
-- `project.authors(...)` and `project.defaultFeatures(...)` for publication metadata;
-- `pml` for PML enablement; and
-- `workspaces` for named project paths.
-
-`panic("message")` immediately aborts project-script evaluation. Because the evaluator emits the plan, source registry, and
-lock only after the script returns normally, a panic does not start Tala compilation and does not emit partial project
-state.
-
-`eprint(value)` and `eprintln(value)` mirror Kotlin's standard output helpers but write to standard error. Both accept
-nullable values; `eprintln` appends the platform line separator.
-
-Author declarations are case-sensitive Progmasoft Account names and belong to the project block:
-
-```kotlin
-project {
-  authors("Leitwolf", "Helmut")
-}
-```
-
-## Evaluation lifecycle
-
-Project evaluation is an ordered operation rather than serialization of an arbitrary object graph:
-
-1. the native driver discovers the exact `BUILD.kts`;
-2. the plugin preamble is parsed early enough to resolve trusted Kotlin plugin JARs;
-3. the full script executes with the project DSL;
-4. typed scopes validate and produce an immutable plan;
-5. plugin finalizers add deterministic extension metadata;
-6. the SQLite lockfile is refreshed; and
-7. the native driver consumes the plan and starts the requested compiler/tool route.
-
-The plan transport is an implementation boundary, not a second user manifest. Projects do not contain `MANIFEST.TOML`, and
-`.vipkg` packages keep the project script at their root as `BUILD.kts` rather than under an extra `TALA/`
-directory. Test source files are not included in a published `.vipkg`.
-
-Plugin code is trusted build logic with full JVM access. Safety comes from exact identity, contained local paths, descriptor
-and service agreement, API-version checks, digest verification, deterministic model validation, and explicit failure—not
-from a sandbox that changes Kotlin semantics.
-
-## Output directories and artifact names
-
-Debug and Release output directories are independent DSL values. The defaults are `build/debug` and `build/release`.
-The command-line `-Emit` option selects the artifact kind; artifact choice is deliberately not stored in the project DSL.
-The chosen output directory continues to come from the evaluated project mode.
-
-Binary emission creates one `<project-or-entry>.vxse`. The project output naming contract for source-owned emissions is to
-flatten source stems inside the selected output directory: `Sources/MyApp/Main.tala` becomes `build/debug/Main.o` for a
-debug object build. The original source directory is not reproduced below `build/debug`; multiple sources produce multiple
-objects/assembly files, and equal stems are diagnosed as ambiguous instead of overwriting one another.
-
-The project route is connected: source ownership is retained through Xmm, then each source is lowered to its own object or
-assembly. All source outputs are planned and generated before existing destinations are replaced. A failure during parsing,
-verification, target lowering, or collision checking leaves the previous output set untouched. The compiler does not delete
-unrelated or stale sibling files; it replaces only artifacts named by the current source catalog. Explicit `-File` builds
-remain separate and emit a sibling artifact. See [Project native artifacts](PROJECT-ARTIFACTS.md) for the exact transaction
-and recovery behavior.
-
-## Case sensitivity and paths
-
-Language identifiers, test-suite names, package coordinates, plugin coordinates, targets, and canonical CLI values are
-case-sensitive. Filesystem containment is evaluated after canonicalization, so a path that textually begins with the project
-directory but resolves outside it is rejected.
-
-Use forward-slash-style project-relative patterns in exclusions. The evaluator preserves null when no `exclude(...)` call is
-present; an explicit empty list and the absence of an exclusion policy must not be conflated by transports or plugins.
+`talafmt.kts`, `talalint.kts` and `tala-analyzer.kts` configure the formatter, the linter and the analyzer. Each tool uses
+its defaults when its file is absent.
