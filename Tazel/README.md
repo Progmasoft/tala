@@ -27,7 +27,7 @@ describes the project file. [`BUILD.kts`](BUILD.kts) in this directory is the wh
 | `com.progmasoft.tazel.cli` | the command line: the typed parser, the commands, `main` |
 | `com.progmasoft.tazel.dsl` | the project DSL, its model and the loader that evaluates a project file |
 | `com.progmasoft.tazel.dsl.plugin` | the plugin host: preamble, resolution, verification, activation |
-| `com.progmasoft.tazel.build` | source discovery, compiler arguments, tool lookup, workspaces |
+| `com.progmasoft.tazel.driver` | source discovery, compiler arguments, tool lookup, workspaces |
 | `com.progmasoft.tazel.lock` | `LOCK.sqlite3` and `LOCK.dump` |
 | `com.progmasoft.api.tazel.dsl.plugin` | the API a plugin is written against |
 

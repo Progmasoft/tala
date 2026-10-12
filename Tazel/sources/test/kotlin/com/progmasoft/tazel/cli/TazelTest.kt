@@ -7,8 +7,8 @@ package com.progmasoft.tazel.cli
 
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.TerminalRecorder
-import com.progmasoft.tazel.build.Processes
-import com.progmasoft.tazel.build.Toolchain
+import com.progmasoft.tazel.driver.Processes
+import com.progmasoft.tazel.driver.Toolchain
 import com.progmasoft.tazel.dsl.OperatingSystem
 import com.progmasoft.tazel.lock.ProjectLockFile
 import java.nio.file.Files

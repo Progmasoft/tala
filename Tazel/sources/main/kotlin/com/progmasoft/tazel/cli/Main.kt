@@ -8,8 +8,8 @@ package com.progmasoft.tazel.cli
 import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import com.github.ajalt.mordant.terminal.Terminal
-import com.progmasoft.tazel.build.SystemProcesses
-import com.progmasoft.tazel.build.Toolchain
+import com.progmasoft.tazel.driver.SystemProcesses
+import com.progmasoft.tazel.driver.Toolchain
 import com.progmasoft.tazel.dsl.detectHost
 import java.nio.file.Path
 import kotlin.system.exitProcess
