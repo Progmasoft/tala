@@ -17,7 +17,7 @@ compiler is Haskell through CorePrep and C++20 from Xpp onward.
 ## The name
 
 The name comes from Tagalog and Sanskrit. In Tagalog *tala* is a bright star; in Sanskrit *tāla* is a beat, the measure
-that keeps music in time.
+that keeps music in time. Tazel, the build system and package manager, joins Tala and Bazel.
 
 Through version 0.2.8 the project went by the code name X#. Its first real name was Visual X#, which risked being taken
 for the unrelated xBase language X#. Tala is the final name; earlier release notes keep the names they were written

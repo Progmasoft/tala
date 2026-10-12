@@ -1,7 +1,9 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Tala Kotlin project evaluator
+# Tazel
+
+Tazel is the build system and package manager of Tala. The name joins Tala and Bazel.
 
 This Java 25/Kotlin component evaluates the single `BUILD.kts` project file used by `talac`. It resolves source roots,
 compiler settings, targets, dependencies, named test suites, and publication metadata into the native compiler plan. It has
