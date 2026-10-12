@@ -3,43 +3,47 @@
 
 module Main (main) where
 
+import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text qualified as Text
 import Data.Text.IO qualified as TextIO
 import System.Environment (getArgs)
-import System.Exit (exitFailure)
+import Data.Version (showVersion)
+import Paths_talalint (version)
+import System.Exit (ExitCode (..), exitFailure, exitWith)
+import System.IO (hPutStrLn, stderr)
 import Progmasoft.Talafmt (formattedSource)
 import Progmasoft.Talalint
+import Progmasoft.Talalint.CommandLine
 import Progmasoft.Tala.AST
 import Progmasoft.Tala.Frontend
-
-data Command = Help | ListChecks | Check FilePath | Fix FilePath
 
 main :: IO ()
 main = do
     arguments <- getArgs
-    case parseCommand arguments of
-        Nothing -> usage >> exitFailure
-        Just command -> runCommand command
+    case parseCommandLine arguments of
+        Left problem -> do
+            hPutStrLn stderr ("talalint: " ++ renderCommandLineError problem)
+            exitWith (ExitFailure usageError)
+        Right ShowHelp -> putStr usageText
+        Right ShowVersion -> putStrLn ("talalint " ++ showVersion version)
+        Right (Lint mode paths) -> do
+            clean <- mapM (lintPath mode) (NonEmpty.toList paths)
+            if and clean then pure () else exitFailure
 
-parseCommand :: [String] -> Maybe Command
-parseCommand ["-Help"] = Just Help
-parseCommand ["-List-Checks"] = Just ListChecks
-parseCommand ["-Fix", path] = Just (Fix path)
-parseCommand [path] = Just (Check path)
-parseCommand _ = Nothing
+-- | Exit status of a command line that could not be read.
+usageError :: Int
+usageError = 2
 
-runCommand :: Command -> IO ()
-runCommand Help = usage
-runCommand ListChecks = mapM_ printCheck availableChecks
-runCommand command = do
-    let path = commandPath command
+-- | Lint one file; True when nothing is left to report.
+lintPath :: Mode -> FilePath -> IO Bool
+lintPath mode path = do
     source <- Text.unpack <$> TextIO.readFile path
-    finalSource <- case command of
-        Fix _ -> applyFixes path source
-        _ -> pure source
+    finalSource <- case mode of
+        Fix -> applyFixes path source
+        Report -> pure source
     let problems = lintSource (CompilerInput path finalSource)
     mapM_ printDiagnostic problems
-    if null problems then pure () else exitFailure
+    pure (null problems)
 
 applyFixes :: FilePath -> String -> IO String
 applyFixes path source = case applySafeFixes (CompilerInput path source) of
@@ -47,16 +51,6 @@ applyFixes path source = case applySafeFixes (CompilerInput path source) of
     Right result -> do
         TextIO.writeFile path (Text.pack (formattedSource result))
         pure (formattedSource result)
-
-commandPath :: Command -> FilePath
-commandPath command = case command of
-    Check path -> path
-    Fix path -> path
-    Help -> error "Help does not own a source path"
-    ListChecks -> error "ListChecks does not own a source path"
-
-printCheck :: (String, String) -> IO ()
-printCheck (ruleId, explanation) = putStrLn (ruleId ++ "\t" ++ explanation)
 
 printDiagnostic :: LintDiagnostic -> IO ()
 printDiagnostic problem =
@@ -84,6 +78,3 @@ renderSeverity severity = case severity of
     LintInfo -> "info"
     LintWarning -> "warning"
     LintError -> "error"
-
-usage :: IO ()
-usage = putStrLn "usage: talalint <file.tala> | talalint -Fix <file.tala> | talalint -List-Checks | talalint -Help"

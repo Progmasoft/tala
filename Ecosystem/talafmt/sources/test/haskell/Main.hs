@@ -4,6 +4,7 @@
 module Main (main) where
 
 import System.Exit (exitFailure)
+import CommandLineTests
 import Progmasoft.Talafmt
 import Progmasoft.Talafmt.Encoding
 import Progmasoft.Tala.Diagnostic (diagnosticCode)
@@ -11,6 +12,7 @@ import Progmasoft.Tala.Frontend
 
 main :: IO ()
 main = do
+    mapM_ (uncurry check) commandLineTests
     check "formatter removes trailing whitespace and preserves the first line ending" normalizesLayout
     check "formatter reports an already formatted source as unchanged" unchangedSource
     check "formatter refuses malformed source" rejectsMalformedSource

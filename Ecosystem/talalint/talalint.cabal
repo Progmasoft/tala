@@ -16,6 +16,7 @@ build-type: Simple
 library
     exposed-modules:
         Progmasoft.Talalint
+        Progmasoft.Talalint.CommandLine
     hs-source-dirs: sources/main/haskell
     build-depends:
         base >=4.20 && <4.23,
@@ -26,7 +27,11 @@ library
 executable talalint
     main-is: Progmasoft/Talalint/Main.hs
     other-modules:
+        Paths_talalint
         Progmasoft.Talalint
+        Progmasoft.Talalint.CommandLine
+    autogen-modules:
+        Paths_talalint
     hs-source-dirs: sources/main/haskell
     build-depends:
         base >=4.20 && <4.23,
@@ -39,6 +44,8 @@ executable talalint
 test-suite talalint-tests
     type: exitcode-stdio-1.0
     main-is: Main.hs
+    other-modules:
+        CommandLineTests
     hs-source-dirs: sources/test/haskell
     build-depends:
         base >=4.20 && <4.23,
