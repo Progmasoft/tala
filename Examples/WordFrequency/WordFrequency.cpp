@@ -10,7 +10,7 @@ int
 main()
 {
     constexpr std::array words
-        = { "visual", "xsharp", "visual", "compiler", "xsharp", "visual" };
+        = { "visual", "tala", "visual", "compiler", "tala", "visual" };
     std::map<std::string, int> counts;
     for (const auto *word : words)
     {

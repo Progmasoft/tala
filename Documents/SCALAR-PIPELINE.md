@@ -12,14 +12,14 @@ verification, serialization, and native lowering.
 
 The scalar pipeline has five non-negotiable properties:
 
-1. A Visual X# type has the same width on every development host.
+1. A Tala type has the same width on every development host.
 2. Literal parsing never narrows through a host `Int`, `long`, or `double`.
 3. Every serialized value carries enough type information to reconstruct it.
 4. Each IR verifier independently rejects an invalid type/payload pair.
 5. LLVM receives signedness, width, and floating semantics explicitly.
 
-The implementation therefore avoids C and C++ ABI assumptions. Visual X#
-`int` is 64-bit even on a platform where C++ `int` is 32-bit, and Visual X#
+The implementation therefore avoids C and C++ ABI assumptions. Tala
+`int` is 64-bit even on a platform where C++ `int` is 32-bit, and Tala
 `long` remains 32-bit even where a native `long` has another width.
 
 ## Canonical catalog
@@ -238,9 +238,9 @@ the earliest owning layer whenever the normal pipeline is used.
 ## Test ownership
 
 Haskell scalar codec and verifier cases live beside the Haskell driver tests.
-Native cross-stage scalar tests live in `Compiler/Driver/Tests`. Core-only
-golden documents live in `Compiler/Core/Tests`, and LLVM instruction tests live
-in `Compiler/Backend/LLVM/Tests`.
+Native cross-stage scalar tests live in `Talac/Driver/Tests`. Core-only
+golden documents live in `Talac/Core/Tests`, and LLVM instruction tests live
+in `Talac/Backend/LLVM/Tests`.
 
 The suite covers every catalog type, signed and unsigned endpoints, malformed
 floating spellings, noncanonical integer magnitudes, numeric payload limits,

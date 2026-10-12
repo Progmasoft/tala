@@ -8,7 +8,7 @@ cc_binary(
     deps = [
         "//Interactive:interactive_arguments",
         "//Interactive:interactive_runtime",
-        "//Compiler/Backend/LLVM:llvm_backend",
+        "//Talac/Backend/LLVM:llvm_backend",
         "@catch3//:catch2_main",
         "@catch3//src/Progmasoft:catch3",
     ],

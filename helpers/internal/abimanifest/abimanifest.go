@@ -178,10 +178,10 @@ func (source *sources) sameNumbers(what string, stated map[string]int, found map
 }
 
 var (
-	declaredFunction = regexp.MustCompile(`(?m)^\s*(vxs_[a-z0-9_]+)\(`)
-	enumerator       = regexp.MustCompile(`(?m)^\s*(VXS_FRONTEND_[A-Z_]+) = (\d+),?$`)
-	integerMacro     = regexp.MustCompile(`(?m)^#define (VXS_[A-Z_]+) (?:U?INT(?:32|64)_C)\((-?\d+)\)$`)
-	definitionExport = regexp.MustCompile(`(?m)^\s+(vxs_[a-z0-9_]+)\s*$`)
+	declaredFunction = regexp.MustCompile(`(?m)^\s*(tala_[a-z0-9_]+)\(`)
+	enumerator       = regexp.MustCompile(`(?m)^\s*(TALA_FRONTEND_[A-Z_]+) = (\d+),?$`)
+	integerMacro     = regexp.MustCompile(`(?m)^#define (TALA_[A-Z_]+) (?:U?INT(?:32|64)_C)\((-?\d+)\)$`)
+	definitionExport = regexp.MustCompile(`(?m)^\s+(tala_[a-z0-9_]+)\s*$`)
 	quotedName       = regexp.MustCompile(`"([A-Za-z0-9_]+)"`)
 	structField      = regexp.MustCompile(`(?m)^\s+[A-Za-z_][A-Za-z0-9_ ]*?[ \*]([A-Za-z][A-Za-z0-9]*);`)
 )
@@ -233,7 +233,7 @@ func between(text string, start string, end string) string {
 	return rest[:to]
 }
 
-// magic reads a wire magic written as character literals: 'V', 'X', 'M', 'M'.
+// magic reads a wire magic written as character literals: 'T', 'A', 'M', 'M'.
 func magic(text string, after string) string {
 	from := strings.Index(text, after)
 	if from < 0 {
@@ -266,19 +266,19 @@ func Verify(repository string) ([]string, error) {
 	frontend := manifest.FrontendLibrary
 	header := source.read(frontend.Header)
 	source.sameSet("frontend functions in "+frontend.Header, frontend.Symbols, functions(header))
-	source.sameSet("frontend exports in vxs-frontend.def", frontend.Symbols,
+	source.sameSet("frontend exports in tala-frontend.def", frontend.Symbols,
 		func() []string {
 			var names []string
-			for _, match := range definitionExport.FindAllStringSubmatch(source.read("Compiler/Haskell/Driver/ffi/vxs-frontend.def"), -1) {
+			for _, match := range definitionExport.FindAllStringSubmatch(source.read("Talac/Haskell/Driver/ffi/tala-frontend.def"), -1) {
 				names = append(names, match[1])
 			}
 			return names
 		}())
-	kinds := between(header, "enum vxs_frontend_output_kind", "};")
-	statuses := between(header, "enum vxs_frontend_status", "};")
+	kinds := between(header, "enum tala_frontend_output_kind", "};")
+	statuses := between(header, "enum tala_frontend_status", "};")
 	source.sameNumbers("frontend output kind", frontend.OutputKinds, numbers(enumerator, kinds, nil))
 	source.sameNumbers("frontend status", frontend.Statuses, numbers(enumerator, statuses, nil))
-	ffi := source.read("Compiler/Haskell/Driver/src/Visual/XSharp/Driver/FFI.hs")
+	ffi := source.read("Talac/Haskell/Driver/src/Progmasoft/Tala/Driver/FFI.hs")
 	if found := source.number("the frontend ABI version", ffi, `(?m)^frontendAbiVersion = pure (\d+)$`); found != frontend.AbiVersion {
 		source.differ("frontend ABI version", frontend.AbiVersion, found)
 	}
@@ -287,10 +287,10 @@ func Verify(repository string) ([]string, error) {
 			source.problems = append(source.problems, "the frontend library has no name for "+platform)
 		}
 	}
-	loader := source.read("Compiler/Cli/Commands/Frontend.cpp")
+	loader := source.read("Talac/Cli/Commands/Frontend.cpp")
 	for platform, library := range frontend.Libraries {
 		if !strings.Contains(loader, `"`+library+`"`) {
-			source.problems = append(source.problems, fmt.Sprintf("the frontend library of %s, %s, is not what Compiler/Cli/Commands/Frontend.cpp loads", platform, library))
+			source.problems = append(source.problems, fmt.Sprintf("the frontend library of %s, %s, is not what Talac/Cli/Commands/Frontend.cpp loads", platform, library))
 		}
 	}
 
@@ -298,15 +298,15 @@ func Verify(repository string) ([]string, error) {
 	ownership := manifest.Runtime.Ownership
 	aarc := source.read(ownership.Header)
 	source.sameSet("ownership functions in "+ownership.Header, ownership.Symbols, functions(aarc))
-	if found := source.number("VXS_AARC_ABI_VERSION", aarc, `(?m)^#define VXS_AARC_ABI_VERSION UINT32_C\((\d+)\)$`); found != ownership.AbiVersion {
+	if found := source.number("TALA_AARC_ABI_VERSION", aarc, `(?m)^#define TALA_AARC_ABI_VERSION UINT32_C\((\d+)\)$`); found != ownership.AbiVersion {
 		source.differ("ownership ABI version", ownership.AbiVersion, found)
 	}
 	var fields []string
-	for _, match := range structField.FindAllStringSubmatch(between(aarc, "typedef struct VxsAarcTypeMetadata", "} VxsAarcTypeMetadata;"), -1) {
+	for _, match := range structField.FindAllStringSubmatch(between(aarc, "typedef struct TalaAarcTypeMetadata", "} TalaAarcTypeMetadata;"), -1) {
 		fields = append(fields, match[1])
 	}
 	if strings.Join(fields, ",") != strings.Join(ownership.TypeMetadata, ",") {
-		source.differ("the fields of VxsAarcTypeMetadata, in order", ownership.TypeMetadata, fields)
+		source.differ("the fields of TalaAarcTypeMetadata, in order", ownership.TypeMetadata, fields)
 	}
 	text := manifest.Runtime.Text
 	textHeader := source.read(text.Header)
@@ -314,20 +314,20 @@ func Verify(repository string) ([]string, error) {
 	source.sameNumbers("text constant", text.Constants, numbers(integerMacro, textHeader, nil))
 	// What a host of generated code exports is the same list.
 	var exported []string
-	for _, match := range quotedName.FindAllStringSubmatch(between(source.read("Compiler/Runtime/host.bzl"), "_ENTRY_POINTS = [", "]"), -1) {
+	for _, match := range quotedName.FindAllStringSubmatch(between(source.read("Talac/Runtime/host.bzl"), "_ENTRY_POINTS = [", "]"), -1) {
 		exported = append(exported, match[1])
 	}
-	source.sameSet("runtime entry points in Compiler/Runtime/host.bzl", append(append([]string(nil), ownership.Symbols...), text.Symbols...), exported)
+	source.sameSet("runtime entry points in Talac/Runtime/host.bzl", append(append([]string(nil), ownership.Symbols...), text.Symbols...), exported)
 
 	// The wire formats.
 	type wire struct {
 		version int
 		magic   string
 	}
-	coreHeader := source.read("Compiler/Headers/Visual/XSharp/Core/Wire.hpp")
-	coreHaskell := source.read("Compiler/Haskell/Core/src/Visual/XSharp/Core/Wire.hs")
-	prepHeader := source.read("Compiler/Headers/Visual/XSharp/Core/CorePrep/Wire/Format.hpp")
-	prepHaskell := source.read("Compiler/Haskell/Core/src/Visual/XSharp/Core/CorePrep/Wire/Format.hs")
+	coreHeader := source.read("Talac/Headers/Progmasoft/Tala/Core/Wire.hpp")
+	coreHaskell := source.read("Talac/Haskell/Core/src/Progmasoft/Tala/Core/Wire.hs")
+	prepHeader := source.read("Talac/Headers/Progmasoft/Tala/Core/CorePrep/Wire/Format.hpp")
+	prepHaskell := source.read("Talac/Haskell/Core/src/Progmasoft/Tala/Core/CorePrep/Wire/Format.hs")
 	found := map[string][]wire{
 		"Core": {
 			{source.number("the native Core wire version", coreHeader, `kCurrentVersion = (\d+)`), between(coreHeader, "does not match ", ".")},
@@ -338,10 +338,10 @@ func Verify(repository string) ([]string, error) {
 			{source.number("the frontend CorePrep wire version", prepHaskell, `(?m)^currentWireVersion = WireVersion (\d+)$`), between(prepHaskell, `wireMagic = map (fromIntegral . fromEnum) "`, `"`)},
 		},
 		"Xpp": {
-			{source.number("the Xpp wire version", source.read("Compiler/Headers/Visual/XSharp/Xpp/Wire.hpp"), `kCurrentVersion = (\d+)U?`), magic(source.read("Compiler/Codegen/Xpp/Wire.cpp"), "kMagic{")},
+			{source.number("the Xpp wire version", source.read("Talac/Headers/Progmasoft/Tala/Xpp/Wire.hpp"), `kCurrentVersion = (\d+)U?`), magic(source.read("Talac/Codegen/Xpp/Wire.cpp"), "kMagic{")},
 		},
 		"Xmm": {
-			{source.number("the Xmm wire version", source.read("Compiler/Headers/Visual/XSharp/Xmm/Wire.hpp"), `kCurrentVersion = (\d+)U?`), magic(source.read("Compiler/Codegen/Xmm/Wire.cpp"), "kMagic{")},
+			{source.number("the Xmm wire version", source.read("Talac/Headers/Progmasoft/Tala/Xmm/Wire.hpp"), `kCurrentVersion = (\d+)U?`), magic(source.read("Talac/Codegen/Xmm/Wire.cpp"), "kMagic{")},
 		},
 	}
 	stated := map[string]bool{}
@@ -369,7 +369,7 @@ func Verify(repository string) ([]string, error) {
 
 	// The executable.
 	executable := manifest.Executable
-	generator := source.readAny("Compiler/Backend/LLVM/Generator.cpp", "Compiler/Backend/LLVM/Codegen.cpp")
+	generator := source.readAny("Talac/Backend/LLVM/Generator.cpp", "Talac/Backend/LLVM/Codegen.cpp")
 	entry := regexp.MustCompile(`triple\.isOSWindows\(\) \? "([A-Za-z_]+)" : "([A-Za-z_]+)"`).FindStringSubmatch(generator)
 	if entry == nil {
 		source.problems = append(source.problems, "the entry symbols were not found in the LLVM generator")
@@ -384,7 +384,7 @@ func Verify(repository string) ([]string, error) {
 			}
 		}
 	}
-	linker := source.read("Compiler/Linker/NativeLinker.cpp")
+	linker := source.read("Talac/Linker/NativeLinker.cpp")
 	if !strings.Contains(linker, `"`+executable.Extension+`"`) {
 		source.problems = append(source.problems, "the executable extension "+executable.Extension+" is not what the native linker requires")
 	}

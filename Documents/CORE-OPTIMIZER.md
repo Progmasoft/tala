@@ -118,7 +118,7 @@ environment and never substitutes a variable with an expression.
 ## Integer folding
 
 Integer operations are evaluated with unbounded host `Integer` arithmetic and
-materialized only when the result fits the declared Visual X# scalar type.
+materialized only when the result fits the declared Tala scalar type.
 This separates computation from representation:
 
 - `byte` is signed 8-bit;
@@ -173,7 +173,7 @@ IntegerFact = [minimum .. maximum] × excludesZero
 Either interval endpoint may be absent when no bound is known. Integer type
 limits initialize an unconstrained variable's interval. A signed 64-bit `int`,
 for example, begins at `[-2^63 .. 2^63 - 1]`; an unsigned 8-bit `ubyte` begins at
-`[0 .. 255]`. This makes range reasoning respect Visual X#'s scalar catalog
+`[0 .. 255]`. This makes range reasoning respect Tala's scalar catalog
 instead of the host's `Int` width.
 
 The independent zero-exclusion bit matters for joins. If one arm establishes
@@ -423,7 +423,7 @@ x // 1 -> x
 arbitrary call or closure expression with zero would discard its effect.
 
 Double arithmetic negation collapses when the nested and outer result types
-agree. Double logical negation collapses only for a boolean operand. Visual X#
+agree. Double logical negation collapses only for a boolean operand. Tala
 allows numeric values in boolean context, so `!!numericValue` performs a real
 numeric-to-boolean conversion and must not become the original numeric value.
 
@@ -679,7 +679,7 @@ Focused tests cover:
 - input rejection; and
 - final verifier acceptance.
 
-Integration tests additionally compile Visual X# source through optimized Core
+Integration tests additionally compile Tala source through optimized Core
 and CorePrep. They inspect unoptimized Core when the source-value contract is
 the subject of the test, and optimized Core when dead-value removal is the
 subject. This distinction prevents optimization progress from weakening lexer

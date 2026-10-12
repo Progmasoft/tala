@@ -1,0 +1,1467 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Dates
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Scope
+-- Demonstrates: System.Timing.Date defines the standard Tala civil-date, civil-date-time, ISO
+--   week-date, calendar arithmetic, zoned-date-time, date formatting, and database
+--   temporal-integration APIs.
+
+namespace System.Timing.Date;
+
+using System.Timing;
+using System.Timing.Time;
+
+-- ============================================================================
+-- Example 2: 2. LocalDate
+-- Demonstrates: LocalDate represents a civil calendar date only. It has no time of day, timezone, UTC
+--   offset, location, or timeline position.
+
+public data LocalDate {
+    public LocalDate(
+        int year,
+        int month,
+        int day
+    );
+
+    public int Year { get; }
+    public int Month { get; }
+    public int Day { get; }
+
+    public DayOfWeek DayOfWeek { get; }
+    public int DayOfYear { get; }
+
+    public int IsoDayOfWeek();
+    public IsoWeekDate IsoWeekDate();
+
+    public static LocalDate Parse(
+        _ String value
+    );
+
+    public String ToString();
+
+    public String Format(
+        _ DateFormat format
+    );
+
+    public String Format(
+        _ String pattern
+    );
+
+    public int CompareTo(
+        _ LocalDate other
+    );
+
+    public static bool IsLeapYear(
+        _ int year
+    );
+
+    public static int DaysInMonth(
+        int year,
+        int month
+    );
+
+    public LocalDate AddDays(
+        _ int days
+    );
+
+    public LocalDate AddMonths(
+        _ int months
+    );
+
+    public LocalDate AddYears(
+        _ int years
+    );
+
+    public LocalDate StartOfWeek();
+    public LocalDate EndOfWeek();
+    public LocalDate StartOfMonth();
+    public LocalDate EndOfMonth();
+    public LocalDate StartOfYear();
+    public LocalDate EndOfYear();
+}
+
+-- ============================================================================
+-- Example 3: 2. LocalDate
+-- Demonstrates: Valid:
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+LocalDate leapDay =
+    new LocalDate(
+        2024,
+        2,
+        29
+    );
+
+-- ============================================================================
+-- Example 4: 2. LocalDate
+-- Demonstrates: Invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        2,
+        29
+    ); -- INVALID
+
+-- ============================================================================
+-- Example 5: 2. LocalDate
+-- Demonstrates: Invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        13,
+        1
+    ); -- INVALID
+
+-- ============================================================================
+-- Example 6: 2.2 Proleptic Gregorian calendar
+-- Demonstrates: Examples:
+
+LocalDate.IsLeapYear(2000); -- true
+LocalDate.IsLeapYear(1900); -- false
+LocalDate.IsLeapYear(2024); -- true
+LocalDate.IsLeapYear(2026); -- false
+
+-- ============================================================================
+-- Example 7: 2.3 Text form
+-- Demonstrates: For years from 0 through 9999, the year is emitted with four digits. Larger absolute
+--   years use as many digits as required. Negative years retain a leading - and use at least four
+--   magnitude digits.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+date.ToString();
+-- "2026-08-09"
+
+-- ============================================================================
+-- Example 8: 2.4 DayOfYear
+-- Demonstrates: Example:
+
+new LocalDate(
+    2024,
+    12,
+    31
+).DayOfYear;
+-- 366
+
+-- ============================================================================
+-- Example 9: 2.5 Comparison
+-- Demonstrates: Comparison is chronological civil-date ordering.
+
+new LocalDate(2026, 8, 8)
+    <
+new LocalDate(2026, 8, 9);
+
+-- ============================================================================
+-- Example 10: 2.5 Comparison
+-- Demonstrates: Relational overloads:
+
+public static bool Operator<=>(
+    _ LocalDate left,
+    _ LocalDate right
+);
+
+public static bool Operator<>>(
+    _ LocalDate left,
+    _ LocalDate right
+);
+
+public static bool Operator<<>(
+    _ LocalDate left,
+    _ LocalDate right
+);
+
+public static bool Operator<<=>(
+    _ LocalDate left,
+    _ LocalDate right
+);
+
+-- ============================================================================
+-- Example 11: 3. DayOfWeek
+-- Demonstrates: == and \= use normal CoW value equality and are not overloaded.
+
+public enum DayOfWeek {
+    MONDAY,
+    TUESDAY,
+    WEDNESDAY,
+    THURSDAY,
+    FRIDAY,
+    SATURDAY,
+    SUNDAY,
+}
+
+-- ============================================================================
+-- Example 12: 4. IsoWeekDate
+-- Demonstrates: IsoWeekDate represents an ISO-8601-style week date.
+
+public data IsoWeekDate {
+    public IsoWeekDate(
+        int weekYear,
+        int week,
+        DayOfWeek dayOfWeek
+    );
+
+    public int WeekYear { get; }
+    public int Week { get; }
+    public DayOfWeek DayOfWeek { get; }
+
+    public int IsoDayOfWeek();
+
+    public LocalDate ToLocalDate();
+
+    public static IsoWeekDate Of(
+        _ LocalDate date
+    );
+
+    public static int WeeksInYear(
+        _ int weekYear
+    );
+
+    public String ToString();
+}
+
+-- ============================================================================
+-- Example 13: 4. IsoWeekDate
+-- Demonstrates: Example:
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+IsoWeekDate week =
+    date.IsoWeekDate();
+
+-- ============================================================================
+-- Example 14: 5. DatePeriod
+-- Demonstrates: DatePeriod represents calendar-relative years, months, and days.
+
+public data DatePeriod {
+    int Years,
+    int Months,
+    int Days,
+}
+
+-- ============================================================================
+-- Example 15: 5. DatePeriod
+-- Demonstrates: Example:
+
+LocalDate date =
+    new LocalDate(
+        2024,
+        2,
+        29
+    );
+
+LocalDate result =
+    date + {
+        Years: 1,
+        Months: 1,
+        Days: 2,
+    };
+
+-- ============================================================================
+-- Example 16: 6. DateSpan
+-- Demonstrates: DateSpan represents an exact signed count of civil calendar days.
+
+public data DateSpan {
+    longint Days,
+
+    public bool IsZero();
+    public bool IsPositive();
+    public bool IsNegative();
+}
+
+-- ============================================================================
+-- Example 17: 6. DateSpan
+-- Demonstrates: Example:
+
+DateSpan span =
+    new LocalDate(2026, 8, 10)
+    -
+    new LocalDate(2026, 8, 9);
+
+span.Days;
+-- 1
+
+-- ============================================================================
+-- Example 18: 6. DateSpan
+-- Demonstrates: Reverse order:
+
+DateSpan span =
+    new LocalDate(2026, 8, 9)
+    -
+    new LocalDate(2026, 8, 10);
+
+span.Days;
+-- -1
+
+-- ============================================================================
+-- Example 19: 7. LocalDate arithmetic
+-- Demonstrates: Operators:
+
+public static LocalDate Operator<+>(
+    _ LocalDate date,
+    _ DatePeriod period
+);
+
+public static LocalDate Operator<->(
+    _ LocalDate date,
+    _ DatePeriod period
+);
+
+public static LocalDate Operator<+>(
+    _ LocalDate date,
+    _ DateSpan span
+);
+
+public static LocalDate Operator<->(
+    _ LocalDate date,
+    _ DateSpan span
+);
+
+public static DateSpan Operator<->(
+    _ LocalDate left,
+    _ LocalDate right
+);
+
+-- ============================================================================
+-- Example 20: 7. LocalDate arithmetic
+-- Demonstrates: Convenience methods:
+
+public LocalDate AddDays(
+    _ int days
+);
+
+public LocalDate AddMonths(
+    _ int months
+);
+
+public LocalDate AddYears(
+    _ int years
+);
+
+-- ============================================================================
+-- Example 21: 7.1 Day arithmetic
+-- Demonstrates: Convenience methods:
+
+new LocalDate(2026, 8, 9)
+    .AddDays(1);
+-- 2026-08-10
+
+-- ============================================================================
+-- Example 22: 7.1 Day arithmetic
+-- Demonstrates: Convenience methods:
+
+new LocalDate(2026, 1, 31)
+    .AddDays(1);
+-- 2026-02-01
+
+-- ============================================================================
+-- Example 23: 7.2 Month-end clamping
+-- Demonstrates: If the target month does not contain the original day, the result clamps to the final
+--   valid day of that target month.
+
+new LocalDate(2026, 1, 31)
+    .AddMonths(1);
+-- 2026-02-28
+
+-- ============================================================================
+-- Example 24: 7.2 Month-end clamping
+-- Demonstrates: If the target month does not contain the original day, the result clamps to the final
+--   valid day of that target month.
+
+new LocalDate(2024, 1, 31)
+    .AddMonths(1);
+-- 2024-02-29
+
+-- ============================================================================
+-- Example 25: 7.2 Month-end clamping
+-- Demonstrates: Year arithmetic uses the same clamping rule:
+
+new LocalDate(2024, 2, 29)
+    .AddYears(1);
+-- 2025-02-28
+
+-- ============================================================================
+-- Example 26: 7.3 Start/end calendar queries
+-- Demonstrates: Weeks use the ISO Monday...Sunday boundary.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+date.StartOfWeek();
+-- 2026-08-03
+
+date.EndOfWeek();
+-- 2026-08-09
+
+date.StartOfMonth();
+-- 2026-08-01
+
+date.EndOfMonth();
+-- 2026-08-31
+
+date.StartOfYear();
+-- 2026-01-01
+
+date.EndOfYear();
+-- 2026-12-31
+
+-- ============================================================================
+-- Example 27: 8. LocalDate + LocalTime
+-- Demonstrates: A civil date and a civil time combine into LocalDateTime.
+
+public static LocalDateTime Operator<+>(
+    _ LocalDate date,
+    _ LocalTime time
+);
+
+-- ============================================================================
+-- Example 28: 8. LocalDate + LocalTime
+-- Demonstrates: Example:
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+LocalTime time =
+    new LocalTime(
+        18,
+        30
+    );
+
+LocalDateTime value =
+    date + time;
+
+-- ============================================================================
+-- Example 29: 8. LocalDate + LocalTime
+-- Demonstrates: The reverse form is not defined:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+LocalDateTime value =
+    time + date; -- INVALID
+
+-- ============================================================================
+-- Example 30: 9. LocalDate + LocalTimeShift
+-- Demonstrates: LocalTimeShift carries both a wrapped LocalTime and a signed day offset. Applying it
+--   to a LocalDate consumes that day offset.
+
+public static LocalDateTime Operator<+>(
+    _ LocalDate date,
+    _ LocalTimeShift shift
+);
+
+-- ============================================================================
+-- Example 31: 9. LocalDate + LocalTimeShift
+-- Demonstrates: Example:
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+LocalTimeShift shift =
+    new LocalTime(
+        23,
+        30
+    )
+    + Duration.Of(hours: 2);
+
+LocalDateTime value =
+    date + shift;
+
+-- ============================================================================
+-- Example 32: 10. LocalDateTime
+-- Demonstrates: LocalDateTime represents a civil date and civil time with no timezone or UTC offset.
+
+public data LocalDateTime {
+    public LocalDateTime(
+        LocalDate date,
+        LocalTime time
+    );
+
+    public LocalDateTime(
+        int year,
+        int month,
+        int day,
+        int hour,
+        int minute,
+        int second = 0,
+        int nanosecond = 0
+    );
+
+    public LocalDate Date { get; }
+    public LocalTime Time { get; }
+
+    public int Year { get; }
+    public int Month { get; }
+    public int Day { get; }
+
+    public int Hour { get; }
+    public int Minute { get; }
+    public int Second { get; }
+    public int Nanosecond { get; }
+
+    public DayOfWeek DayOfWeek { get; }
+    public int DayOfYear { get; }
+
+    public static LocalDateTime Parse(
+        _ String value
+    );
+
+    public String ToString();
+
+    public String Format(
+        _ DateFormat format
+    );
+
+    public String Format(
+        _ String pattern
+    );
+
+    public int CompareTo(
+        _ LocalDateTime other
+    );
+
+    public Instant AtOffset(
+        _ UtcOffset offset
+    );
+
+    public ZonedDateTime AtZone(
+        TimeZone timeZone,
+        LocalDateTimeResolution resolution =
+            LocalDateTimeResolution.STRICT
+    );
+
+    public static LocalDateTime Of(
+        Instant instant,
+        UtcOffset offset
+    );
+}
+
+-- ============================================================================
+-- Example 33: 10.2 Comparison
+-- Demonstrates: Relational overloads:
+
+public static bool Operator<=>(
+    _ LocalDateTime left,
+    _ LocalDateTime right
+);
+
+public static bool Operator<>>(
+    _ LocalDateTime left,
+    _ LocalDateTime right
+);
+
+public static bool Operator<<>(
+    _ LocalDateTime left,
+    _ LocalDateTime right
+);
+
+public static bool Operator<<=>(
+    _ LocalDateTime left,
+    _ LocalDateTime right
+);
+
+-- ============================================================================
+-- Example 34: 11. LocalDateTime arithmetic
+-- Demonstrates: Exact civil-time arithmetic uses Duration:
+
+public static LocalDateTime Operator<+>(
+    _ LocalDateTime value,
+    _ Duration duration
+);
+
+public static LocalDateTime Operator<->(
+    _ LocalDateTime value,
+    _ Duration duration
+);
+
+public static Duration Operator<->(
+    _ LocalDateTime left,
+    _ LocalDateTime right
+);
+
+-- ============================================================================
+-- Example 35: 11. LocalDateTime arithmetic
+-- Demonstrates: Example:
+
+LocalDateTime result =
+    new LocalDateTime(
+        2026, 8, 9,
+        23, 30
+    )
+    + Duration.Of(hours: 2);
+
+-- 2026-08-10T01:30:00
+
+-- ============================================================================
+-- Example 36: 11. LocalDateTime arithmetic
+-- Demonstrates: Calendar arithmetic uses DatePeriod:
+
+public static LocalDateTime Operator<+>(
+    _ LocalDateTime value,
+    _ DatePeriod period
+);
+
+public static LocalDateTime Operator<->(
+    _ LocalDateTime value,
+    _ DatePeriod period
+);
+
+-- ============================================================================
+-- Example 37: 11. LocalDateTime arithmetic
+-- Demonstrates: DatePeriod changes the Date component using the same Years → Months → Days and
+--   month-end clamping rules as LocalDate. The Time component is preserved.
+
+LocalDateTime result =
+    new LocalDateTime(
+        2024, 2, 29,
+        13, 45
+    )
+    + {
+        Years: 1,
+        Months: 0,
+        Days: 0,
+    };
+
+-- 2025-02-28T13:45:00
+
+-- ============================================================================
+-- Example 38: 12. Fixed-offset conversion
+-- Demonstrates: A fixed UtcOffset uniquely resolves a LocalDateTime to an Instant.
+
+LocalDateTime local =
+    new LocalDateTime(
+        2026, 8, 9,
+        18, 30
+    );
+
+Instant instant =
+    local.AtOffset(
+        new UtcOffset(
+            hours: 3
+        )
+    );
+
+-- ============================================================================
+-- Example 39: 12. Fixed-offset conversion
+-- Demonstrates: The reverse operation is exact:
+
+LocalDateTime local =
+    LocalDateTime.Of(
+        instant,
+        offset
+    );
+
+-- ============================================================================
+-- Example 40: 13. LocalDateTimeResolution
+-- Demonstrates: A named TimeZone can make a local civil datetime unique, ambiguous, or nonexistent
+--   because timezone rules may change the UTC offset.
+
+public enum LocalDateTimeResolution {
+    STRICT,
+    EARLIER,
+    LATER,
+    NEXT_VALID,
+}
+
+-- ============================================================================
+-- Example 41: 14. ZonedDateTime
+-- Demonstrates: ZonedDateTime is a consistent snapshot containing an exact instant and its civil
+--   representation in a named timezone.
+
+public data class ZonedDateTime(
+    Instant Instant,
+    LocalDateTime LocalDateTime,
+    UtcOffset Offset,
+    TimeZone TimeZone,
+    String Location
+) {
+    public LocalDate Date { get; }
+    public LocalTime Time { get; }
+
+    public static ZonedDateTime Of(
+        Instant instant,
+        TimeZone timeZone
+    );
+
+    public static ZonedDateTime Of(
+        Instant instant,
+        TimeZone timeZone,
+        String location
+    );
+
+    public ZonedDateTime WithTimeZone(
+        _ TimeZone timeZone
+    );
+
+    public ZonedDateTime WithTimeZone(
+        TimeZone timeZone,
+        String location
+    );
+
+    public ZonedDateTime AddPeriod(
+        DatePeriod period,
+        LocalDateTimeResolution resolution =
+            LocalDateTimeResolution.STRICT
+    );
+
+    public String Format(
+        _ DateFormat format
+    );
+
+    public String Format(
+        _ String pattern
+    );
+
+    public String ToString();
+}
+
+-- ============================================================================
+-- Example 42: 14.1 Instant → timezone
+-- Demonstrates: This direction is always unambiguous:
+
+ZonedDateTime istanbul =
+    ZonedDateTime.Of(
+        instant,
+        TimeZone.Of(
+            "Europe/Istanbul"
+        ),
+        "İstanbul"
+    );
+
+-- ============================================================================
+-- Example 43: 14.3 Changing timezone
+-- Demonstrates: WithTimeZone() preserves the same Instant and recalculates the civil representation.
+--   The overload without a location sets Location to null; it does not carry a label from the previous
+--   timezone into the new one.
+
+ZonedDateTime london =
+    istanbul.WithTimeZone(
+        TimeZone.Of(
+            "Europe/London"
+        ),
+        "London"
+    );
+
+-- ============================================================================
+-- Example 44: 15. ZonedDateTime arithmetic
+-- Demonstrates: Exact elapsed-time arithmetic operates on the underlying Instant:
+
+public static ZonedDateTime Operator<+>(
+    _ ZonedDateTime value,
+    _ Duration duration
+);
+
+public static ZonedDateTime Operator<->(
+    _ ZonedDateTime value,
+    _ Duration duration
+);
+
+public static Duration Operator<->(
+    _ ZonedDateTime left,
+    _ ZonedDateTime right
+);
+
+-- ============================================================================
+-- Example 45: 15. ZonedDateTime arithmetic
+-- Demonstrates: Calendar-period arithmetic is intentionally explicit:
+
+ZonedDateTime changed =
+    value.AddPeriod(
+        {
+            Years: 0,
+            Months: 0,
+            Days: 1,
+        },
+        LocalDateTimeResolution.NEXT_VALID
+    );
+
+-- ============================================================================
+-- Example 46: 16. DateFormat
+-- Demonstrates: There is no implicit ZonedDateTime + DatePeriod operator because calendar arithmetic
+--   can encounter DST gaps or overlaps and therefore needs an explicit resolution policy.
+
+public enum class DateFormat() {
+    case Iso,
+    case IsoDateTime,
+    case IsoOffset,
+
+    case Short,
+    case Long,
+    case Location,
+    case Full,
+}
+
+-- ============================================================================
+-- Example 47: 17. Pattern symbols
+-- Demonstrates: LocalDate, LocalDateTime, and ZonedDateTime support:
+
+value.Format(
+    "pattern"
+);
+
+-- ============================================================================
+-- Example 48: 18. Pattern target validity
+-- Demonstrates: Using time, offset, timezone, or location symbols on LocalDate is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+String value =
+    date.Format(
+        "yyyy-MM-dd HH:mm"
+    ); -- INVALID
+
+-- ============================================================================
+-- Example 49: 20. Literals
+-- Demonstrates: Literal text is enclosed in single quotes:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+LocalDateTime value = ...;
+
+value.Format(
+    "yyyy-MM-dd 'at' HH:mm"
+);
+
+-- ============================================================================
+-- Example 50: 21. Clock date APIs
+-- Demonstrates: Clock remains defined in System.Timing.Time. Date.md extends its standard surface with
+--   date-aware operations.
+
+public class Clock {
+    public static Clock System();
+
+    public static Clock Fixed(
+        _ Instant instant
+    );
+
+    public static Clock Offset(
+        Clock base,
+        Duration offset
+    );
+
+    public Instant Now();
+
+    public ZonedTime NowAt(
+        _ TimeZone timeZone
+    );
+
+    public ZonedTime NowAt(
+        TimeZone timeZone,
+        String location
+    );
+
+    public LocalDate TodayAt(
+        _ TimeZone timeZone
+    );
+
+    public LocalDate TodayAt(
+        _ UtcOffset offset
+    );
+
+    public LocalDateTime NowDateTimeAt(
+        _ TimeZone timeZone
+    );
+
+    public LocalDateTime NowDateTimeAt(
+        _ UtcOffset offset
+    );
+
+    public ZonedDateTime NowZonedAt(
+        _ TimeZone timeZone
+    );
+
+    public ZonedDateTime NowZonedAt(
+        TimeZone timeZone,
+        String location
+    );
+}
+
+-- ============================================================================
+-- Example 51: 21. Clock date APIs
+-- Demonstrates: Therefore these APIs do not exist:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+clock.Today();       -- INVALID
+clock.NowDateTime(); -- INVALID
+
+-- ============================================================================
+-- Example 52: 22. TodayAt
+-- Demonstrates: A timezone or fixed offset must be explicit.
+
+LocalDate today =
+    Clock.System().TodayAt(
+        TimeZone.Of(
+            "Europe/Istanbul"
+        )
+    );
+
+-- ============================================================================
+-- Example 53: 22. TodayAt
+-- Demonstrates: Fixed-offset form:
+
+LocalDate utcToday =
+    clock.TodayAt(
+        UtcOffset.Utc()
+    );
+
+-- ============================================================================
+-- Example 54: 23. NowDateTimeAt
+-- Demonstrates: Fixed-offset form:
+
+LocalDateTime value =
+    clock.NowDateTimeAt(
+        TimeZone.Of(
+            "Europe/Istanbul"
+        )
+    );
+
+-- ============================================================================
+-- Example 55: 23. NowDateTimeAt
+-- Demonstrates: Fixed-offset form:
+
+LocalDateTime value =
+    clock.NowDateTimeAt(
+        new UtcOffset(
+            hours: 3
+        )
+    );
+
+-- ============================================================================
+-- Example 56: 24. NowZonedAt
+-- Demonstrates: Fixed-offset form:
+
+ZonedDateTime value =
+    Clock.System().NowZonedAt(
+        TimeZone.Of(
+            "Europe/Istanbul"
+        ),
+        "İstanbul"
+    );
+
+-- ============================================================================
+-- Example 57: 24. NowZonedAt
+-- Demonstrates: A fixed clock keeps all date-aware calls deterministic:
+
+Clock clock =
+    Clock.Fixed(
+        instant
+    );
+
+LocalDate first =
+    clock.TodayAt(zone);
+
+LocalDate second =
+    clock.TodayAt(zone);
+
+first == second;
+-- true
+
+-- ============================================================================
+-- Example 58: 26. DateError
+-- Demonstrates: These operations may produce different wall-clock times around timezone transitions.
+
+public enum DateError {
+    INVALID_DATE,
+    INVALID_DATE_TIME,
+    INVALID_FORMAT,
+    INVALID_PATTERN,
+    AMBIGUOUS_LOCAL_DATE_TIME,
+    NONEXISTENT_LOCAL_DATE_TIME,
+}
+
+-- ============================================================================
+-- Example 59: 27. DateException
+-- Demonstrates: These operations may produce different wall-clock times around timezone transitions.
+
+public class DateException : RuntimeException {
+    public DateError Error { get; }
+}
+
+-- ============================================================================
+-- Example 60: 29. PostgreSQL temporal mapping
+-- Demonstrates: Namespace:
+
+Progmasoft.Database.PostgreSql
+
+-- ============================================================================
+-- Example 61: 29.1 date
+-- Demonstrates: Normal finite PostgreSQL date values map to LocalDate.
+
+LocalDate date =
+    reader.Get<LocalDate>(
+        "created_date"
+    );
+
+-- ============================================================================
+-- Example 62: 29.2 time without time zone
+-- Demonstrates: PostgreSQL time without time zone is a civil time-of-day. Values inside the standard
+--   LocalTime domain map to LocalTime.
+
+LocalTime time =
+    reader.Get<LocalTime>(
+        "opens_at"
+    );
+
+-- ============================================================================
+-- Example 63: 29.4 timestamp without time zone
+-- Demonstrates: PostgreSQL timestamp without time zone maps to LocalDateTime.
+
+LocalDateTime value =
+    reader.Get<LocalDateTime>(
+        "scheduled_at"
+    );
+
+-- ============================================================================
+-- Example 64: 29.5 timestamp with time zone
+-- Demonstrates: PostgreSQL timestamp with time zone represents an exact timeline point and maps to
+
+Instant created =
+    reader.Get<Instant>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 65: 29.5 timestamp with time zone
+-- Demonstrates: If a civil representation is needed:
+
+ZonedDateTime local =
+    ZonedDateTime.Of(
+        created,
+        TimeZone.Of(
+            "Europe/Istanbul"
+        )
+    );
+
+-- ============================================================================
+-- Example 66: 30. MariaDB temporal mapping
+-- Demonstrates: Namespaces:
+
+Progmasoft.Database.MariaDb
+Progmasoft.Database.MariaDb.MySql
+
+-- ============================================================================
+-- Example 67: 30.1 DATE
+-- Demonstrates: Therefore:
+
+String raw =
+    reader.Get<String>(
+        "legacy_date"
+    );
+
+-- ============================================================================
+-- Example 68: 30.1 DATE
+-- Demonstrates: For a valid civil date:
+
+LocalDate date =
+    reader.Get<LocalDate>(
+        "created_date"
+    );
+
+-- ============================================================================
+-- Example 69: 30.3 DATETIME
+-- Demonstrates: A valid MariaDB DATETIME maps naturally to LocalDateTime:
+
+LocalDateTime value =
+    reader.Get<LocalDateTime>(
+        "scheduled_at"
+    );
+
+-- ============================================================================
+-- Example 70: 30.3 DATETIME
+-- Demonstrates: The textual path remains available for database-specific zero/invalid civil
+--   representations:
+
+String raw =
+    reader.Get<String>(
+        "legacy_datetime"
+    );
+
+-- ============================================================================
+-- Example 71: 30.4 TIMESTAMP
+-- Demonstrates: Fixed-offset example:
+
+connection.UseUtcTimeZone();
+
+Instant created =
+    reader.Get<Instant>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 72: 30.4 TIMESTAMP
+-- Demonstrates: Another fixed offset is also valid:
+
+connection.SetSessionTimeZone(
+    new UtcOffset(
+        hours: 3
+    )
+);
+
+Instant created =
+    reader.Get<Instant>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 73: 30.4 TIMESTAMP
+-- Demonstrates: Named-zone or SYSTEM session timezones do not provide the fixed-offset contract
+--   required by Get<Instant>():
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+connection.SetSessionTimeZone(
+    TimeZone.Of(
+        "America/New_York"
+    )
+);
+
+Instant created =
+    reader.Get<Instant>(
+        "created_at"
+    ); -- INVALID conversion
+
+-- ============================================================================
+-- Example 74: 30.4 TIMESTAMP
+-- Demonstrates: The caller can still read:
+
+LocalDateTime local =
+    reader.Get<LocalDateTime>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 75: 30.4 TIMESTAMP
+-- Demonstrates: or:
+
+String raw =
+    reader.Get<String>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 76: 32. No implicit system timezone
+-- Demonstrates: Invalid conceptual API:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Instant instant =
+    localDateTime.ToInstant(); -- INVALID
+
+-- ============================================================================
+-- Example 77: 32. No implicit system timezone
+-- Demonstrates: Correct fixed-offset form:
+
+Instant instant =
+    localDateTime.AtOffset(
+        offset
+    );
+
+-- ============================================================================
+-- Example 78: 32. No implicit system timezone
+-- Demonstrates: Correct named-zone form:
+
+ZonedDateTime zoned =
+    localDateTime.AtZone(
+        zone,
+        resolution
+    );
+
+-- ============================================================================
+-- Example 79: 36. Current civil date in a timezone
+-- Demonstrates: To compare timeline position, compare .Instant.
+
+using System.Timing.Date;
+using System.Timing.Time;
+
+TimeZone zone =
+    TimeZone.Of(
+        "Europe/Istanbul"
+    );
+
+LocalDate today =
+    Clock.System().TodayAt(
+        zone
+    );
+
+Console.Println(
+    today
+);
+
+-- ============================================================================
+-- Example 80: 37. Current zoned datetime
+-- Demonstrates: To compare timeline position, compare .Instant.
+
+ZonedDateTime now =
+    Clock.System().NowZonedAt(
+        TimeZone.Of(
+            "Europe/Istanbul"
+        ),
+        "İstanbul"
+    );
+
+Console.Println(
+    now.Format(
+        DateFormat.Full
+    )
+);
+
+-- ============================================================================
+-- Example 81: 38. Calendar month arithmetic
+-- Demonstrates: The exact current value depends on the clock at execution time.
+
+LocalDate january =
+    new LocalDate(
+        2026,
+        1,
+        31
+    );
+
+LocalDate february =
+    january.AddMonths(1);
+
+Console.Println(
+    february
+);
+-- 2026-02-28
+
+-- ============================================================================
+-- Example 82: 39. Exact day difference
+-- Demonstrates: The exact current value depends on the clock at execution time.
+
+LocalDate first =
+    new LocalDate(
+        2026,
+        8,
+        1
+    );
+
+LocalDate second =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+DateSpan span =
+    second - first;
+
+Console.Println(
+    span.Days
+);
+-- 8
+
+-- ============================================================================
+-- Example 83: 40. LocalTimeShift integration
+-- Demonstrates: The exact current value depends on the clock at execution time.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+LocalTimeShift shift =
+    new LocalTime(
+        23,
+        30
+    )
+    + Duration.Of(hours: 2);
+
+LocalDateTime value =
+    date + shift;
+
+Console.Println(
+    value
+);
+-- 2026-08-10T01:30:00
+
+-- ============================================================================
+-- Example 84: 41. Fixed offset conversion
+-- Demonstrates: The exact current value depends on the clock at execution time.
+
+LocalDateTime local =
+    new LocalDateTime(
+        2026, 8, 9,
+        18, 30
+    );
+
+Instant instant =
+    local.AtOffset(
+        new UtcOffset(
+            hours: 3
+        )
+    );
+
+-- ============================================================================
+-- Example 85: 42. Named timezone conversion
+-- Demonstrates: No timezone database lookup is required.
+
+LocalDateTime local =
+    new LocalDateTime(
+        2026, 8, 9,
+        18, 30
+    );
+
+ZonedDateTime value =
+    local.AtZone(
+        TimeZone.Of(
+            "Europe/Istanbul"
+        )
+    );
+
+-- ============================================================================
+-- Example 86: 43. Explicit DST gap resolution
+-- Demonstrates: Under STRICT, ambiguous or nonexistent local values fail instead of being silently
+
+ZonedDateTime value =
+    local.AtZone(
+        zone,
+        LocalDateTimeResolution.NEXT_VALID
+    );
+
+-- ============================================================================
+-- Example 87: 44. Same instant in different zones
+-- Demonstrates: NEXTVALID is explicit evidence that the caller accepts advancing across a local-time
+
+Instant instant =
+    Clock.System().Now();
+
+ZonedDateTime istanbul =
+    ZonedDateTime.Of(
+        instant,
+        TimeZone.Of(
+            "Europe/Istanbul"
+        ),
+        "İstanbul"
+    );
+
+ZonedDateTime london =
+    ZonedDateTime.Of(
+        instant,
+        TimeZone.Of(
+            "Europe/London"
+        ),
+        "London"
+    );
+
+-- ============================================================================
+-- Example 88: 45. ISO week-date
+-- Demonstrates: Their LocalDateTime and Offset values may differ.
+
+LocalDate date =
+    new LocalDate(
+        2026,
+        8,
+        9
+    );
+
+IsoWeekDate week =
+    date.IsoWeekDate();
+
+LocalDate restored =
+    week.ToLocalDate();
+
+restored == date;
+-- true
+
+-- ============================================================================
+-- Example 89: 46. PostgreSQL date
+-- Demonstrates: Their LocalDateTime and Offset values may differ.
+
+PostgreSqlReader reader =
+    command.ExecuteReader();
+
+while (reader.Read()) {
+    LocalDate createdDate =
+        reader.Get<LocalDate>(
+            "created_date"
+        );
+
+    LocalDateTime scheduled =
+        reader.Get<LocalDateTime>(
+            "scheduled_at"
+        );
+
+    Instant created =
+        reader.Get<Instant>(
+            "created_at"
+        );
+}
+
+-- ============================================================================
+-- Example 90: 47. MariaDB valid and legacy dates
+-- Demonstrates: Their LocalDateTime and Offset values may differ.
+
+MariaDbReader reader =
+    command.ExecuteReader();
+
+while (reader.Read()) {
+    String raw =
+        reader.Get<String>(
+            "legacy_date"
+        );
+
+    if (raw \= "0000-00-00") {
+        LocalDate date =
+            reader.Get<LocalDate>(
+                "legacy_date"
+            );
+    }
+}
+
+-- ============================================================================
+-- Example 91: 48. MariaDB TIMESTAMP under UTC session
+-- Demonstrates: The textual path preserves database-specific values that are intentionally outside the
+--   strict civil-date domain.
+
+connection.UseUtcTimeZone();
+
+MariaDbReader reader =
+    command.ExecuteReader();
+
+while (reader.Read()) {
+    Instant created =
+        reader.Get<Instant>(
+            "created_at"
+        );
+}

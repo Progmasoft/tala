@@ -42,7 +42,7 @@ build recorded 1 009. The job fails when fewer than 95 percent of the includes a
 of the compilations are free of errors.
 
 Both jobs run [the same measurement](../.github/codeql/Measure-CppAnalysis.ps1). It compares the native sources the
-repository owns under `Compiler/` and `Interactive/` with the sources the CodeQL database holds and fails below
+repository owns under `Talac/` and `Interactive/` with the sources the CodeQL database holds and fails below
 95 percent. It also writes the share of resolved includes and of compilations without errors, with the extractor's
 own summary and telemetry, to the job summary and to the log.
 

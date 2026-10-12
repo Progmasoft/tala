@@ -3,7 +3,7 @@
 
 # Testing and verification
 
-Visual X# crosses Haskell, C++20, Kotlin, LLVM, and tool-specific boundaries. No single test command validates every layer.
+Tala crosses Haskell, C++20, Kotlin, LLVM, and tool-specific boundaries. No single test command validates every layer.
 This guide maps a change to the smallest meaningful local gate and the integrated workflows that protect the repository.
 
 ## Test principles
@@ -31,7 +31,7 @@ occur. External names such as `docs.rs` are unrelated and must not be rewritten.
 ## Go repository checks
 
 The independent module is `helpers/go.mod`, with module identity
-`github.com/Progmasoft/visual-xsharp/helpers`. A root `go.work` selects it for
+`github.com/Progmasoft/tala/helpers`. A root `go.work` selects it for
 checkout commands; there is no root `go.mod`. Command entry points live under
 `helpers/cmd/`; reusable developer logic lives under `helpers/internal/`.
 Cobra provides the developer command tree and standard `--help` / `-h` behavior.
@@ -100,7 +100,7 @@ leaves out what was asked for must not pass. They are tested on their own hosts 
 A run builds the image of a target once, from `helpers/containers/<target>/Containerfile`, and names it after the
 content of that file. The sources reach the container as an archive of what Git would commit, tracked files and new
 files that are not ignored, so a run tests the working tree as it is and writes nothing into it. Downloads and build
-output are kept in a volume for each target, `visual-xsharp-cross-<target>`; the first run of the `native` suite
+output are kept in a volume for each target, `tala-cross-<target>`; the first run of the `native` suite
 builds LLVM-dependent code and the Haskell frontend from nothing and takes a long time, and later runs rebuild what
 changed. `--jobs` limits how many compilers Bazel starts at once, because a container has the memory of Podman's
 machine, not of the host. Without `--target`, every target that runs is run; a failure of one does not stop the
@@ -120,7 +120,7 @@ command packages and internal implementation packages; it does not substitute
 entry-point file coverage for the developer implementation.
 
 `verify_examples.go` checks that every program listed in `Examples/README.md`
-has its directory and the expected Visual X#, C#, C++, Java, and Rust source
+has its directory and the expected Tala, C#, C++, Java, and Rust source
 files, and that no unlisted program directory is left behind. `verify_benchmarks.go`
 checks that root-level benchmark reports are indexed exactly once in
 `Benchmarks/README.md`, with no missing, stale, or escaping paths. These are
@@ -138,7 +138,7 @@ git diff --name-only
 
 ## Haskell compiler packages
 
-The Haskell workspace lives under `Compiler/` and contains separate Syntax, Frontend, Core, and Driver packages. From that
+The Haskell workspace lives under `Talac/` and contains separate Syntax, Frontend, Core, and Driver packages. From that
 directory run:
 
 ```powershell
@@ -191,11 +191,11 @@ Control-flow changes must exercise the stage that creates edges and every
 storage-oriented consumer of those edges. Three component-owned suites make
 that boundary explicit:
 
-- `Compiler/Analysis/Tests/definite_initialization_tests` checks the shared
+- `Talac/Analysis/Tests/definite_initialization_tests` checks the shared
   reachability, initialization, and ownership fixed points;
-- `Compiler/Codegen/Xpp/Tests/xpp_verifier_tests` checks symbolic storage,
+- `Talac/Codegen/Xpp/Tests/xpp_verifier_tests` checks symbolic storage,
   including direct-function versus closure-storage reads and explicit AARC handle lifetime; and
-- `Compiler/Codegen/Xmm/Tests/xmm_verifier_tests` checks virtual-register
+- `Talac/Codegen/Xmm/Tests/xmm_verifier_tests` checks virtual-register
   initialization, strong/weak/unowned representation, and block-order independence.
 
 The integrated developer command builds and executes all three. Focused Bazel
@@ -220,8 +220,8 @@ smoke target. It is separate from the component-owned `develop test` suite set.
 Run it directly when a Core, CorePrep, Xpp, or Xmm decoder changes:
 
 ```powershell
-bazelisk build //Compiler/Fuzzing:wire_fuzz_smoke
-.\bazel-bin\Compiler\Fuzzing\wire_fuzz_smoke.exe
+bazelisk build //Talac/Fuzzing:wire_fuzz_smoke
+.\bazel-bin\Talac\Fuzzing\wire_fuzz_smoke.exe
 ```
 
 The separate `fuzzing.yml` workflow runs `go run ./helpers/cmd/develop fuzz`, a 90-second-per-target CI campaign with
@@ -231,21 +231,21 @@ crash artifacts, and current limits.
 Use Bazel target boundaries to keep iteration focused:
 
 ```powershell
-bazelisk build //Compiler/Core:core
-bazelisk build //Compiler/ADTs/Tests:adt_tests
-bazelisk build //Compiler/Codegen/Xpp:xpp
-bazelisk build //Compiler/Codegen/Xmm:xmm
-bazelisk build //Compiler/Analysis/Tests:definite_initialization_tests
-bazelisk build //Compiler/Codegen/Xpp/Tests:xpp_verifier_tests
-bazelisk build //Compiler/Codegen/Xmm/Tests:xmm_verifier_tests
-bazelisk build //Compiler/Backend/LLVM:llvm_backend
-bazelisk build //Compiler/Driver:core_pipeline
-bazelisk build //Compiler/Core/Tests:core_pipeline_tests
-bazelisk build //Compiler/Driver/Tests:closure_pipeline_tests
-bazelisk build //Compiler/Driver/Tests:scalar_pipeline_tests
-bazelisk build //Compiler/Backend/LLVM/Tests:llvm_backend_tests
-bazelisk build //Compiler/Runtime/AARC/Tests:aarc_c_abi_tests
-bazelisk build //Interactive:vxsi
+bazelisk build //Talac/Core:core
+bazelisk build //Talac/ADTs/Tests:adt_tests
+bazelisk build //Talac/Codegen/Xpp:xpp
+bazelisk build //Talac/Codegen/Xmm:xmm
+bazelisk build //Talac/Analysis/Tests:definite_initialization_tests
+bazelisk build //Talac/Codegen/Xpp/Tests:xpp_verifier_tests
+bazelisk build //Talac/Codegen/Xmm/Tests:xmm_verifier_tests
+bazelisk build //Talac/Backend/LLVM:llvm_backend
+bazelisk build //Talac/Driver:core_pipeline
+bazelisk build //Talac/Core/Tests:core_pipeline_tests
+bazelisk build //Talac/Driver/Tests:closure_pipeline_tests
+bazelisk build //Talac/Driver/Tests:scalar_pipeline_tests
+bazelisk build //Talac/Backend/LLVM/Tests:llvm_backend_tests
+bazelisk build //Talac/Runtime/AARC/Tests:aarc_c_abi_tests
+bazelisk build //Interactive:tali
 bazelisk build //Interactive/Tests:interactive_tests
 ```
 
@@ -270,18 +270,18 @@ test identifies the contract that owns its maintenance:
 
 | Test package | Contract |
 | --- | --- |
-| `Compiler/Cli/Tests` | command grammar, option scope, and output behavior |
-| `Compiler/Analysis/Tests` | reusable CFG reachability and definite-initialization facts |
-| `Compiler/Core/Tests` | Core model, verification, artifacts, and golden wire |
-| `Compiler/Codegen/Xpp/Tests` | symbolic-storage verification at the Xpp boundary |
-| `Compiler/Codegen/Xmm/Tests` | virtual-register verification at the Xmm boundary |
-| `Compiler/Driver/Tests` | connected CorePrep, Xpp, and Xmm stage behavior |
-| `Compiler/Backend/LLVM/Tests` | LLVM IR and native artifact lowering |
-| `Compiler/Runtime/AARC/Tests` | C++ runtime invariants and a C11-only caller of the public ABI |
+| `Talac/Cli/Tests` | command grammar, option scope, and output behavior |
+| `Talac/Analysis/Tests` | reusable CFG reachability and definite-initialization facts |
+| `Talac/Core/Tests` | Core model, verification, artifacts, and golden wire |
+| `Talac/Codegen/Xpp/Tests` | symbolic-storage verification at the Xpp boundary |
+| `Talac/Codegen/Xmm/Tests` | virtual-register verification at the Xmm boundary |
+| `Talac/Driver/Tests` | connected CorePrep, Xpp, and Xmm stage behavior |
+| `Talac/Backend/LLVM/Tests` | LLVM IR and native artifact lowering |
+| `Talac/Runtime/AARC/Tests` | C++ runtime invariants and a C11-only caller of the public ABI |
 | `Interactive/Tests` | REPL input, bounded history, source bindings, and session behavior |
 
 Fixtures follow the same rule. A Core golden document is stored below the Core
-test package, while multi-file `.vxs` projects used by the connected pipeline
+test package, while multi-file `.tala` projects used by the connected pipeline
 belong to Driver tests. Retired textual-intermediate fixtures are not kept in
 the current source tree and are never an input promise for the CLI.
 
@@ -325,7 +325,7 @@ more boundary verification, not an exemption.
 Run the project evaluator and DSL tests with the repository wrapper:
 
 ```powershell
-.\ProjectSystem\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p ProjectSystem test
 ```
 
 Project-system tests should distinguish script parsing, immutable model construction, validation, lockfile persistence, and
@@ -342,7 +342,7 @@ native plan transport. Important cases include:
 - deterministic SQLite lockfile contents; and
 - `panic` producing no partial plan, lock update, or compilation start.
 
-Do not test the evaluator by searching for `.vxs` files in Kotlin. Source discovery belongs to the Haskell compiler driver.
+Do not test the evaluator by searching for `.tala` files in Kotlin. Source discovery belongs to the Haskell compiler driver.
 
 ## Analyzer, Formatter, and Linter
 
@@ -425,9 +425,9 @@ The repository currently separates twelve workflow ownership areas:
 | `haskell-coverage.yml` | Haskell coverage reporting |
 | `coverage.yml` | Native C++, Kotlin, and Go coverage reports uploaded to Codecov |
 | `codeql.yml` | CodeQL scanning for C/C++, Kotlin, Go, and GitHub Actions |
-| `analyzer.yml` | Visual Analyzer layers |
-| `formatter.yml` | Visual Formatter layers |
-| `linter.yml` | Visual Linter layers |
+| `analyzer.yml` | tala-analyzer layers |
+| `formatter.yml` | talafmt layers |
+| `linter.yml` | talalint layers |
 | `benchmarks.yml` | Native and Haskell benchmark build and smoke coverage |
 
 See [Code scanning and coverage](COVERAGE-AND-SECURITY.md) for language boundaries, report formats, Codecov flags, and
@@ -453,14 +453,14 @@ transient external failure is established.
 For a connected source subset, a useful end-to-end matrix is:
 
 ```powershell
-vxs check -File .\Sources\Main.vxs
-vxs build -File .\Sources\Main.vxs -Emit core
-vxs build -File .\Sources\Main.vxs -Emit llvmll
-vxs build -File .\Sources\Main.vxs -Emit llvmbc
-vxs build -File .\Sources\Main.vxs -Emit object
-vxs build -File .\Sources\Main.vxs -Emit assembly
-vxs build -File .\Sources\Main.vxs
-vxs run -File .\Sources\Main.vxs
+talac check -File .\Sources\Main.tala
+talac build -File .\Sources\Main.tala -Emit core
+talac build -File .\Sources\Main.tala -Emit llvmll
+talac build -File .\Sources\Main.tala -Emit llvmbc
+talac build -File .\Sources\Main.tala -Emit object
+talac build -File .\Sources\Main.tala -Emit assembly
+talac build -File .\Sources\Main.tala
+talac run -File .\Sources\Main.tala
 ```
 
 Assertions should include file extension, nonempty artifact, replacement of an older artifact, no output from `check`, no
@@ -476,29 +476,29 @@ that boundary with:
 go run ./helpers/cmd/develop bundle
 ```
 
-This is more than an archive or copy test. A passing run proves that the staged `vxs` reports the checkout's compiler
-version, loads the adjacent private `vxs-frontend` shared library in-process, compiles a real `.vxs` source into a `.vxse`, and executes the result
+This is more than an archive or copy test. A passing run proves that the staged `talac` reports the checkout's compiler
+version, loads the adjacent private `tala-frontend` shared library in-process, compiles a real `.tala` source into a `.vxse`, and executes the result
 successfully. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
 texts, and a `SHA256SUMS` manifest covering the other staged files.
 
-The output under `dist/visual-xsharp-<version>-<platform>-<arch>/` is ignored and reproducible. Do not treat an old bundle as
+The output under `dist/tala-<version>-<platform>-<arch>/` is ignored and reproducible. Do not treat an old bundle as
 test input, copy a frontend from another checkout into it, or commit the generated directory. A release or packaging change
 should start from a freshly staged bundle so version, wire contract, native driver, and legal materials are evaluated as one
 unit.
 
-The bundle smoke path also invokes `vxs interactive` with the staged directory prepended to `PATH`. `-Eval` must return the
-expected result, `-Help` must reach `vxsi`, and a piped no-argument REPL transcript must type-check, evaluate, display
-history, reset the ORC resource trackers, and evaluate the same symbol again. This verifies that the singular `vxs` command
+The bundle smoke path also invokes `talac interactive` with the staged directory prepended to `PATH`. `--eval` must return the
+expected result, `-Help` must reach `tali`, and a piped no-argument REPL transcript must type-check, evaluate, display
+history, reset the ORC resource trackers, and evaluate the same symbol again. This verifies that the singular `talac` command
 finds its sibling REPL by `PATH` rather than a private absolute path or the current directory.
 
 For focused local feedback, the REPL's owning tests can be built and run directly:
 
 ```powershell
-bazelisk build //Compiler/Backend/LLVM/Tests:llvm_backend_tests `
-  //Compiler/Cli/Tests:cli_parser_tests `
+bazelisk build //Talac/Backend/LLVM/Tests:llvm_backend_tests `
+  //Talac/Cli/Tests:cli_parser_tests `
   //Interactive/Tests:interactive_tests
-.\bazel-bin\Compiler\Backend\LLVM\Tests\llvm_backend_tests.exe
-.\bazel-bin\Compiler\Cli\Tests\cli_parser_tests.exe
+.\bazel-bin\Talac\Backend\LLVM\Tests\llvm_backend_tests.exe
+.\bazel-bin\Talac\Cli\Tests\cli_parser_tests.exe
 .\bazel-bin\Interactive\Tests\interactive_tests.exe
 ```
 

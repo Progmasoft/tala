@@ -5,7 +5,7 @@
 // its behavior.
 package main
 
-import "github.com/Progmasoft/visual-xsharp/helpers/internal/githelper"
+import "github.com/Progmasoft/tala/helpers/internal/githelper"
 
 func main() {
 	githelper.Main()

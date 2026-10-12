@@ -3,11 +3,11 @@
 
 # Console output and strings
 
-A Visual X# program writes to the console with `System.Console`, and
+A Tala program writes to the console with `System.Console`, and
 `System` is imported implicitly, so `Console.Println("Hello")` is a complete
 statement. The console is specified in
-`Spec/StandardLibrary/IO/ConsoleIO.vxs`, and the two operations on strings
-that this document covers, `+` and `==`, in `Spec/Language/Operators.vxs`.
+`Spec/StandardLibrary/IO/ConsoleIO.tala`, and the two operations on strings
+that this document covers, `+` and `==`, in `Spec/Language/Operators.tala`.
 
 This document says how much of that the compiler implements and how. It is an
 implementation reference, not the definition of the language.
@@ -70,15 +70,15 @@ A conversion is `%`, flags, a width, a precision after a point, and a letter.
 
 | Code | Reported when |
 | --- | --- |
-| `VXT0071` | `Console` has no method of that name |
-| `VXT0072` | `Print` or one of its siblings is given no value or several, or a format method is given no format |
-| `VXT0073` | a value of a type that has no text form is written or joined |
-| `VXT0074` | the format is not a string literal |
-| `VXT0075` | the format has a `%` that begins no conversion, or ends inside one |
-| `VXT0076` | a conversion has a flag or a precision it does not take, or flags that exclude each other |
-| `VXT0077` | the number of arguments is not the number the format takes |
-| `VXT0078` | an argument does not have the type its conversion takes |
-| `VXT0079` | the form is specified and not implemented yet; see below |
+| `TAT0071` | `Console` has no method of that name |
+| `TAT0072` | `Print` or one of its siblings is given no value or several, or a format method is given no format |
+| `TAT0073` | a value of a type that has no text form is written or joined |
+| `TAT0074` | the format is not a string literal |
+| `TAT0075` | the format has a `%` that begins no conversion, or ends inside one |
+| `TAT0076` | a conversion has a flag or a precision it does not take, or flags that exclude each other |
+| `TAT0077` | the number of arguments is not the number the format takes |
+| `TAT0078` | an argument does not have the type its conversion takes |
+| `TAT0079` | the form is specified and not implemented yet; see below |
 
 ## How a console call is compiled
 
@@ -100,8 +100,8 @@ No stage after the type checker knows what a format is.
 Each of those calls is a *runtime call*: one operation of Core, CorePrep, Xpp
 and Xmm whose first operand is a literal that names a function of the runtime
 catalog and whose remaining operands are the arguments. The catalog is one
-table, written in `Visual/XSharp/Core/RuntimeCall.hpp` for the native stages
-and in `Visual.XSharp.RuntimeCall` for the frontend, and every stage verifies
+table, written in `Tala/Core/RuntimeCall.hpp` for the native stages
+and in `Progmasoft.Tala.RuntimeCall` for the frontend, and every stage verifies
 a call against it. `CORE-IR.md` has the operation and `ARTIFACT-WIRE.md` its
 encoding.
 
@@ -142,7 +142,7 @@ uses changes nothing a program can observe.
 
 ## The runtime
 
-`Compiler/Runtime/Text` implements the functions: joining, the conversions
+`Talac/Runtime/Text` implements the functions: joining, the conversions
 and the write. It is written without a standard container and without a
 C runtime function, because it is compiled twice.
 
@@ -151,7 +151,7 @@ test programs, links it as a library and exports its entry points to the JIT.
 Such a host may install a sink that receives what a program writes in place
 of the standard streams; that is how the tests read output.
 
-A native executable is linked with `vxs-runtime.lib`, which stands beside the
+A native executable is linked with `tala-runtime.lib`, which stands beside the
 compiler. It is one object, built from the same sources as the libraries of
 a host together with the ownership runtime, and it needs no C runtime: memory
 comes from the process heap and output goes to the standard handles, through
@@ -159,7 +159,7 @@ seven functions of kernel32. The linker makes the import library for those
 seven from a list of names, so linking a program needs neither a C runtime
 nor a Windows SDK. `AARC-ABI.md` describes the ownership side.
 
-On Linux and macOS the library is `libvxs-runtime.a`. An executable there is
+On Linux and macOS the library is `libtala-runtime.a`. An executable there is
 linked with the C library of the system: memory comes from `malloc` and
 output goes to the standard descriptors through `write`. A line ends with a
 line feed alone there, and with a carriage return and a line feed on Windows.
@@ -173,10 +173,10 @@ a file or a pipe, as UTF-8.
 
 | Pending | Today |
 | --- | --- |
-| `%A` and `%O`, and the `IDebug` and `IDisplay` contracts | `VXT0079`; they need the object model |
-| a text form of a floating-point number for `Print` and `+` | `VXT0079`; `%f` writes one with a precision |
-| `longint`, `ulongint` and `double` as text | `VXT0079`; the runtime functions take 64 bits |
-| `Console.Stdout()`, `Stderr()`, `Stdin()` and everything on them: `Flush`, `Read`, `Readln`, `Readf`, `Prompt` | `VXT0079`; they need stream objects |
+| `%A` and `%O`, and the `IDebug` and `IDisplay` contracts | `TAT0079`; they need the object model |
+| a text form of a floating-point number for `Print` and `+` | `TAT0079`; `%f` writes one with a precision |
+| `longint`, `ulongint` and `double` as text | `TAT0079`; the runtime functions take 64 bits |
+| `Console.Stdout()`, `Stderr()`, `Stdin()` and everything on them: `Flush`, `Read`, `Readln`, `Readf`, `Prompt` | `TAT0079`; they need stream objects |
 | a format given by a compile-time directive, `#define FORMAT "%d"` | the format must be a literal |
 | formatted string interpolation, `"%d$count"` | not parsed as interpolation |
 | `-Type-Safe-Format false` | the option is accepted and has no effect: formats are always checked strictly |

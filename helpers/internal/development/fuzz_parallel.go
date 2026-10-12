@@ -29,13 +29,13 @@ type fuzzTask struct {
 // itself. Measured on a two-core, four-thread host, two concurrent targets
 // cut executed inputs by 40 to 90 percent. The default therefore grants one
 // job per four logical processors, at most four, which is a single job on
-// such a host and on four-vCPU CI runners. VXS_FUZZ_JOBS overrides it for a
+// such a host and on four-vCPU CI runners. TALA_FUZZ_JOBS overrides it for a
 // host with spare cores.
 func fuzzJobs(configured string, logicalProcessors int) (int, error) {
 	if configured != "" {
 		jobs, err := strconv.Atoi(configured)
 		if err != nil || jobs < 1 || jobs > 64 {
-			return 0, errors.New("VXS_FUZZ_JOBS must be an integer in [1, 64]")
+			return 0, errors.New("TALA_FUZZ_JOBS must be an integer in [1, 64]")
 		}
 		return jobs, nil
 	}

@@ -7,6 +7,38 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Visual X# is now Tala
+
+The language and its tools have new names. The entries below and those of
+earlier releases keep the names they were written with.
+
+- The language is **Tala** and its sources end in `.tala` (was `.vxs`).
+- The compiler is `talac` (was `vxs`), the REPL is `tali` (was `vxsi`) and
+  takes `--eval` (was `-Eval`), the formatter is `talafmt`, the linter is
+  `talalint`, the language server is `tala-analyzer`, and the build system
+  and package manager is Tazel, whose project file is `BUILD.kts`.
+- Directories: `Compiler/` is `Talac/`, `ProjectSystem/` is `Tazel/`, and
+  `Analyzer/`, `Formatter/`, `Linter/` are `Ecosystem/tala-analyzer/`,
+  `Ecosystem/talafmt/`, `Ecosystem/talalint/`.
+- C++ headers are included as `Progmasoft/Tala/...` and the namespace is
+  `Progmasoft::Tala`; the Haskell modules are `Progmasoft.Tala.*`,
+  `Progmasoft.Talafmt.*`, `Progmasoft.Talalint.*` and
+  `Progmasoft.TalaAnalyzer.*`; the Cabal packages are `tala-syntax`,
+  `tala-frontend`, `tala-core`, `tala-compiler`, `tala-analyzer`, `talafmt`
+  and `talalint`; the Kotlin packages are `com.progmasoft.tazel.*`,
+  `com.progmasoft.talafmt`, `com.progmasoft.talalint` and
+  `com.progmasoft.tala.analyzer`; the Go module is
+  `github.com/Progmasoft/tala/helpers`.
+- Binary names: the frontend library is `tala-frontend`, the runtime library
+  is `tala-runtime.lib` or `libtala-runtime.a`, exported C symbols begin with
+  `tala_`, and environment variables and macros begin with `TALA_`.
+- Diagnostic codes begin with `TA` (`TAT0080` was `VXT0080`), and the magic
+  numbers of the wire formats are `TACR`, `TACP`, `TAPP`, `TAMM` and `TADC`.
+  Artifacts written by an earlier compiler are not read.
+- The C interface is TCI, the Tala C Interface (was VXCI).
+- Not yet changed: the options of `talac` still have the `-Option` form and a
+  native executable still ends in `.vxse`.
+
 ### Compiler
 
 - A local whose value is computed by need no longer makes a long chain of

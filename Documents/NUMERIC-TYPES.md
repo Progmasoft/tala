@@ -3,7 +3,7 @@
 
 # Numeric types and literals
 
-Visual X# defines scalar widths as language properties. They do not depend on
+Tala defines scalar widths as language properties. They do not depend on
 the host compiler, operating system, or CPU word size.
 
 ## Scalar catalog
@@ -28,7 +28,7 @@ the host compiler, operating system, or CPU word size.
 | `double` | `f128` | floating point |
 
 The familiar C-family names intentionally do not imply C-family widths. In
-particular, Visual X# `long` is 32-bit and `int` is 64-bit.
+particular, Tala `long` is 32-bit and `int` is 64-bit.
 
 ## Integer literals
 
@@ -36,7 +36,7 @@ Decimal, hexadecimal, and binary spellings are accepted. Octal spellings do
 not exist. An apostrophe may separate digits only when both adjacent
 characters are valid digits for the selected radix.
 
-```vxs
+```talac
 26
 1'000'000
 0xFF'EE
@@ -46,7 +46,7 @@ characters are valid digits for the selected radix.
 Malformed spellings are rejected as one token, producing one diagnostic at
 the literal rather than misleading follow-up name tokens.
 
-```vxs
+```talac
 0o377
 0x'FF
 0b1010'
@@ -58,7 +58,7 @@ An integer literal without a target has type `int`. The compiler does not
 silently widen it when the value exceeds `int`. A declared integer target
 selects the literal representation directly when the value fits.
 
-```vxs
+```talac
 byte small = 100;
 long normal = 2'000'000'000;
 longint large = 9'223'372'036'854'775'808;
@@ -74,7 +74,7 @@ An untargeted floating-point literal has type `float`. A floating target
 selects `sfloat`, `lfloat`, `float`, or `double`; suffixes are neither needed
 nor supported.
 
-```vxs
+```talac
 sfloat compact = 1.5;
 lfloat single = 1.5;
 float normal = 1.5;
@@ -84,7 +84,7 @@ double extended = 1.5;
 Scientific notation accepts `e` or `E` and an optional exponent sign.
 Apostrophes may separate mantissa digits, but never exponent digits.
 
-```vxs
+```talac
 1e3
 2E-4
 1'000.250'000
@@ -99,7 +99,7 @@ native lowering boundary.
 `char` stores a `u32`. A literal can contain several values; they are packed
 left to right, and the packed result must fit in 32 bits.
 
-```vxs
+```talac
 char first = 'A';
 char pair = 'AB';
 char four = 'ABCD';
@@ -124,7 +124,7 @@ packed values wider than `u32` are compile-time errors.
 Boolean targets and conditions accept numeric values. Zero means `false`;
 every nonzero value means `true`.
 
-```vxs
+```talac
 bool disabled = 0;
 bool enabled = 1;
 
@@ -140,7 +140,7 @@ boolean atom.
 ## `void` and the internal no-result marker
 
 `void` is the only source spelling for a function that returns no value.
-Visual X# has no source-language `unit` type and does not admit `unit` in a
+Tala has no source-language `unit` type and does not admit `unit` in a
 declaration, type argument, cast, or callable signature.
 
 The current native Core ABI historically names its private no-result marker
@@ -165,7 +165,7 @@ representation is selected. It is therefore independent of the Haskell host
 word size and catches both a literal that does not fit and a constant
 expression whose folded result does not fit.
 
-```vxs
+```talac
 byte valid = 100 + 27;
 byte overflow = 100 + 28; -- compile-time error
 ```
@@ -229,7 +229,7 @@ Two computed operands must already have the same scalar type. A target may
 select the type of a literal, but it does not silently convert an existing
 binding of another width or signedness.
 
-```vxs
+```talac
 long left = 1;
 long right = 2;
 long sum = left + right; // valid
@@ -271,7 +271,7 @@ Literal interpretation is deterministic across development hosts:
 
 - radix and separator checks operate on source characters;
 - integer range checks use unbounded compiler arithmetic;
-- scalar widths come from the Visual X# catalog;
+- scalar widths come from the Tala catalog;
 - floating spelling is preserved until target lowering;
 - character packing is defined by value order, not platform endianness;
 - source `void` is separated from the native resultless ABI marker.

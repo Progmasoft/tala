@@ -1,0 +1,166 @@
+load("//Talac/Runtime:host.bzl", "RUNTIME_HOST_DEPS", "RUNTIME_HOST_LINKOPTS")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_library(
+    name = "wire_fuzz_harness",
+    srcs = ["WireFuzz.cpp"],
+    hdrs = ["WireFuzz.hpp"],
+    deps = [
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Artifact:wire_support_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_wire",
+        "//Talac/Headers/Progmasoft/Tala/Xmm:xmm",
+        "//Talac/Headers/Progmasoft/Tala/Xpp:xpp",
+    ],
+)
+
+cc_binary(
+    name = "wire_fuzz_smoke",
+    srcs = ["WireFuzzSmoke.cpp"],
+    deps = [":wire_fuzz_harness"],
+)
+
+# This binary has no project main: the libFuzzer runtime supplies it. Build it
+# with the host's fuzz profile so all transitive project code is instrumented.
+cc_binary(
+    name = "wire_fuzzer",
+    srcs = ["LibFuzzer.cpp"],
+    deps = [":wire_fuzz_harness"],
+)
+
+# Structural comparison of two CorePrep lowerings. It has no frontend or LLVM
+# dependency so its own contract can be tested without either.
+cc_library(
+    name = "coreprep_parity",
+    srcs = ["CorePrepParity.cpp"],
+    hdrs = ["CorePrepParity.hpp"],
+    visibility = ["//Talac/Fuzzing/Tests:__pkg__"],
+    deps = ["//Talac/Headers/Progmasoft/Tala/Core:core"],
+)
+
+# A compiled program calls the runtime, and the JIT resolves a runtime symbol
+# in the process that hosts it. The options and libraries are those of every
+# such host; see //Talac/Runtime:host.bzl.
+cc_library(
+    name = "source_fuzz_harness",
+    srcs = ["SourceFuzz.cpp"],
+    hdrs = ["SourceFuzz.hpp"],
+    linkopts = RUNTIME_HOST_LINKOPTS,
+    deps = [
+        ":coreprep_parity",
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Cli/Commands:frontend",
+        "//Talac/Core:core",
+        "//Talac/Driver:pipeline",
+        "//Talac/Headers/Progmasoft/Tala/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_wire",
+        "//Talac/Support:compiler_stack",
+    ] + RUNTIME_HOST_DEPS,
+)
+
+cc_binary(
+    name = "source_fuzz_smoke",
+    srcs = [
+        "SourceFuzzSmoke.cpp",
+    ],
+    deps = [":source_fuzz_harness"],
+)
+
+# The large tables of programs with hand-written results: the branching
+# table here, the expression and leaving tables in source_expression_smoke.
+# Programs of their own, so that each smoke program runs under one process
+# watchdog.
+cc_binary(
+    name = "source_execution_smoke",
+    srcs = [
+        "BranchingExecutionCases.cpp",
+        "BranchingExecutionCases.hpp",
+        "ExecutionCases.cpp",
+        "ExecutionCases.hpp",
+        "Generated/SelectionCases.inc",
+        "SourceExecutionSmoke.cpp",
+    ],
+    deps = [":source_fuzz_harness"],
+)
+
+cc_binary(
+    name = "source_expression_smoke",
+    srcs = [
+        "ExecutionCases.cpp",
+        "ExecutionCases.hpp",
+        "ExpressionExecutionCases.cpp",
+        "ExpressionExecutionCases.hpp",
+        "Generated/LeavingCases.inc",
+        "LeavingExecutionCases.cpp",
+        "LeavingExecutionCases.hpp",
+        "SourceExpressionSmoke.cpp",
+    ],
+    deps = [":source_fuzz_harness"],
+)
+
+# The tables written by hand for single features: inferred return types,
+# evaluation by need, enums and closures.
+cc_binary(
+    name = "source_feature_smoke",
+    srcs = [
+        "ExecutionCases.cpp",
+        "ExecutionCases.hpp",
+        "SourceFeatureSmoke.cpp",
+    ],
+    deps = [
+        ":source_fuzz_harness",
+        "//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api",
+        "//Talac/Runtime/AARC:aarc",
+    ],
+)
+
+# Programs that write to the console, with the text each must write. The
+# harness links the runtime the generated code calls; its output is read
+# through a sink.
+cc_binary(
+    name = "source_console_smoke",
+    srcs = ["SourceConsoleSmoke.cpp"],
+    deps = [":source_fuzz_harness"] + RUNTIME_HOST_DEPS,
+)
+
+# A measuring instrument, not a test: it compiles one source file on a stack
+# of a chosen size and prints the stack the compilation committed.
+cc_binary(
+    name = "source_stack_probe",
+    srcs = ["SourceStackProbe.cpp"],
+    deps = [":source_fuzz_harness"],
+)
+
+cc_binary(
+    name = "lexer_fuzzer",
+    srcs = ["SourceLibFuzzer.cpp"],
+    defines = ["TALA_SOURCE_FUZZ_STAGE=0"],
+    deps = [":source_fuzz_harness"],
+)
+
+cc_binary(
+    name = "parser_fuzzer",
+    srcs = ["SourceLibFuzzer.cpp"],
+    defines = ["TALA_SOURCE_FUZZ_STAGE=1"],
+    deps = [":source_fuzz_harness"],
+)
+
+cc_binary(
+    name = "source_llvm_fuzzer",
+    srcs = ["SourceLibFuzzer.cpp"],
+    defines = ["TALA_SOURCE_FUZZ_STAGE=2"],
+    deps = [":source_fuzz_harness"],
+)
+
+cc_binary(
+    name = "differential_fuzzer",
+    srcs = ["SourceLibFuzzer.cpp"],
+    defines = ["TALA_SOURCE_FUZZ_STAGE=3"],
+    deps = [":source_fuzz_harness"],
+)

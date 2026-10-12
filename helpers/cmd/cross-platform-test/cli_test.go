@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/crossplatform"
+	"github.com/Progmasoft/tala/helpers/internal/crossplatform"
 )
 
 // idleEngine fails the test when anything is started.

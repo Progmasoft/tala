@@ -19,7 +19,7 @@ import (
 	"strings"
 )
 
-const optionalPackagesUsage = `Optional Visual X# developer packages
+const optionalPackagesUsage = `Optional Tala developer packages
 
 Supported hosts are those of prebuild: Windows 10/11, macOS 15/26, Ubuntu
 26.04 LTS, Fedora 43, and Debian 13. Windows uses WinGet defaults, macOS uses
@@ -312,7 +312,7 @@ func main() {
 func newOptionalPackagesCommand(runner packageRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "optional-packages",
-		Short:         "Check or install the optional Visual X# developer packages.",
+		Short:         "Check or install the optional Tala developer packages.",
 		Long:          optionalPackagesUsage,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,

@@ -44,7 +44,7 @@ func TestNativeFuzzInventoryIsComponentOwnedAndBounded(t *testing.T) {
 			t.Fatalf("unbounded or disconnected target: %+v", target)
 		}
 	}
-	for _, label := range []string{"//Compiler/Cli/Fuzzing:cli_fuzzer", "//Compiler/ProjectSystem/Bridge/Fuzzing:project_fuzzer", "//Interactive/Fuzzing:repl_fuzzer", "//Compiler/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
+	for _, label := range []string{"//Talac/Cli/Fuzzing:cli_fuzzer", "//Talac/Tazel/Bridge/Fuzzing:project_fuzzer", "//Interactive/Fuzzing:repl_fuzzer", "//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
 		if !labels[label] {
 			t.Fatalf("missing component-local target %s", label)
 		}
@@ -65,7 +65,7 @@ func TestFuzzProcessWatchdogDoesNotLimitBuildTools(t *testing.T) {
 		{"wire_fuzzer", []string{"-max_total_time=30"}, 120},
 		{"frontend-fuzz.exe", []string{"parser", "900"}, 1200},
 		{"cabal", []string{"build", "all"}, 0},
-		{"bazel", []string{"build", "//Compiler:vxs"}, 0},
+		{"bazel", []string{"build", "//Talac:talac"}, 0},
 	} {
 		if got := fuzzProcessSeconds(item.name, item.args); got != item.seconds {
 			t.Fatalf("%s timeout = %d; want %d", item.name, got, item.seconds)

@@ -1,58 +1,58 @@
 {
   "schema": 1,
-  "description": "The binary interfaces of Visual X#: what one build of the compiler promises another program or another stage, by name and by number. `go run ./helpers/cmd/verify-abi` compares every entry with the sources.",
+  "description": "The binary interfaces of Tala: what one build of the compiler promises another program or another stage, by name and by number. `go run ./helpers/cmd/verify-abi` compares every entry with the sources.",
   "frontend_library": {
     "abi_version": 2,
-    "header": "Compiler/Headers/Visual/XSharp/Frontend.h",
+    "header": "Talac/Headers/Progmasoft/Tala/Frontend.h",
     "libraries": {
-      "windows": "vxs-frontend.dll",
-      "macos": "libvxs-frontend.dylib",
-      "linux": "libvxs-frontend.so"
+      "windows": "tala-frontend.dll",
+      "macos": "libtala-frontend.dylib",
+      "linux": "libtala-frontend.so"
     },
     "symbols": [
-      "vxs_frontend_abi_version",
-      "vxs_frontend_compile_source",
-      "vxs_frontend_execute",
-      "vxs_frontend_fuzz_compile",
-      "vxs_frontend_fuzz_syntax",
-      "vxs_frontend_initialize",
-      "vxs_frontend_shutdown"
+      "tala_frontend_abi_version",
+      "tala_frontend_compile_source",
+      "tala_frontend_execute",
+      "tala_frontend_fuzz_compile",
+      "tala_frontend_fuzz_syntax",
+      "tala_frontend_initialize",
+      "tala_frontend_shutdown"
     ],
     "output_kinds": {
-      "VXS_FRONTEND_CORE_WIRE": 0,
-      "VXS_FRONTEND_PROJECT_SOURCE_LIST": 1,
-      "VXS_FRONTEND_DIAGNOSTIC_WIRE": 2,
-      "VXS_FRONTEND_ERROR_TEXT": 3,
-      "VXS_FRONTEND_COREPREP_WIRE": 4,
-      "VXS_FRONTEND_WARNING_TEXT": 5
+      "TALA_FRONTEND_CORE_WIRE": 0,
+      "TALA_FRONTEND_PROJECT_SOURCE_LIST": 1,
+      "TALA_FRONTEND_DIAGNOSTIC_WIRE": 2,
+      "TALA_FRONTEND_ERROR_TEXT": 3,
+      "TALA_FRONTEND_COREPREP_WIRE": 4,
+      "TALA_FRONTEND_WARNING_TEXT": 5
     },
     "statuses": {
-      "VXS_FRONTEND_OK": 0,
-      "VXS_FRONTEND_DIAGNOSTICS": 1,
-      "VXS_FRONTEND_INVALID_REQUEST": 2,
-      "VXS_FRONTEND_INTERNAL_ERROR": 3,
-      "VXS_FRONTEND_OUTPUT_REJECTED": 4
+      "TALA_FRONTEND_OK": 0,
+      "TALA_FRONTEND_DIAGNOSTICS": 1,
+      "TALA_FRONTEND_INVALID_REQUEST": 2,
+      "TALA_FRONTEND_INTERNAL_ERROR": 3,
+      "TALA_FRONTEND_OUTPUT_REJECTED": 4
     }
   },
   "runtime": {
     "ownership": {
       "abi_version": 2,
-      "header": "Compiler/Headers/Visual/XSharp/Runtime/AARC.h",
+      "header": "Talac/Headers/Progmasoft/Tala/Runtime/AARC.h",
       "symbols": [
-        "vxs_aarc_abi_version",
-        "vxs_aarc_allocate",
-        "vxs_aarc_copy_unowned",
-        "vxs_aarc_copy_weak",
-        "vxs_aarc_is_exact_type",
-        "vxs_aarc_load_unowned",
-        "vxs_aarc_lock_weak",
-        "vxs_aarc_make_unowned",
-        "vxs_aarc_make_weak",
-        "vxs_aarc_release_strong",
-        "vxs_aarc_release_unowned",
-        "vxs_aarc_release_weak",
-        "vxs_aarc_retain_strong",
-        "vxs_aarc_string_literal"
+        "tala_aarc_abi_version",
+        "tala_aarc_allocate",
+        "tala_aarc_copy_unowned",
+        "tala_aarc_copy_weak",
+        "tala_aarc_is_exact_type",
+        "tala_aarc_load_unowned",
+        "tala_aarc_lock_weak",
+        "tala_aarc_make_unowned",
+        "tala_aarc_make_weak",
+        "tala_aarc_release_strong",
+        "tala_aarc_release_unowned",
+        "tala_aarc_release_weak",
+        "tala_aarc_retain_strong",
+        "tala_aarc_string_literal"
       ],
       "type_metadata": [
         "abiVersion",
@@ -65,43 +65,43 @@
       ]
     },
     "text": {
-      "header": "Compiler/Headers/Visual/XSharp/Runtime/Text.h",
+      "header": "Talac/Headers/Progmasoft/Tala/Runtime/Text.h",
       "symbols": [
-        "vxs_console_write",
-        "vxs_text_concat",
-        "vxs_text_equals",
-        "vxs_text_format_char",
-        "vxs_text_format_floating",
-        "vxs_text_format_signed",
-        "vxs_text_format_string",
-        "vxs_text_format_unsigned",
-        "vxs_text_from_bool",
-        "vxs_text_from_char",
-        "vxs_text_from_signed",
-        "vxs_text_from_unsigned",
-        "vxs_text_newline"
+        "tala_console_write",
+        "tala_text_concat",
+        "tala_text_equals",
+        "tala_text_format_char",
+        "tala_text_format_floating",
+        "tala_text_format_signed",
+        "tala_text_format_string",
+        "tala_text_format_unsigned",
+        "tala_text_from_bool",
+        "tala_text_from_char",
+        "tala_text_from_signed",
+        "tala_text_from_unsigned",
+        "tala_text_newline"
       ],
       "constants": {
-        "VXS_TEXT_FLAG_LEFT": 1,
-        "VXS_TEXT_FLAG_ZERO": 2,
-        "VXS_TEXT_FLAG_PLUS": 4,
-        "VXS_TEXT_FLAG_SPACE": 8,
-        "VXS_TEXT_FLAG_ALTERNATE": 16,
-        "VXS_TEXT_FLAG_GROUP": 32,
-        "VXS_TEXT_FLAG_HEXADECIMAL": 64,
-        "VXS_TEXT_ABSENT": -1,
-        "VXS_CONSOLE_OUTPUT": 0,
-        "VXS_CONSOLE_OUTPUT_LINE": 1,
-        "VXS_CONSOLE_ERROR": 2,
-        "VXS_CONSOLE_ERROR_LINE": 3
+        "TALA_TEXT_FLAG_LEFT": 1,
+        "TALA_TEXT_FLAG_ZERO": 2,
+        "TALA_TEXT_FLAG_PLUS": 4,
+        "TALA_TEXT_FLAG_SPACE": 8,
+        "TALA_TEXT_FLAG_ALTERNATE": 16,
+        "TALA_TEXT_FLAG_GROUP": 32,
+        "TALA_TEXT_FLAG_HEXADECIMAL": 64,
+        "TALA_TEXT_ABSENT": -1,
+        "TALA_CONSOLE_OUTPUT": 0,
+        "TALA_CONSOLE_OUTPUT_LINE": 1,
+        "TALA_CONSOLE_ERROR": 2,
+        "TALA_CONSOLE_ERROR_LINE": 3
       }
     }
   },
   "wire_formats": [
-    { "name": "Core", "magic": "VXCR", "version": 10 },
-    { "name": "CorePrep", "magic": "VXCP", "version": 8 },
-    { "name": "Xpp", "magic": "VXPP", "version": 7 },
-    { "name": "Xmm", "magic": "VXMM", "version": 7 }
+    { "name": "Core", "magic": "TACR", "version": 10 },
+    { "name": "CorePrep", "magic": "TACP", "version": 8 },
+    { "name": "Xpp", "magic": "TAPP", "version": 7 },
+    { "name": "Xmm", "magic": "TAMM", "version": 7 }
   ],
   "executable": {
     "extension": ".vxse",
@@ -119,7 +119,7 @@
     "native_linking": {
       "windows": {
         "linker": "lld-link",
-        "runtime_library": "vxs-runtime.lib",
+        "runtime_library": "tala-runtime.lib",
         "system_imports": {
           "KERNEL32.dll": [
             "GetConsoleMode",
@@ -134,11 +134,11 @@
       },
       "linux": {
         "linker": "cc",
-        "runtime_library": "libvxs-runtime.a"
+        "runtime_library": "libtala-runtime.a"
       },
       "macos": {
         "linker": "cc",
-        "runtime_library": "libvxs-runtime.a"
+        "runtime_library": "libtala-runtime.a"
       }
     }
   }

@@ -21,7 +21,7 @@ import (
 // tidyRoots are the first-party C++ trees clang-tidy analyzes. Vendored and
 // fetched dependencies compile inside the same Bazel actions but are not ours
 // to lint.
-var tidyRoots = []string{"Compiler/", "Interactive/", "Benchmarks/"}
+var tidyRoots = []string{"Talac/", "Interactive/", "Benchmarks/"}
 
 // tidyUnit is one first-party translation unit together with the exact
 // compiler command Bazel uses for it.
@@ -92,18 +92,18 @@ func tidyActionQuery(targets []string) string {
 }
 
 func tidyTargets() []string {
-	targets := []string{"//Compiler/Cli:vxs", "//Interactive:vxsi"}
+	targets := []string{"//Talac/Cli:talac", "//Interactive:tali"}
 	return append(targets, nativeTargets...)
 }
 
 // tidyJobs selects how many analyzer processes run at once. Each process is
 // single-threaded and independent, so one per logical processor is the
-// useful maximum. VXS_TIDY_JOBS overrides it.
+// useful maximum. TALA_TIDY_JOBS overrides it.
 func tidyJobs(configured string, logicalProcessors int) (int, error) {
 	if configured != "" {
 		jobs, err := strconv.Atoi(configured)
 		if err != nil || jobs < 1 || jobs > 256 {
-			return 0, errors.New("VXS_TIDY_JOBS must be an integer in [1, 256]")
+			return 0, errors.New("TALA_TIDY_JOBS must be an integer in [1, 256]")
 		}
 		return jobs, nil
 	}
@@ -173,7 +173,7 @@ func isFirstPartySource(source string) bool {
 // public headers Bazel exposes through the main repository's virtual include
 // directories and anything generated into a first-party package. Outputs of
 // fetched repositories live under bin/external and do not match.
-var firstPartyOutput = regexp.MustCompile(`^bazel-out/[^/]+/bin/(_virtual_includes|Compiler|Interactive|Benchmarks)/`)
+var firstPartyOutput = regexp.MustCompile(`^bazel-out/[^/]+/bin/(_virtual_includes|Talac|Interactive|Benchmarks)/`)
 
 // isFirstPartyLocation reports whether a diagnostic location is ours.
 func isFirstPartyLocation(path string) bool {
@@ -355,7 +355,7 @@ func runTidy(repository string, runner commandRunner, bazelArguments []string) e
 	if err != nil {
 		return errors.New("required tool \"clang-tidy\" was not found; install LLVM's clang-tidy and run doctor again")
 	}
-	jobs, err := tidyJobs(os.Getenv("VXS_TIDY_JOBS"), runtime.NumCPU())
+	jobs, err := tidyJobs(os.Getenv("TALA_TIDY_JOBS"), runtime.NumCPU())
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func runTidy(repository string, runner commandRunner, bazelArguments []string) e
 	if err != nil {
 		return err
 	}
-	database, err := os.MkdirTemp("", "vxs-tidy-")
+	database, err := os.MkdirTemp("", "tala-tidy-")
 	if err != nil {
 		return err
 	}

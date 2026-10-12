@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Template Frontend Architecture
 
-This document describes the compiler implementation boundary for Visual X#
+This document describes the compiler implementation boundary for Tala
 template declarations. The language contract remains in `Spec/`; this document
 explains how the Haskell frontend preserves that contract for later compiler
 stages.
@@ -90,7 +90,7 @@ All template parameter names enter the template environment before member
 bodies are renamed. This is necessary because a default may refer to a later
 parameter, as in:
 
-```vxs
+```talac
 template<typename T = U, typename U = int>
 class Pair {
 }

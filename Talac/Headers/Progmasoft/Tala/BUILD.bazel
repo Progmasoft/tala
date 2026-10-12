@@ -1,0 +1,33 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Tala is the stable public include surface. Implementations live in
+# the product-oriented Talac/ tree and may evolve without renaming includes.
+cc_library(
+    name = "namespace",
+    hdrs = ["Namespace.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+)
+
+# The Haskell frontend is loaded through a deliberately narrow C11 ABI.
+# Runtime implementation and ownership remain in C++20 and Haskell.
+cc_library(
+    name = "frontend_abi",
+    hdrs = ["Frontend.h"],
+    strip_include_prefix = "/Talac/Headers",
+)
+
+cc_library(
+    name = "pipeline_api",
+    hdrs = ["Pipeline.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Backend:llvm_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_wire",
+        "//Talac/Headers/Progmasoft/Tala/Xmm:xmm",
+        "//Talac/Headers/Progmasoft/Tala/Xpp:xpp",
+    ],
+)

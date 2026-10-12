@@ -1,0 +1,787 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Core System
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: Source Encoding
+-- Demonstrates: Tala source files use UTF-8.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Türkçe";
+
+-- ============================================================================
+-- Example 2: Implicit System Namespace
+-- Demonstrates: The compiler behaves as if every source file contains:
+
+using System;
+
+-- ============================================================================
+-- Example 3: Implicit System Namespace
+-- Demonstrates: Sub-namespaces are not imported recursively.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf";
+Integer age = 26;
+
+-- ============================================================================
+-- Example 4: Implicit System Namespace
+-- Demonstrates: Sub-namespaces are not imported recursively.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+System.String text = "Wolf";
+System.Integer age = 26;
+
+-- ============================================================================
+-- Example 5: Value Types
+-- Demonstrates: When a shared value is mutated, the runtime separates the buffer before the mutation.
+--   Other logical copies remain unchanged.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+int first = 26;
+int second = first;
+
+second += 1;
+
+-- first  == 26
+-- second == 27
+
+-- ============================================================================
+-- Example 6: Value Types
+-- Demonstrates: Value types cannot contain null as their value.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+int age = null;
+
+-- ============================================================================
+-- Example 7: Reference Types
+-- Demonstrates: All reference types are nullable.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String name = null;
+Integer age = null;
+Object value = null;
+
+-- ============================================================================
+-- Example 8: Value Types and System.Object
+-- Demonstrates: Value types have no inheritance, subtype, or identity relationship with System.Object.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+Object value = 26;
+
+-- ============================================================================
+-- Example 9: Value Types and System.Object
+-- Demonstrates: A corresponding System wrapper is a separate reference type.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer boxed = 26;
+Object value = boxed;
+
+-- ============================================================================
+-- Example 10: Of Factories and Contextual Wrapping
+-- Demonstrates: The value argument is named. The positional form is invalid.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer age = Integer.Of(value: 26);
+
+-- ============================================================================
+-- Example 11: Of Factories and Contextual Wrapping
+-- Demonstrates: The value argument is named. The positional form is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+Integer age = Integer.Of(26);
+
+-- ============================================================================
+-- Example 12: Of Factories and Contextual Wrapping
+-- Demonstrates: The fundamental factories are:
+
+Character.Of(value: 'A');
+Boolean.Of(value: true);
+
+Byte.Of(value: byteValue);
+Short.Of(value: shortValue);
+Long.Of(value: longValue);
+Integer.Of(value: intValue);
+LongInteger.Of(value: longIntValue);
+
+UByte.Of(value: ubyteValue);
+UShort.Of(value: ushortValue);
+ULong.Of(value: ulongValue);
+UInteger.Of(value: uintValue);
+ULongInteger.Of(value: ulongIntValue);
+
+SFloat.Of(value: sfloatValue);
+LFloat.Of(value: lfloatValue);
+Float.Of(value: floatValue);
+Double.Of(value: doubleValue);
+
+String.Of(value: "Wolf");
+
+-- ============================================================================
+-- Example 13: Of Factories and Contextual Wrapping
+-- Demonstrates: When the target wrapper type is known, the compiler inserts the corresponding
+--   Of(value: ...) operation.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer age = 26;
+
+-- ============================================================================
+-- Example 14: Of Factories and Contextual Wrapping
+-- Demonstrates: The compiler lowers the initializer as:
+
+Integer.Of(value: 26)
+
+-- ============================================================================
+-- Example 15: Of Factories and Contextual Wrapping
+-- Demonstrates: The compiler lowers the initializer as:
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String animal = "Wolf";
+
+-- ============================================================================
+-- Example 16: Of Factories and Contextual Wrapping
+-- Demonstrates: The compiler lowers the initializer as:
+
+String.Of(value: "Wolf")
+
+-- ============================================================================
+-- Example 17: Of Factories and Contextual Wrapping
+-- Demonstrates: The factory is not a general numeric conversion facility. Its argument must satisfy
+--   the accepted value type for that factory.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+long number = 3;
+Long boxed = Long.Of(value: number);
+
+-- ============================================================================
+-- Example 18: Of Factories and Contextual Wrapping
+-- Demonstrates: The factory is not a general numeric conversion facility. Its argument must satisfy
+--   the accepted value type for that factory.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+Integer number = 3;
+Long boxed = Long.Of(value: number);
+
+-- ============================================================================
+-- Example 19: Boolean Numeric Context
+-- Demonstrates: Numeric zero means false. A nonzero numeric value means true.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+bool disabled = 0;
+bool enabled = 1;
+bool negative = -1;
+
+-- ============================================================================
+-- Example 20: Boolean Numeric Context
+-- Demonstrates: Numeric zero means false. A nonzero numeric value means true.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Boolean enabled = 1;
+
+-- ============================================================================
+-- Example 21: Boolean Numeric Context
+-- Demonstrates: The compiler lowers the initializer as:
+
+Boolean.Of(value: 1)
+
+-- ============================================================================
+-- Example 22: Boolean Numeric Context
+-- Demonstrates: A numeric condition uses the same rule.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID: condition is true
+if (1) {
+}
+
+-- ============================================================================
+-- Example 23: Boolean Numeric Context
+-- Demonstrates: A numeric condition uses the same rule.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID: condition is false
+if (0) {
+}
+
+-- ============================================================================
+-- Example 24: Null
+-- Demonstrates: Every value type is non-nullable.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer age = null;
+String name = null;
+
+-- ============================================================================
+-- Example 25: Null
+-- Demonstrates: Every value type is non-nullable.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+int age = null;
+char letter = null;
+bool enabled = null;
+
+-- ============================================================================
+-- Example 26: Null
+-- Demonstrates: Tala provides ?? and ??=.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer age = null;
+int otherAge = age ?? 0;
+
+-- ============================================================================
+-- Example 27: Null
+-- Demonstrates: Tala provides ?? and ??=.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Integer age = null;
+age ??= 26;
+
+-- ============================================================================
+-- Example 28: Null
+-- Demonstrates: nullable type suffix ?; - null-conditional access ?.; - null-forgiving postfix !.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+Integer? age = null;
+
+-- ============================================================================
+-- Example 29: Null
+-- Demonstrates: nullable type suffix ?; - null-conditional access ?.; - null-forgiving postfix !.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+String city = user?.Address;
+
+-- ============================================================================
+-- Example 30: Null
+-- Demonstrates: nullable type suffix ?; - null-conditional access ?.; - null-forgiving postfix !.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+int age = boxedAge!;
+
+-- ============================================================================
+-- Example 31: Null
+-- Demonstrates: Converting a null wrapper reference to its non-null value type throws
+--   System.NullPointerException.
+
+Integer age = null;
+int otherAge = age;
+-- Throws System.NullPointerException.
+
+-- ============================================================================
+-- Example 32: Null
+-- Demonstrates: The standard null-argument guard is available:
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+ArgumentNullException.ThrowIfNull(value);
+
+-- ============================================================================
+-- Example 33: Reference Main Owner and Aliases
+-- Demonstrates: The binding that directly receives a newly produced object becomes the main owner.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- text is the main owner.
+
+-- ============================================================================
+-- Example 34: Reference Main Owner and Aliases
+-- Demonstrates: Normal reference assignment creates an alias. It does not transfer or copy the object
+--   and does not move main ownership.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+String other = text;  -- alias
+String third = text;  -- alias
+
+-- ============================================================================
+-- Example 35: Reference Main Owner and Aliases
+-- Demonstrates: A normal function argument creates a temporary alias. It does not transfer the main
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+Use(value: text);     -- parameter is an alias during the call
+
+-- ============================================================================
+-- Example 36: Reference Main Owner and Aliases
+-- Demonstrates: A newly produced return value makes the receiving binding the main owner.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = Create(); -- text owns the newly produced object
+
+-- ============================================================================
+-- Example 37: Reference Main Owner and Aliases
+-- Demonstrates: Returning an existing reference preserves the existing main owner. A binding that
+--   receives that reference becomes an alias.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf";      -- main owner
+String echoed = Echo(value: text); -- echoed is an alias
+
+-- ============================================================================
+-- Example 38: Reference Main Owner and Aliases
+-- Demonstrates: A field or indexed storage location that directly receives a newly produced object may
+--   be the main owner.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+holder.value = "Wolf"; -- holder.value owns the newly produced String
+
+-- ============================================================================
+-- Example 39: Reference Main Owner and Aliases
+-- Demonstrates: Assigning an existing reference to a field or indexed location creates an alias.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+holder.value = text;  -- alias
+
+-- ============================================================================
+-- Example 40: Reference Main Owner and Aliases
+-- Demonstrates: Reading a reference from a field or indexed location creates an alias and does not
+--   take ownership from the storage location.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = holder.value; -- alias
+String item = items[index]; -- alias
+
+-- ============================================================================
+-- Example 41: Reference Main Owner and Aliases
+-- Demonstrates: If the main-owner binding is destroyed, rebound, or set to null while aliases remain,
+--   the runtime atomically selects one living alias as the new main owner. The selected alias is not
+--   observable as a language-level ordering guarantee.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+String other = text;  -- alias
+
+text = null;
+-- other becomes the main owner atomically.
+
+-- ============================================================================
+-- Example 42: Owner-sensitive Reference Transformations
+-- Demonstrates: Assigning the result back to the main-owner binding reuses the main object. Aliases
+--   continue to refer to that same object and observe the transformed state.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+String other = text;  -- alias
+
+text = text.ToUpper();
+
+-- text and other still refer to the same object.
+-- text  == "WOLF"
+-- other == "WOLF"
+
+-- ============================================================================
+-- Example 43: Owner-sensitive Reference Transformations
+-- Demonstrates: Assigning the result to a different binding produces a separate object for that
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "WOLF";          -- main owner
+String result = text.ToUpper(); -- separate object
+
+-- ============================================================================
+-- Example 44: Owner-sensitive Reference Transformations
+-- Demonstrates: An alias separates when it receives a transformation result whose source is the main
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf"; -- main owner
+String other = text;  -- alias
+
+other = text.ToUpper();
+
+-- text and other now refer to different objects.
+-- text  == "Wolf"
+-- other == "WOLF"
+
+-- ============================================================================
+-- Example 45: StaticCast
+-- Demonstrates: A conversion is statically safe only when it is unambiguous and cannot lose
+--   information.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID: long is i32, int is i64.
+long source = 42;
+int target = StaticCast<int>(source);
+
+-- ============================================================================
+-- Example 46: StaticCast
+-- Demonstrates: A conversion is statically safe only when it is unambiguous and cannot lose
+--   information.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+short source = 42;
+long target = StaticCast<long>(source);
+
+-- ============================================================================
+-- Example 47: StaticCast
+-- Demonstrates: A conversion is statically safe only when it is unambiguous and cannot lose
+--   information.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID: int does not fit completely in long.
+int source = 42;
+long target = StaticCast<long>(source);
+
+-- ============================================================================
+-- Example 48: StaticCast
+-- Demonstrates: A conversion is statically safe only when it is unambiguous and cannot lose
+--   information.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID: signed values may be negative.
+int source = 42;
+uint target = StaticCast<uint>(source);
+
+-- ============================================================================
+-- Example 49: StaticCast
+-- Demonstrates: Floating-point widening inside the floating family is valid.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+sfloat source = 1.5;
+float target = StaticCast<float>(source);
+
+-- ============================================================================
+-- Example 50: StaticCast
+-- Demonstrates: A conversion that may lose integer precision is not statically safe merely because the
+--   floating-point target has a large numeric range.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+int source = 9'000'000'000;
+float target = StaticCast<float>(source);
+
+-- ============================================================================
+-- Example 51: DynamicCast
+-- Demonstrates: DynamicCast<Target>(value) performs a runtime-checked reference conversion.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Animal animal = dog;
+Dog result = DynamicCast<Dog>(animal);
+
+-- ============================================================================
+-- Example 52: DynamicCast
+-- Demonstrates: A null source produces null when the target is a reference type.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+Animal animal = null;
+Dog result = DynamicCast<Dog>(animal);
+-- result == null
+
+-- ============================================================================
+-- Example 53: DynamicCast
+-- Demonstrates: A non-null incompatible object throws System.InvalidCastException.
+
+Animal animal = cat;
+Dog result = DynamicCast<Dog>(animal);
+-- Throws System.InvalidCastException when the object is not compatible with Dog.
+
+-- ============================================================================
+-- Example 54: Identifiers
+-- Demonstrates: Emoji and Unicode punctuation are not identifier characters.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+name
+_name
+__value
+_1
+user1
+userAdı
+x₂
+á
+área
+
+-- ============================================================================
+-- Example 55: Identifiers
+-- Demonstrates: Emoji and Unicode punctuation are not identifier characters.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+_
+user🙂
+user.name
+user-name
+-name
+name-
+βValue
+
+-- ============================================================================
+-- Example 56: Identifiers
+-- Demonstrates: The following two spellings identify the same symbol:
+
+área
+área
+
+-- ============================================================================
+-- Example 57: Identifiers
+-- Demonstrates: is a separate token and is interpreted as an operator where valid.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+result = left - right;
+value = -26;
+
+-- ============================================================================
+-- Example 58: Integer Literals
+-- Demonstrates: Octal integer literals do not exist.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+26
+1'000'000
+0xFF
+0xFF'EE
+0b1010
+0b1010'1100
+
+-- ============================================================================
+-- Example 59: Integer Literals
+-- Demonstrates: Octal integer literals do not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+0o377
+
+-- ============================================================================
+-- Example 60: Integer Literals
+-- Demonstrates: The apostrophe digit separator is allowed only between two valid digits of the
+--   literal's radix.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+1'000
+0xAB'CD
+0b1010'1100
+
+-- ============================================================================
+-- Example 61: Integer Literals
+-- Demonstrates: The apostrophe digit separator is allowed only between two valid digits of the
+--   literal's radix.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+'1000
+1000'
+1''000
+0x'FF
+0b1010'
+
+-- ============================================================================
+-- Example 62: Integer Literals
+-- Demonstrates: A target integer type may interpret the literal directly when the value fits that
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+byte small = 100;
+long normal = 2'000'000'000;
+int wide = 9'000'000'000;
+longint huge = 9'223'372'036'854'775'808;
+
+-- ============================================================================
+-- Example 63: Integer Literals
+-- Demonstrates: A target integer type may interpret the literal directly when the value fits that
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID: value does not fit byte.
+byte small = 1'000;
+
+-- ============================================================================
+-- Example 64: Integer Literals
+-- Demonstrates: is not part of an integer literal. It is unary negation.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+int value = -26;
+
+-- ============================================================================
+-- Example 65: Integer Literals
+-- Demonstrates: The compiler evaluates a constant unary-negation expression as a whole, so the minimum
+--   representable signed value is valid even when its positive magnitude would not fit the same signed
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+int minimum = -9'223'372'036'854'775'808;
+
+-- ============================================================================
+-- Example 66: Floating-point Literals
+-- Demonstrates: A target floating-point type directly controls the literal type.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+sfloat a = 1.5;
+lfloat b = 1.5;
+float c = 1.5;
+double d = 1.5;
+
+-- ============================================================================
+-- Example 67: Floating-point Literals
+-- Demonstrates: Scientific notation uses e or E.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+1e3
+1.5e2
+2E-4
+
+-- ============================================================================
+-- Example 68: Floating-point Literals
+-- Demonstrates: The apostrophe separator may be used between digits in the integer and fraction parts.
+--   It is not allowed in the exponent.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+1'000.250'000
+1.5e100
+
+-- ============================================================================
+-- Example 69: Floating-point Literals
+-- Demonstrates: The apostrophe separator may be used between digits in the integer and fraction parts.
+--   It is not allowed in the exponent.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+1'.5
+1.'5
+1.5e1'00
+
+-- ============================================================================
+-- Example 70: Character Literals
+-- Demonstrates: The packed result must fit in u32.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+char a = 'A';
+char pair = 'AB';
+char triple = 'ABC';
+char four = 'ABCD';
+
+-- ============================================================================
+-- Example 71: Character Literals
+-- Demonstrates: The following values are normative:
+
+'A'    == 0x00000041
+'AB'   == 0x00004142
+'ABC'  == 0x00414243
+'ABCD' == 0x41424344
+
+-- ============================================================================
+-- Example 72: Character Literals
+-- Demonstrates: The following values are normative:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID: packed value does not fit u32.
+char value = 'ABCDE';
+
+-- ============================================================================
+-- Example 73: Escape Sequences
+-- Demonstrates: A char value is not restricted to a single Unicode scalar value. Its storage range is
+--   the full u32 range.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+char newline = '\n';
+char escape = '\e';
+char letter = '\u0041';
+String text = "first\nsecond";
+
+-- ============================================================================
+-- Example 74: Escape Sequences
+-- Demonstrates: A char value is not restricted to a single Unicode scalar value. Its storage range is
+--   the full u32 range.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+-- INVALID
+char value = '\q';
+
+-- ============================================================================
+-- Example 75: Escape Sequences
+-- Demonstrates: Escaped values inside a multi-character char literal participate in the same
+--   left-to-right packing rule.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+char value = 'A\n';
+
+-- ============================================================================
+-- Example 76: String Literals
+-- Demonstrates: A normal string literal is contextually converted through String.Of(value: ...) when a
+--   String is required.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "Wolf";
+
+-- ============================================================================
+-- Example 77: String Literals
+-- Demonstrates: The compiler lowers the initializer as:
+
+String.Of(value: "Wolf")
+
+-- ============================================================================
+-- Example 78: String Literals
+-- Demonstrates: A physical source-line break inside a normal string contributes a space. An explicit
+--   \n contributes a newline.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = "first
+second\nthird";
+
+-- ============================================================================
+-- Example 79: String Literals
+-- Demonstrates: Raw strings use the shared long-bracket delimiter family.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = [[first
+second
+third]];
+
+-- ============================================================================
+-- Example 80: String Literals
+-- Demonstrates: Raw-string escape sequences are not processed. Physical line breaks are preserved.
+-- Expected result: accepted when the referenced declarations are available.
+
+-- VALID
+String text = [[first\nsecond]];
+
+-- The content contains the two characters '\\' and 'n'.

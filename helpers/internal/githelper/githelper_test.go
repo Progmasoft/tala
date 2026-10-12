@@ -93,14 +93,14 @@ func exitCode(err error) int {
 
 func TestGeneratedAndPrivatePathsAreRecognizedAtAnyDepth(t *testing.T) {
 	for _, path := range []string{
-		"build", "Compiler/build/output.o", "ProjectSystem/node_modules/tool",
-		"Compiler/Haskell/dist-newstyle/cache", ".codex/PLAN.md", ".claude/WORKLOG.md", ".claude",
+		"build", "Talac/build/output.o", "Tazel/node_modules/tool",
+		"Talac/Haskell/dist-newstyle/cache", ".codex/PLAN.md", ".claude/WORKLOG.md", ".claude",
 	} {
 		if !isGenerated(path) {
 			t.Errorf("expected %q to be generated or private", path)
 		}
 	}
-	for _, path := range []string{"Compiler/Builder.cpp", "Documents/building.md", "Package.lock", "notes/.claude.md", "outline/a"} {
+	for _, path := range []string{"Talac/Builder.cpp", "Documents/building.md", "Package.lock", "notes/.claude.md", "outline/a"} {
 		if isGenerated(path) {
 			t.Errorf("did not expect %q to be generated or private", path)
 		}
@@ -125,7 +125,7 @@ func TestUntrackPathspecsAddEachIgnoredTrackedFileOnce(t *testing.T) {
 }
 
 func TestUpdateStagesCommitsAndPushesInOrder(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	output, err := invoke(git, "update", "Change the IR")
 	if err != nil {
 		t.Fatalf("update failed: %v\n%s", err, output)
@@ -143,7 +143,7 @@ func TestUpdateStagesCommitsAndPushesInOrder(t *testing.T) {
 }
 
 func TestUpdateNeverForcesThePush(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	if _, err := invoke(git, "update", "Change"); err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestUpdateNeverForcesThePush(t *testing.T) {
 }
 
 func TestUpdateRefusesTheDefaultBranchBeforeStaging(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	git.captures["branch --show-current"] = "main\n"
 	_, err := invoke(git, "update", "Change")
 	if err == nil || !strings.Contains(err.Error(), "default branch") {
@@ -165,7 +165,7 @@ func TestUpdateRefusesTheDefaultBranchBeforeStaging(t *testing.T) {
 		t.Fatalf("commands ran on the default branch: %#v", git.runs)
 	}
 
-	allowed := topicRepository("Compiler/Core/IR.cpp")
+	allowed := topicRepository("Talac/Core/IR.cpp")
 	allowed.captures["branch --show-current"] = "main\n"
 	if _, err := invoke(allowed, "update", "--allow-default-branch", "Change"); err != nil {
 		t.Fatalf("explicitly allowed commit failed: %v", err)
@@ -186,7 +186,7 @@ func TestUpdateWithNothingStagedDoesNotCommit(t *testing.T) {
 }
 
 func TestUpdateStopsWhenTheCommitFails(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	git.codes = map[string]int{"commit": 1}
 	if _, err := invoke(git, "update", "Change"); err == nil {
 		t.Fatal("a failed commit was reported as success")
@@ -199,8 +199,8 @@ func TestUpdateStopsWhenTheCommitFails(t *testing.T) {
 }
 
 func TestUpdateReportsADirtyTreeAfterThePush(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
-	git.captures["status --short"] = " M Compiler/Core/IR.cpp\n"
+	git := topicRepository("Talac/Core/IR.cpp")
+	git.captures["status --short"] = " M Talac/Core/IR.cpp\n"
 	_, err := invoke(git, "update", "Change")
 	if err == nil || !strings.Contains(err.Error(), "still dirty") {
 		t.Fatalf("error = %v", err)
@@ -208,7 +208,7 @@ func TestUpdateReportsADirtyTreeAfterThePush(t *testing.T) {
 }
 
 func TestUpdateNoPushOnlyCommits(t *testing.T) {
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	if _, err := invoke(git, "update", "--no-push", "Change"); err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestUpdateReadsTheMessageFromAFile(t *testing.T) {
 	if err := os.WriteFile(file, []byte("Subject\n\nA body with \"quotes\" and $dollars.\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	git := topicRepository("Compiler/Core/IR.cpp")
+	git := topicRepository("Talac/Core/IR.cpp")
 	if _, err := invoke(git, "update", "--message-file", file); err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestUpdateRejectsMissingEmptyAndDoubleMessages(t *testing.T) {
 		{"update", "--message-file", filepath.Join(t.TempDir(), "missing.txt")},
 		{"update", "one", "two"},
 	} {
-		git := topicRepository("Compiler/Core/IR.cpp")
+		git := topicRepository("Talac/Core/IR.cpp")
 		if _, err := invoke(git, arguments...); err == nil {
 			t.Errorf("%v was accepted", arguments)
 		}
@@ -430,7 +430,7 @@ func TestCommandsOutsideARepositoryDoNothing(t *testing.T) {
 
 func TestInvalidInvocationsNeverReachGit(t *testing.T) {
 	for _, arguments := range [][]string{{"unknown"}, {"push", "extra"}, {"clean", "extra"}, {"start"}, {"update", "--force", "Message"}} {
-		git := topicRepository("Compiler/Core/IR.cpp")
+		git := topicRepository("Talac/Core/IR.cpp")
 		if _, err := invoke(git, arguments...); err == nil {
 			t.Errorf("%v was accepted", arguments)
 		}

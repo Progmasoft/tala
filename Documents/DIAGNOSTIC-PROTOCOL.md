@@ -5,12 +5,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Structured Diagnostic Protocol
 
-Visual X# tools consume compiler diagnostics through the versioned VXDG protocol. The protocol is a private process
+Tala tools consume compiler diagnostics through the versioned TADG protocol. The protocol is a private process
 boundary between the compiler and trusted local tools such as Xide. It is not a source artifact, a user-selectable emit
 format, or a replacement for readable terminal diagnostics.
 
-VXDG version 1 carries enough structure for an editor to present an error list, navigate to related declarations, and
-offer explicitly described edits without parsing English text. The public `vxs` command remains the only compiler
+TADG version 1 carries enough structure for an editor to present an error list, navigate to related declarations, and
+offer explicitly described edits without parsing English text. The public `talac` command remains the only compiler
 executable users invoke. The native driver starts the Haskell frontend and passes the side-channel path privately.
 
 ## Design rules
@@ -32,7 +32,7 @@ diagnostics produced there use the ordinary `CorePrep` stage tag.
 
 ## Transport
 
-A trusted local consumer sets `VXS_DIAGNOSTICS_FILE` on the native `vxs` process when it requests structured diagnostics.
+A trusted local consumer sets `TALA_DIAGNOSTICS_FILE` on the native `talac` process when it requests structured diagnostics.
 The native driver preserves that private variable for its child frontend, which writes one complete document before it
 exits. In the absence of the environment variable, the frontend performs no extra I/O and preserves existing CLI behavior.
 
@@ -41,9 +41,9 @@ accept a file that predates the child process. The recommended sequence is:
 
 1. Create a unique temporary filename using an operating-system facility.
 2. Remove the placeholder file while retaining the unpredictable filename.
-3. Start `vxs check -File <absolute-source-path>` with `VXS_DIAGNOSTICS_FILE` set.
+3. Start `talac check -File <absolute-source-path>` with `TALA_DIAGNOSTICS_FILE` set.
 4. Wait for the compiler process and drain stdout and stderr concurrently.
-5. Read and validate the complete VXDG document.
+5. Read and validate the complete TADG document.
 6. Delete the temporary file in a guaranteed cleanup path.
 
 If a non-timed-out process does not create a document, the consumer reports a compiler integration failure. It must not
@@ -72,7 +72,7 @@ Every document starts with this 12-byte header:
 
 | Offset | Size | Meaning |
 | ---: | ---: | --- |
-| 0 | 4 | ASCII magic `VXDG` |
+| 0 | 4 | ASCII magic `TADG` |
 | 4 | 2 | protocol version, currently `1` |
 | 6 | 2 | reserved flags, currently zero |
 | 8 | 4 | diagnostic record count |
@@ -99,7 +99,7 @@ Records follow the header count in source-independent emission order. Each recor
 7. related-location count and related locations;
 8. fix count and fixes.
 
-A code contains 1–64 ASCII uppercase letters, digits, or hyphens. For example, `VXP100` and `VXT-204` are valid;
+A code contains 1–64 ASCII uppercase letters, digits, or hyphens. For example, `TAP100` and `TAT-204` are valid;
 `parser100` is not. Codes identify diagnostic categories and must not be synthesized from translated messages.
 
 The message is ready for display but does not need to contain enough information for a tool to reconstruct structured

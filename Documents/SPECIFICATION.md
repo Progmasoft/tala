@@ -5,7 +5,7 @@
 
 ## Purpose
 
-`Spec/` contains 25 topic-oriented `.vxs` example suites. They explain current language design intent using independent,
+`Spec/` contains 25 topic-oriented `.tala` example suites. They explain current language design intent using independent,
 numbered fragments.
 
 The catalog is grouped by ownership rather than kept as one flat directory:
@@ -22,27 +22,27 @@ The complete linked catalog is maintained in [`Spec/README.md`](../Spec/README.m
 
 | Area | Current suites |
 | --- | --- |
-| declarations and type forms | `Language/Decls.vxs` |
-| attributes | `Language/Attributes.vxs` |
-| evaluation by need and effects | `Language/Evaluation.vxs` |
-| operators and precedence | `Language/Operators.vxs` |
-| optionals and null behavior | `Language/Optional.vxs` |
-| strings, scalars, escapes, and source text | `Language/String.vxs` |
-| exceptions | `Language/Exceptions.vxs` |
-| iteration and generators | `Language/Iteration.vxs` |
-| unsafe operations | `Language/Unsafe.vxs` |
-| core and collections | `StandardLibrary/Core/*.vxs` |
-| console, file, and command I/O | `StandardLibrary/IO/*.vxs` |
-| text formats | `StandardLibrary/Text/*.vxs` |
-| numeric algorithms | `StandardLibrary/Numerics/Math.vxs` |
-| concurrency | `StandardLibrary/Concurrency/*.vxs` |
-| date and time | `StandardLibrary/Temporal/*.vxs` |
-| BLINQ | `StandardLibrary/Query/BLINQ.vxs` |
-| database providers | `Libraries/Databases/*.vxs` |
-| FFI and inline assembly | `Interop/*.vxs` |
+| declarations and type forms | `Language/Decls.tala` |
+| attributes | `Language/Attributes.tala` |
+| evaluation by need and effects | `Language/Evaluation.tala` |
+| operators and precedence | `Language/Operators.tala` |
+| optionals and null behavior | `Language/Optional.tala` |
+| strings, scalars, escapes, and source text | `Language/String.tala` |
+| exceptions | `Language/Exceptions.tala` |
+| iteration and generators | `Language/Iteration.tala` |
+| unsafe operations | `Language/Unsafe.tala` |
+| core and collections | `StandardLibrary/Core/*.tala` |
+| console, file, and command I/O | `StandardLibrary/IO/*.tala` |
+| text formats | `StandardLibrary/Text/*.tala` |
+| numeric algorithms | `StandardLibrary/Numerics/Math.tala` |
+| concurrency | `StandardLibrary/Concurrency/*.tala` |
+| date and time | `StandardLibrary/Temporal/*.tala` |
+| BLINQ | `StandardLibrary/Query/BLINQ.tala` |
+| database providers | `Libraries/Databases/*.tala` |
+| FFI and inline assembly | `Interop/*.tala` |
 
 When a broad system overview and a focused language topic overlap, the focused topic is more specific. For example,
-`Language/String.vxs` governs `String` representation and syntax over an older/general core-system example. Resolve a real
+`Language/String.tala` governs `String` representation and syntax over an older/general core-system example. Resolve a real
 conflict explicitly rather than blending incompatible rules.
 
 ## How to read an example
@@ -60,7 +60,7 @@ Numbered examples should be understandable in isolation. Context may be omitted 
 declarations must not silently change the rule being demonstrated. An invalid example should identify the exact invalid
 property instead of relying on several unrelated errors in one fragment.
 
-Use Visual X# syntax even when describing a backend concept. Native C++ implementation details do not introduce `switch`,
+Use Tala syntax even when describing a backend concept. Native C++ implementation details do not introduce `switch`,
 `case`, C-style top-level entry functions, semicolon rules, or C scalar widths into the language catalog.
 
 ## Design versus implementation
@@ -74,7 +74,7 @@ Use these layers when comparing design and code:
 1. `Spec/` defines the intended public language/library behavior.
 2. Compiler models show which parts can currently be represented.
 3. Focused tests show which behavior is implemented at an owning stage.
-4. Connected CLI tests show which behavior is usable through `vxs`.
+4. Connected CLI tests show which behavior is usable through `talac`.
 5. Backend tests show which represented values can produce native artifacts.
 
 A parser test alone does not prove runtime behavior. An LLVM test alone does not authorize new source syntax. A registered
@@ -84,7 +84,7 @@ artifact name does not prove a codec exists.
 
 Current cross-cutting rules include:
 
-- source files use `.vxs`;
+- source files use `.tala`;
 - project executables use `.vxse`;
 - runtime `String` is a sequence of Unicode code points rather than a UTF-8 byte container;
 - project entry is a namespace-qualified class with `public static void Main()`;
@@ -121,7 +121,7 @@ to differ, just as it is for normal project sources.
 - `System.Worlds` entries are compiler-special library surfaces, not language built-ins.
 - `Core`, `Xpp`, and `Xmm` are the current intermediate artifact vocabulary.
 - CorePrep is internal and has no public extension.
-- Visual X# packages are `.vipkg`; Kotlin DSL plugins are JARs.
+- Tala packages are `.vipkg`; Kotlin DSL plugins are JARs.
 
 Historical implementation names can remain in legacy source that is deliberately retained, but they do not enter the public
 catalog as current language or artifact names.

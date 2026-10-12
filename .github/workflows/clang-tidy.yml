@@ -60,7 +60,7 @@ jobs:
 
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       # The helper builds the native targets first: clang-tidy needs the

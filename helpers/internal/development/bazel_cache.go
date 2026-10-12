@@ -22,9 +22,9 @@ const bazelDiskCacheLimit = "8G"
 // check or time budget is altered.
 //
 // CI keeps its own cache through the workflow's Bazel setup, and
-// VXS_BAZEL_DISK_CACHE=off disables this one for a cold local measurement.
+// TALA_BAZEL_DISK_CACHE=off disables this one for a cold local measurement.
 func cachedBuild(arguments []string) []string {
-	directory, enabled := bazelDiskCacheDirectory(os.Getenv("CI"), os.Getenv("VXS_BAZEL_DISK_CACHE"), os.UserCacheDir)
+	directory, enabled := bazelDiskCacheDirectory(os.Getenv("CI"), os.Getenv("TALA_BAZEL_DISK_CACHE"), os.UserCacheDir)
 	if !enabled || len(arguments) == 0 || arguments[0] != "build" {
 		return arguments
 	}
@@ -44,5 +44,5 @@ func bazelDiskCacheDirectory(ci, configured string, userCache func() (string, er
 	if err != nil || root == "" {
 		return "", false
 	}
-	return filepath.Join(root, "visual-xsharp", "bazel-disk-cache"), true
+	return filepath.Join(root, "tala", "bazel-disk-cache"), true
 }

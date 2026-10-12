@@ -1,0 +1,601 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala standard library design examples: System.Math
+--
+-- This file is a topic-oriented standard-library contract. Each numbered fragment is independent.
+-- Declarations describe the intended public surface; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Ownership and Call Shape
+-- Demonstrates: System.Math is the numeric namespace and contains one stateless Math object. Its
+--   operations are object members, not top-level functions. A top-level static class is not used
+--   because Tala permits static classes only as nested declarations.
+
+namespace System.Math;
+
+public object Math {
+}
+
+using System.Math;
+
+float root = Math.Sqrt(9.0);
+float sameRoot = System.Math.Math.Sqrt(9.0);
+
+-- ============================================================================
+-- Example 2: 2. Numeric Scope
+-- Demonstrates: Math follows Tala widths. It does not reinterpret C, C++, Java, or C# numeric
+--   names. bool and char are not arithmetic Math operands. Abs preserves its argument type; for a
+--   signed integer minimum whose positive magnitude is not representable, Abs raises
+--   ArithmeticException. Floating Abs changes negative zero to positive zero and propagates NaN.
+
+public object Math {
+    public byte Abs(_ byte value);
+    public short Abs(_ short value);
+    public long Abs(_ long value);
+    public int Abs(_ int value);
+    public longint Abs(_ longint value);
+
+    public sfloat Abs(_ sfloat value);
+    public lfloat Abs(_ lfloat value);
+    public float Abs(_ float value);
+    public double Abs(_ double value);
+}
+
+-- ============================================================================
+-- Example 3: 2.1 No Hidden Numeric Promotion
+-- Demonstrates: Every overload preserves its operand type unless the declaration explicitly states
+--   another result. Math does not add an implicit signed/unsigned, integer/floating, or width
+--   conversion that ordinary Tala expressions do not have.
+
+long small = -12;
+long sameWidth = Math.Abs(small); -- long
+
+float angle = 1.0;
+float sine = Math.Sin(angle); -- float
+
+-- INVALID: there is no mixed-width Pow overload.
+float invalid = Math.Pow(2.0, lfloatValue);
+
+-- ============================================================================
+-- Example 4: 3. Constants
+-- Demonstrates: Mathematical constants use float, the ordinary Tala f64 type. They are immutable
+--   object members and may be read through Math without constructing or owning an object.
+
+public object Math {
+    public final float E = 2.7182818284590452353602874713527;
+    public final float Pi = 3.1415926535897932384626433832795;
+    public final float Tau = 6.2831853071795864769252867665590;
+    public final float Ln2 = 0.6931471805599453094172321214582;
+    public final float Ln10 = 2.3025850929940456840179914546844;
+    public final float Sqrt2 = 1.4142135623730950488016887242097;
+}
+
+float halfTurn = Math.Pi;
+float fullTurn = Math.Tau;
+
+-- ============================================================================
+-- Example 5: 4. Ordering and Bounds
+-- Demonstrates: Min, Max, and Clamp cover every integer and floating type. The two operands and both
+--   bounds must have exactly the same type as the value.
+
+public object Math {
+    public byte Min(_ byte left, _ byte right);
+    public short Min(_ short left, _ short right);
+    public long Min(_ long left, _ long right);
+    public int Min(_ int left, _ int right);
+    public longint Min(_ longint left, _ longint right);
+    public ubyte Min(_ ubyte left, _ ubyte right);
+    public ushort Min(_ ushort left, _ ushort right);
+    public ulong Min(_ ulong left, _ ulong right);
+    public uint Min(_ uint left, _ uint right);
+    public ulongint Min(_ ulongint left, _ ulongint right);
+    public sfloat Min(_ sfloat left, _ sfloat right);
+    public lfloat Min(_ lfloat left, _ lfloat right);
+    public float Min(_ float left, _ float right);
+    public double Min(_ double left, _ double right);
+
+    public byte Max(_ byte left, _ byte right);
+    public short Max(_ short left, _ short right);
+    public long Max(_ long left, _ long right);
+    public int Max(_ int left, _ int right);
+    public longint Max(_ longint left, _ longint right);
+    public ubyte Max(_ ubyte left, _ ubyte right);
+    public ushort Max(_ ushort left, _ ushort right);
+    public ulong Max(_ ulong left, _ ulong right);
+    public uint Max(_ uint left, _ uint right);
+    public ulongint Max(_ ulongint left, _ ulongint right);
+    public sfloat Max(_ sfloat left, _ sfloat right);
+    public lfloat Max(_ lfloat left, _ lfloat right);
+    public float Max(_ float left, _ float right);
+    public double Max(_ double left, _ double right);
+
+    public byte Clamp(_ byte value, _ byte minimum, _ byte maximum);
+    public short Clamp(_ short value, _ short minimum, _ short maximum);
+    public long Clamp(_ long value, _ long minimum, _ long maximum);
+    public int Clamp(_ int value, _ int minimum, _ int maximum);
+    public longint Clamp(_ longint value, _ longint minimum, _ longint maximum);
+    public ubyte Clamp(_ ubyte value, _ ubyte minimum, _ ubyte maximum);
+    public ushort Clamp(_ ushort value, _ ushort minimum, _ ushort maximum);
+    public ulong Clamp(_ ulong value, _ ulong minimum, _ ulong maximum);
+    public uint Clamp(_ uint value, _ uint minimum, _ uint maximum);
+    public ulongint Clamp(_ ulongint value, _ ulongint minimum, _ ulongint maximum);
+    public sfloat Clamp(_ sfloat value, _ sfloat minimum, _ sfloat maximum);
+    public lfloat Clamp(_ lfloat value, _ lfloat minimum, _ lfloat maximum);
+    public float Clamp(_ float value, _ float minimum, _ float maximum);
+    public double Clamp(_ double value, _ double minimum, _ double maximum);
+}
+
+-- ============================================================================
+-- Example 6: 4.1 Ordering Edge Cases
+-- Demonstrates: Clamp requires minimum <= maximum and raises ArithmeticException otherwise. Floating
+--   Min, Max, and Clamp propagate NaN. Min(-0.0, +0.0) is -0.0; Max(-0.0, +0.0) is +0.0.
+
+float bounded = Math.Clamp(12.5, 0.0, 10.0); -- 10.0
+float unknown = Math.Min(Math.Sqrt(-1.0), 1.0); -- NaN
+
+-- ============================================================================
+-- Example 7: 5. Sign and Magnitude
+-- Demonstrates: Sign returns -1, 0, or 1 as int. A NaN argument raises ArithmeticException.
+--   Magnitude returns an unsigned result, so the minimum value of a signed integer is representable.
+
+public object Math {
+    public int Sign(_ byte value);
+    public int Sign(_ short value);
+    public int Sign(_ long value);
+    public int Sign(_ int value);
+    public int Sign(_ longint value);
+    public int Sign(_ ubyte value);
+    public int Sign(_ ushort value);
+    public int Sign(_ ulong value);
+    public int Sign(_ uint value);
+    public int Sign(_ ulongint value);
+    public int Sign(_ sfloat value);
+    public int Sign(_ lfloat value);
+    public int Sign(_ float value);
+    public int Sign(_ double value);
+
+    public ubyte Magnitude(_ byte value);
+    public ushort Magnitude(_ short value);
+    public ulong Magnitude(_ long value);
+    public uint Magnitude(_ int value);
+    public ulongint Magnitude(_ longint value);
+}
+
+uint magnitude = Math.Magnitude(intMinimum); -- representable even for the minimum int
+
+-- ============================================================================
+-- Example 8: 6. Integer Number Theory
+-- Demonstrates: GreatestCommonDivisor is non-negative and treats a zero operand normally.
+--   LeastCommonMultiple is non-negative and returns zero when either operand is zero. Either method
+--   raises ArithmeticException when its exact non-negative result cannot fit the selected result
+--   type; this includes GreatestCommonDivisor(minimum, 0) for a signed integer type.
+
+public object Math {
+    public byte GreatestCommonDivisor(_ byte left, _ byte right);
+    public short GreatestCommonDivisor(_ short left, _ short right);
+    public long GreatestCommonDivisor(_ long left, _ long right);
+    public int GreatestCommonDivisor(_ int left, _ int right);
+    public longint GreatestCommonDivisor(_ longint left, _ longint right);
+    public ubyte GreatestCommonDivisor(_ ubyte left, _ ubyte right);
+    public ushort GreatestCommonDivisor(_ ushort left, _ ushort right);
+    public ulong GreatestCommonDivisor(_ ulong left, _ ulong right);
+    public uint GreatestCommonDivisor(_ uint left, _ uint right);
+    public ulongint GreatestCommonDivisor(_ ulongint left, _ ulongint right);
+
+    public byte LeastCommonMultiple(_ byte left, _ byte right);
+    public short LeastCommonMultiple(_ short left, _ short right);
+    public long LeastCommonMultiple(_ long left, _ long right);
+    public int LeastCommonMultiple(_ int left, _ int right);
+    public longint LeastCommonMultiple(_ longint left, _ longint right);
+    public ubyte LeastCommonMultiple(_ ubyte left, _ ubyte right);
+    public ushort LeastCommonMultiple(_ ushort left, _ ushort right);
+    public ulong LeastCommonMultiple(_ ulong left, _ ulong right);
+    public uint LeastCommonMultiple(_ uint left, _ uint right);
+    public ulongint LeastCommonMultiple(_ ulongint left, _ ulongint right);
+}
+
+int divisor = Math.GreatestCommonDivisor(84, 30); -- 6
+int multiple = Math.LeastCommonMultiple(21, 6);   -- 42
+
+-- ============================================================================
+-- Example 9: 7. Rounding Modes
+-- Demonstrates: MidpointRounding names the tie rule explicitly. ToEven is the default for Round.
+
+public enum class MidpointRounding() {
+    case ToEven,
+    case AwayFromZero,
+    case TowardZero,
+    case TowardNegativeInfinity,
+    case TowardPositiveInfinity,
+}
+
+-- ============================================================================
+-- Example 10: 7.1 Integral Rounding
+-- Demonstrates: Ceiling, Floor, Truncate, and Round preserve the floating operand type. digits counts
+--   decimal fractional digits and must be within the implementation-independent range supported by
+--   the selected floating type; an invalid digits value raises ArgumentOutOfRangeException.
+
+public object Math {
+    public sfloat Ceiling(_ sfloat value);
+    public lfloat Ceiling(_ lfloat value);
+    public float Ceiling(_ float value);
+    public double Ceiling(_ double value);
+
+    public sfloat Floor(_ sfloat value);
+    public lfloat Floor(_ lfloat value);
+    public float Floor(_ float value);
+    public double Floor(_ double value);
+
+    public sfloat Truncate(_ sfloat value);
+    public lfloat Truncate(_ lfloat value);
+    public float Truncate(_ float value);
+    public double Truncate(_ double value);
+
+    public sfloat Round(_ sfloat value);
+    public lfloat Round(_ lfloat value);
+    public float Round(_ float value);
+    public double Round(_ double value);
+
+    public sfloat Round(_ sfloat value, digits: int);
+    public lfloat Round(_ lfloat value, digits: int);
+    public float Round(_ float value, digits: int);
+    public double Round(_ double value, digits: int);
+
+    public sfloat Round(_ sfloat value, mode: MidpointRounding);
+    public lfloat Round(_ lfloat value, mode: MidpointRounding);
+    public float Round(_ float value, mode: MidpointRounding);
+    public double Round(_ double value, mode: MidpointRounding);
+
+    public sfloat Round(_ sfloat value, digits: int, mode: MidpointRounding);
+    public lfloat Round(_ lfloat value, digits: int, mode: MidpointRounding);
+    public float Round(_ float value, digits: int, mode: MidpointRounding);
+    public double Round(_ double value, digits: int, mode: MidpointRounding);
+}
+
+float bankers = Math.Round(2.5); -- 2.0
+float outward = Math.Round(2.5, mode: .AwayFromZero); -- 3.0
+
+-- ============================================================================
+-- Example 11: 8. Roots, Powers, and Exponentials
+-- Demonstrates: Root, power, exponential, and logarithmic operations preserve a single floating
+--   operand type. A two-operand operation requires matching types.
+
+public object Math {
+    public sfloat Sqrt(_ sfloat value);
+    public lfloat Sqrt(_ lfloat value);
+    public float Sqrt(_ float value);
+    public double Sqrt(_ double value);
+
+    public sfloat Cbrt(_ sfloat value);
+    public lfloat Cbrt(_ lfloat value);
+    public float Cbrt(_ float value);
+    public double Cbrt(_ double value);
+
+    public sfloat Pow(_ sfloat value, _ sfloat exponent);
+    public lfloat Pow(_ lfloat value, _ lfloat exponent);
+    public float Pow(_ float value, _ float exponent);
+    public double Pow(_ double value, _ double exponent);
+
+    public sfloat Exp(_ sfloat value);
+    public lfloat Exp(_ lfloat value);
+    public float Exp(_ float value);
+    public double Exp(_ double value);
+
+    public sfloat Exp2(_ sfloat value);
+    public lfloat Exp2(_ lfloat value);
+    public float Exp2(_ float value);
+    public double Exp2(_ double value);
+
+    public sfloat Expm1(_ sfloat value);
+    public lfloat Expm1(_ lfloat value);
+    public float Expm1(_ float value);
+    public double Expm1(_ double value);
+
+    public sfloat Log(_ sfloat value);
+    public lfloat Log(_ lfloat value);
+    public float Log(_ float value);
+    public double Log(_ double value);
+
+    public sfloat Log(_ sfloat value, _ sfloat base);
+    public lfloat Log(_ lfloat value, _ lfloat base);
+    public float Log(_ float value, _ float base);
+    public double Log(_ double value, _ double base);
+
+    public sfloat Log2(_ sfloat value);
+    public lfloat Log2(_ lfloat value);
+    public float Log2(_ float value);
+    public double Log2(_ double value);
+
+    public sfloat Log10(_ sfloat value);
+    public lfloat Log10(_ lfloat value);
+    public float Log10(_ float value);
+    public double Log10(_ double value);
+
+    public sfloat Log1p(_ sfloat value);
+    public lfloat Log1p(_ lfloat value);
+    public float Log1p(_ float value);
+    public double Log1p(_ double value);
+
+    public sfloat Hypot(_ sfloat x, _ sfloat y);
+    public lfloat Hypot(_ lfloat x, _ lfloat y);
+    public float Hypot(_ float x, _ float y);
+    public double Hypot(_ double x, _ double y);
+}
+
+float stableSmallLog = Math.Log1p(0.0000001);
+float stableSmallExp = Math.Expm1(0.0000001);
+
+-- ============================================================================
+-- Example 12: 8.1 Floating Domains
+-- Demonstrates: Floating-domain errors produce the IEEE NaN or infinity appropriate to the selected
+--   type; they do not turn a total floating operation into an exception. For example, Sqrt(-1.0)
+--   and Log(-1.0) are NaN, Log(0.0) is negative infinity, and Exp overflow is positive infinity.
+
+float notReal = Math.Sqrt(-1.0); -- NaN
+float pole = Math.Log(0.0);      -- negative infinity
+
+-- ============================================================================
+-- Example 13: 9. Trigonometry
+-- Demonstrates: Trigonometric arguments and results use radians. DegreesToRadians and
+--   RadiansToDegrees make unit conversion explicit rather than guessing from a numeric value.
+
+public object Math {
+    public sfloat Sin(_ sfloat radians);
+    public lfloat Sin(_ lfloat radians);
+    public float Sin(_ float radians);
+    public double Sin(_ double radians);
+
+    public sfloat Cos(_ sfloat radians);
+    public lfloat Cos(_ lfloat radians);
+    public float Cos(_ float radians);
+    public double Cos(_ double radians);
+
+    public sfloat Tan(_ sfloat radians);
+    public lfloat Tan(_ lfloat radians);
+    public float Tan(_ float radians);
+    public double Tan(_ double radians);
+
+    public sfloat Asin(_ sfloat value);
+    public lfloat Asin(_ lfloat value);
+    public float Asin(_ float value);
+    public double Asin(_ double value);
+
+    public sfloat Acos(_ sfloat value);
+    public lfloat Acos(_ lfloat value);
+    public float Acos(_ float value);
+    public double Acos(_ double value);
+
+    public sfloat Atan(_ sfloat value);
+    public lfloat Atan(_ lfloat value);
+    public float Atan(_ float value);
+    public double Atan(_ double value);
+
+    public sfloat Atan2(_ sfloat y, _ sfloat x);
+    public lfloat Atan2(_ lfloat y, _ lfloat x);
+    public float Atan2(_ float y, _ float x);
+    public double Atan2(_ double y, _ double x);
+
+    public sfloat DegreesToRadians(_ sfloat degrees);
+    public lfloat DegreesToRadians(_ lfloat degrees);
+    public float DegreesToRadians(_ float degrees);
+    public double DegreesToRadians(_ double degrees);
+
+    public sfloat RadiansToDegrees(_ sfloat radians);
+    public lfloat RadiansToDegrees(_ lfloat radians);
+    public float RadiansToDegrees(_ float radians);
+    public double RadiansToDegrees(_ double radians);
+}
+
+float rightAngle = Math.DegreesToRadians(90.0);
+float one = Math.Sin(rightAngle);
+
+-- ============================================================================
+-- Example 14: 10. Hyperbolic Functions
+-- Demonstrates: Hyperbolic and inverse-hyperbolic operations use the same type-preserving floating
+--   overload policy as trigonometric operations.
+
+public object Math {
+    public sfloat Sinh(_ sfloat value);
+    public lfloat Sinh(_ lfloat value);
+    public float Sinh(_ float value);
+    public double Sinh(_ double value);
+
+    public sfloat Cosh(_ sfloat value);
+    public lfloat Cosh(_ lfloat value);
+    public float Cosh(_ float value);
+    public double Cosh(_ double value);
+
+    public sfloat Tanh(_ sfloat value);
+    public lfloat Tanh(_ lfloat value);
+    public float Tanh(_ float value);
+    public double Tanh(_ double value);
+
+    public sfloat Asinh(_ sfloat value);
+    public lfloat Asinh(_ lfloat value);
+    public float Asinh(_ float value);
+    public double Asinh(_ double value);
+
+    public sfloat Acosh(_ sfloat value);
+    public lfloat Acosh(_ lfloat value);
+    public float Acosh(_ float value);
+    public double Acosh(_ double value);
+
+    public sfloat Atanh(_ sfloat value);
+    public lfloat Atanh(_ lfloat value);
+    public float Atanh(_ float value);
+    public double Atanh(_ double value);
+}
+
+-- ============================================================================
+-- Example 15: 11. Floating-Point Construction
+-- Demonstrates: CopySign, ScaleByPowerOfTwo, NextAfter, and FusedMultiplyAdd expose operations that
+--   cannot be expressed reliably by composing ordinary arithmetic. All floating operands of one
+--   call have the same type.
+
+public object Math {
+    public sfloat CopySign(_ sfloat magnitude, _ sfloat sign);
+    public lfloat CopySign(_ lfloat magnitude, _ lfloat sign);
+    public float CopySign(_ float magnitude, _ float sign);
+    public double CopySign(_ double magnitude, _ double sign);
+
+    public sfloat ScaleByPowerOfTwo(_ sfloat value, exponent: int);
+    public lfloat ScaleByPowerOfTwo(_ lfloat value, exponent: int);
+    public float ScaleByPowerOfTwo(_ float value, exponent: int);
+    public double ScaleByPowerOfTwo(_ double value, exponent: int);
+
+    public sfloat NextAfter(_ sfloat value, toward: sfloat);
+    public lfloat NextAfter(_ lfloat value, toward: lfloat);
+    public float NextAfter(_ float value, toward: float);
+    public double NextAfter(_ double value, toward: double);
+
+    public sfloat FusedMultiplyAdd(_ sfloat left, _ sfloat right, _ sfloat addend);
+    public lfloat FusedMultiplyAdd(_ lfloat left, _ lfloat right, _ lfloat addend);
+    public float FusedMultiplyAdd(_ float left, _ float right, _ float addend);
+    public double FusedMultiplyAdd(_ double left, _ double right, _ double addend);
+}
+
+float signedZero = Math.CopySign(0.0, -1.0); -- -0.0
+float exactStep = Math.FusedMultiplyAdd(left, right, addend); -- one final rounding
+
+-- ============================================================================
+-- Example 16: 12. Floating-Point Classification
+-- Demonstrates: Classification preserves NaN, infinity, normal, subnormal, finite, and sign-bit
+--   distinctions without converting the value to another width. SignBit observes negative zero and
+--   signed NaN representations as well as ordinary negative numbers.
+
+public object Math {
+    public bool IsFinite(_ sfloat value);
+    public bool IsFinite(_ lfloat value);
+    public bool IsFinite(_ float value);
+    public bool IsFinite(_ double value);
+
+    public bool IsInfinite(_ sfloat value);
+    public bool IsInfinite(_ lfloat value);
+    public bool IsInfinite(_ float value);
+    public bool IsInfinite(_ double value);
+
+    public bool IsNaN(_ sfloat value);
+    public bool IsNaN(_ lfloat value);
+    public bool IsNaN(_ float value);
+    public bool IsNaN(_ double value);
+
+    public bool IsNormal(_ sfloat value);
+    public bool IsNormal(_ lfloat value);
+    public bool IsNormal(_ float value);
+    public bool IsNormal(_ double value);
+
+    public bool IsSubnormal(_ sfloat value);
+    public bool IsSubnormal(_ lfloat value);
+    public bool IsSubnormal(_ float value);
+    public bool IsSubnormal(_ double value);
+
+    public bool SignBit(_ sfloat value);
+    public bool SignBit(_ lfloat value);
+    public bool SignBit(_ float value);
+    public bool SignBit(_ double value);
+}
+
+bool negativeZero = Math.SignBit(Math.CopySign(0.0, -1.0)); -- true
+
+-- ============================================================================
+-- Example 17: 13. Magnitude Ordering
+-- Demonstrates: MinMagnitude and MaxMagnitude compare absolute magnitude but return one original
+--   operand, including its sign. NaN propagation and signed-zero tie rules match Min and Max.
+
+public object Math {
+    public sfloat MinMagnitude(_ sfloat left, _ sfloat right);
+    public lfloat MinMagnitude(_ lfloat left, _ lfloat right);
+    public float MinMagnitude(_ float left, _ float right);
+    public double MinMagnitude(_ double left, _ double right);
+
+    public sfloat MaxMagnitude(_ sfloat left, _ sfloat right);
+    public lfloat MaxMagnitude(_ lfloat left, _ lfloat right);
+    public float MaxMagnitude(_ float left, _ float right);
+    public double MaxMagnitude(_ double left, _ double right);
+}
+
+float nearer = Math.MinMagnitude(-2.0, 3.0); -- -2.0
+
+-- ============================================================================
+-- Example 18: 14. Accurate Angle Multiples
+-- Demonstrates: SinPi, CosPi, and TanPi compute the function of Pi * value without first rounding a
+--   separately materialized multiplication. This provides exact zeros and half-turn boundaries where
+--   the selected floating representation permits them.
+
+public object Math {
+    public sfloat SinPi(_ sfloat value);
+    public lfloat SinPi(_ lfloat value);
+    public float SinPi(_ float value);
+    public double SinPi(_ double value);
+
+    public sfloat CosPi(_ sfloat value);
+    public lfloat CosPi(_ lfloat value);
+    public float CosPi(_ float value);
+    public double CosPi(_ double value);
+
+    public sfloat TanPi(_ sfloat value);
+    public lfloat TanPi(_ lfloat value);
+    public float TanPi(_ float value);
+    public double TanPi(_ double value);
+}
+
+float exactSine = Math.SinPi(0.5); -- 1.0
+
+-- ============================================================================
+-- Example 19: 15. Interpolation
+-- Demonstrates: Lerp computes start + amount * (end - start) with an implementation chosen to avoid
+--   avoidable overflow and cancellation. amount is not clamped; callers use Clamp explicitly when
+--   they require an interval-limited interpolation.
+
+public object Math {
+    public sfloat Lerp(_ sfloat start, _ sfloat end, amount: sfloat);
+    public lfloat Lerp(_ lfloat start, _ lfloat end, amount: lfloat);
+    public float Lerp(_ float start, _ float end, amount: float);
+    public double Lerp(_ double start, _ double end, amount: double);
+}
+
+float midpoint = Math.Lerp(10.0, 20.0, amount: 0.5); -- 15.0
+float beyond = Math.Lerp(10.0, 20.0, amount: 1.5);   -- 25.0
+
+-- ============================================================================
+-- Example 20: 16. Precision and Reproducibility
+-- Demonstrates: Results use round-to-nearest, ties-to-even in the destination type unless a rounding
+--   overload explicitly selects another mode. FusedMultiplyAdd performs exactly one final rounding.
+--   Classification, sign, integer number theory, integral rounding, and documented special cases are
+--   bit-reproducible across supported platforms. Transcendental finite results are within one unit in
+--   the last place of the exact result; implementations must not forward an unspecified host-libm
+--   result when that would violate this bound.
+
+float reproducible = Math.FusedMultiplyAdd(0.1, 10.0, -1.0);
+
+-- ============================================================================
+-- Example 21: 17. NaN and Signed Zero
+-- Demonstrates: Operations preserve the destination type's IEEE special values. Unless a method
+--   states a stronger rule, any NaN operand produces NaN. A returned NaN payload is unspecified, so
+--   programs test it with IsNaN rather than comparing payload bits. CopySign and SignBit are the
+--   explicit surfaces for sign-sensitive zero behavior.
+
+bool invalidRoot = Math.IsNaN(Math.Sqrt(-1.0)); -- true
+
+-- ============================================================================
+-- Example 22: 18. Deliberate Exclusions
+-- Demonstrates: Random generation is stateful and therefore does not belong to Math. Complex,
+--   arbitrary-precision, decimal, statistics, vectors, and matrices have their own types or library
+--   namespaces. Math does not duplicate ordinary operators, collection Min/Max, or numeric parsing.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Math.Random();              -- INVALID: no hidden process-global random generator
+Math.Parse("3.14");         -- INVALID: parsing belongs to numeric types
+Math.Sum(values);           -- INVALID: aggregation belongs to BLINQ/collections
+
+-- ============================================================================
+-- Example 23: 19. No Construction or Inheritance
+-- Demonstrates: Math is an object declaration. It has exactly one AARC identity, cannot be created,
+--   inherited, or stored as a value-type utility instance, and exposes no mutable process state.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+new Math(); -- INVALID
+
+class CustomMath : Math { -- INVALID
+}

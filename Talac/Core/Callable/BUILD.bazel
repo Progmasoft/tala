@@ -1,0 +1,9 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "callable",
+    srcs = ["Signature.cpp"],
+    deps = ["//Talac/Headers/Progmasoft/Tala/Core:callable_api"],
+)

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-// prebuild installs system tools used to develop Visual X#. Bazel, Cabal, and
+// prebuild installs system tools used to develop Tala. Bazel, Cabal, and
 // Gradle remain the owners of their build graphs after host bootstrap.
 package main
 
@@ -23,12 +23,12 @@ import (
 	"time"
 )
 
-const prebuildUsage = `Visual X# development-host bootstrap
+const prebuildUsage = `Tala development-host bootstrap
 
 Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
 Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
 toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Temurin JDK 25, Git, and the
-platform link resources. Visual X# uses ClangCL/LLD on Windows, not MSVC.`
+platform link resources. Tala uses ClangCL/LLD on Windows, not MSVC.`
 
 type bootstrapHost int
 
@@ -203,7 +203,7 @@ func main() {
 func newPrebuildCommand(runner bootstrapRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "prebuild",
-		Short:         "Check or install the tools a Visual X# development host needs.",
+		Short:         "Check or install the tools a Tala development host needs.",
 		Long:          prebuildUsage,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
@@ -264,7 +264,7 @@ func detectBootstrapHost(goos string) (bootstrapHost, error) {
 		}
 		return classifyBootstrapLinux(string(contents))
 	default:
-		return bootstrapUnsupported, fmt.Errorf("%s is not a supported Visual X# development host", goos)
+		return bootstrapUnsupported, fmt.Errorf("%s is not a supported Tala development host", goos)
 	}
 }
 
@@ -580,7 +580,7 @@ func installGHCupWindowsWithLoader(runner bootstrapRunner, load func() ([]byte, 
 		return fmt.Errorf("cannot verify the pinned GHCup bootstrap: %w", err)
 	}
 	fmt.Println("Installing GHCup with the pinned Haskell bootstrap...")
-	err = withTemporaryBootstrapScript(script, "visual-xsharp-ghcup-*.ps1", func(path string) error {
+	err = withTemporaryBootstrapScript(script, "tala-ghcup-*.ps1", func(path string) error {
 		return runner.Run("powershell.exe", "-NoProfile", "-NonInteractive", "-File", path,
 			"-Minimal", "-InBash", "-InstallDir", `C:\`)
 	})
@@ -609,7 +609,7 @@ func installGHCupUnixWithLoaderAs(runner bootstrapRunner, load func() ([]byte, e
 		return fmt.Errorf("cannot verify the pinned GHCup bootstrap: %w", err)
 	}
 	fmt.Println("Installing GHCup with the pinned Haskell bootstrap...")
-	err = withTemporaryBootstrapScript(script, "visual-xsharp-ghcup-*.sh", func(path string) error {
+	err = withTemporaryBootstrapScript(script, "tala-ghcup-*.sh", func(path string) error {
 		return runner.Run("env", "BOOTSTRAP_HASKELL_NONINTERACTIVE=1", "BOOTSTRAP_HASKELL_MINIMAL=1", "sh", path)
 	})
 	if err != nil {

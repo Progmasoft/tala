@@ -1,0 +1,25 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "llvm_backend_tests",
+    srcs = [
+        "CallableInvocationTests.cpp",
+        "ComputabilityExecutionTests.cpp",
+        "ArithmeticExecutionTests.cpp",
+        "ConditionalExecutionTests.cpp",
+        "LLVMBackendTests.cpp",
+        "JitSessionTests.cpp",
+        "LoopExecutionTests.cpp",
+        "ReservedSymbolTests.cpp",
+        "ShortCircuitExecutionTests.cpp",
+    ],
+    deps = [
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Driver:core_pipeline",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+        "@llvm//:llvm",
+    ],
+)

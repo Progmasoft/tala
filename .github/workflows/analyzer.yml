@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: visual-analyzer-${{ github.ref }}
+  group: tala-analyzer-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,25 +42,25 @@ jobs:
 
       - name: Check analyzer configuration DSL
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p Analyzer spotlessCheck test
+        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
         run: cabal update
 
-      - name: Build Visual Analyzer
+      - name: Build tala-analyzer
         shell: pwsh
-        working-directory: Compiler
-        run: cabal build visual-analyzer --disable-optimization
+        working-directory: Talac
+        run: cabal build tala-analyzer --disable-optimization
 
-      - name: Test Visual Analyzer
+      - name: Test tala-analyzer
         shell: pwsh
-        working-directory: Compiler
-        run: cabal test visual-analyzer-tests --disable-optimization
+        working-directory: Talac
+        run: cabal test tala-analyzer-tests --disable-optimization
 
       - name: Check package metadata
         shell: pwsh
-        working-directory: Analyzer
+        working-directory: Ecosystem/tala-analyzer
         run: cabal check
 
       - name: Check patch hygiene
@@ -81,11 +81,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: Analyzer/vscode/package-lock.json
+          cache-dependency-path: Ecosystem/tala-analyzer/vscode/package-lock.json
 
       - name: Check extension types
         shell: pwsh
-        working-directory: Analyzer/vscode
+        working-directory: Ecosystem/tala-analyzer/vscode
         run: |
           npm ci
           npm run check
@@ -112,7 +112,7 @@ jobs:
 
       - name: Compile IntelliJ plugin
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p Analyzer/intellij compileKotlin processResources dokkaGenerateHtml
+        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
 
   kotlin-config:
     name: Kotlin configuration model
@@ -136,4 +136,4 @@ jobs:
 
       - name: Test, format, and generate Kotlin API documentation
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p Analyzer check jacocoTestReport spotlessCheck
+        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer check jacocoTestReport spotlessCheck

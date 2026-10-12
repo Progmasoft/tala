@@ -9,15 +9,15 @@
 
 #include "Interactive/Runtime/Source.hpp"
 #include "Interactive/Runtime/Value.hpp"
-#include "Visual/XSharp/Interactive/Arguments.hpp"
-#include "Visual/XSharp/Interactive/Session.hpp"
+#include "Progmasoft/Tala/Interactive/Arguments.hpp"
+#include "Progmasoft/Tala/Interactive/Session.hpp"
 
 namespace
 {
-    namespace Interactive = Visual::XSharp::Interactive;
-    namespace Llvm = Visual::XSharp::Backend::LLVM;
+    namespace Interactive = Progmasoft::Tala::Interactive;
+    namespace Llvm = Progmasoft::Tala::Backend::LLVM;
     namespace Core = Llvm::Core;
-    namespace Runtime = Visual::XSharp::Interactive::Runtime;
+    namespace Runtime = Progmasoft::Tala::Interactive::Runtime;
 
     class Invocation final
     {
@@ -26,7 +26,7 @@ namespace
             : storage_(arguments)
         {
             argv_.reserve(storage_.size() + 1U);
-            argv_.push_back(const_cast<char *>("vxsi"));
+            argv_.push_back(const_cast<char *>("tali"));
             for (auto &argument : storage_)
                 argv_.push_back(argument.data());
             request_
@@ -49,13 +49,13 @@ namespace
 } // namespace
 
 TEST_CASE(
-    "vxsi defaults to its interactive mode and keeps one-shot syntax narrow",
-    "[vxsi][arguments]")
+    "tali defaults to its interactive mode and keeps one-shot syntax narrow",
+    "[tali][arguments]")
 {
     const Invocation repl{};
     REQUIRE(repl.Request().kind == Interactive::RequestKind::Repl);
 
-    const Invocation evaluate{ "-Eval", "5 + 5" };
+    const Invocation evaluate{ "--eval", "5 + 5" };
     REQUIRE(evaluate.Request().kind == Interactive::RequestKind::Evaluate);
     REQUIRE(evaluate.Request().expression == "5 + 5");
 
@@ -63,19 +63,19 @@ TEST_CASE(
     REQUIRE(help.Request().kind == Interactive::RequestKind::Help);
 }
 
-TEST_CASE("vxsi rejects truncated and ambiguous public invocations",
-          "[vxsi][arguments][errors]")
+TEST_CASE("tali rejects truncated and ambiguous public invocations",
+          "[tali][arguments][errors]")
 {
-    const Invocation missing{ "-Eval" };
+    const Invocation missing{ "--eval" };
     REQUIRE(missing.Request().kind == Interactive::RequestKind::Error);
     REQUIRE(missing.Request().diagnostic.find("exactly one")
             != std::string::npos);
 
-    const Invocation empty{ "-Eval", "" };
+    const Invocation empty{ "--eval", "" };
     REQUIRE(empty.Request().kind == Interactive::RequestKind::Error);
     REQUIRE(empty.Request().diagnostic.find("non-empty") != std::string::npos);
 
-    const Invocation extra{ "-Eval", "1 + 2", "ignored" };
+    const Invocation extra{ "--eval", "1 + 2", "ignored" };
     REQUIRE(extra.Request().kind == Interactive::RequestKind::Error);
 
     const Invocation misplaced{ "-Bogus" };
@@ -85,28 +85,28 @@ TEST_CASE("vxsi rejects truncated and ambiguous public invocations",
 
 TEST_CASE("generated REPL cells use a unique namespace and preserve a typed "
           "previous result",
-          "[vxsi][source]")
+          "[tali][source]")
 {
     const Llvm::JitValue previous{ Core::Type::int64(), std::int64_t{ 10 } };
     const auto first
-        = Runtime::BuildCellSource(7U, "vxsiPrevious * 3", previous);
+        = Runtime::BuildCellSource(7U, "taliPrevious * 3", previous);
     const auto second = Runtime::BuildCellSource(8U, "5 + 5", std::nullopt);
     REQUIRE(first.has_value());
     REQUIRE(second.has_value());
-    REQUIRE(first->find("namespace VisualXSharp.Interactive.Cell7;")
+    REQUIRE(first->find("namespace Tala.Interactive.Cell7;")
             != std::string::npos);
-    REQUIRE(second->find("namespace VisualXSharp.Interactive.Cell8;")
+    REQUIRE(second->find("namespace Tala.Interactive.Cell8;")
             != std::string::npos);
     REQUIRE(first->find("class Session") != std::string::npos);
     REQUIRE(first->find("public static auto Evaluate()") != std::string::npos);
-    REQUIRE(first->find("int vxsiPrevious = 10;") != std::string::npos);
-    REQUIRE(first->find("vxsiPrevious * 3") != std::string::npos);
-    REQUIRE(first->find(".vxs") == std::string::npos);
+    REQUIRE(first->find("int taliPrevious = 10;") != std::string::npos);
+    REQUIRE(first->find("taliPrevious * 3") != std::string::npos);
+    REQUIRE(first->find(".tala") == std::string::npos);
 }
 
 TEST_CASE(
     "cell source omits uninitialized session state and enforces input limits",
-    "[vxsi][source][limits]")
+    "[tali][source][limits]")
 {
     const auto source = Runtime::BuildCellSource(0U, "5 + 5", std::nullopt);
     REQUIRE(source.has_value());
@@ -118,22 +118,21 @@ TEST_CASE(
                                            std::nullopt));
 }
 
-TEST_CASE("REPL scalar values have lossless Visual X# bindings",
-          "[vxsi][state]")
+TEST_CASE("REPL scalar values have lossless Tala bindings", "[tali][state]")
 {
     using Llvm::JitValue;
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::int8(), std::int64_t{ -8 } })
-            == "byte vxsiPrevious = -8;");
+            == "byte taliPrevious = -8;");
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::uint64(),
                                              std::uint64_t{ 0xFFFFFFFFULL } })
-            == "uint vxsiPrevious = 4294967295;");
+            == "uint taliPrevious = 4294967295;");
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::boolean(), true })
-            == "bool vxsiPrevious = true;");
+            == "bool taliPrevious = true;");
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::character(), U'\n' })
-            == "char vxsiPrevious = '\\u000A';");
+            == "char taliPrevious = '\\u000A';");
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::float32(), 1.25 })
-            == "lfloat vxsiPrevious = 1.25;");
+            == "lfloat taliPrevious = 1.25;");
     REQUIRE_FALSE(Runtime::SourceBinding(
         JitValue{ Core::Type::int128(), std::int64_t{ 10 } }));
     REQUIRE_FALSE(
@@ -142,7 +141,7 @@ TEST_CASE("REPL scalar values have lossless Visual X# bindings",
 
 TEST_CASE("REPL bindings reject mismatched payloads and values outside their "
           "declared type",
-          "[vxsi][state][safety]")
+          "[tali][state][safety]")
 {
     using Llvm::JitValue;
     REQUIRE(Runtime::SourceBinding(
@@ -159,10 +158,10 @@ TEST_CASE("REPL bindings reject mismatched payloads and values outside their "
 
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::int8(), std::int64_t{ -128 } })
-            == "byte vxsiPrevious = -128;");
+            == "byte taliPrevious = -128;");
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::int8(), std::int64_t{ 127 } })
-            == "byte vxsiPrevious = 127;");
+            == "byte taliPrevious = 127;");
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::int8(), std::int64_t{ -129 } })
             == std::nullopt);
@@ -171,23 +170,23 @@ TEST_CASE("REPL bindings reject mismatched payloads and values outside their "
             == std::nullopt);
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::uint8(), std::uint64_t{ 255 } })
-            == "ubyte vxsiPrevious = 255;");
+            == "ubyte taliPrevious = 255;");
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::uint8(), std::uint64_t{ 256 } })
             == std::nullopt);
     REQUIRE(Runtime::SourceBinding(
                 JitValue{ Core::Type::uint64(),
                           std::uint64_t{ 18446744073709551615ULL } })
-            == "uint vxsiPrevious = 18446744073709551615;");
+            == "uint taliPrevious = 18446744073709551615;");
 
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::float32(), 0.1 })
-            == "lfloat vxsiPrevious = 0.100000001;");
+            == "lfloat taliPrevious = 0.100000001;");
     REQUIRE(Runtime::SourceBinding(JitValue{ Core::Type::float64(), -0.0 })
-            == "float vxsiPrevious = -0;");
+            == "float taliPrevious = -0;");
 }
 
 TEST_CASE("REPL display retains source signedness, width, and scalar category",
-          "[vxsi][presentation]")
+          "[tali][presentation]")
 {
     using Llvm::JitValue;
     REQUIRE(Interactive::FormatValue(
@@ -207,17 +206,17 @@ TEST_CASE("REPL display retains source signedness, width, and scalar category",
 }
 
 TEST_CASE("REPL symbol discovery honors cell identity and unique signatures",
-          "[vxsi][symbols]")
+          "[tali][symbols]")
 {
-    visual_xsharp::xmm::Module module;
-    module.name = { U"VisualXSharp", U"Interactive", U"Cell12" };
-    visual_xsharp::xmm::Function evaluate;
+    tala::xmm::Module module;
+    module.name = { U"Tala", U"Interactive", U"Cell12" };
+    tala::xmm::Function evaluate;
     evaluate.symbol = { 24U, U"Evaluate" };
     evaluate.return_type = Core::Type::int64();
     module.functions.push_back(evaluate);
 
     REQUIRE(Runtime::EvaluationSymbol(module, 12U)
-            == "VisualXSharp.Interactive.Cell12.Evaluate.24");
+            == "Tala.Interactive.Cell12.Evaluate.24");
     REQUIRE_FALSE(Runtime::EvaluationSymbol(module, 11U));
 
     module.functions.push_back(evaluate);

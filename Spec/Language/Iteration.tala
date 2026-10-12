@@ -1,0 +1,893 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Iteration and Generators
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Iteration Model
+-- Demonstrates: Tala exposes System.Utils.Enumerable<T> as the standard lazy enumerable surface.
+
+static System.Utils.Enumerable<int> CountTo(int max) {
+    for (int i = 1; i <= max; i++) {
+        yield i;
+    }
+}
+
+-- ============================================================================
+-- Example 2: 1. Iteration Model
+-- Demonstrates: An enumerable is consumed with for (:).
+
+for (int number : CountTo(5)) {
+    Console.Println(number);
+}
+
+-- ============================================================================
+-- Example 3: 1. Iteration Model
+-- Demonstrates: Tala does not expose a System.Utils.Iterator<T> type.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+System.Utils.Iterator<int> iterator; -- INVALID
+
+-- ============================================================================
+-- Example 4: 2. System.Utils.Enumerable<T>
+-- Demonstrates: An Enumerable<T> value represents a repeatable lazy production definition, not one
+--   consumed iteration state.
+
+auto values = CountTo(3);
+
+for (auto value : values) {
+    Console.Println(value);
+}
+
+for (auto value : values) {
+    Console.Println(value);
+}
+
+-- ============================================================================
+-- Example 5: 2. System.Utils.Enumerable<T>
+-- Demonstrates: Each active traversal has its own independent iteration state.
+
+auto values = CountTo(3);
+
+for (auto first : values) {
+    for (auto second : values) {
+        Use(first, second);
+    }
+}
+
+-- ============================================================================
+-- Example 6: 2. System.Utils.Enumerable<T>
+-- Demonstrates: The language does not require an enumerable to be finite.
+
+static System.Utils.Enumerable<int> Counter() {
+    int value = 0;
+
+    while (true) {
+        yield value;
+        value++;
+    }
+}
+
+-- ============================================================================
+-- Example 7: 3. Generator Declarations
+-- Demonstrates: Its return type must be written explicitly as System.Utils.Enumerable<T>.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 8: 3. Generator Declarations
+-- Demonstrates: Return-type inference with auto is not allowed for a generator declaration.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static auto Values() {
+    yield 1; -- INVALID
+}
+
+-- ============================================================================
+-- Example 9: 3. Generator Declarations
+-- Demonstrates: It is not allowed in constructors, destructors, property accessors, or indexer
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Example {
+    public Example() {
+        yield 1; -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 10: 3. Generator Declarations
+-- Demonstrates: It is not allowed in constructors, destructors, property accessors, or indexer
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Example {
+    public int Value {
+        get {
+            yield 1; -- INVALID
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 11: 3. Generator Declarations
+-- Demonstrates: A generator declaration cannot be op.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static op System.Utils.Enumerable<int> Values() {
+    yield 1; -- INVALID
+}
+
+-- ============================================================================
+-- Example 12: 4. Lazy Execution
+-- Demonstrates: Calling a generator function creates its Enumerable<T> result but does not eagerly
+--   execute the complete generator body.
+
+auto values = CountTo(5);
+
+-- ============================================================================
+-- Example 13: 4. Lazy Execution
+-- Demonstrates: After a yield, generator execution is suspended. When the same traversal advances
+--   again, execution resumes after that yield.
+
+static System.Utils.Enumerable<int> Values() {
+    int value = 10;
+
+    yield value;
+
+    value += 5;
+
+    yield value;
+}
+
+-- ============================================================================
+-- Example 14: 5. Generator State
+-- Demonstrates: Local bindings that are live at a suspension point are preserved as part of that
+
+static System.Utils.Enumerable<int> Counter() {
+    int value = 0;
+
+    while (value < 3) {
+        yield value;
+        value++;
+    }
+}
+
+-- ============================================================================
+-- Example 15: 6. Generator Parameters
+-- Demonstrates: Generator arguments are evaluated and bound when the generator function is called.
+
+static System.Utils.Enumerable<int> CountFrom(int start) {
+    yield start;
+    yield start + 1;
+}
+
+int value = 10;
+auto values = CountFrom(value);
+
+value = 20;
+
+for (auto item : values) {
+    Console.Println(item);
+}
+
+-- ============================================================================
+-- Example 16: 6. Generator Parameters
+-- Demonstrates: For an AARC parameter, the generator state retains the normal reference/alias
+--   relationship.
+
+static System.Utils.Enumerable<String> Names(User user) {
+    yield user.name;
+}
+
+-- ============================================================================
+-- Example 17: 7. yield
+-- Demonstrates: The basic form is:
+
+yield expression;
+
+-- ============================================================================
+-- Example 18: 7. yield
+-- Demonstrates: The expression supplies the next produced element. Except for the special null rule
+--   defined below, the expression must be compatible with T under the ordinary assignment/conversion
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 19: 7. yield
+-- Demonstrates: The expression supplies the next produced element. Except for the special null rule
+--   defined below, the expression must be compatible with T under the ordinary assignment/conversion
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1.5; -- INVALID
+}
+
+-- ============================================================================
+-- Example 20: 7. yield
+-- Demonstrates: AARC values use normal reference/alias semantics.
+
+static System.Utils.Enumerable<User> Users() {
+    User user = LoadUser();
+    yield user;
+}
+
+-- ============================================================================
+-- Example 21: 7. yield
+-- Demonstrates: CoW values use normal value semantics.
+
+static System.Utils.Enumerable<Point> Points() {
+    Point point = CreatePoint();
+    yield point;
+}
+
+-- ============================================================================
+-- Example 22: 8. null Elements
+-- Demonstrates: null is a valid yielded element even when T is a value type.
+-- Expected result: accepted when the referenced declarations are available.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    yield null; -- VALID
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 23: 8. null Elements
+-- Demonstrates: null is never an end-of-iteration sentinel.
+
+static System.Utils.Enumerable<String> Values() {
+    yield "A";
+    yield null;
+    yield "B";
+}
+
+-- ============================================================================
+-- Example 24: 8. null Elements
+-- Demonstrates: When a yielded null is bound to a loop variable, ordinary target-binding rules are
+--   applied at consumption time.
+
+for (int value : Values()) {
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 25: 8. null Elements
+-- Demonstrates: With auto, the loop variable's static type is still inferred from T.
+
+for (auto value : Values()) {
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 26: 9. return in Generators
+-- Demonstrates: A generator may use bare return; to finish production immediately.
+
+static System.Utils.Enumerable<int> Values() {
+    if (not Ready()) {
+        return;
+    }
+
+    yield 20;
+}
+
+-- ============================================================================
+-- Example 27: 9. return in Generators
+-- Demonstrates: A generator cannot use return expression;.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static System.Utils.Enumerable<int> Values() {
+    return 10; -- INVALID
+}
+
+-- ============================================================================
+-- Example 28: 9. return in Generators
+-- Demonstrates: Ordinary unreachable-code rules apply after return;.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    return;
+    yield 2; -- INVALID: unreachable
+}
+
+-- ============================================================================
+-- Example 29: 10. for (:)
+-- Demonstrates: The enumerable loop form is:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+for (Type name : source) {
+    ...
+}
+
+-- ============================================================================
+-- Example 30: 10. for (:)
+-- Demonstrates: An explicit element type may be used.
+
+for (int number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 31: 10. for (:)
+-- Demonstrates: auto may be used.
+
+for (auto number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 32: 10. for (:)
+-- Demonstrates: final may be combined with either form.
+
+for (final int number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 33: 10. for (:)
+-- Demonstrates: final may be combined with either form.
+
+for (final auto number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 34: 10. for (:)
+-- Demonstrates: A final iteration binding cannot be rebound within that iteration.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+for (final auto number : CountTo(5)) {
+    number = 10; -- INVALID
+}
+
+-- ============================================================================
+-- Example 35: 10. for (:)
+-- Demonstrates: A non-final iteration binding may be rebound normally.
+-- Expected result: accepted when the referenced declarations are available.
+
+for (auto number : CountTo(5)) {
+    number = 10; -- VALID
+}
+
+-- ============================================================================
+-- Example 36: 11. Loop Binding Scope and Lifetime
+-- Demonstrates: The iteration binding exists only inside the loop body.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+for (auto value : Values()) {
+    Use(value);
+}
+
+Use(value); -- INVALID
+
+-- ============================================================================
+-- Example 37: 12. Source Evaluation
+-- Demonstrates: The source expression of a for (:) loop is evaluated exactly once when that loop
+
+for (auto value : CreateValues()) {
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 38: 12. Source Evaluation
+-- Demonstrates: Nested loops evaluate their own source expressions independently.
+
+for (auto user : Users()) {
+    for (auto item : LoadItems(user)) {
+        Use(user, item);
+    }
+}
+
+-- ============================================================================
+-- Example 39: 13. Sources Accepted by for (:)
+-- Demonstrates: A user-defined type can expose an enumerable-producing member instead.
+
+class Range {
+    int start;
+    int end;
+
+    public Range(int start, int end);
+
+    public System.Utils.Enumerable<int> Values() {
+        for (int i = start; i <= end; i++) {
+            yield i;
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 40: 13. Sources Accepted by for (:)
+-- Demonstrates: Usage:
+
+for (auto value : range.Values()) {
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 41: 14. break and continue
+-- Demonstrates: Inside for (:), ordinary loop-control rules apply.
+
+for (auto number : CountTo(10)) {
+    if (number == 5) {
+        break;
+    }
+
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 42: 14. break and continue
+-- Demonstrates: Ending one traversal does not consume the Enumerable<T> itself.
+
+auto values = CountTo(5);
+
+for (auto value : values) {
+    if (value == 2) {
+        break;
+    }
+}
+
+for (auto value : values) {
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 43: 14. break and continue
+-- Demonstrates: continue; skips the remainder of the current body and requests the next element from
+--   the same traversal.
+
+for (auto value : CountTo(5)) {
+    if (value == 3) {
+        continue;
+    }
+
+    Use(value);
+}
+
+-- ============================================================================
+-- Example 79: 14. break and continue
+-- Demonstrates: The condition of a loop belongs to that loop. A break in a block used as a value in
+--   the condition leaves the loop whose condition it is, not a loop around it. What the condition
+--   evaluated before the break has happened, once; the body does not run again.
+
+while (Outer()) {
+    while (if (Done()) { break; } else { true }) {
+        Step();
+    }
+
+    AfterInner(); -- reached: the break left the inner loop only
+}
+
+-- ============================================================================
+-- Example 80: 14. break and continue
+-- Demonstrates: A continue in the condition of a loop abandons the rest of that evaluation and
+--   evaluates the condition of the same loop again. The body does not run in between, and in a
+--   for loop neither does the update. The same holds for the condition of a do/while loop.
+--   A condition that continues on every evaluation never ends: that is an endless loop, as written.
+
+for (int index = 0; if (Busy()) { continue; } else { index < limit }; index += 1) {
+    Use(index); -- index advances only after a completed condition and body
+}
+
+-- ============================================================================
+-- Example 81: 14. break and continue
+-- Demonstrates: A continue in the update of a for loop skips the rest of the update and goes on to
+--   the condition. It does not start the update again, and what the update did before it stays done.
+
+for (int index = 0; index < limit; index += 1, total += if (Odd(index)) { continue; } else { index }) {
+    Use(index);
+}
+
+-- ============================================================================
+-- Example 82: 14. break and continue
+-- Demonstrates: A break in the update of a for loop leaves that loop. The rest of the update and
+--   the condition are not evaluated. In a loop used as an expression it carries the value of the
+--   loop, like any other break of that loop.
+
+for (int index = 0; index < limit; index += if (Full()) { break; } else { 1 }) {
+    Use(index);
+}
+
+-- ============================================================================
+-- Example 83: 14. break and continue
+-- Demonstrates: A callable is not inside the loops around the place that creates it. break and
+--   continue in its body, also in a block used as a value there, do not reach such a loop.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+while (Ready()) {
+    auto stop = \() -> { break; }; -- INVALID: no loop encloses the body of the callable
+}
+
+-- ============================================================================
+-- Example 44: 15. Value-Carrying break
+-- Demonstrates: Tala supports:
+
+break expression;
+
+-- ============================================================================
+-- Example 45: 15. Value-Carrying break
+-- Demonstrates: A value-carrying break terminates the nearest loop and supplies the result of that
+--   loop expression.
+
+int result = while (true) {
+    if (Ready()) {
+        break 10;
+    }
+};
+
+-- ============================================================================
+-- Example 46: 15. Value-Carrying break
+-- Demonstrates: The same form may appear in an enumerable for expression.
+
+int result = for (auto value : Counter()) {
+    if (value >= 100) {
+        break value;
+    }
+};
+
+-- ============================================================================
+-- Example 47: 15. Value-Carrying break
+-- Demonstrates: continue cannot carry a value.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+continue 5; -- INVALID
+
+-- ============================================================================
+-- Example 48: 15. Value-Carrying break
+-- Demonstrates: Ordinary source exhaustion of a for (:) loop is a normal completion without a value.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int result = for (auto value : values) {
+    if (value > 10) {
+        break value;
+    }
+}; -- INVALID if source exhaustion can complete the loop without a value
+
+-- ============================================================================
+-- Example 49: 16. yield Inside Loops
+-- Demonstrates: yield produces an element for the generator containing it. It does not act as break
+--   for an enclosing loop.
+
+static System.Utils.Enumerable<int> Values() {
+    for (int i = 0; i < 10; i++) {
+        if (i == 3) {
+            continue;
+        }
+
+        if (i == 8) {
+            break;
+        }
+
+        yield i;
+    }
+}
+
+-- ============================================================================
+-- Example 50: 16. yield Inside Loops
+-- Demonstrates: A value-carrying break produces a value for its loop expression; it does not yield an
+--   enumerable element.
+
+static System.Utils.Enumerable<int> Values() {
+    int found = while (true) {
+        if (Ready()) {
+            break 5;
+        }
+    };
+
+    yield found;
+}
+
+-- ============================================================================
+-- Example 51: 17. Exceptions During Iteration
+-- Demonstrates: Generator execution uses the ordinary Tala exception model.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    throw new RuntimeException();
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 52: 17. Exceptions During Iteration
+-- Demonstrates: = keeps its ordinary discard semantics inside a generator.
+
+static System.Utils.Enumerable<int> Values() {
+    _ = MightFail();
+    yield 1;
+}
+
+-- ============================================================================
+-- Example 53: 18. try / catch and yield
+-- Demonstrates: yield may appear inside try and catch blocks.
+
+static System.Utils.Enumerable<int> Values() {
+    try {
+        yield 1;
+        yield Read();
+    }
+    catch (RuntimeException error) {
+        yield 0;
+    }
+}
+
+-- ============================================================================
+-- Example 54: 19. defer and Generator Cleanup
+-- Demonstrates: A defer registered in generator execution belongs to the active generator traversal
+
+static System.Utils.Enumerable<int> Values() {
+    defer Cleanup();
+
+    yield 1;
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 55: 19. defer and Generator Cleanup
+-- Demonstrates: Early consumer termination also closes the active traversal and runs applicable
+--   deferred actions.
+
+for (auto value : Values()) {
+    if (value == 1) {
+        break;
+    }
+}
+
+-- ============================================================================
+-- Example 56: 19. defer and Generator Cleanup
+-- Demonstrates: A suspension point does not by itself leave the active lexical scopes.
+
+static System.Utils.Enumerable<int> Values() {
+    defer OuterCleanup();
+
+    {
+        defer InnerCleanup();
+        yield 1;
+    }
+
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 57: 21. Composing Enumerables
+-- Demonstrates: Tala does not define yield from or yield.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+yield from source; -- INVALID
+yield* source;     -- INVALID
+
+-- ============================================================================
+-- Example 58: 21. Composing Enumerables
+-- Demonstrates: To produce the elements of another enumerable, use ordinary for (:) plus yield.
+
+static System.Utils.Enumerable<int> First() {
+    yield 1;
+    yield 2;
+}
+
+static System.Utils.Enumerable<int> Combined() {
+    for (auto value : First()) {
+        yield value;
+    }
+
+    yield 3;
+}
+
+-- ============================================================================
+-- Example 59: 21. Composing Enumerables
+-- Demonstrates: The same form supports filtering and transformation without additional generator
+
+static System.Utils.Enumerable<int> Positive(
+    System.Utils.Enumerable<int> source
+) {
+    for (auto value : source) {
+        if (value > 0) {
+            yield value;
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 60: 22. Recursive Generators
+-- Demonstrates: A generator may call itself recursively.
+
+static System.Utils.Enumerable<int> Walk(Node node) {
+    yield node.value;
+
+    for (auto child : node.children) {
+        for (auto value : Walk(child)) {
+            yield value;
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 61: 23. Multiple Active Traversals
+-- Demonstrates: Multiple traversals of the same Enumerable<T> may be active at the same time.
+
+auto values = CountTo(3);
+
+for (auto first : values) {
+    for (auto second : values) {
+        Use(first, second);
+    }
+}
+
+-- ============================================================================
+-- Example 62: 24. Mutation of an Iterated Source
+-- Demonstrates: For a collection or another iterable standard-library source, mutation during
+--   traversal follows that source type's own specification.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+for (auto value : values) {
+    values.Add(...);
+}
+
+-- ============================================================================
+-- Example 63: 25. Interaction with op
+-- Demonstrates: A generator declaration cannot be op.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static op System.Utils.Enumerable<int> Values() {
+    yield 1;
+} -- INVALID
+
+-- ============================================================================
+-- Example 64: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+static System.Utils.Enumerable<int> CountTo(int max) {
+    for (int i = 1; i <= max; i++) {
+        yield i;
+    }
+}
+
+-- ============================================================================
+-- Example 65: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+for (int number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 66: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+for (auto number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 67: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+for (final auto number : CountTo(5)) {
+    Use(number);
+}
+
+-- ============================================================================
+-- Example 68: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+static System.Utils.Enumerable<int> Values() {
+    yield 1;
+    yield null;
+    yield 2;
+}
+
+-- ============================================================================
+-- Example 69: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+static System.Utils.Enumerable<int> Values() {
+    if (not Ready()) {
+        return;
+    }
+
+    yield 1;
+}
+
+-- ============================================================================
+-- Example 70: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+static System.Utils.Enumerable<int> Values() {
+    try {
+        yield Read();
+    }
+    catch (RuntimeException error) {
+        yield 0;
+    }
+}
+
+-- ============================================================================
+-- Example 71: 26. VALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+
+static System.Utils.Enumerable<int> Forever() {
+    int value = 0;
+
+    while (true) {
+        yield value;
+        value++;
+    }
+}
+
+-- ============================================================================
+-- Example 72: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+System.Utils.Iterator<int> iterator; -- INVALID: no public Iterator type
+
+-- ============================================================================
+-- Example 73: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static auto Values() {
+    yield 1; -- INVALID: generator return type must be explicit
+}
+
+-- ============================================================================
+-- Example 74: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static System.Utils.Enumerable<int> Values() {
+    return 10; -- INVALID: generator cannot return a value directly
+}
+
+-- ============================================================================
+-- Example 75: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+static op System.Utils.Enumerable<int> Values() {
+    yield 1;
+} -- INVALID: generator cannot be op
+
+-- ============================================================================
+-- Example 76: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+yield from source; -- INVALID
+
+-- ============================================================================
+-- Example 77: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+yield* source; -- INVALID
+
+-- ============================================================================
+-- Example 78: 27. INVALID Summary
+-- Demonstrates: Ordinary op rules remain applicable to functions called from non-op generator code
+--   where otherwise relevant.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+continue 5; -- INVALID

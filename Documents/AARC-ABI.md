@@ -20,7 +20,7 @@ deletion, and is disabled by default.
 
 A CoW value may share an internal allocation. That detail does not give it
 reference identity and does not turn assignment into aliasing. `StorageClass`
-and `NominalKind` in `Visual/XSharp/Core/Ownership.hpp` form the canonical native
+and `NominalKind` in `Tala/Core/Ownership.hpp` form the canonical native
 table. A named type without declaration metadata stays `Unresolved`; spelling is
 never used to guess its ABI.
 
@@ -67,7 +67,7 @@ alignment before creating an object.
 
 ## C11 boundary and C++ implementation
 
-`Compiler/Headers/Visual/XSharp/Runtime/AARC.h` is the language-neutral ABI
+`Talac/Headers/Progmasoft/Tala/Runtime/AARC.h` is the language-neutral ABI
 contract. It is valid C11, uses `<stdint.h>`, `<stddef.h>`, and `<stdbool.h>`,
 wraps declarations in `#ifdef __cplusplus` / `extern "C"`, and declares the
 metadata layout and unmangled runtime entry points. C translation units do not
@@ -77,7 +77,7 @@ them only through the declared functions.
 
 `AARC.hpp` is the optional C++ convenience surface. It reuses the C metadata
 layout and adds the compiler-facing `TypeIdentity`, typed handle wrappers, and
-namespaced operations. `Compiler/Runtime/AARC/Internal.hpp` alone defines the
+namespaced operations. `Talac/Runtime/AARC/Internal.hpp` alone defines the
 atomic object header, while `Runtime.cpp` implements both surfaces in C++20.
 Destructor callbacks crossing the C boundary must not throw. Metadata remains
 immutable and must outlive the object allocations that refer to it.
@@ -95,18 +95,18 @@ Generated code targets unmangled C entry points:
 
 | Entry point | Contract |
 | --- | --- |
-| `vxs_aarc_abi_version` | reports the runtime's metadata and function ABI version |
-| `vxs_aarc_allocate` | creates a payload with one strong owner and one implicit weak entry |
-| `vxs_aarc_retain_strong` | returns the same live payload with one added strong owner |
-| `vxs_aarc_release_strong` | releases an owner and destroys on the last release |
-| `vxs_aarc_make_weak` | creates a control handle that does not keep the payload alive |
-| `vxs_aarc_copy_weak` | creates an independent reference to an existing weak handle |
-| `vxs_aarc_lock_weak` | returns a nullable, newly retained strong result |
-| `vxs_aarc_release_weak` | releases a weak control handle |
-| `vxs_aarc_make_unowned` | creates a non-owning handle that keeps only the header alive |
-| `vxs_aarc_copy_unowned` | creates an independent reference to an existing unowned handle |
-| `vxs_aarc_load_unowned` | returns a nullable, newly retained strong result |
-| `vxs_aarc_release_unowned` | releases an unowned control handle |
+| `tala_aarc_abi_version` | reports the runtime's metadata and function ABI version |
+| `tala_aarc_allocate` | creates a payload with one strong owner and one implicit weak entry |
+| `tala_aarc_retain_strong` | returns the same live payload with one added strong owner |
+| `tala_aarc_release_strong` | releases an owner and destroys on the last release |
+| `tala_aarc_make_weak` | creates a control handle that does not keep the payload alive |
+| `tala_aarc_copy_weak` | creates an independent reference to an existing weak handle |
+| `tala_aarc_lock_weak` | returns a nullable, newly retained strong result |
+| `tala_aarc_release_weak` | releases a weak control handle |
+| `tala_aarc_make_unowned` | creates a non-owning handle that keeps only the header alive |
+| `tala_aarc_copy_unowned` | creates an independent reference to an existing unowned handle |
+| `tala_aarc_load_unowned` | returns a nullable, newly retained strong result |
+| `tala_aarc_release_unowned` | releases an unowned control handle |
 
 Weak lock and unowned load use compare/exchange on a non-zero strong count. A
 state check followed by a raw pointer load would race the last release, so both
@@ -147,7 +147,7 @@ computation when it is created, and its destructor releases it. The result
 slot holds a `bool` or a number and owns nothing.
 
 String constants keep `i32` Unicode-scalar storage and call
-`vxs_aarc_string_literal`, which creates a `System.String` AARC object without
+`tala_aarc_string_literal`, which creates a `System.String` AARC object without
 introducing UTF-8 storage.
 
 ## Current boundary
@@ -156,7 +156,7 @@ Retains and releases are placed for every AARC value of a function by the Xpp
 ownership placement pass, described in [Ownership flow](OWNERSHIP-FLOW.md).
 This slice does not collect cycles. A native executable is linked with the
 runtime library; see "Native executables" below.
-`Visual::XSharp::Runtime::Aarc::LiveAllocations` counts the
+`Progmasoft::Tala::Runtime::Aarc::LiveAllocations` counts the
 allocations whose storage has not been reclaimed; it is a C++ entry point for
 tests and is not part of the C ABI. The future concurrent Bacon–Rajan plus
 trial-deletion collector remains opt-in with `-Cycle-Collector true`. The
@@ -166,14 +166,14 @@ when no candidate exists or the program has already broken the candidate cycle.
 ## Native executables
 
 On Windows a native executable is linked without a C runtime. What its code
-calls of the runtime, it finds in `vxs-runtime.lib`, which the compiler links
+calls of the runtime, it finds in `tala-runtime.lib`, which the compiler links
 from the directory of its own executable: the ownership runtime of this
 document and the text and console runtime, as one object. On Linux and macOS
-the library is `libvxs-runtime.a`, and the executable is linked with the C
+the library is `libtala-runtime.a`, and the executable is linked with the C
 library of the system as well.
 
 That object is built from the sources a host process links,
-`Compiler/Runtime/AARC` and `Compiler/Runtime/Text`, in one translation unit
+`Talac/Runtime/AARC` and `Talac/Runtime/Text`, in one translation unit
 with the few things those sources take from a C runtime when there is one:
 the non-throwing allocation functions, over the heap of the process, the
 memory functions a compiler may call for a loop or an initialization, and the

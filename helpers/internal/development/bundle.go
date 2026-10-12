@@ -29,7 +29,7 @@ func buildBundle(repository string, currentHost host, runner commandRunner, baze
 		return err
 	}
 
-	compilerDirectory := filepath.Join(repository, "Compiler")
+	compilerDirectory := filepath.Join(repository, "Talac")
 	frontend, err := locateFrontendLibrary(compilerDirectory)
 	if err != nil {
 		return fmt.Errorf("cannot locate the Haskell frontend shared library: %w", err)
@@ -43,7 +43,7 @@ func buildBundle(repository string, currentHost host, runner commandRunner, baze
 	if err != nil {
 		return err
 	}
-	bundleName := fmt.Sprintf("visual-xsharp-%s-%s", version, platform)
+	bundleName := fmt.Sprintf("tala-%s-%s", version, platform)
 	bundleDirectory := filepath.Join(repository, "dist", bundleName)
 	if err := validateBundleTarget(repository, bundleDirectory); err != nil {
 		return err
@@ -62,17 +62,17 @@ func buildBundle(repository string, currentHost host, runner commandRunner, baze
 		}
 	}()
 
-	publicExecutable := "vxs" + currentHost.executable
-	interactiveExecutable := "vxsi" + currentHost.executable
+	publicExecutable := "talac" + currentHost.executable
+	interactiveExecutable := "tali" + currentHost.executable
 	frontendLibraryName := filepath.Base(frontend)
-	nativeCompiler := filepath.Join(repository, "bazel-bin", "Compiler", "Cli", publicExecutable)
+	nativeCompiler := filepath.Join(repository, "bazel-bin", "Talac", "Cli", publicExecutable)
 	nativeInteractive := filepath.Join(repository, "bazel-bin", "Interactive", interactiveExecutable)
 	stagedFiles := []string{publicExecutable, interactiveExecutable, frontendLibraryName}
 	if err := copyFile(nativeCompiler, filepath.Join(stagingDirectory, publicExecutable), 0o755); err != nil {
 		return fmt.Errorf("cannot stage the public compiler driver: %w", err)
 	}
 	if err := copyFile(nativeInteractive, filepath.Join(stagingDirectory, interactiveExecutable), 0o755); err != nil {
-		return fmt.Errorf("cannot stage the Visual X# Interactive executable: %w", err)
+		return fmt.Errorf("cannot stage the Tala Interactive executable: %w", err)
 	}
 	if err := copyFile(frontend, filepath.Join(stagingDirectory, frontendLibraryName), 0o755); err != nil {
 		return fmt.Errorf("cannot stage the Haskell frontend shared library: %w", err)
@@ -138,7 +138,7 @@ func validateBundleTarget(repository string, bundleDirectory string) error {
 	if err != nil {
 		return fmt.Errorf("cannot resolve the bundle target: %w", err)
 	}
-	if filepath.Dir(target) != distributionRoot || !strings.HasPrefix(filepath.Base(target), "visual-xsharp-") {
+	if filepath.Dir(target) != distributionRoot || !strings.HasPrefix(filepath.Base(target), "tala-") {
 		return fmt.Errorf("refusing to replace unsafe bundle target %q", target)
 	}
 	return nil
@@ -210,23 +210,23 @@ func writeBundleChecksums(bundleDirectory string, relativeFiles []string) error 
 }
 
 func smokeTestBundle(repository string, bundleDirectory string, currentHost host, version string, runner commandRunner) error {
-	temporary, err := os.MkdirTemp("", "visual-xsharp-bundle-smoke-")
+	temporary, err := os.MkdirTemp("", "tala-bundle-smoke-")
 	if err != nil {
 		return fmt.Errorf("cannot create the bundle smoke-test directory: %w", err)
 	}
 	defer os.RemoveAll(temporary)
 
-	fixture := filepath.Join(repository, "Compiler", "Driver", "Tests", "Fixtures", "Source", "haskell_frontend", "Main.vxs")
-	source := filepath.Join(temporary, "Main.vxs")
+	fixture := filepath.Join(repository, "Talac", "Driver", "Tests", "Fixtures", "Source", "haskell_frontend", "Main.tala")
+	source := filepath.Join(temporary, "Main.tala")
 	if err := copyFile(fixture, source, 0o644); err != nil {
 		return fmt.Errorf("cannot stage the smoke-test source: %w", err)
 	}
-	compiler := filepath.Join(bundleDirectory, "vxs"+currentHost.executable)
-	interactive := filepath.Join(bundleDirectory, "vxsi"+currentHost.executable)
+	compiler := filepath.Join(bundleDirectory, "talac"+currentHost.executable)
+	interactive := filepath.Join(bundleDirectory, "tali"+currentHost.executable)
 	pathEnvironment := []string{"PATH=" + bundleDirectory}
 	// A same-named program in the working directory is deliberately wrong. The
-	// public launcher must use PATH only, so this decoy can never shadow vxsi.
-	decoy := filepath.Join(temporary, "vxsi"+currentHost.executable)
+	// public launcher must use PATH only, so this decoy can never shadow tali.
+	decoy := filepath.Join(temporary, "tali"+currentHost.executable)
 	if err := copyFile(compiler, decoy, 0o755); err != nil {
 		return fmt.Errorf("cannot prepare the current-directory PATH decoy: %w", err)
 	}
@@ -235,41 +235,41 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	if err != nil {
 		return fmt.Errorf("staged compiler version smoke test failed: %w", err)
 	}
-	wantVersion := "vxs " + version
+	wantVersion := "talac " + version
 	if output != wantVersion {
 		return fmt.Errorf("staged compiler reported %q; expected %q", output, wantVersion)
 	}
-	fmt.Println("Smoke-testing one-shot evaluation through vxs interactive and standalone vxsi...")
-	output, err = runner.RunWithInput(temporary, pathEnvironment, "", compiler, "interactive", "-Eval", "5 + 5")
+	fmt.Println("Smoke-testing one-shot evaluation through talac interactive and standalone tali...")
+	output, err = runner.RunWithInput(temporary, pathEnvironment, "", compiler, "interactive", "--eval", "5 + 5")
 	if err != nil || !strings.HasPrefix(strings.TrimSpace(output), "10 : ") {
-		return fmt.Errorf("vxs interactive -Eval failed or selected the current-directory decoy: %q (%v)", output, err)
+		return fmt.Errorf("talac interactive --eval failed or selected the current-directory decoy: %q (%v)", output, err)
 	}
-	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "-Eval", "5 + 5")
+	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "--eval", "5 + 5")
 	if err != nil || !strings.HasPrefix(strings.TrimSpace(output), "10 : ") {
-		return fmt.Errorf("standalone vxsi -Eval smoke test failed: %q (%v)", output, err)
+		return fmt.Errorf("standalone tali --eval smoke test failed: %q (%v)", output, err)
 	}
 	output, err = runner.RunWithInput(temporary, pathEnvironment, "", compiler, "interactive", "-Help")
-	if err != nil || !strings.Contains(output, "Visual X# Interactive") || !strings.Contains(output, "Usage:") {
-		return fmt.Errorf("vxs interactive -Help did not reach vxsi: %q (%v)", output, err)
+	if err != nil || !strings.Contains(output, "Tala Interactive") || !strings.Contains(output, "Usage:") {
+		return fmt.Errorf("talac interactive -Help did not reach tali: %q (%v)", output, err)
 	}
 	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "-Help")
-	if err != nil || !strings.Contains(output, "Visual X# Interactive") || !strings.Contains(output, "Usage:") {
-		return fmt.Errorf("standalone vxsi -Help smoke test failed: %q (%v)", output, err)
+	if err != nil || !strings.Contains(output, "Tala Interactive") || !strings.Contains(output, "Usage:") {
+		return fmt.Errorf("standalone tali -Help smoke test failed: %q (%v)", output, err)
 	}
-	output, err = runner.RunWithInput(temporary, []string{"PATH="}, "", compiler, "interactive", "-Eval", "5 + 5")
-	if err == nil || !strings.Contains(output, "vxsi") || !strings.Contains(output, "PATH") {
-		return fmt.Errorf("vxs interactive should fail clearly when vxsi is absent from PATH: %q (%v)", output, err)
+	output, err = runner.RunWithInput(temporary, []string{"PATH="}, "", compiler, "interactive", "--eval", "5 + 5")
+	if err == nil || !strings.Contains(output, "tali") || !strings.Contains(output, "PATH") {
+		return fmt.Errorf("talac interactive should fail clearly when tali is absent from PATH: %q (%v)", output, err)
 	}
 	fmt.Println("Smoke-testing the persistent REPL session, history, reset, and error recovery...")
 	replInput := strings.Repeat("x", 1024*1024+1) + "\n" +
-		"5 + 5\nvxsiPrevious * 3\ntrue + 1\nvxsiPrevious + 1\n" +
-		":type true\n:history\n:reset\nvxsiPrevious\n" +
+		"5 + 5\ntaliPrevious * 3\ntrue + 1\ntaliPrevious + 1\n" +
+		":type true\n:history\n:reset\ntaliPrevious\n" +
 		"7 + 8\n:history\n:help\n:quit\n"
 	output, err = runner.RunWithInput(temporary, pathEnvironment, replInput, interactive)
 	if err != nil {
 		return fmt.Errorf("persistent REPL smoke test failed: %w\n%s", err, output)
 	}
-	for _, expected := range []string{"10 : ", "30 : ", "31 : ", "bool", "one Visual X# input line cannot exceed 1 MiB", "VXT0012", "session values, JIT modules, and history cleared", "VXN0001", "   1  7 + 8", "Type :help for commands"} {
+	for _, expected := range []string{"10 : ", "30 : ", "31 : ", "bool", "one Tala input line cannot exceed 1 MiB", "TAT0012", "session values, JIT modules, and history cleared", "TAN0001", "   1  7 + 8", "Type :help for commands"} {
 		if !strings.Contains(output, expected) {
 			return fmt.Errorf("persistent REPL output omitted %q:\n%s", expected, output)
 		}

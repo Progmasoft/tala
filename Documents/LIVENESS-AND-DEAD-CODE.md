@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Native liveness and dead-code elimination
 
-Visual X# performs target-independent native liveness analysis after CorePrep.
+Tala performs target-independent native liveness analysis after CorePrep.
 The analysis is shared by Xpp and Xmm, while each stage retains ownership of
 the opcode policy that decides whether an unused result may be removed.
 

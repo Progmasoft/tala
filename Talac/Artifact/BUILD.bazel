@@ -1,0 +1,19 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "source_path",
+    srcs = ["SourcePath.cpp"],
+    hdrs = ["SourcePath.hpp"],
+)
+
+cc_library(
+    name = "wire_support",
+    srcs = ["WireSupport.cpp"],
+    deps = [
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Artifact:wire_support_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+    ],
+)

@@ -29,9 +29,9 @@ First run `go run ./helpers/cmd/develop doctor`; it checks the host and LLVM dev
 the smallest Bazel target that observes your change, for example:
 
 ```text
-bazelisk build //Compiler/Cli/Tests:cli_parser_tests
-bazelisk build //Compiler/Codegen/Xpp/Tests:xpp_verifier_tests
-bazelisk build //Compiler/Backend/LLVM/Tests:llvm_backend_tests
+bazelisk build //Talac/Cli/Tests:cli_parser_tests
+bazelisk build //Talac/Codegen/Xpp/Tests:xpp_verifier_tests
+bazelisk build //Talac/Backend/LLVM/Tests:llvm_backend_tests
 bazelisk build //Interactive/Tests:interactive_tests
 ```
 
@@ -53,8 +53,8 @@ libFuzzer driver with a temporary seed corpus and preserves crashes for regressi
 Use LLVM/Clang **23.1.0** `clang-format` on changed project-owned C/C++ files, then check them again:
 
 ```text
-clang-format -i Compiler/Codegen/Xpp/YourChangedFile.cpp
-clang-format --dry-run --Werror Compiler/Codegen/Xpp/YourChangedFile.cpp
+clang-format -i Talac/Codegen/Xpp/YourChangedFile.cpp
+clang-format --dry-run --Werror Talac/Codegen/Xpp/YourChangedFile.cpp
 ```
 
 Replace the example path with your files. Do not reformat `third_party/`, generated code, or an entire component merely
@@ -63,7 +63,7 @@ to rename public APIs.
 
 ## Haskell frontend, Core, and CorePrep
 
-From `Compiler/`:
+From `Talac/`:
 
 ```text
 cabal build all
@@ -81,7 +81,7 @@ side can hide a shared bug.
 On Windows, run the pinned project wrapper rather than a machine-global Gradle:
 
 ```text
-.\ProjectSystem\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p ProjectSystem test
 ```
 
 If a DSL plan reaches the native driver, add a bridge or process-level check in addition to the Kotlin model test. For
@@ -90,7 +90,7 @@ Kotlin Gradle tests; [Testing](../TESTING.md#analyzer-formatter-and-linter) give
 separate workflows and release lines.
 
 The current GitHub Kotlin gates use the Windows wrapper. A macOS contributor should use the Gradle version pinned in
-`ProjectSystem/gradle/wrapper/gradle-wrapper.properties` for an equivalent local run, or explicitly report that the
+`Tazel/gradle/wrapper/gradle-wrapper.properties` for an equivalent local run, or explicitly report that the
 Kotlin gate could not run locally; do not present an unverified macOS wrapper command as a pass.
 
 ## Go tooling and documentation

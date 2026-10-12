@@ -1,6 +1,6 @@
 ---
 name: Language or tooling proposal
-about: Propose a Visual X# language, compiler, DSL, or tooling improvement
+about: Propose a Tala language, compiler, DSL, or tooling improvement
 title: "[Proposal] "
 ---
 
@@ -9,15 +9,15 @@ title: "[Proposal] "
 
 Check `Spec/` and existing issues before proposing syntax or semantics. An implementation gap for an already specified feature is usually a bug or implementation task, not a new language design. Public proposals must not cite private internal notes as the language contract.
 
-For an implementation proposal, see the [contributor guide](https://github.com/Progmasoft/visual-xsharp/blob/main/CONTRIBUTING.md).
+For an implementation proposal, see the [contributor guide](https://github.com/Progmasoft/tala/blob/main/CONTRIBUTING.md).
 
 ### Problem
 
-What real program or workflow is difficult today? Show a short Visual X# example using current syntax when possible.
+What real program or workflow is difficult today? Show a short Tala example using current syntax when possible.
 
 ### Proposed behavior
 
-Describe the user-visible result. If this changes language syntax or semantics, identify the affected `Spec/` section and show valid and invalid examples. Do not assume C#, Kotlin, or C++ syntax automatically applies to Visual X#.
+Describe the user-visible result. If this changes language syntax or semantics, identify the affected `Spec/` section and show valid and invalid examples. Do not assume C#, Kotlin, or C++ syntax automatically applies to Tala.
 
 ### Affected layers
 

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-name: Visual XSharp owned sources
+name: Tala owned sources
 
 # Third-party submodules are scanned by their owners. Generated compiler output
 # is not checked in and must not dilute the project-owned CodeQL database.

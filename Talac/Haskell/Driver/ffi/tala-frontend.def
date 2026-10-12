@@ -1,0 +1,11 @@
+; SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+; SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+LIBRARY tala-frontend
+EXPORTS
+    tala_frontend_abi_version
+    tala_frontend_initialize
+    tala_frontend_shutdown
+    tala_frontend_execute
+    tala_frontend_compile_source
+    tala_frontend_fuzz_syntax
+    tala_frontend_fuzz_compile

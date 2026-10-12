@@ -135,8 +135,8 @@ func buildLimits(options Options) []string {
 }
 
 const (
-	imagePrefix  = "localhost/visual-xsharp-cross-"
-	volumePrefix = "visual-xsharp-cross-"
+	imagePrefix  = "localhost/tala-cross-"
+	volumePrefix = "tala-cross-"
 )
 
 // Owned lists the images and the volumes this tool created.

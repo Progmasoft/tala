@@ -172,12 +172,12 @@ func Suites(jobs int) []Suite {
 		{
 			Name:        "frontend",
 			Description: "the Haskell frontend and its tests",
-			Script:      "cd Compiler && cabal update && cabal test all",
+			Script:      "cd Talac && cabal update && cabal test all",
 		},
 		{
 			Name:        "native",
 			Description: "the native compiler and its suites",
-			Script:      "(cd Compiler && cabal update) && go run ./helpers/cmd/develop test" + bazel,
+			Script:      "(cd Talac && cabal update) && go run ./helpers/cmd/develop test" + bazel,
 		},
 	}
 }

@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-const moduleName = "github.com/Progmasoft/visual-xsharp/helpers"
+const moduleName = "github.com/Progmasoft/tala/helpers"
 
 type qualityRunner interface {
 	Run(string, string, ...string) ([]byte, error)

@@ -11,17 +11,17 @@ import (
 )
 
 var generatedBuildPaths = []string{
-	"Compiler/dist-newstyle",
-	"Compiler/dist-fuzz-coverage",
-	"ProjectSystem/.gradle",
-	"ProjectSystem/build",
-	"Analyzer/.gradle",
-	"Analyzer/build",
-	"Formatter/.gradle",
-	"Formatter/build",
-	"Linter/.gradle",
-	"Linter/build",
-	"Compiler/Driver/Tests/Fixtures/Source/haskell_frontend/Main.vxse",
+	"Talac/dist-newstyle",
+	"Talac/dist-fuzz-coverage",
+	"Tazel/.gradle",
+	"Tazel/build",
+	"Ecosystem/tala-analyzer/.gradle",
+	"Ecosystem/tala-analyzer/build",
+	"Ecosystem/talafmt/.gradle",
+	"Ecosystem/talafmt/build",
+	"Ecosystem/talalint/.gradle",
+	"Ecosystem/talalint/build",
+	"Talac/Driver/Tests/Fixtures/Source/haskell_frontend/Main.vxse",
 }
 
 func cleanGeneratedBuildPaths(repository string) error {
@@ -45,7 +45,7 @@ func runCleanBuild(repository string, currentHost host, runner commandRunner, co
 		if err != nil {
 			return err
 		}
-		if err := runner.Run(filepath.Join(repository, "Compiler"), nil, cabal, "clean"); err != nil {
+		if err := runner.Run(filepath.Join(repository, "Talac"), nil, cabal, "clean"); err != nil {
 			return fmt.Errorf("Cabal cold clean failed: %w", err)
 		}
 		if err := cleanGeneratedBuildPaths(repository); err != nil {

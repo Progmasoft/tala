@@ -1,0 +1,383 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Threading
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Namespace and core types
+-- Demonstrates: The core threading API is available through:
+
+using System.Threading.Mpsc;
+
+-- ============================================================================
+-- Example 2: 3.1 Untyped parameters
+-- Demonstrates: Threading APIs use the normal Tala lambda syntax. This section records the forms
+--   used by the examples in this document; it does not replace the general callable/lambda
+--   specification.
+
+\x, y -> x + y;
+
+-- ============================================================================
+-- Example 3: 3.2 Explicitly typed parameters
+-- Demonstrates: Threading APIs use the normal Tala lambda syntax. This section records the forms
+--   used by the examples in this document; it does not replace the general callable/lambda
+--   specification.
+
+\(int x, int y) -> x + y;
+
+-- ============================================================================
+-- Example 4: 3.3 Parameterless lambda
+-- Demonstrates: Threading APIs use the normal Tala lambda syntax. This section records the forms
+--   used by the examples in this document; it does not replace the general callable/lambda
+--   specification.
+
+\ -> {
+    Work();
+}
+
+-- ============================================================================
+-- Example 5: 3.4 Ignored parameter
+-- Demonstrates: means that the corresponding parameter is intentionally ignored and does not create a
+--   usable binding.
+
+\_ -> Work();
+
+-- ============================================================================
+-- Example 6: 3.4 Ignored parameter
+-- Demonstrates: means that the corresponding parameter is intentionally ignored and does not create a
+--   usable binding.
+
+\x, _ -> x;
+
+-- ============================================================================
+-- Example 7: 3.4 Ignored parameter
+-- Demonstrates: A typed ignored parameter is also permitted:
+
+\(int x, int _) -> x;
+
+-- ============================================================================
+-- Example 8: 3.5 Lambda return type and target variable
+-- Demonstrates: The lambda return type follows the receiving variable type.
+
+TaskHandle task = Task.Run(\ -> {
+    Console.Println("Background work");
+});
+
+-- ============================================================================
+-- Example 9: 3.5 Lambda return type and target variable
+-- Demonstrates: When the receiving variable is auto, the lambda return type is also inferred
+--   automatically from the lambda expression/body and its context.
+
+auto add = \(int x, int y) -> x + y;
+
+-- ============================================================================
+-- Example 10: 3.5 Lambda return type and target variable
+-- Demonstrates: No syntax of the following form exists merely to spell a lambda return type:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+\ -> T { -- INVALID
+}
+
+-- ============================================================================
+-- Example 11: 5. Task<T>
+-- Demonstrates: Example:
+
+Task<int> task = ComputeAsync();
+TaskHandle handle = task.Handle();
+Future<int> future = task.Future();
+
+-- ============================================================================
+-- Example 12: 5. Task<T>
+-- Demonstrates: Task<void> is a normal specialization and represents an asynchronous computation with
+--   no value result.
+
+async Task<void> Work() {
+    await SaveAsync();
+}
+
+-- ============================================================================
+-- Example 13: 6.2 Repeated observation
+-- Demonstrates: The same completed result may be observed repeatedly:
+
+int a = future.Get();
+int b = future.Get();
+
+-- ============================================================================
+-- Example 14: 7. async functions
+-- Demonstrates: An asynchronous function declares an asynchronous task result with async Task<T>.
+
+async Task<int> ComputeAsync() {
+    return 42;
+}
+
+-- ============================================================================
+-- Example 15: 7. async functions
+-- Demonstrates: A resultless asynchronous function uses Task<void>:
+
+async Task<void> Work() {
+    await SaveAsync();
+}
+
+-- ============================================================================
+-- Example 16: 8. await
+-- Demonstrates: It is not a top-level declaration or top-level executable construct.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+await task; -- INVALID at top level
+
+-- ============================================================================
+-- Example 17: 8.1 Awaiting Task<T>
+-- Demonstrates: It is not a top-level declaration or top-level executable construct.
+
+int value = await ComputeAsync();
+
+-- ============================================================================
+-- Example 18: 8.2 Awaiting Future<T>
+-- Demonstrates: Future<T> is also awaitable:
+
+Future<int> future = task.Future();
+int value = await future;
+
+-- ============================================================================
+-- Example 19: 8.3 Awaiting TaskHandle
+-- Demonstrates: A TaskHandle is awaitable even though it carries no value result.
+
+async Task<void> Work() {
+    TaskHandle task = Task.Run(\ -> {
+        BackgroundWork();
+    });
+
+    await task;
+}
+
+-- ============================================================================
+-- Example 20: 8.4 Typed unwrapping
+-- Demonstrates: For example:
+
+async Task<void> Work() {
+    TaskHandle dowork = await DoWork();
+}
+
+-- ============================================================================
+-- Example 21: 9. await { ... } block
+-- Demonstrates: Tala supports an await block inside an async callable:
+
+async Task<void> Work() {
+    await {
+        HeavyWork();
+        Save();
+    }
+}
+
+-- ============================================================================
+-- Example 22: 9. await { ... } block
+-- Demonstrates: The example above has the same sequencing meaning as:
+
+async Task<void> Work() {
+    await HeavyWork();
+    await Save();
+}
+
+-- ============================================================================
+-- Example 23: 9. await { ... } block
+-- Demonstrates: An await block is an executable construct inside an async callable, not a top-level
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+await {
+    Work();
+} -- INVALID at top level
+
+-- ============================================================================
+-- Example 24: 10. Scheduler-backed concurrency with Task.Run(...)
+-- Demonstrates: For a resultless background task:
+
+async Task<void> Work() {
+    TaskHandle task = Task.Run(\ -> {
+        Console.Println("Background work");
+    });
+
+    await task;
+}
+
+-- ============================================================================
+-- Example 25: 10. Scheduler-backed concurrency with Task.Run(...)
+-- Demonstrates: Example:
+
+async Task<void> Work() {
+    Console.Println("A");
+
+    TaskHandle task = Task.Run(\ -> {
+        HeavyWork();
+    });
+
+    Console.Println("B");
+
+    await task;
+
+    Console.Println("C");
+}
+
+-- ============================================================================
+-- Example 26: 11. Task faults
+-- Demonstrates: A throwable raised inside a scheduled/asynchronous task is captured as the task's
+--   fault rather than synchronously escaping from the operation that created the task.
+
+async Task<void> Work() throws IOException {
+    TaskHandle task = Task.Run(\ -> {
+        throw new IOException();
+    });
+
+    await task; -- IOException propagates here
+}
+
+-- ============================================================================
+-- Example 27: 12. Cooperative cancellation
+-- Demonstrates: Calling:
+
+task.Cancel();
+
+-- ============================================================================
+-- Example 28: 12. Cooperative cancellation
+-- Demonstrates: Example:
+
+TaskHandle task = Task.Run(\ -> {
+    for (;;) {
+        Task.ThrowIfCancellationRequested();
+        WorkChunk();
+    }
+});
+
+-- ============================================================================
+-- Example 29: 12. Cooperative cancellation
+-- Demonstrates: A task may also inspect the request and perform its own cleanup:
+
+TaskHandle task = Task.Run(\ -> {
+    for (;;) {
+        if (Task.IsCancellationRequested()) {
+            Cleanup();
+            return;
+        }
+
+        WorkChunk();
+    }
+});
+
+-- ============================================================================
+-- Example 30: 12. Cooperative cancellation
+-- Demonstrates: Therefore:
+
+task.Cancel();
+await task;
+
+-- ============================================================================
+-- Example 31: 14. Direct threads with Thread.Spawn(...)
+-- Demonstrates: The spawn API returns a ThreadHandle:
+
+ThreadHandle thread = Thread.Spawn(\ -> {
+    Work();
+});
+
+-- ============================================================================
+-- Example 32: 14.1 Normal capture
+-- Demonstrates: A normal lambda uses the language's normal capture semantics:
+-- Expected result: accepted when the referenced declarations are available.
+
+void Start() {
+    String message = "Hello";
+
+    Thread.Spawn(\ -> {
+        Console.Println(message);
+    });
+
+    Console.Println(message); -- VALID
+}
+
+-- ============================================================================
+-- Example 33: 14.2 move capture
+-- Demonstrates: move transfers captured bindings into the spawned closure:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Start() {
+    String message = "Hello";
+
+    Thread.Spawn(move \ -> {
+        Console.Println(message);
+    });
+
+    Console.Println(message); -- INVALID: message was moved
+}
+
+-- ============================================================================
+-- Example 34: 15. MPSC channels
+-- Demonstrates: A channel is a normal generic reference type constructed with new.
+
+Channel<String> channel = new Channel<String>();
+
+-- ============================================================================
+-- Example 35: 15.1 Multiple producers
+-- Demonstrates: Multiple concurrent tasks or threads may send values into the same channel.
+
+void Start() {
+    Channel<String> channel = new Channel<String>();
+
+    Thread.Spawn(\ -> {
+        channel.Send("A");
+    });
+
+    Thread.Spawn(\ -> {
+        channel.Send("B");
+    });
+
+    String first = channel.Receive();
+    String second = channel.Receive();
+}
+
+-- ============================================================================
+-- Example 36: 16. Sequential async versus concurrency
+-- Demonstrates: The following two forms are sequential:
+
+async Task<void> Work() {
+    await {
+        HeavyWork();
+        Save();
+    }
+}
+
+-- ============================================================================
+-- Example 37: 16. Sequential async versus concurrency
+-- Demonstrates: The following two forms are sequential:
+
+async Task<void> Work() {
+    await HeavyWork();
+    await Save();
+}
+
+-- ============================================================================
+-- Example 38: 16. Sequential async versus concurrency
+-- Demonstrates: By contrast, explicitly scheduling work creates concurrency:
+
+async Task<void> Work() {
+    TaskHandle task = Task.Run(\ -> {
+        HeavyWork();
+    });
+
+    DoSomethingElse();
+
+    await task;
+}
+
+-- ============================================================================
+-- Example 39: 16. Sequential async versus concurrency
+-- Demonstrates: Direct thread spawning is also concurrent:
+
+void Work() {
+    ThreadHandle thread = Thread.Spawn(\ -> {
+        HeavyWork();
+    });
+
+    DoSomethingElse();
+}

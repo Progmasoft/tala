@@ -27,9 +27,9 @@ $summary = $env:GITHUB_STEP_SUMMARY
 if (-not $summary) { $summary = Join-Path ([System.IO.Path]::GetTempPath()) 'cpp-analysis-summary.md' }
 
 # The native sources the repository owns.
-$owned = @(git ls-files -- 'Compiler/*.cpp' 'Compiler/*.hpp' 'Compiler/*.h' 'Compiler/*.inc' `
+$owned = @(git ls-files -- 'Talac/*.cpp' 'Talac/*.hpp' 'Talac/*.h' 'Talac/*.inc' `
         'Interactive/*.cpp' 'Interactive/*.hpp' 'Interactive/*.h' |
-        Where-Object { $_ -notlike 'Compiler/Haskell/*' })
+        Where-Object { $_ -notlike 'Talac/Haskell/*' })
 if ($owned.Count -eq 0) { throw 'no native sources were found to compare with' }
 
 # The sources the database holds: every file the extractor read is kept in

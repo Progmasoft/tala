@@ -1,0 +1,712 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Console I/O
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: Tala — Console I/O
+-- Demonstrates: System is implicitly imported by Tala, so System.Console may normally be written
+
+Console.Println("Hello");
+Console.Stdout().Flush();
+
+-- ============================================================================
+-- Example 2: Tala — Console I/O
+-- Demonstrates: The fully qualified form remains valid:
+
+System.Console.Println("Hello");
+
+-- ============================================================================
+-- Example 3: 1. Standard console surfaces
+-- Demonstrates: Tala exposes the process standard streams through:
+
+Console.Stdin()
+Console.Stdout()
+Console.Stderr()
+
+-- ============================================================================
+-- Example 4: 1.1 Standard output
+-- Demonstrates: This document does not define the concrete stream class names returned by these APIs.
+
+Console.Stdout().Flush();
+
+-- ============================================================================
+-- Example 5: 1.2 Standard error
+-- Demonstrates: Flush() guarantees that buffered standard output is sent to the underlying output
+--   destination.
+
+Console.Stderr().Flush();
+
+-- ============================================================================
+-- Example 6: 2.1 Plain output
+-- Demonstrates: A % sequence passed to one of these methods has no Printf meaning merely because it
+--   resembles a format specifier.
+
+Console.Println("%d"); -- prints the ordinary String value "%d"
+
+-- ============================================================================
+-- Example 7: 2.1 Plain output
+-- Demonstrates: Normal expression and String rules apply before the value is written.
+
+Console.Println("Age: " + StaticCast<int>(age));
+
+-- ============================================================================
+-- Example 8: 2.2 Line-output forms
+-- Demonstrates: Therefore these are not necessarily equivalent:
+
+Console.Print("Hello\n");
+Console.Println("Hello");
+
+-- ============================================================================
+-- Example 9: 3.1 Compile-time format requirement
+-- Demonstrates: A compile-time directive String may be used as a format:
+-- Expected result: accepted when the referenced declarations are available.
+
+#define FORMAT "%d"
+
+Console.Printf(FORMAT, value); -- VALID
+
+-- ============================================================================
+-- Example 10: 4.2 Integers
+-- Demonstrates: Formatting does not reinterpret a signed integer as its raw underlying bit pattern.
+
+Console.Printf("%x", -255);
+
+-- ============================================================================
+-- Example 11: 4.2 Integers
+-- Demonstrates: There is no implicit signed/unsigned conversion performed merely for formatting.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+uint value = 42;
+
+Console.Printf("%u", value); -- VALID
+Console.Printf("%d", value); -- INVALID
+
+-- ============================================================================
+-- Example 12: 4.3 Floating-point values
+-- Demonstrates: Integers are not implicitly converted to floating-point values by the formatter.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int value = 42;
+
+Console.Printf("%f", value);                     -- INVALID
+Console.Printf("%f", StaticCast<double>(value)); -- VALID
+
+-- ============================================================================
+-- Example 13: 4.6 Platform newline
+-- Demonstrates: %n emits one platform-native newline and consumes no argument.
+
+Console.Printf("A%nB");
+
+-- ============================================================================
+-- Example 14: 5.2 Digit grouping
+-- Demonstrates: The ' flag performs locale-independent numeric grouping with apostrophes.
+
+Console.Printf("%'d", 1234567);
+
+-- ============================================================================
+-- Example 15: 5.2 Digit grouping
+-- Demonstrates: For floating-point output:
+
+Console.Printf("%'.2f", 1234567.5);
+
+-- ============================================================================
+-- Example 16: 5.3 Invalid flag combinations
+-- Demonstrates: A flag that has no defined meaning for a specifier is a compile-time error. It is not
+--   silently ignored.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%+s", name);   -- INVALID
+Console.Printf("%0s", name);   -- INVALID
+Console.Printf("%#d", value);  -- INVALID
+Console.Printf("%'x", value);  -- INVALID
+
+-- ============================================================================
+-- Example 17: 5.3 Invalid flag combinations
+-- Demonstrates: and 0 MUST NOT be combined:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%-08d", value); -- INVALID
+
+-- ============================================================================
+-- Example 18: 5.3 Invalid flag combinations
+-- Demonstrates: and the space flag MUST NOT be combined:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%+ d", value); -- INVALID
+
+-- ============================================================================
+-- Example 19: 6. Width
+-- Demonstrates: A fixed width is written directly in the format:
+
+Console.Printf("%10s", value);
+Console.Printf("%-10s", value);
+Console.Printf("%08d", value);
+
+-- ============================================================================
+-- Example 20: 6. Width
+-- Demonstrates: Dynamic width uses and consumes an additional int argument:
+
+Console.Printf("%*s", width, value);
+
+-- ============================================================================
+-- Example 21: 7. Precision
+-- Demonstrates: Examples:
+
+Console.Printf("%.3f", value);
+Console.Printf("%.5s", text);
+Console.Printf("%.4A", object);
+
+-- ============================================================================
+-- Example 22: 7. Precision
+-- Demonstrates: Dynamic precision uses . and consumes an additional int argument:
+
+Console.Printf("%.*f", precision, value);
+
+-- ============================================================================
+-- Example 23: 7. Precision
+-- Demonstrates: Width and precision may both be dynamic:
+
+Console.Printf("%*.*f", width, precision, value);
+
+-- ============================================================================
+-- Example 24: 8. Locale independence
+-- Demonstrates: Thus:
+
+Console.Printf("%.2f", 12.5);
+
+-- ============================================================================
+-- Example 25: 9. Console.Format
+-- Demonstrates: Console.Format(...) applies the same output format grammar but performs no I/O.
+
+String text = Console.Format(
+    "Name: %s, Age: %d",
+    name,
+    age
+);
+
+-- ============================================================================
+-- Example 26: 10. Display and debug formatting contracts
+-- Demonstrates: User-defined %O formatting is provided through:
+
+interface IDisplay {
+    public void Format(System.Format.Formatter formatter);
+}
+
+-- ============================================================================
+-- Example 27: 10. Display and debug formatting contracts
+-- Demonstrates: User-defined %A formatting is provided through:
+
+interface IDebug {
+    public void Format(System.Format.Formatter formatter);
+}
+
+-- ============================================================================
+-- Example 28: 11. Formatted String interpolation
+-- Demonstrates: Examples:
+
+"%s$name"
+"%08d$count"
+"%.2f$price"
+"%#A$user"
+"%d$(age + 1)"
+"%.2f$(price * tax)"
+
+-- ============================================================================
+-- Example 29: 11. Formatted String interpolation
+-- Demonstrates: These forms are not interpolation:
+
+"$name"       -- not interpolation
+"$(age + 1)"  -- not interpolation
+
+-- ============================================================================
+-- Example 30: 12. Standard input
+-- Demonstrates: Console input is accessed through:
+
+Console.Stdin()
+
+-- ============================================================================
+-- Example 31: 12. Standard input
+-- Demonstrates: Examples:
+
+char ch = Console.Stdin().Read();
+
+String name = Console.Stdin().Readln();
+
+-- ============================================================================
+-- Example 32: 12. Standard input
+-- Demonstrates: and:
+
+String name =
+    Console.Stdin()
+        .Prompt("Name: ")
+        .Readln();
+
+-- ============================================================================
+-- Example 33: 13. Prompt
+-- Demonstrates: Prompt(format, ...) writes a prompt to standard output and returns the same logical
+--   input surface so that a read operation may be chained.
+
+Console.Stdin()
+    .Prompt("Name: ")
+    .Readln();
+
+-- ============================================================================
+-- Example 34: 13. Prompt
+-- Demonstrates: Formatted prompts use the normal console output format grammar:
+
+Console.Stdin()
+    .Prompt("Age must be at least %d: ", minimumAge)
+    .Readf("%d", age);
+
+-- ============================================================================
+-- Example 35: 13. Prompt
+-- Demonstrates: Multiple prompt operations may be chained:
+
+Console.Stdin()
+    .Prompt("> ")
+    .Prompt("Value: ")
+    .Readln();
+
+-- ============================================================================
+-- Example 36: 14. Read
+-- Demonstrates: Read() reads one char.
+
+char value = Console.Stdin().Read();
+
+-- ============================================================================
+-- Example 37: 15. Readln
+-- Demonstrates: Readln() reads the current line and returns a String that excludes the line
+
+String line = Console.Stdin().Readln();
+
+-- ============================================================================
+-- Example 38: 16. Readf
+-- Demonstrates: It returns void.
+
+int age;
+String name;
+
+Console.Stdin().Readf("%d %s", age, name);
+
+-- ============================================================================
+-- Example 39: 16.1 Writable targets
+-- Demonstrates: Valid examples:
+
+int value;
+Console.Stdin().Readf("%d", value);
+
+-- ============================================================================
+-- Example 40: 16.1 Writable targets
+-- Demonstrates: Valid examples:
+
+Console.Stdin().Readf("%d", self.age);
+Console.Stdin().Readf("%d", user.age);
+
+-- ============================================================================
+-- Example 41: 16.1 Writable targets
+-- Demonstrates: A property with a setter is writable:
+
+Console.Stdin().Readf("%d", settings.Volume);
+
+-- ============================================================================
+-- Example 42: 16.1 Writable targets
+-- Demonstrates: A writable indexer is also a valid target:
+
+Console.Stdin().Readf("%d", values[index]);
+
+-- ============================================================================
+-- Example 43: 16.1 Writable targets
+-- Demonstrates: Non-writable expressions are invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Stdin().Readf("%d", age + 1);  -- INVALID
+Console.Stdin().Readf("%d", GetAge()); -- INVALID
+
+-- ============================================================================
+-- Example 44: 16.1 Writable targets
+-- Demonstrates: A final target is invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+final int age = 26;
+
+Console.Stdin().Readf("%d", age); -- INVALID
+
+-- ============================================================================
+-- Example 45: 16.1 Writable targets
+-- Demonstrates: A getter-only property is invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Stdin().Readf("%s", user.Name); -- INVALID if Name has no setter
+
+-- ============================================================================
+-- Example 46: 16.1 Writable targets
+-- Demonstrates: A writable target expression is evaluated exactly once.
+
+Console.Stdin().Readf("%d", values[NextIndex()]);
+
+-- ============================================================================
+-- Example 47: 16.5 %s
+-- Demonstrates: %s skips leading whitespace and reads a token until the next whitespace.
+
+String name;
+Console.Stdin().Readf("%s", name);
+
+-- ============================================================================
+-- Example 48: 16.5 %s
+-- Demonstrates: A width limits the maximum number of Unicode characters consumed:
+
+String value;
+Console.Stdin().Readf("%5s", value);
+
+-- ============================================================================
+-- Example 49: 16.6 %c
+-- Demonstrates: It does not automatically skip leading whitespace.
+
+char value;
+Console.Stdin().Readf("%c", value);
+
+-- ============================================================================
+-- Example 50: 16.11 Width in Readf
+-- Demonstrates: Dynamic width is allowed:
+
+String name;
+int width = 10;
+
+Console.Stdin().Readf("%*s", width, name);
+
+-- ============================================================================
+-- Example 51: 16.12 Precision in Readf
+-- Demonstrates: Precision is not supported by Readf.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+double value;
+
+Console.Stdin().Readf("%.2f", value); -- INVALID
+
+-- ============================================================================
+-- Example 52: 16.13 Digit grouping in Readf
+-- Demonstrates: A grouping separator is accepted only when the ' flag is present.
+
+int value;
+
+Console.Stdin().Readf("%'d", value);
+
+-- ============================================================================
+-- Example 53: 16.14 %n in Readf
+-- Demonstrates: Example:
+
+int first;
+int second;
+
+Console.Stdin().Readf("%d%n%d", first, second);
+
+-- ============================================================================
+-- Example 54: 17. Readf type checking
+-- Demonstrates: The target static type MUST match the conversion family.
+-- Expected result: accepted when the referenced declarations are available.
+
+int age;
+String name;
+
+Console.Stdin().Readf("%d", age);  -- VALID
+Console.Stdin().Readf("%s", name); -- VALID
+
+-- ============================================================================
+-- Example 55: 17. Readf type checking
+-- Demonstrates: The target static type MUST match the conversion family.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Stdin().Readf("%s", age); -- INVALID
+
+-- ============================================================================
+-- Example 56: 18. Readf failure and partial assignment
+-- Demonstrates: If earlier conversions succeeded before a later conversion fails, the earlier
+--   assignments remain performed.
+
+int first = 0;
+int second = 0;
+
+Console.Stdin().Readf("%d %d", first, second);
+
+-- ============================================================================
+-- Example 57: 20. Interaction with op
+-- Demonstrates: For example, wrapping a console call in the special discard statement:
+
+_ = Console.Stdin().Readln();
+
+-- ============================================================================
+-- Example 58: VALID — ordinary output
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+Console.Print("Hello");
+Console.Println("World");
+Console.Printf("Count: %d", count);
+Console.Printfn("Price: %.2f", price);
+
+-- ============================================================================
+-- Example 59: VALID — standard error
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+Console.Error("warning");
+Console.Errorln("failed");
+Console.Errorf("Code: %d", code);
+Console.Errorfn("Code: %d", code);
+
+-- ============================================================================
+-- Example 60: VALID — explicit flush
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+Console.Print("Working...");
+Console.Stdout().Flush();
+
+-- ============================================================================
+-- Example 61: VALID — prompt and line input
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+String name =
+    Console.Stdin()
+        .Prompt("Name: ")
+        .Readln();
+
+-- ============================================================================
+-- Example 62: VALID — formatted input
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+int age;
+String name;
+
+Console.Stdin()
+    .Prompt("Enter age and name: ")
+    .Readf("%d %s", age, name);
+
+-- ============================================================================
+-- Example 63: VALID — compile-time format symbol
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+#define FORMAT "%08d"
+
+Console.Printf(FORMAT, value);
+
+-- ============================================================================
+-- Example 64: INVALID — wrong output type
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+uint value = 42;
+
+Console.Printf("%d", value);
+
+-- ============================================================================
+-- Example 65: INVALID — wrong formatted-input target type
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+String value;
+
+Console.Stdin().Readf("%d", value);
+
+-- ============================================================================
+-- Example 66: INVALID — non-writable target
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+int age;
+
+Console.Stdin().Readf("%d", age + 1);
+
+-- ============================================================================
+-- Example 67: INVALID — precision in Readf
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+double value;
+
+Console.Stdin().Readf("%.2f", value);
+
+-- ============================================================================
+-- Example 68: INVALID — unsupported input conversion
+-- Demonstrates: may discard exception propagation according to the language's discard rules, but it
+--   does not remove the I/O side effect. The normal op purity restrictions still apply.
+
+Object value;
+
+Console.Stdin().Readf("%A", value);
+
+-- ============================================================================
+-- Example 69: 2.1 Plain output
+-- Demonstrates: Print, Println, Error and Errorln take one value. A value that is not a String is written as
+--   text: an integer in decimal with a minus sign when it is negative, a bool as true or false, and a char
+--   as the character itself. This is the text the + operator joins to a String.
+
+Console.Println(42);     -- 42
+Console.Println(-7);     -- -7
+Console.Println(true);   -- true
+Console.Println('x');    -- x
+
+-- ============================================================================
+-- Example 70: 2.2 Line-output forms
+-- Demonstrates: Println, Printfn, Errorln and Errorfn end the line with the line terminator of the platform,
+--   which is what %n writes: a carriage return and a line feed on Windows, and a line feed elsewhere. An
+--   escape written in a String is the character it names on every platform.
+
+Console.Println("Hello");   -- Hello, and the line terminator of the platform
+Console.Print("Hello\n");   -- Hello, and a line feed
+
+-- ============================================================================
+-- Example 71: 4.1 Conversions
+-- Demonstrates: The conversions of the output format grammar. Each takes one argument, except %n and %%,
+--   which take none. %A and %O take an object.
+
+Console.Printf("%d", count);    -- a signed integer in decimal
+Console.Printf("%u", size);     -- an unsigned integer in decimal
+Console.Printf("%x", mask);     -- an integer in hexadecimal, with lowercase digits
+Console.Printf("%f", ratio);    -- a floating-point number with a fixed number of digits after the point
+Console.Printf("%s", name);     -- a String
+Console.Printf("%c", initial);  -- a char
+Console.Printf("%b", ready);    -- a bool, as true or false
+Console.Printf("%n");           -- the line terminator of the platform
+Console.Printf("100%%");        -- a percent sign: 100%
+
+-- ============================================================================
+-- Example 72: 4.1 Conversions
+-- Demonstrates: A sequence that begins with % and is not a conversion is a compile-time error, and so is a
+--   format that ends inside one.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%q", value);   -- INVALID: no such conversion
+Console.Printf("100%");        -- INVALID: the format ends inside a conversion
+
+-- ============================================================================
+-- Example 73: 4.1 Conversions
+-- Demonstrates: The arguments of a format are the ones its conversions take, in the order of the
+--   conversions, no more and no fewer.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%d and %d", first);           -- INVALID: an argument is missing
+Console.Printf("%d", first, second);          -- INVALID: an argument is left over
+
+-- ============================================================================
+-- Example 74: 4.1 Conversions
+-- Demonstrates: An argument has the type its conversion takes. %s takes a String, %c a char and %b a bool;
+--   %x takes a signed or an unsigned integer.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%s", 42);      -- INVALID: %s takes a String
+Console.Printf("%c", 65);      -- INVALID: %c takes a char
+Console.Printf("%b", 1);       -- INVALID: %b takes a bool
+Console.Printf("%x", 1.5);     -- INVALID: %x takes an integer
+
+-- ============================================================================
+-- Example 75: 4.3 Floating-point values
+-- Demonstrates: %f writes six digits after the point unless a precision says otherwise. The digits are those
+--   of the exact value of the number, rounded to the nearest; a value exactly between two rounds to the one
+--   whose last digit is even.
+
+Console.Printf("%f", 12.5);     -- 12.500000
+Console.Printf("%.2f", 12.5);   -- 12.50
+Console.Printf("%.0f", 2.5);    -- 2
+Console.Printf("%.0f", 3.5);    -- 4
+
+-- ============================================================================
+-- Example 76: 4.3 Floating-point values
+-- Demonstrates: A value that is not a finite number is written as a word: nan, inf or -inf.
+
+Console.Printf("%f", ratio);   -- inf when ratio is positive infinity
+
+-- ============================================================================
+-- Example 77: 5.1 Flags
+-- Demonstrates: The flags, and the conversions that take each. - puts the value at the left of its field and
+--   is taken by every conversion that has a width. 0 pads a number with zeros after its sign. + writes a
+--   plus sign before a number that is not negative, and a space writes a space there. # writes 0x before a
+--   hexadecimal number. ' groups the integer digits of a decimal number.
+
+Console.Printf("%-8d|", 42);     -- 42      |
+Console.Printf("%08d", -42);     -- -0000042
+Console.Printf("%+d", 42);       -- +42
+Console.Printf("% d", 42);       --  42
+Console.Printf("%#x", 255);      -- 0xff
+Console.Printf("%'d", 1234567);  -- 1'234'567
+
+-- ============================================================================
+-- Example 78: 5.1 Flags
+-- Demonstrates: 0 is taken by %d, %u, %x and %f. + and the space are taken by %d and %f. # is taken by %x.
+--   ' is taken by %d, %u and %f. A flag written twice is an error.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%+u", size);    -- INVALID: an unsigned number has no sign
+Console.Printf("%0c", initial); -- INVALID
+Console.Printf("%#f", ratio);   -- INVALID
+Console.Printf("%++d", count);  -- INVALID: the flag is written twice
+
+-- ============================================================================
+-- Example 79: 4.2 Integers
+-- Demonstrates: %x writes the magnitude of the number. A negative number has a minus sign before its
+--   magnitude, and the # prefix stands between the sign and the digits.
+
+Console.Printf("%x", 255);    -- ff
+Console.Printf("%x", -255);   -- -ff
+Console.Printf("%#x", -255);  -- -0xff
+
+-- ============================================================================
+-- Example 80: 6. Width
+-- Demonstrates: A width is the least number of characters a conversion writes; a value that needs more is
+--   written whole. A width and a precision count characters, not bytes. %n and %% take neither.
+-- Expected result: the last two lines are rejected at compile time; the INVALID marker is normative.
+
+Console.Printf("%2d", 12345);  -- 12345
+Console.Printf("%5%");         -- INVALID
+Console.Printf("%-n");         -- INVALID
+
+-- ============================================================================
+-- Example 81: 6. Width
+-- Demonstrates: A width or a precision written as * is an int argument that stands before the value. The
+--   arguments of a format are evaluated in the order they are written.
+
+Console.Printf("%*d", width, value);              -- width is evaluated first, then value
+Console.Printf("%*.*f", width, precision, value); -- width, then precision, then value
+
+-- ============================================================================
+-- Example 82: 6. Width
+-- Demonstrates: The argument of a * is an int.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+uint width = 8;
+
+Console.Printf("%*d", width, value); -- INVALID
+
+-- ============================================================================
+-- Example 83: 7. Precision
+-- Demonstrates: A precision is taken by %f, where it is the number of digits after the point, by %s, where
+--   it is the most characters written, and by %A. Any other conversion with a precision is an error.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Console.Printf("%.2d", count);   -- INVALID
+Console.Printf("%.1c", initial); -- INVALID
+
+-- ============================================================================
+-- Example 84: 5.2 Digit grouping
+-- Demonstrates: Grouping applies to the digits before the point. Zeros that pad a number are not grouped.
+
+Console.Printf("%'.2f", 1234567.891);  -- 1'234'567.89
+Console.Printf("%'d", 123);            -- 123
+
+-- ============================================================================
+-- Example 85: 3.1 Compile-time format requirement
+-- Demonstrates: A format is known when the program is compiled. A String that is computed is not a format.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+String format = "%d";
+
+Console.Printf(format, value);          -- INVALID
+Console.Printf("%d" + suffix, value);   -- INVALID

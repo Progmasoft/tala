@@ -8,7 +8,7 @@ performance guarantee.
 
 ## Environment
 
-- source: working tree based on `a73b03a` (Visual X# 0.3.8)
+- source: working tree based on `a73b03a` (Tala 0.3.8)
 - host: Windows x86-64, Intel Core i5-3210M at 2.50 GHz, 4 logical CPUs
 - compiler: ClangCL 22.1.8, C++20
 - build: Bazel `-c opt`

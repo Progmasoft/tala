@@ -1,0 +1,75 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "dense_bit_set",
+    srcs = ["DenseBitSet.cpp"],
+    deps = ["//Talac/Headers/Progmasoft/Tala/Analysis:dense_bit_set"],
+)
+
+cc_library(
+    name = "control_flow",
+    srcs = ["ControlFlow.cpp"],
+    deps = ["//Talac/Headers/Progmasoft/Tala/Analysis:control_flow"],
+)
+
+cc_library(
+    name = "dominance",
+    srcs = ["Dominance.cpp"],
+    deps = [
+        ":control_flow",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:dominance_api",
+    ],
+)
+
+cc_library(
+    name = "control_dependence",
+    srcs = ["ControlDependence.cpp"],
+    deps = [
+        ":dominance",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:control_dependence_api",
+    ],
+)
+
+cc_library(
+    name = "definite_initialization",
+    srcs = ["DefiniteInitialization.cpp"],
+    deps = [
+        ":control_flow",
+        ":dense_bit_set",
+        ":worklist",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:definite_initialization_api",
+    ],
+)
+
+cc_library(
+    name = "ownership_flow",
+    srcs = ["OwnershipFlow.cpp"],
+    deps = [
+        ":control_flow",
+        ":dense_bit_set",
+        ":worklist",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:ownership_flow_api",
+    ],
+)
+
+cc_library(
+    name = "liveness",
+    srcs = ["Liveness.cpp"],
+    deps = [
+        ":control_flow",
+        ":dense_bit_set",
+        ":worklist",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:liveness_api",
+    ],
+)
+
+cc_library(
+    name = "worklist",
+    srcs = ["Worklist.cpp"],
+    deps = [
+        ":control_flow",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:worklist_api",
+    ],
+)

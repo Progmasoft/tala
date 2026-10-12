@@ -12,10 +12,10 @@
 
 ## Command
 
-Run from `Compiler/`:
+Run from `Talac/`:
 
 ```powershell
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks --benchmark-options="--match prefix Core/ConstantFoldInteger --time-limit 1 --resamples 100"
+cabal bench tala-core:core-benches --enable-benchmarks --benchmark-options="--match prefix Core/ConstantFoldInteger --time-limit 1 --resamples 100"
 ```
 
 ## Results

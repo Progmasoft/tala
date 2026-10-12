@@ -1,0 +1,40 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "callable_contract_tests",
+    srcs = ["CallableContractTests.cpp"],
+    deps = [
+        "//Talac/Core/Callable:callable",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+cc_binary(
+    name = "core_pipeline_tests",
+    srcs = [
+        "ConditionalChainTests.cpp",
+        "ConditionalLoweringTests.cpp",
+        "CorePipelineTests.cpp",
+        "CorePrepVerifierTests.cpp",
+        "FallThroughTests.cpp",
+        "LoopLoweringTests.cpp",
+        "NestingLimitTests.cpp",
+        "RuntimeCallVerifierTests.cpp",
+        "ShortCircuitLoweringTests.cpp",
+        "SymbolAllocationTests.cpp",
+        "TemplateTests.cpp",
+    ],
+    deps = [
+        "//Talac/Core:core",
+        "//Talac/Driver:core_pipeline",
+        "//Talac/Support:compiler_stack",
+        "//Talac/Headers/Progmasoft/Tala:pipeline_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:template_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)

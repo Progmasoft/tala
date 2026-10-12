@@ -8,7 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/repository"
+	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"github.com/spf13/cobra"
 	"io"
 	"os"

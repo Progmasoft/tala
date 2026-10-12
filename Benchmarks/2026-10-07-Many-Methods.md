@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Scope
 
-The time of `vxs check` on one class with many small methods grew with the
+The time of `talac check` on one class with many small methods grew with the
 square of their number: 1000 methods took 4 seconds and 4000 took 73. This
 record holds the measurements that located the cause in five places, and the
 same measurements after each was changed.
@@ -36,7 +36,7 @@ given number of statements `if (n > 7) { t += 1; }`.
 
 ## Whole programs
 
-`vxs check -File`, wall time in seconds.
+`talac check -File`, wall time in seconds.
 
 | Program | Size | Before, one run | After, best of five |
 | --- | ---: | ---: | ---: |
@@ -78,7 +78,7 @@ into a table of its own, building the function type of each, and it searched
 the whole module for closures that capture into the function. The table and
 the captures are now collected once for the module.
 
-`//Compiler/Core/CorePrep/Benches:coreprep_benches` has the case
+`//Talac/Core/CorePrep/Benches:coreprep_benches` has the case
 `VerifyFunctions` for this. After the change, on modules of functions that
 return a constant:
 

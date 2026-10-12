@@ -30,10 +30,10 @@ number with another machine or treating a small delta as a regression.
 
 ## Command
 
-Run from `Compiler/`:
+Run from `Talac/`:
 
 ```powershell
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks `
+cabal bench tala-core:core-benches --enable-benchmarks `
   --benchmark-options="--match pattern Core/InlineLinearBody/8 --time-limit 0.1"
 ```
 

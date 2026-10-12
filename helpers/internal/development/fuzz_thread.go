@@ -29,7 +29,7 @@ func threadFuzzBuildArguments(configuration, sanitizerConfiguration, macRuntime 
 // a skipped success: the selection fails on Windows, and the runtime probe must
 // start cleanly and report its intentional data race before any input runs.
 func runThreadFuzzCampaign(repository string, currentHost host, runner commandRunner) error {
-	duration, err := fuzzDuration(false, os.Getenv("VXS_FUZZ_SECONDS"))
+	duration, err := fuzzDuration(false, os.Getenv("TALA_FUZZ_SECONDS"))
 	if err != nil {
 		return err
 	}
@@ -72,11 +72,11 @@ func runThreadFuzzCampaign(repository string, currentHost host, runner commandRu
 	if temporaryRoot == "" {
 		temporaryRoot = os.TempDir()
 	}
-	work, err := os.MkdirTemp(temporaryRoot, "vxs-fuzz-")
+	work, err := os.MkdirTemp(temporaryRoot, "tala-fuzz-")
 	if err != nil {
 		return fmt.Errorf("could not create fuzz work directory: %w", err)
 	}
-	persistentCorpus := os.Getenv("VXS_FUZZ_CORPUS")
+	persistentCorpus := os.Getenv("TALA_FUZZ_CORPUS")
 	corpusRoot := persistentCorpus
 	if corpusRoot == "" {
 		corpusRoot = filepath.Join(work, "corpus")
@@ -90,7 +90,7 @@ func runThreadFuzzCampaign(repository string, currentHost host, runner commandRu
 		if err := os.MkdirAll(corpus, 0o700); err != nil {
 			return fmt.Errorf("could not prepare %s corpus; preserved %q: %w", target.corpus, work, err)
 		}
-		if err := syncSeedCorpus(filepath.Join(repository, "Compiler", "Fuzzing", "Corpus", target.corpus), corpus); err != nil {
+		if err := syncSeedCorpus(filepath.Join(repository, "Talac", "Fuzzing", "Corpus", target.corpus), corpus); err != nil {
 			return fmt.Errorf("could not synchronize the versioned %s seed corpus: %w", target.corpus, err)
 		}
 	}

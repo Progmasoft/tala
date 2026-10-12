@@ -1,0 +1,7 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+cc_binary(
+    name = "cli_fuzzer",
+    srcs = ["CliFuzzer.cpp"],
+    deps = ["//Talac/Cli/Arguments:arguments", "@llvm//:llvm"],
+)

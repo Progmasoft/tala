@@ -1,0 +1,186 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Evaluation
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Evaluation by Need
+-- Demonstrates: Tala is a lazy language. A value is computed when it is first needed, not where it is
+--   written. Binding a name to an expression computes nothing.
+
+int total = Sum(values); -- nothing is computed here
+
+if (verbose) {
+    Print(total);        -- Sum(values) is computed here, if this is reached
+}
+
+-- ============================================================================
+-- Example 2: 1. Evaluation by Need
+-- Demonstrates: A value that is never needed is never computed. Whatever computing it would have done does
+--   not happen: it does not fail, and it does not run without end.
+
+int quotient = left / right; -- right may be zero
+int endless = Forever();     -- Forever never returns
+
+return 5;                    -- neither value is needed: the result is 5
+
+-- ============================================================================
+-- Example 3: 1. Evaluation by Need
+-- Demonstrates: Evaluation is call by need: a value is computed at most once. Every later use reads the value
+--   that the first use computed.
+
+int cost = Expensive(input);
+
+return cost + cost + cost; -- Expensive(input) is computed once
+
+-- ============================================================================
+-- Example 4: 1. Evaluation by Need
+-- Demonstrates: A value is needed where the program cannot go on without it: in a condition, as the subject of
+--   a match, as an operand of an arithmetic or comparison operator whose result is needed, and where it leaves
+--   the program. A value computed from another needs that other only when it is itself needed.
+
+int quotient = left / right;
+int next = quotient + 1;     -- needs quotient only if next is needed
+
+return right > 0 ? next : 0; -- when right is zero, nothing divides
+
+-- ============================================================================
+-- Example 12: 1. Evaluation by Need
+-- Demonstrates: An expression written as a statement of its own is evaluated, and so is a value assigned to
+--   the discard. A statement exists to be carried out; nothing else could ever need its value.
+
+Validate(input);    -- evaluated: the statement is the need
+_ = left / right;   -- evaluated: if right is zero, the failure is here
+
+-- ============================================================================
+-- Example 5: 1. Evaluation by Need
+-- Demonstrates: An argument is passed by need. The method computes it if it needs it and at most once, however
+--   many times its parameter is read.
+
+static int Choose(_ bool first, _ int one, _ int other) {
+    return first ? one : other;
+}
+
+Choose(true, 1, left / right); -- right may be zero: the third argument is not needed
+
+-- ============================================================================
+-- Example 6: 2. Failure
+-- Demonstrates: A value that cannot be computed fails where it is needed, not where it is written. A program
+--   that needs such a value fails; a program that does not need it does not.
+
+int quotient = left / right; -- no failure here, whatever right is
+
+Use(quotient);               -- if right is zero, the failure is here
+
+-- ============================================================================
+-- Example 13: 2. Failure
+-- Demonstrates: Whether a program fails is determined: it fails when it needs a value that cannot be computed.
+--   Which failure it meets is not, when one statement needs several such values. The values a statement needs
+--   have no order among themselves that a program may rely on, and a value that runs without end is one that
+--   cannot be computed: a statement that needs it and a value that fails may fail or may never end.
+--   Statements are still carried out in the order they are written, and so are effects.
+
+int first = left / zero;      -- cannot be computed
+int second = Parse(text);     -- cannot be computed either, for this text
+
+return first + second;        -- the program fails; which of the two failures it reports is not determined
+
+Use(first);                   -- as two statements the order is determined:
+Use(second);                  -- the failure is that of first, and this statement is never reached
+
+-- ============================================================================
+-- Example 14: 2. Failure
+-- Demonstrates: Some values cannot be computed at all. An integer quotient or remainder by zero has no value,
+--   with /, with // and with %. A shift has no value when its amount is negative or is not less than the width
+--   of the shifted value. A program that needs such a value stops there; it does not continue with some other
+--   value in its place, and nothing after that point happens.
+
+int quotient = total / count;  -- no value when count is zero
+int rest = total % count;      -- no value when count is zero
+int bit = 1 << position;       -- no value when position is negative, or 64 or more for an int
+
+Use(quotient);                 -- when count is zero the program stops here
+
+-- ============================================================================
+-- Example 7: 3. Suspended Computations
+-- Demonstrates: A value that has not been computed yet is a suspended computation, a thunk. Thunks are not
+--   part of the source language: there is no syntax that creates, tests or forces one, and the type of a name
+--   is the type of its value, computed or not.
+
+int total = Sum(values); -- total is an int, before and after it is computed
+
+-- ============================================================================
+-- Example 8: 4. Effects
+-- Demonstrates: Effects are not lazy. A store into a variable, and anything else that changes what the rest of
+--   the program observes, happens where it is written and in the order in which it is written, whether or not
+--   the value of the expression that contains it is ever needed.
+
+int count = 0;
+int unused = (count += 1) + Expensive(input); -- the store happens here
+
+return count; -- 1
+
+-- ============================================================================
+-- Example 9: 4. Effects
+-- Demonstrates: The language has an effect system, and it is not visible in the source: no annotation says
+--   that an expression has an effect, and none is needed to make one happen. The compiler tells an expression
+--   that only computes a value, which is evaluated by need, from one that has an effect, which is evaluated in
+--   place.
+
+int quotient = left / right; -- computes a value: evaluated by need
+count += 1;                  -- has an effect: happens here
+
+-- ============================================================================
+-- Example 15: 4. Effects
+-- Demonstrates: Output is an effect. An expression that writes to the console, itself or through a method it
+--   calls, is evaluated where it is written and in the order it is written, whether or not its value is
+--   ever needed. A value that only computes is still computed by need beside it.
+
+static int Log(_ int value) {
+    Console.Println(value);
+    return value;
+}
+
+int unused = Log(1);        -- writes 1 here
+int skipped = left / zero;  -- computes nothing: the value is never needed
+
+Console.Println(2);         -- 1 has already been written
+
+-- ============================================================================
+-- Example 16: 4. Effects
+-- Demonstrates: An argument that has an effect is evaluated at the call, in the order the arguments are
+--   written, whether or not the method reads its parameter.
+
+Choose(true, Log(1), Log(2)); -- writes 1 and then 2; the method reads only its second parameter
+
+-- ============================================================================
+-- Example 10: 4. Effects
+-- Demonstrates: A value means what its variables held where it was written, however late it is computed. A
+--   later store into a variable does not change a value that was bound before the store.
+
+int width = 8;
+int area = width * Height(); -- the value of width here is 8
+
+width = 100;
+
+return area;                 -- 8 * Height(), not 100 * Height()
+
+-- ============================================================================
+-- Example 11: 5. Strictness in BLINQ
+-- Demonstrates: .Strict and .AllStrict of BLINQ make a query eager: the first the chain above it, the second
+--   the whole query expression. They belong to BLINQ. They do not make any other part of a program strict, and
+--   the language has no construct that does.
+-- Context note: values is a sequence; the BLINQ rules are in StandardLibrary/Query/BLINQ.tala.
+
+auto ready =
+        values
+            .Filter {
+                $0 > 10
+            }
+            .Strict; -- the chain above is eager
+
+int quotient = left / right; -- still evaluated by need

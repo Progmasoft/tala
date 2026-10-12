@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-// Package githelper implements the guarded Git workflow of the Visual X#
+// Package githelper implements the guarded Git workflow of the Tala
 // repositories: stage safely, commit, push without rewriting history, and keep
 // a topic branch current with the default branch. It passes arguments directly
 // to Git and never builds a shell command.

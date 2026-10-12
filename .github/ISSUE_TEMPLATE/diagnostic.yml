@@ -47,8 +47,8 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS/version, Visual X# version, and relevant compiler or toolchain versions.
-      placeholder: Windows 11; vxs 0.5.1; Clang 22; GHC 9.10
+      description: OS/version, Tala version, and relevant compiler or toolchain versions.
+      placeholder: Windows 11; talac 0.5.1; Clang 22; GHC 9.10
     validations:
       required: true
   - type: textarea

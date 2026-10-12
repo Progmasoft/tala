@@ -5,8 +5,8 @@ use std::error::Error;
 use std::fs;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = std::env::temp_dir().join("visual-xsharp-roundtrip.txt");
-    let expected = "Visual X# round-trip: Καλημέρα, 世界";
+    let path = std::env::temp_dir().join("tala-roundtrip.txt");
+    let expected = "Tala round-trip: Καλημέρα, 世界";
 
     fs::write(&path, expected)?;
     let actual = fs::read_to_string(&path)?;

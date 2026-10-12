@@ -1,0 +1,29 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "llvm_backend",
+    srcs = [
+        "Artifact.cpp",
+        "Codegen.cpp",
+        "Emission.cpp",
+        "Emission.hpp",
+        "Generator.cpp",
+        "Generator.hpp",
+        "GeneratorArithmetic.cpp",
+        "GeneratorInstructions.cpp",
+        "GeneratorObjects.cpp",
+        "GeneratorValues.cpp",
+        "JitSession.cpp",
+        "Verifier.cpp",
+    ],
+    deps = [
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Core/Callable:callable",
+        "//Talac/Core/Ownership:ownership",
+        "//Talac/Headers/Progmasoft/Tala/Backend:llvm_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "@llvm//:llvm",
+    ],
+)

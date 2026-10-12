@@ -5,9 +5,9 @@
 #include <string>
 #include <string_view>
 
-#include "Visual/XSharp/Interactive/History.hpp"
+#include "Progmasoft/Tala/Interactive/History.hpp"
 
-namespace Visual::XSharp::Interactive::Runtime
+namespace Progmasoft::Tala::Interactive::Runtime
 {
     void
     History::Append(std::string_view expression)
@@ -30,4 +30,4 @@ namespace Visual::XSharp::Interactive::Runtime
     {
         return entries_;
     }
-} // namespace Visual::XSharp::Interactive::Runtime
+} // namespace Progmasoft::Tala::Interactive::Runtime

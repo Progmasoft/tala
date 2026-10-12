@@ -1,0 +1,32 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "xpp",
+    srcs = [
+        "ControlFlow.cpp",
+        "Lower.cpp",
+        "Optimize.cpp",
+        "OwnershipPlacement.cpp",
+        "OwnershipVerifier.cpp",
+        "Verifier.cpp",
+        "Wire.cpp",
+    ],
+    deps = [
+        "//Talac/Analysis:control_flow",
+        "//Talac/Analysis:dominance",
+        "//Talac/Analysis:definite_initialization",
+        "//Talac/Analysis:liveness",
+        "//Talac/Analysis:ownership_flow",
+        "//Talac/Artifact:wire_support",
+        "//Talac/Artifact:source_path",
+        "//Talac/Core:core",
+        "//Talac/Core/Callable:callable",
+        "//Talac/Core/Ownership:ownership",
+        "//Talac/Headers/Progmasoft/Tala/ADTs:dense_id_map",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "//Talac/Headers/Progmasoft/Tala/Xpp:xpp",
+        "//Talac/Headers/Progmasoft/Tala/Xpp:control_flow_api",
+    ],
+)

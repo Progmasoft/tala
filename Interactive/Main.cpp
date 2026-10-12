@@ -6,10 +6,10 @@
 #include <iostream>
 #include <string>
 
-#include "Visual/XSharp/Interactive/Arguments.hpp"
-#include "Visual/XSharp/Interactive/ReplInput.hpp"
-#include "Visual/XSharp/Interactive/Session.hpp"
-#include "Visual/XSharp/Support/CompilerStack.hpp"
+#include "Progmasoft/Tala/Interactive/Arguments.hpp"
+#include "Progmasoft/Tala/Interactive/ReplInput.hpp"
+#include "Progmasoft/Tala/Interactive/Session.hpp"
+#include "Progmasoft/Tala/Support/CompilerStack.hpp"
 
 namespace
 {
@@ -18,14 +18,14 @@ namespace
     [[nodiscard]] auto
     Repl() -> int
     {
-        using namespace Visual::XSharp::Interactive;
+        using namespace Progmasoft::Tala::Interactive;
         Session session;
-        fmt::print("Visual X# Interactive (vxsi)\nType :help for commands; "
+        fmt::print("Tala Interactive (tali)\nType :help for commands; "
                    "Ctrl+D/Ctrl+Z exits.\n");
         std::string line;
         while (true)
         {
-            fmt::print("vxsi> ");
+            fmt::print("tali> ");
             std::cout.flush();
             const auto inputStatus
                 = ReadInputLine(std::cin, line, kMaximumInputLineBytes);
@@ -37,14 +37,13 @@ namespace
             if (inputStatus == InputLineStatus::Failure)
             {
                 fmt::print(stderr,
-                           "vxsi: could not read the next input line\n");
+                           "tali: could not read the next input line\n");
                 return 1;
             }
             if (inputStatus == InputLineStatus::TooLong)
             {
-                fmt::print(
-                    stderr,
-                    "vxsi: one Visual X# input line cannot exceed 1 MiB\n");
+                fmt::print(stderr,
+                           "tali: one Tala input line cannot exceed 1 MiB\n");
                 continue;
             }
             if (!line.empty() && line.back() == '\r')
@@ -65,7 +64,7 @@ namespace
                     if (result.status == CellStatus::Type)
                         fmt::print("{}\n", result.text);
                     else
-                        fmt::print(stderr, "vxsi: {}\n", result.text);
+                        fmt::print(stderr, "tali: {}\n", result.text);
                     continue;
                 }
                 case ReplCommandKind::History:
@@ -77,7 +76,7 @@ namespace
                 }
                 case ReplCommandKind::Reset:
                     if (const auto issue = session.Reset())
-                        fmt::print(stderr, "vxsi: {}\n", *issue);
+                        fmt::print(stderr, "tali: {}\n", *issue);
                     else
                         fmt::print("session values, JIT modules, and history "
                                    "cleared\n");
@@ -86,11 +85,11 @@ namespace
                     return 0;
                 case ReplCommandKind::TypeMissingExpression:
                     fmt::print(stderr,
-                               "vxsi: :type expects a Visual X# expression\n");
+                               "tali: :type expects a Tala expression\n");
                     continue;
                 case ReplCommandKind::Unknown:
                     fmt::print(stderr,
-                               "vxsi: unknown REPL command '{}'; use :help\n",
+                               "tali: unknown REPL command '{}'; use :help\n",
                                line);
                     continue;
             }
@@ -100,7 +99,7 @@ namespace
                 || result.status == CellStatus::Void)
                 fmt::print("{}\n", result.text);
             else
-                fmt::print(stderr, "vxsi: {}\n", result.text);
+                fmt::print(stderr, "tali: {}\n", result.text);
         }
     }
 } // namespace
@@ -114,8 +113,8 @@ namespace
 auto
 main(int argc, char **argv) -> int
 {
-    // Cells are compiled on the compiler stack, as sources are in `vxs`.
-    return Visual::XSharp::Support::RunOnCompilerStack([argc, argv] {
+    // Cells are compiled on the compiler stack, as sources are in `talac`.
+    return Progmasoft::Tala::Support::RunOnCompilerStack([argc, argv] {
         return RunMain(argc, argv);
     });
 }
@@ -125,7 +124,7 @@ namespace
     auto
     RunMain(int argc, char **argv) -> int
     {
-        using namespace Visual::XSharp::Interactive;
+        using namespace Progmasoft::Tala::Interactive;
         const auto request = ParseArguments(argc, argv);
         switch (request.kind)
         {
@@ -135,7 +134,7 @@ namespace
                 PrintHelp();
                 return 0;
             case RequestKind::Error:
-                fmt::print(stderr, "vxsi: {}\n", request.diagnostic);
+                fmt::print(stderr, "tali: {}\n", request.diagnostic);
                 return 2;
             case RequestKind::Evaluate:
             {
@@ -144,7 +143,7 @@ namespace
                 if (result.status != CellStatus::Value
                     && result.status != CellStatus::Void)
                 {
-                    fmt::print(stderr, "vxsi: {}\n", result.text);
+                    fmt::print(stderr, "tali: {}\n", result.text);
                     return 1;
                 }
                 fmt::print("{}\n", result.text);

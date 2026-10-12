@@ -15,8 +15,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/crossplatform"
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/repository"
+	"github.com/Progmasoft/tala/helpers/internal/crossplatform"
+	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"github.com/spf13/cobra"
 )
 

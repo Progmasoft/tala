@@ -31,7 +31,7 @@ propagation, and fixed-point orchestration.
 
 ```powershell
 Set-Location Compiler
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks --benchmark-options="--match prefix Core/LoopIntegerFacts --time-limit 0.1"
+cabal bench tala-core:core-benches --enable-benchmarks --benchmark-options="--match prefix Core/LoopIntegerFacts --time-limit 0.1"
 ```
 
 ## Measurements

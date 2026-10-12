@@ -12,10 +12,10 @@
 #include <type_traits>
 #include <variant>
 
+#include "Progmasoft/Tala/Core/Scalar.hpp"
 #include "Value.hpp"
-#include "Visual/XSharp/Core/Scalar.hpp"
 
-namespace Visual::XSharp::Interactive::Runtime
+namespace Progmasoft::Tala::Interactive::Runtime
 {
     namespace
     {
@@ -80,8 +80,7 @@ namespace Visual::XSharp::Interactive::Runtime
     SourceBinding(const Backend::LLVM::JitValue &value)
         -> std::optional<std::string>
     {
-        const auto description
-            = visual_xsharp::core::describe_scalar(value.type);
+        const auto description = tala::core::describe_scalar(value.type);
         if (!description)
             return std::nullopt;
 
@@ -91,25 +90,25 @@ namespace Visual::XSharp::Interactive::Runtime
                 if constexpr (std::is_same_v<Value, bool>)
                 {
                     if (description->family
-                        != visual_xsharp::core::ScalarFamily::Boolean)
+                        != tala::core::ScalarFamily::Boolean)
                         return std::nullopt;
-                    return fmt::format("bool vxsiPrevious = {};",
+                    return fmt::format("bool taliPrevious = {};",
                                        payload ? "true" : "false");
                 }
                 else if constexpr (std::is_same_v<Value, char32_t>)
                 {
                     if (description->family
-                        != visual_xsharp::core::ScalarFamily::Character)
+                        != tala::core::ScalarFamily::Character)
                         return std::nullopt;
                     const auto literal = CharacterLiteral(payload);
                     if (!literal)
                         return std::nullopt;
-                    return fmt::format("char vxsiPrevious = {};", *literal);
+                    return fmt::format("char taliPrevious = {};", *literal);
                 }
                 else if constexpr (std::is_same_v<Value, std::int64_t>)
                 {
                     if (description->family
-                            != visual_xsharp::core::ScalarFamily::SignedInteger
+                            != tala::core::ScalarFamily::SignedInteger
                         || description->bit_width > 64U)
                         return std::nullopt;
                     if (description->bit_width < 64U)
@@ -119,35 +118,34 @@ namespace Visual::XSharp::Interactive::Runtime
                         if (payload < -limit || payload >= limit)
                             return std::nullopt;
                     }
-                    return fmt::format("{} vxsiPrevious = {};",
+                    return fmt::format("{} taliPrevious = {};",
                                        description->spelling,
                                        IntegerText(payload));
                 }
                 else if constexpr (std::is_same_v<Value, std::uint64_t>)
                 {
                     if (description->family
-                            != visual_xsharp::core::ScalarFamily::
-                                UnsignedInteger
+                            != tala::core::ScalarFamily::UnsignedInteger
                         || description->bit_width > 64U)
                         return std::nullopt;
                     if (description->bit_width < 64U
                         && payload >= (std::uint64_t{ 1 }
                                        << description->bit_width))
                         return std::nullopt;
-                    return fmt::format("{} vxsiPrevious = {};",
+                    return fmt::format("{} taliPrevious = {};",
                                        description->spelling,
                                        IntegerText(payload));
                 }
                 else if constexpr (std::is_same_v<Value, double>)
                 {
                     if (description->family
-                        != visual_xsharp::core::ScalarFamily::Floating)
+                        != tala::core::ScalarFamily::Floating)
                         return std::nullopt;
                     auto literal
                         = FloatingText(payload, description->bit_width);
                     if (!literal)
                         return std::nullopt;
-                    return fmt::format("{} vxsiPrevious = {};",
+                    return fmt::format("{} taliPrevious = {};",
                                        description->spelling,
                                        *literal);
                 }
@@ -182,17 +180,17 @@ namespace Visual::XSharp::Interactive::Runtime
     }
 
     auto
-    DisplayType(const visual_xsharp::core::Type &type) -> std::string
+    DisplayType(const tala::core::Type &type) -> std::string
     {
-        if (type.kind == visual_xsharp::core::Type::Kind::Unit)
+        if (type.kind == tala::core::Type::Kind::Unit)
             return "void";
-        if (const auto scalar = visual_xsharp::core::describe_scalar(type))
+        if (const auto scalar = tala::core::describe_scalar(type))
             return std::string(scalar->spelling);
-        if (type.kind == visual_xsharp::core::Type::Kind::String)
+        if (type.kind == tala::core::Type::Kind::String)
             return "String";
-        if (type.kind == visual_xsharp::core::Type::Kind::Function)
+        if (type.kind == tala::core::Type::Kind::Function)
             return "function";
-        if (type.kind == visual_xsharp::core::Type::Kind::Named)
+        if (type.kind == tala::core::Type::Kind::Named)
         {
             std::string name;
             for (const auto &part : type.name)
@@ -202,14 +200,14 @@ namespace Visual::XSharp::Interactive::Runtime
                 for (const auto scalar : part)
                 {
                     if (scalar > 0x7fU)
-                        return "named Visual X# type";
+                        return "named Tala type";
                     name.push_back(static_cast<char>(scalar));
                 }
             }
             if (!type.templateArguments.empty())
                 name.append("<...>");
-            return name.empty() ? "named Visual X# type" : name;
+            return name.empty() ? "named Tala type" : name;
         }
         return "unknown";
     }
-} // namespace Visual::XSharp::Interactive::Runtime
+} // namespace Progmasoft::Tala::Interactive::Runtime

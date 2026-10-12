@@ -6,19 +6,19 @@
 #include <string>
 #include <string_view>
 
-#include "Visual/XSharp/Interactive/ReplInput.hpp"
+#include "Progmasoft/Tala/Interactive/ReplInput.hpp"
 
 namespace
 {
-    using Visual::XSharp::Interactive::InputLineStatus;
-    using Visual::XSharp::Interactive::ParseReplCommand;
-    using Visual::XSharp::Interactive::ReadInputLine;
-    using Visual::XSharp::Interactive::ReplCommandKind;
+    using Progmasoft::Tala::Interactive::InputLineStatus;
+    using Progmasoft::Tala::Interactive::ParseReplCommand;
+    using Progmasoft::Tala::Interactive::ReadInputLine;
+    using Progmasoft::Tala::Interactive::ReplCommandKind;
 } // namespace
 
 TEST_CASE(
     "REPL input accepts the exact byte bound and preserves following lines",
-    "[vxsi][input][limits]")
+    "[tali][input][limits]")
 {
     std::istringstream input("1234\nnext\n");
     std::string line;
@@ -31,7 +31,7 @@ TEST_CASE(
 }
 
 TEST_CASE("REPL input drains overlong lines rather than exposing their suffix",
-          "[vxsi][input][recovery]")
+          "[tali][input][recovery]")
 {
     std::istringstream input("12345\nnext\n");
     std::string line;
@@ -43,7 +43,7 @@ TEST_CASE("REPL input drains overlong lines rather than exposing their suffix",
 }
 
 TEST_CASE("REPL input reports an oversized final line at EOF",
-          "[vxsi][input][eof]")
+          "[tali][input][eof]")
 {
     std::istringstream input("12345");
     std::string line;
@@ -54,7 +54,7 @@ TEST_CASE("REPL input reports an oversized final line at EOF",
 }
 
 TEST_CASE("REPL input delivers an unterminated final line exactly once",
-          "[vxsi][input][eof]")
+          "[tali][input][eof]")
 {
     std::istringstream input("last expression");
     std::string line;
@@ -65,7 +65,7 @@ TEST_CASE("REPL input delivers an unterminated final line exactly once",
 }
 
 TEST_CASE("REPL input limits count UTF-8 bytes without returning partial lines",
-          "[vxsi][input][utf8]")
+          "[tali][input][utf8]")
 {
     std::istringstream input("\xc3\xa9\nnext\n");
     std::string line;
@@ -77,7 +77,7 @@ TEST_CASE("REPL input limits count UTF-8 bytes without returning partial lines",
 }
 
 TEST_CASE("REPL commands are exact and preserve source text after type",
-          "[vxsi][commands]")
+          "[tali][commands]")
 {
     REQUIRE(ParseReplCommand(":help").kind == ReplCommandKind::Help);
     REQUIRE(ParseReplCommand(":history").kind == ReplCommandKind::History);
@@ -102,7 +102,7 @@ TEST_CASE("REPL commands are exact and preserve source text after type",
 
 TEST_CASE("REPL source lines are forwarded byte-for-byte and are not mistaken "
           "for commands",
-          "[vxsi][commands]")
+          "[tali][commands]")
 {
     const auto expression = ParseReplCommand("  5 + 5  ");
     REQUIRE(expression.kind == ReplCommandKind::Expression);

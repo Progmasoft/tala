@@ -1,3 +1,0 @@
--- This file is deliberately invalid. The project-relative exclusion policy
--- must prune it before lexing or parsing begins.
-this is not Visual X# source

@@ -36,15 +36,15 @@ func seedNames(t *testing.T, corpus string) []string {
 
 func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 	repository := t.TempDir()
-	writeSource(t, repository, "Examples/Hello/Hello.vxs", "namespace Hello;")
-	writeSource(t, repository, "Spec/Language/Sample.VXS", "namespace Sample;")
-	writeSource(t, repository, "Compiler/Driver/Tests/Fixtures/Source/source/a.vxs", "namespace A;")
-	writeSource(t, repository, "Analyzer/Tests/Data/b.vxs", "namespace B;")
+	writeSource(t, repository, "Examples/Hello/Hello.tala", "namespace Hello;")
+	writeSource(t, repository, "Spec/Language/Sample.TALA", "namespace Sample;")
+	writeSource(t, repository, "Talac/Driver/Tests/Fixtures/Source/source/a.tala", "namespace A;")
+	writeSource(t, repository, "Ecosystem/tala-analyzer/Tests/Data/b.tala", "namespace B;")
 	// Not a source, outside the roots, empty, and longer than the target reads.
 	writeSource(t, repository, "Examples/Hello/README.md", "namespace Hello;")
-	writeSource(t, repository, "helpers/c.vxs", "namespace C;")
-	writeSource(t, repository, "Examples/Empty/Empty.vxs", "")
-	writeSource(t, repository, "Examples/Long/Long.vxs", strings.Repeat("-", 65))
+	writeSource(t, repository, "helpers/c.tala", "namespace C;")
+	writeSource(t, repository, "Examples/Empty/Empty.tala", "")
+	writeSource(t, repository, "Examples/Long/Long.tala", strings.Repeat("-", 65))
 
 	corpus := t.TempDir()
 	held, err := syncRepositorySources(repository, corpus, 64)
@@ -56,7 +56,7 @@ func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 		t.Fatalf("held %d seeds in %v, want the four sources under the roots", held, names)
 	}
 	for _, name := range names {
-		if !strings.HasPrefix(name, "repository-") || !strings.HasSuffix(name, ".vxs") {
+		if !strings.HasPrefix(name, "repository-") || !strings.HasSuffix(name, ".tala") {
 			t.Fatalf("seed %q is not named after its content", name)
 		}
 	}
@@ -64,9 +64,9 @@ func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 
 func TestRepositorySourcesAreAddedOnceAndNeverReplaced(t *testing.T) {
 	repository := t.TempDir()
-	writeSource(t, repository, "Examples/Hello/Hello.vxs", "namespace Hello;")
+	writeSource(t, repository, "Examples/Hello/Hello.tala", "namespace Hello;")
 	// The same text in two places is one seed.
-	writeSource(t, repository, "Spec/Language/Hello.vxs", "namespace Hello;")
+	writeSource(t, repository, "Spec/Language/Hello.tala", "namespace Hello;")
 	corpus := t.TempDir()
 	// What a campaign learned stays whatever the repository holds.
 	learned := filepath.Join(corpus, "0123456789abcdef")
@@ -87,7 +87,7 @@ func TestRepositorySourcesAreAddedOnceAndNeverReplaced(t *testing.T) {
 	}
 
 	// A source that changes adds a seed; the seed of its old text stays.
-	writeSource(t, repository, "Examples/Hello/Hello.vxs", "namespace Changed;")
+	writeSource(t, repository, "Examples/Hello/Hello.tala", "namespace Changed;")
 	if _, err := syncRepositorySources(repository, corpus, 1024); err != nil {
 		t.Fatal(err)
 	}

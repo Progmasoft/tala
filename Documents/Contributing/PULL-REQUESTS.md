@@ -4,7 +4,7 @@
 # Prepare a pull request
 
 External contributors normally push a topic branch to their own fork and open a PR against
-`Progmasoft/visual-xsharp:main`. The repository's protected `main` branch is not a request to force-push or to bypass
+`Progmasoft/tala:main`. The repository's protected `main` branch is not a request to force-push or to bypass
 review; it prevents branch deletion and non-fast-forward pushes. A PR is the practical way for a contributor without
 direct write access to submit a change.
 

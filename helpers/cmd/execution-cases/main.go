@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/executioncases"
+	"github.com/Progmasoft/tala/helpers/internal/executioncases"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ func newCommand(output io.Writer, problems io.Writer) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "execution-cases",
 		Short: "Generate and check the execution test tables",
-		Long: `The cases under Compiler/Fuzzing/Cases own the programs that the Haskell
+		Long: `The cases under Talac/Fuzzing/Cases own the programs that the Haskell
 frontend tests run in a reference evaluator and that source_execution_smoke
 runs through LLVM. This command writes both tables from those files.`,
 		SilenceUsage:  true,

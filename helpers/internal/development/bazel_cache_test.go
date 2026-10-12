@@ -12,7 +12,7 @@ import (
 func TestBazelDiskCacheIsLocalOptionalAndAbsolute(t *testing.T) {
 	root := t.TempDir()
 	cache := func() (string, error) { return root, nil }
-	if directory, enabled := bazelDiskCacheDirectory("", "", cache); !enabled || directory != filepath.Join(root, "visual-xsharp", "bazel-disk-cache") {
+	if directory, enabled := bazelDiskCacheDirectory("", "", cache); !enabled || directory != filepath.Join(root, "tala", "bazel-disk-cache") {
 		t.Fatalf("default cache: %q, %v", directory, enabled)
 	}
 	// CI owns its cache through the workflow; a developer may opt out.
@@ -35,17 +35,17 @@ func TestBazelDiskCacheIsLocalOptionalAndAbsolute(t *testing.T) {
 
 func TestCachedBuildOnlyExtendsBuildCommands(t *testing.T) {
 	t.Setenv("CI", "")
-	t.Setenv("VXS_BAZEL_DISK_CACHE", t.TempDir())
-	build := cachedBuild([]string{"build", "--config=asan-linux", "//Compiler/Cli:vxs"})
-	if len(build) != 5 || build[0] != "build" || build[3] != "--config=asan-linux" || build[4] != "//Compiler/Cli:vxs" {
+	t.Setenv("TALA_BAZEL_DISK_CACHE", t.TempDir())
+	build := cachedBuild([]string{"build", "--config=asan-linux", "//Talac/Cli:talac"})
+	if len(build) != 5 || build[0] != "build" || build[3] != "--config=asan-linux" || build[4] != "//Talac/Cli:talac" {
 		t.Fatalf("build arguments were reordered or dropped: %v", build)
 	}
 	clean := []string{"clean", "--expunge"}
 	if got := cachedBuild(clean); len(got) != 2 {
 		t.Fatalf("non-build command changed: %v", got)
 	}
-	t.Setenv("VXS_BAZEL_DISK_CACHE", "off")
-	if got := cachedBuild([]string{"build", "//Compiler/Cli:vxs"}); len(got) != 2 {
+	t.Setenv("TALA_BAZEL_DISK_CACHE", "off")
+	if got := cachedBuild([]string{"build", "//Talac/Cli:talac"}); len(got) != 2 {
 		t.Fatalf("disabled cache still added options: %v", got)
 	}
 }

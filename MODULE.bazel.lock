@@ -176,14 +176,14 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "//Compiler/Build/Bazel:llvm.bzl%llvm": {
+    "//Talac/Build/Bazel:llvm.bzl%llvm": {
       "general": {
-        "bzlTransitiveDigest": "d5n0dYsk+AgFJkyvMPDSSOLLwOjjLGJVSC3ypF4EO2w=",
-        "usagesDigest": "P+FRNaQA5bl9toCO/ZX58+54m9FcZovAzbpWgJtq8P0=",
+        "bzlTransitiveDigest": "OyOmiSyhZkmHoCehm/843yYfzXhOUcGQ001cytoFdKk=",
+        "usagesDigest": "7NtUmlJqTP71H1SkwDc/sXFoPFimszKJsQTBblXLYFI=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "llvm": {
-            "repoRuleId": "@@//Compiler/Build/Bazel:llvm.bzl%_llvm_repository",
+            "repoRuleId": "@@//Talac/Build/Bazel:llvm.bzl%_llvm_repository",
             "attributes": {}
           }
         }

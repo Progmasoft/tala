@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const watchdogRole = "VXS_WATCHDOG_TEST_ROLE"
+const watchdogRole = "TALA_WATCHDOG_TEST_ROLE"
 
 // TestMain lets the test binary stand in for a hung fuzz program: the parent
 // role starts a child that never exits and then blocks, like a smoke program
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 		if err := child.Start(); err != nil {
 			os.Exit(3)
 		}
-		if err := os.WriteFile(os.Getenv("VXS_WATCHDOG_TEST_PID"), []byte(strconv.Itoa(child.Process.Pid)), 0o600); err != nil {
+		if err := os.WriteFile(os.Getenv("TALA_WATCHDOG_TEST_PID"), []byte(strconv.Itoa(child.Process.Pid)), 0o600); err != nil {
 			os.Exit(4)
 		}
 		time.Sleep(10 * time.Minute)
@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 func TestWatchdogTerminatesTheWholeProcessTree(t *testing.T) {
 	pidFile := filepath.Join(t.TempDir(), "child.pid")
 	t.Setenv(watchdogRole, "parent")
-	t.Setenv("VXS_WATCHDOG_TEST_PID", pidFile)
+	t.Setenv("TALA_WATCHDOG_TEST_PID", pidFile)
 	command, finish := watchedCommandWithin(3, os.Args[0], nil)
 	started := time.Now()
 	output, runErr := command.CombinedOutput()

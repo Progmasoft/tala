@@ -65,29 +65,29 @@ coverage:
 flags:
   haskell-frontend:
     paths:
-      - Compiler/Haskell/
+      - Talac/Haskell/
     carryforward: false
   native-cpp:
     paths:
-      - Compiler/
+      - Talac/
       - Interactive/
-      - "!Compiler/Haskell/"
+      - "!Talac/Haskell/"
     carryforward: true
   kotlin-project-system:
     paths:
-      - ProjectSystem/
+      - Tazel/
     carryforward: true
   kotlin-analyzer:
     paths:
-      - Analyzer/
+      - Ecosystem/tala-analyzer/
     carryforward: true
   kotlin-formatter:
     paths:
-      - Formatter/
+      - Ecosystem/talafmt/
     carryforward: true
   kotlin-linter:
     paths:
-      - Linter/
+      - Ecosystem/talalint/
     carryforward: true
   go-tools:
     paths:

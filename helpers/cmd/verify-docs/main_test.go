@@ -14,28 +14,28 @@ func TestParseCoverageRequiresHaddockSummary(t *testing.T) {
 
 func TestParseCoverageReadsAllModuleCounts(t *testing.T) {
 	t.Parallel()
-	output := "Haddock coverage:\n  100% ( 4 / 4) in 'Visual.XSharp.One'\n  50% ( 1 / 2) in 'Visual.XSharp.Two'\n"
+	output := "Haddock coverage:\n  100% ( 4 / 4) in 'Progmasoft.Tala.One'\n  50% ( 1 / 2) in 'Progmasoft.Tala.Two'\n"
 	coverage, err := parseCoverage(output)
 	if err != nil {
 		t.Fatalf("parseCoverage returned an error: %v", err)
 	}
-	if len(coverage) != 2 || coverage[0].module != "Visual.XSharp.One" || coverage[1].documented != 1 {
+	if len(coverage) != 2 || coverage[0].module != "Progmasoft.Tala.One" || coverage[1].documented != 1 {
 		t.Fatalf("unexpected parsed coverage: %#v", coverage)
 	}
 }
 
 func TestIncompletePublicCoverageFails(t *testing.T) {
 	t.Parallel()
-	coverage := []moduleCoverage{{module: "Visual.XSharp.AST", documented: 4, exported: 5}}
-	if err := requireCompleteCoverage("visual-xsharp-syntax", coverage); err == nil {
+	coverage := []moduleCoverage{{module: "Progmasoft.Tala.AST", documented: 4, exported: 5}}
+	if err := requireCompleteCoverage("tala-syntax", coverage); err == nil {
 		t.Fatal("expected undocumented public declarations to fail")
 	}
 }
 
 func TestCompletePublicCoveragePasses(t *testing.T) {
 	t.Parallel()
-	coverage := []moduleCoverage{{module: "Visual.XSharp.Lexer", documented: 5, exported: 5}}
-	if err := requireCompleteCoverage("visual-xsharp-syntax", coverage); err != nil {
+	coverage := []moduleCoverage{{module: "Progmasoft.Tala.Lexer", documented: 5, exported: 5}}
+	if err := requireCompleteCoverage("tala-syntax", coverage); err != nil {
 		t.Fatalf("complete API documentation was rejected: %v", err)
 	}
 }

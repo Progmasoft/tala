@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ---
-# Naming checks are intentionally absent. Visual X# retains its established
+# Naming checks are intentionally absent. Tala retains its established
 # PascalCase functions/types/namespaces and camelCase local-variable contract.
 #
 # Two checks are disabled because they contradict a repository convention:
@@ -71,7 +71,7 @@ ImplementationFileExtensions:
 # Bazel exposes the public headers under bazel-out/<config>/bin/_virtual_includes,
 # so that tree must be analyzed too. Fetched repositories live under an
 # external/ directory in both the source and the output tree and stay excluded.
-HeaderFilterRegex: '(^|.*/)(Compiler|Interactive|Benchmarks|Analyzer|Formatter|Linter|_virtual_includes)/.*'
+HeaderFilterRegex: '(^|.*/)(Talac|Interactive|Benchmarks|Ecosystem|_virtual_includes)/.*'
 ExcludeHeaderFilterRegex: '(^|.*/)(build|vendor|third_party|external|subprojects)/.*'
 SystemHeaders: false
 FormatStyle: file

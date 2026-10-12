@@ -1,0 +1,901 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Attributes
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. System.Attribute
+-- Demonstrates: Ordinary Tala attributes are real AARC reference types derived from:
+
+namespace System;
+
+public abstract class Attribute : Object {
+}
+
+-- ============================================================================
+-- Example 2: 1. System.Attribute
+-- Demonstrates: Examples:
+
+public class Serializable : Attribute {
+    public Serializable();
+}
+
+-- ============================================================================
+-- Example 3: 1. System.Attribute
+-- Demonstrates: Examples:
+
+public data class Range(int minimum, int maximum) : Attribute;
+
+-- ============================================================================
+-- Example 4: 1. System.Attribute
+-- Demonstrates: Examples:
+
+public enum class ApiState() : Attribute {
+    case Stable,
+    case Experimental,
+}
+
+-- ============================================================================
+-- Example 5: 1. System.Attribute
+-- Demonstrates: Examples:
+
+public object Marker : Attribute {
+}
+
+-- ============================================================================
+-- Example 6: 3. Attribute application
+-- Demonstrates: Example:
+
+[Serializable]
+class User {
+}
+
+-- ============================================================================
+-- Example 7: 3. Attribute application
+-- Demonstrates: Example:
+
+[Range(0, 100)]
+int volume;
+
+-- ============================================================================
+-- Example 8: 3. Attribute application
+-- Demonstrates: Example:
+
+#[Document("Generated bindings")]
+
+-- ============================================================================
+-- Example 9: 3. Attribute application
+-- Demonstrates: VALID:
+
+namespace App;
+
+class User {
+}
+
+#[Document("Late")]
+
+-- ============================================================================
+-- Example 10: 3. Attribute application
+-- Demonstrates: Also VALID:
+
+class User {
+    #[Document("File metadata")]
+
+    void Run() {
+    }
+}
+
+-- ============================================================================
+-- Example 11: 4. Attribute constructors
+-- Demonstrates: Ordinary class and data class attributes use their normal constructors.
+
+public data class Range(int minimum, int maximum) : Attribute;
+
+-- ============================================================================
+-- Example 12: 4. Attribute constructors
+-- Demonstrates: Usage:
+
+[Range(0, 100)]
+int volume;
+
+-- ============================================================================
+-- Example 13: 4. Attribute constructors
+-- Demonstrates: Attribute overload resolution uses normal Tala constructor rules, including
+--   labels and default arguments.
+
+public class Version : Attribute {
+    public Version(int major, int minor = 0);
+}
+
+-- ============================================================================
+-- Example 14: 4. Attribute constructors
+-- Demonstrates: Attribute overload resolution uses normal Tala constructor rules, including
+--   labels and default arguments.
+
+[Version(major: 2)]
+class Api {
+}
+
+-- ============================================================================
+-- Example 15: 4. Attribute constructors
+-- Demonstrates: If an applicable parameterless constructor exists, parentheses may be omitted.
+
+[Serializable]
+
+-- ============================================================================
+-- Example 16: 4. Attribute constructors
+-- Demonstrates: is equivalent to:
+
+[Serializable()]
+
+-- ============================================================================
+-- Example 17: 5. Compile-time arguments
+-- Demonstrates: VALID:
+
+[Range(0, 100)]
+[Document("User")]
+
+-- ============================================================================
+-- Example 18: 5. Compile-time arguments
+-- Demonstrates: INVALID:
+
+int maximum = ReadMaximum();
+
+[Range(0, maximum)]
+int volume;
+
+-- ============================================================================
+-- Example 19: 6. object and enum class attributes
+-- Demonstrates: An object attribute is already a singleton attribute instance.
+
+public object Serializable : Attribute {
+}
+
+[Serializable]
+class User {
+}
+
+-- ============================================================================
+-- Example 20: 6. object and enum class attributes
+-- Demonstrates: An enum class derived from Attribute exposes singleton cases as attribute instances.
+
+public enum class ApiState() : Attribute {
+    case Stable,
+    case Experimental,
+}
+
+[ApiState.Experimental]
+class NewApi {
+}
+
+-- ============================================================================
+-- Example 21: 7. Multiple attributes and FIFO order
+-- Demonstrates: Multiple attributes may be written separately:
+
+[First]
+[Second]
+[Third]
+class User {
+}
+
+-- ============================================================================
+-- Example 22: 7. Multiple attributes and FIFO order
+-- Demonstrates: or in one list:
+
+[First, Second, Third]
+class User {
+}
+
+-- ============================================================================
+-- Example 23: 7. Multiple attributes and FIFO order
+-- Demonstrates: Attribute metadata preserves source order using FIFO semantics.
+
+[Document("A")]
+[Document("B")]
+[Document("C")]
+class User {
+}
+
+-- ============================================================================
+-- Example 24: 7. Multiple attributes and FIFO order
+-- Demonstrates: The compiler does not automatically sort, merge, deduplicate, or reorder attribute
+
+[Document("A")]
+[Document("B")]
+[Document("A")]
+class User {
+}
+
+-- ============================================================================
+-- Example 25: 8. Repeatability and inheritance defaults
+-- Demonstrates: Example:
+
+[Document("Base type")]
+class Base {
+}
+
+class Child : Base {
+}
+
+-- ============================================================================
+-- Example 26: 9. System.Document
+-- Demonstrates: Because System is implicitly imported by default, normal source uses:
+
+[Document("User model")]
+class User {
+}
+
+-- ============================================================================
+-- Example 27: 10. Documentation comment desugaring
+-- Demonstrates: Single-line declaration documentation:
+
+--| yorum
+
+-- ============================================================================
+-- Example 28: 10. Documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+[Document("yorum")]
+
+-- ============================================================================
+-- Example 29: 10. Documentation comment desugaring
+-- Demonstrates: An empty declaration documentation comment:
+
+--|
+
+-- ============================================================================
+-- Example 30: 10. Documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+[Document("")]
+
+-- ============================================================================
+-- Example 31: 10. Documentation comment desugaring
+-- Demonstrates: Multiple comments remain separate FIFO attributes:
+
+--| A
+--| B
+class User {
+}
+
+-- ============================================================================
+-- Example 32: 10. Documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+[Document("A")]
+[Document("B")]
+class User {
+}
+
+-- ============================================================================
+-- Example 33: 10. Documentation comment desugaring
+-- Demonstrates: A multiline declaration documentation comment:
+
+--[[|
+yorum
+yorum
+]]
+
+-- ============================================================================
+-- Example 34: 10. Documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+[Document("yorum%nyorum")]
+
+-- ============================================================================
+-- Example 35: 11. File documentation comment desugaring
+-- Demonstrates: Single-line file documentation:
+
+--! yorum
+
+-- ============================================================================
+-- Example 36: 11. File documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+#[Document("yorum")]
+
+-- ============================================================================
+-- Example 37: 11. File documentation comment desugaring
+-- Demonstrates: Empty file documentation:
+
+--!
+
+-- ============================================================================
+-- Example 38: 11. File documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+#[Document("")]
+
+-- ============================================================================
+-- Example 39: 11. File documentation comment desugaring
+-- Demonstrates: Multiline file documentation:
+
+--[[!
+yorum
+yorum
+]]
+
+-- ============================================================================
+-- Example 40: 11. File documentation comment desugaring
+-- Demonstrates: is equivalent to:
+
+#[Document("yorum%nyorum")]
+
+-- ============================================================================
+-- Example 41: 12. #[NoImplicitUsingSystem]
+-- Demonstrates: NoImplicitUsingSystem is a compiler-known special file-level attribute.
+
+#[NoImplicitUsingSystem]
+
+-- ============================================================================
+-- Example 42: 12. #[NoImplicitUsingSystem]
+-- Demonstrates: Normally this is sufficient:
+
+[Document("User")]
+
+-- ============================================================================
+-- Example 43: 12. #[NoImplicitUsingSystem]
+-- Demonstrates: With #[NoImplicitUsingSystem], explicit qualification may be required:
+
+#[NoImplicitUsingSystem]
+
+[System.Document("User")]
+class User {
+}
+
+-- ============================================================================
+-- Example 44: 13. Namespace
+-- Demonstrates: Use:
+
+using System.Reflection;
+
+-- ============================================================================
+-- Example 45: 15. Type
+-- Demonstrates: Example:
+
+using System.Reflection;
+
+Type type = TypeInfo.typeof(User);
+
+-- ============================================================================
+-- Example 46: 19. GetCustomAttribute<T>()
+-- Demonstrates: A reflection target may retrieve the first matching ordinary attribute instance.
+
+using System.Reflection;
+
+Type type = TypeInfo.typeof(User);
+
+CustomAttribute attr =
+    type.GetCustomAttribute<CustomAttribute>();
+
+-- ============================================================================
+-- Example 47: 19. GetCustomAttribute<T>()
+-- Demonstrates: If multiple matching attributes exist, the first effective FIFO match is returned.
+
+[CustomAttribute("A")]
+[CustomAttribute("B")]
+class User {
+}
+
+-- ============================================================================
+-- Example 48: 20. GetCustomAttributes<T>()
+-- Demonstrates: All matching ordinary attributes may be retrieved with:
+
+Array<CustomAttribute> attrs =
+    type.GetCustomAttributes<CustomAttribute>();
+
+-- ============================================================================
+-- Example 49: 20. GetCustomAttributes<T>()
+-- Demonstrates: For:
+
+[CustomAttribute("A")]
+[CustomAttribute("B")]
+[CustomAttribute("C")]
+class User {
+}
+
+-- ============================================================================
+-- Example 50: 22. System.Reflection.AttributeUsage
+-- Demonstrates: AttributeUsage is an ordinary standard attribute in System.Reflection whose semantics
+--   are recognized by the compiler.
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Class,
+    allowMultiple: false,
+    inherited: false
+)]
+public data class Serializable() : Attribute;
+
+-- ============================================================================
+-- Example 51: 22. System.Reflection.AttributeUsage
+-- Demonstrates: VALID:
+
+[AttributeUsage(AttributeTargets.Method)]
+public data class Benchmark() : Attribute;
+
+-- ============================================================================
+-- Example 52: 22. System.Reflection.AttributeUsage
+-- Demonstrates: INVALID:
+
+[AttributeUsage(AttributeTargets.Method)]
+class User {
+}
+
+-- ============================================================================
+-- Example 53: 23. AttributeUsage defaults
+-- Demonstrates: Therefore:
+
+public data class Tag(String name) : Attribute;
+
+-- ============================================================================
+-- Example 54: 24. allowMultiple
+-- Demonstrates: allowMultiple controls repeated application of the same attribute type to the same
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Method,
+    allowMultiple: false
+)]
+public data class EntryPoint() : Attribute;
+
+-- ============================================================================
+-- Example 55: 24. allowMultiple
+-- Demonstrates: Then:
+
+[EntryPoint]
+[EntryPoint]
+void Run() {
+}
+
+-- ============================================================================
+-- Example 56: 25. inherited
+-- Demonstrates: inherited controls whether reflection may obtain an attribute through a supported
+--   inheritance or override chain.
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Class,
+    inherited: true
+)]
+public data class Marker(String name) : Attribute;
+
+-- ============================================================================
+-- Example 57: 25. inherited
+-- Demonstrates: inherited controls whether reflection may obtain an attribute through a supported
+--   inheritance or override chain.
+
+[Marker("Base")]
+class Base {
+}
+
+class Child : Base {
+}
+
+-- ============================================================================
+-- Example 58: 25. inherited
+-- Demonstrates: For overridable members, inherited: true follows the override chain.
+
+class Base {
+    [Marker("Base.Run")]
+    public virtual void Run() {
+    }
+}
+
+class Child : Base {
+    public void Run() override {
+    }
+}
+
+-- ============================================================================
+-- Example 59: 26. AttributeTargets
+-- Demonstrates: Example:
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Class |
+    AttributeTargets.DataClass |
+    AttributeTargets.Object
+)]
+public data class Service() : Attribute;
+
+-- ============================================================================
+-- Example 60: 27. Target syntax summary
+-- Demonstrates: Normal application:
+
+[Attribute]
+class User {
+}
+
+-- ============================================================================
+-- Example 61: 27. Target syntax summary
+-- Demonstrates: Parameter application:
+
+public void SetName([NonNull] String name) {
+}
+
+-- ============================================================================
+-- Example 62: 27. Target syntax summary
+-- Demonstrates: Return application:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+[return: NonNull]
+public String FindName() {
+    ...
+}
+
+-- ============================================================================
+-- Example 63: 27. Target syntax summary
+-- Demonstrates: File application:
+
+#[Document("File")]
+
+-- ============================================================================
+-- Example 64: 28. [Fact]
+-- Demonstrates: [Fact] is a compiler-known special test attribute.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+[Fact]
+void ParseInteger() {
+    ...
+}
+
+-- ============================================================================
+-- Example 65: 28. [Fact]
+-- Demonstrates: Named form:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+[Fact("Integer parsing works")]
+void ParseInteger() {
+    ...
+}
+
+-- ============================================================================
+-- Example 66: 29. #if Fact
+-- Demonstrates: Fact is also a conditional-compilation condition for test-only code.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#if Fact
+
+[Fact]
+void TestHelper() {
+    ...
+}
+
+#endif
+
+-- ============================================================================
+-- Example 67: 31. extern
+-- Demonstrates: External method declarations use extern.
+
+public static extern int Add(_ int a, _ int b);
+
+-- ============================================================================
+-- Example 68: 31. extern
+-- Demonstrates: INVALID:
+
+public static extern int Add(_ int a, _ int b) {
+    a + b
+}
+
+-- ============================================================================
+-- Example 69: 32. [DllImport(...)]
+-- Demonstrates: DllImport binds an external method to a dynamic library.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Native {
+    [DllImport("user32.dll")]
+    public static extern int MessageBox(...);
+}
+
+-- ============================================================================
+-- Example 70: 32. [DllImport(...)]
+-- Demonstrates: INVALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Native {
+    [DllImport("user32.dll")]
+    public static int MessageBox(...) {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 71: 33. [DylibImport(...)]
+-- Demonstrates: DylibImport binds an external method through the corresponding dylib/native-library
+
+class Native {
+    [DylibImport("libExample.dylib")]
+    public static extern int Calculate(_ int value);
+}
+
+-- ============================================================================
+-- Example 72: 34. [C]
+-- Demonstrates: [C] is a compiler-known attribute for the C ABI/interoperability surface.
+
+class Math {
+    [C]
+    public static int Add(_ int left, _ int right) {
+        left + right
+    }
+}
+
+-- ============================================================================
+-- Example 73: 34. [C]
+-- Demonstrates: C-compatible value declarations may also participate where Ffi.md permits them.
+
+[C]
+data Point {
+    int x;
+    int y;
+}
+
+-- ============================================================================
+-- Example 74: 35. [ObjectiveC]
+-- Demonstrates: [ObjectiveC] exposes an eligible declaration to the Objective-C
+--   runtime/interoperability surface.
+
+[ObjectiveC]
+class User {
+}
+
+-- ============================================================================
+-- Example 75: 35. [ObjectiveC]
+-- Demonstrates: Members may be exposed explicitly:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class User {
+    [ObjectiveC]
+    public void Print() {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 76: 36. [Swift]
+-- Demonstrates: [Swift] exposes an eligible declaration to the Swift interoperability surface.
+
+[Swift]
+data class User(String name, int age);
+
+-- ============================================================================
+-- Example 77: 36. [Swift]
+-- Demonstrates: Members may be exposed explicitly:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class User {
+    [Swift]
+    public String Name() {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 78: 37. [NoMangle]
+-- Demonstrates: [NoMangle] is a compiler-known special attribute controlling linker-symbol naming.
+
+[C]
+[NoMangle]
+public static int Add(_ int a, _ int b) {
+    a + b
+}
+
+-- ============================================================================
+-- Example 79: 37. [NoMangle]
+-- Demonstrates: It may also participate in external FFI symbol matching where Ffi.md permits it.
+
+class Native {
+    [DllImport("native.dll")]
+    [NoMangle]
+    public static extern int Add(_ int a, _ int b);
+}
+
+-- ============================================================================
+-- Example 80: 40. System.Worlds.ObjectiveC
+-- Demonstrates: System.Worlds.ObjectiveC is a compiler-known special interop surface, not a built-in language namespace.
+
+using System.Worlds.ObjectiveC;
+
+NSString name;
+NSURL url;
+NSProcessInfo processInfo;
+
+-- ============================================================================
+-- Example 81: 41. System.Worlds.Swift
+-- Demonstrates: System.Worlds.Swift is a compiler-known special interop surface, not a built-in language namespace.
+
+using System.Worlds.Swift;
+
+SwiftInt count;
+SwiftString name;
+SwiftBool enabled;
+
+-- ============================================================================
+-- Example 82: 43. using a C module
+-- Demonstrates: A C module defined by module.modulemap is imported with:
+
+using MyLibrary;
+
+-- ============================================================================
+-- Example 83: 43. using a C module
+-- Demonstrates: Tala source:
+
+-- Foo.tala
+using MyLibrary;
+
+-- ============================================================================
+-- Example 84: 44. Ordinary repeatable attribute
+-- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
+
+public data class Tag(String name) : Attribute;
+
+[Tag("A")]
+[Tag("B")]
+class User {
+}
+
+-- ============================================================================
+-- Example 85: 45. Restricted attribute
+-- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Method,
+    allowMultiple: false,
+    inherited: false
+)]
+public data class Benchmark() : Attribute;
+
+class Tests {
+    [Benchmark]
+    public void Run() {
+    }
+}
+
+-- ============================================================================
+-- Example 86: 46. Documentation comments
+-- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
+
+--| A
+--| B
+class User {
+}
+
+-- ============================================================================
+-- Example 87: 46. Documentation comments
+-- Demonstrates: Equivalent:
+
+[Document("A")]
+[Document("B")]
+class User {
+}
+
+-- ============================================================================
+-- Example 88: 47. Reflection
+-- Demonstrates: Equivalent:
+
+using System.Reflection;
+
+Type type = TypeInfo.typeof(User);
+
+Document first =
+    type.GetCustomAttribute<Document>();
+
+Array<Document> all =
+    type.GetCustomAttributes<Document>();
+
+-- ============================================================================
+-- Example 89: 48. Test
+-- Demonstrates: Equivalent:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#if Fact
+
+[Fact("Integer parsing works")]
+void ParseInteger() {
+    ...
+}
+
+#endif
+
+-- ============================================================================
+-- Example 90: 49. Dynamic-library import
+-- Demonstrates: Equivalent:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Native {
+    [DllImport("user32.dll")]
+    public static extern int MessageBox(...);
+}
+
+-- ============================================================================
+-- Example 91: 50. C export
+-- Demonstrates: Equivalent:
+
+class Math {
+    [C]
+    [NoMangle]
+    public static int Add(_ int left, _ int right) {
+        left + right
+    }
+}
+
+-- ============================================================================
+-- Example 92: 51. Old ordinary attribute declaration form
+-- Demonstrates: Equivalent:
+
+attribute Serializable;
+
+-- ============================================================================
+-- Example 93: 52. Runtime attribute argument
+-- Demonstrates: Use a real System.Attribute-derived class, data class, enum class, or object.
+
+int maximum = ReadMaximum();
+
+[Range(0, maximum)]
+int volume;
+
+-- ============================================================================
+-- Example 94: 53. Non-repeatable duplicate
+-- Demonstrates: Given:
+
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Method,
+    allowMultiple: false
+)]
+public data class EntryPoint() : Attribute;
+
+-- ============================================================================
+-- Example 95: 53. Non-repeatable duplicate
+-- Demonstrates: this is INVALID:
+
+[EntryPoint]
+[EntryPoint]
+void Run() {
+}
+
+-- ============================================================================
+-- Example 96: 54. Wrong AttributeUsage target
+-- Demonstrates: this is INVALID:
+
+using System.Reflection;
+
+[AttributeUsage(AttributeTargets.Method)]
+class User {
+}
+
+-- ============================================================================
+-- Example 97: 55. DllImport without extern
+-- Demonstrates: INVALID because User is not an ordinary attribute type.
+
+class Native {
+    [DllImport("native.dll")]
+    public static int Add(_ int left, _ int right) {
+        left + right
+    }
+}
+
+-- ============================================================================
+-- Example 98: 56. extern with body
+-- Demonstrates: INVALID.
+
+public static extern int Add(_ int a, _ int b) {
+    a + b
+}
+
+-- ============================================================================
+-- Example 99: 57. Invalid NoMangle target
+-- Demonstrates: Applying:
+
+[NoMangle]

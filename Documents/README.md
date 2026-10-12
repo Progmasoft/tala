@@ -1,13 +1,13 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Visual X# documentation
+# Tala documentation
 
 This directory explains the repository as it exists today. It is intentionally separate from `Spec/`: the specification
 records language design, while these documents describe compiler architecture, supported workflows, implementation
 coverage, and contributor contracts.
 
-Visual X# is experimental. A documented design is not automatically an implemented feature. Every document uses the
+Tala is experimental. A documented design is not automatically an implemented feature. Every document uses the
 following vocabulary:
 
 - **connected** means the behavior is reachable through a supported command and covered by the owning test layer;
@@ -36,8 +36,8 @@ following vocabulary:
 | Exercise malformed compiler inputs | [Fuzzing](FUZZING.md) |
 | Place tests and fixtures | [Test ownership](TEST-OWNERSHIP.md) |
 | Measure compiler throughput | [Benchmarking](BENCHMARKING.md) and [recorded baselines](../Benchmarks/README.md) |
-| Use `vxs` | [CLI](CLI.md) |
-| Use or implement the REPL | [Visual X# Interactive](INTERACTIVE.md) |
+| Use `talac` | [CLI](CLI.md) |
+| Use or implement the REPL | [Tala Interactive](INTERACTIVE.md) |
 | Write `BUILD.kts` | [Project files](PROJECT_FILES.md) |
 | Understand per-source object and assembly outputs | [Project native artifacts](PROJECT-ARTIFACTS.md) |
 | Understand diagnostics and exit behavior | [Diagnostics](DIAGNOSTICS.md) |
@@ -88,13 +88,13 @@ following vocabulary:
 ## User and project set
 
 - [CLI](CLI.md) is the command and option reference. It also explains precedence and intentionally disconnected commands.
-- [Visual X# Interactive](INTERACTIVE.md) defines the REPL command, cell lifecycle, ORC boundary, result support, and known limits.
+- [Tala Interactive](INTERACTIVE.md) defines the REPL command, cell lifecycle, ORC boundary, result support, and known limits.
 - [Project files](PROJECT_FILES.md) documents discovery, source policy, entry selection, compiler settings, plugins,
   dependencies, publishing metadata, test suites, and the SQLite lockfile.
 - [Project native artifacts](PROJECT-ARTIFACTS.md) documents source ownership, per-file native emission, flattened output
   names, and safe batch replacement.
 - [Diagnostics](DIAGNOSTICS.md) describes error ownership, output streams, source positions, artifact safety, and exit status.
-- [Ecosystem tools](ECOSYSTEM.md) separates the compiler from Visual Analyzer, Visual Formatter, and Visual Linter.
+- [Ecosystem tools](ECOSYSTEM.md) separates the compiler from tala-analyzer, talafmt, and talalint.
 
 ## Developer set
 

@@ -20,7 +20,7 @@ target registers, calling conventions, object layout, or linker directives.
 A `CoreModule` contains:
 
 - one qualified namespace name;
-- the ordered, project-relative `.vxs` source catalog; and
+- the ordered, project-relative `.tala` source catalog; and
 - an ordered list of Core functions, each retaining its physical source owner.
 
 The current source driver emits one module per compiled namespace and selects
@@ -33,7 +33,7 @@ multi-module link unit are later semantic work. The optimizer does not merge
 namespaces or resolve an external name by spelling.
 
 Source identities use canonical project-relative slash paths and the exact
-`.vxs` extension. They are validated at the Core boundary and then carried
+`.tala` extension. They are validated at the Core boundary and then carried
 through CorePrep, Xpp, and Xmm. Closure lifting retains the enclosing source
 owner, so splitting native definitions never depends on reconstructing
 ownership from function names or namespace spellings. The wire field order and
@@ -71,13 +71,13 @@ Core reuses the resolved frontend `Type` model:
 - resolved type variables; and
 - `ErrorType`, which is forbidden in verified Core.
 
-Named scalar types keep their Visual X# spelling. Core does not replace `int`
+Named scalar types keep their Tala spelling. Core does not replace `int`
 with an LLVM integer width or encode `String` as host bytes. Type lowering is a
 later stage decision.
 
 Source `void` is checked before Core. At the current boundary, resultless
 functions use the historically named `unit` marker plus `CoreUnit` as the
-explicit return marker. Visual X# has no source-language `unit` type. Source-
+explicit return marker. Tala has no source-language `unit` type. Source-
 facing tools must spell the result `void` and keep this representation private.
 
 ### Template arguments
@@ -112,7 +112,7 @@ dependencies to a fixed point, and derives child-before-parent processing
 order. It does not claim that template declarations, constraints, packs, or
 lazy members are fully instantiated by the current frontend.
 
-The resulting demand graph is derived compiler state, not part of the `VXCR`
+The resulting demand graph is derived compiler state, not part of the `TACR`
 schema. `FrontendArtifacts` retains it beside Core for the later declaration
 cloner. Loading Core from disk reconstructs the same plan from structural type
 identity rather than trusting serialized queue identifiers.
@@ -240,7 +240,7 @@ inner transfer cannot accidentally jump to an outer loop.
 The update list of a classic `for` is that loop's continuation point, so the
 two transfers differ there. `CoreBreak` in an update list is valid and exits
 the loop after the statements before it. `CoreContinue` placed directly in an
-update list, including inside a `CoreIf` there, is rejected with `VXC1066`:
+update list, including inside a `CoreIf` there, is rejected with `TAC1066`:
 it has no later point of the same iteration to reach, and lowering it would
 jump back to the start of the update without testing the condition. A loop
 nested inside an update list has its own body and continuation point, so
@@ -260,7 +260,7 @@ what the source asks. The rule protects Core built or transformed by other
 means.
 
 A function that returns a value must not fall off the end of its body
-(`VXC1005`). A body does not when every path returns or runs into a loop
+(`TAC1005`). A body does not when every path returns or runs into a loop
 that cannot be left: one whose condition is the literal `true` and that no
 `CoreBreak` of its own body or update list leaves. A `CoreBreak` in a loop
 nested inside it leaves only that loop. The Haskell and the native verifier
@@ -304,10 +304,10 @@ the same loop shape:
   observable.
 
 `LoopLoweringTests.cpp`, `ShortCircuitLoweringTests.cpp`, and
-`ConditionalLoweringTests.cpp` under `Compiler/Core/Tests/` assert these edges
+`ConditionalLoweringTests.cpp` under `Talac/Core/Tests/` assert these edges
 exactly on the native adapter. `LoopExecutionTests.cpp`,
 `ShortCircuitExecutionTests.cpp`, and `ConditionalExecutionTests.cpp` under
-`Compiler/Backend/LLVM/Tests/` execute each form through CorePrep, Xpp, Xmm,
+`Talac/Backend/LLVM/Tests/` execute each form through CorePrep, Xpp, Xmm,
 and LLVM with both native optimizer settings and compare the result with host
 code; the short-circuit and conditional programs guard a division or a
 recursive call, so an eagerly evaluated operand traps or never returns instead
@@ -425,19 +425,19 @@ Two bounds keep the recursion within the stack. The frontend rejects a
 function body that nests statements more than 256 levels or expressions more
 than 1024 levels deep, with a source position, before Core exists. The
 native wire reader and writer bound statement bodies and expressions at 4096
-levels each, so Core from a file is bounded as well. `vxs`, `vxsi` and the
+levels each, so Core from a file is bounded as well. `talac`, `tali` and the
 fuzz programs run the pipeline on a thread with 256 MiB of reserved stack,
-`Visual/XSharp/Support/CompilerStack.hpp`, instead of the stack the
+`Tala/Support/CompilerStack.hpp`, instead of the stack the
 operating system gives the process, which is one megabyte on Windows. A
 program that hosts the pipeline on another thread must give it enough stack
 or accept a lower depth. The stack each stage uses per level is measured
-with `//Compiler/Fuzzing:source_stack_probe`, which compiles a source file
+with `//Talac/Fuzzing:source_stack_probe`, which compiles a source file
 and reports the stack the compilation committed, and
-with `//Compiler/Support/Tests:stack_probe`, which runs one stage on a stack
+with `//Talac/Support/Tests:stack_probe`, which runs one stage on a stack
 of a chosen size; the measurements are recorded in
 `Benchmarks/2026-10-04-Nesting-And-Chains.md`.
 
-`Visual.XSharp.Desugarer.Sequencing` and `Visual.XSharp.Desugarer.Branching`
+`Progmasoft.Tala.Desugarer.Sequencing` and `Progmasoft.Tala.Desugarer.Branching`
 hold these rules. Result slots are
 initialized with a neutral literal of their type that no path can observe.
 `AssignmentExpressionTests.hs`, `LoopExpressionTests.hs` and
@@ -462,7 +462,7 @@ inference to inspect an expression.
 
 `CoreLiteral` pairs a payload with its scalar type. Payload forms are:
 
-- arbitrary-precision host `Integer`, range-checked against the Visual X# type;
+- arbitrary-precision host `Integer`, range-checked against the Tala type;
 - exact floating source spelling, validated without host rounding;
 - Unicode scalar `String` content;
 - boolean; and
@@ -526,13 +526,13 @@ the one primitive whose arity depends on its first operand.
 - The type of the expression is the one the function returns: `String`,
   `bool` or no value.
 
-The catalog is `Visual.XSharp.RuntimeCall` in the frontend and
-`Visual/XSharp/Core/RuntimeCall.hpp` in the native stages; `ARTIFACT-WIRE.md`
+The catalog is `Progmasoft.Tala.RuntimeCall` in the frontend and
+`Tala/Core/RuntimeCall.hpp` in the native stages; `ARTIFACT-WIRE.md`
 lists its rows. A call that names no function, has the wrong number of
 arguments, an argument of a type its function does not take, or a type other
-than the function's result is rejected: `VXC1075` by the Core verifiers,
-`VXC0026` by the Haskell and `VXC1076` by the native CorePrep verifier,
-`VXP1048` by Xpp and `VXL1054` by Xmm.
+than the function's result is rejected: `TAC1075` by the Core verifiers,
+`TAC0026` by the Haskell and `TAC1076` by the native CorePrep verifier,
+`TAP1048` by Xpp and `TAL1054` by Xmm.
 
 A console write is an effect. The optimizer treats it as a call of a function
 it knows nothing about: it is not removed when nothing uses its result, not
@@ -541,9 +541,9 @@ else. The frontend produces the
 primitive for `System.Console` and for `+`, `==` and `\=` on strings;
 `CONSOLE-IO.md` says how.
 
-The Core verifiers reject any other operand of a remembering callable with `VXC1073`. The native
-CorePrep verifier reports `VXC1074` and the Haskell one `VXC0025`, the Xpp
-verifier `VXP1047` and the Xmm verifier `VXL1053`; each of the last four also
+The Core verifiers reject any other operand of a remembering callable with `TAC1073`. The native
+CorePrep verifier reports `TAC1074` and the Haskell one `TAC0025`, the Xpp
+verifier `TAP1047` and the Xmm verifier `TAL1053`; each of the last four also
 requires the result to have the operand's type. The optimizer does not fold
 the primitive, and `MemoizeTests.hs` pins that it neither repeats a remembered
 computation nor turns one remembering callable into two.
@@ -567,15 +567,15 @@ calls, traps, and non-termination do not happen.
 
 The verifier requires:
 
-- a test of `bool` or numeric type (`VXC1067`);
-- both arms to have exactly the result type (`VXC1068`, `VXC1069`); and
-- a `bool` or numeric result type (`VXC1070`).
+- a test of `bool` or numeric type (`TAC1067`);
+- both arms to have exactly the result type (`TAC1068`, `TAC1069`); and
+- a `bool` or numeric result type (`TAC1070`).
 
 The last rule is a storage rule, not a language rule. CorePrep materializes the
 result in one slot that both arms assign; a slot that held an owned value would
 need move and release rules that the backend does not define yet. The native
 verifier additionally rejects an in-memory conditional that does not carry
-exactly three operands (`VXC1071`); the wire reader cannot produce one.
+exactly three operands (`TAC1071`); the wire reader cannot produce one.
 
 Source `condition ? first : second` lowers to one `CoreConditional`. Source
 `left ?: fallback` lowers to
@@ -715,7 +715,7 @@ native Xpp lowering to reconstruct evaluation order.
 
 ## Wire representation
 
-Public `.core` files use the bounded `VXCR` contract documented in
+Public `.core` files use the bounded `TACR` contract documented in
 [Artifact wire](ARTIFACT-WIRE.md). The wire preserves:
 
 - qualified names and identifier spellings;

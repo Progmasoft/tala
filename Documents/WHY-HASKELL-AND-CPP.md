@@ -1,9 +1,9 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Why Visual X# Uses Haskell and C++
+# Why Tala Uses Haskell and C++
 
-Visual X# uses Haskell for its language frontend and C++20 for its native
+Tala uses Haskell for its language frontend and C++20 for its native
 compiler pipeline and LLVM backend. This is an intentional boundary, not a
 temporary comparison between languages.
 
@@ -30,9 +30,9 @@ language/runtime boundary around LLVM.
 
 ## Why a C11 ABI between them?
 
-The Haskell frontend is built as a shared library and loaded into `vxs`; it is
+The Haskell frontend is built as a shared library and loaded into `talac`; it is
 not a second frontend executable. The boundary is a small, versioned C ABI
-declared in `Compiler/Headers/Visual/XSharp/Frontend.h`. C is used only for
+declared in `Talac/Headers/Progmasoft/Tala/Frontend.h`. C is used only for
 that ABI contract. The implementation on each side remains Haskell or C++20.
 
 The ABI exchanges bounded byte spans and a synchronous output callback. The
@@ -44,7 +44,7 @@ pairs, payload kind, and size limits before consuming a result.
 
 This removes the extra frontend process and temporary Core hand-off file while
 keeping the language frontend independently testable. When a user explicitly
-requests a `.core` artifact, `vxs` writes that artifact as normal output; the
+requests a `.core` artifact, `talac` writes that artifact as normal output; the
 compiler does not create one merely to pass data between its own stages.
 
 ## Why not Rust?
@@ -62,7 +62,7 @@ small enough to audit.
 
 ## How the project controls memory-safety risk
 
-No single test technique proves a compiler memory-safe. Visual X# therefore
+No single test technique proves a compiler memory-safe. Tala therefore
 layers explicit boundaries and dynamic checks around native code:
 
 - Haskell owns frontend values; only validated, length-bounded wire bytes leave

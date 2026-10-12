@@ -78,7 +78,7 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Verify Windows toolchain
@@ -143,9 +143,9 @@ jobs:
       - name: Exercise native wire decoder mutations
         shell: pwsh
         run: |
-          bazel build //Compiler/Fuzzing:wire_fuzz_smoke
+          bazel build //Talac/Fuzzing:wire_fuzz_smoke
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & .\bazel-bin\Compiler\Fuzzing\wire_fuzz_smoke.exe
+          & .\bazel-bin\Talac\Fuzzing\wire_fuzz_smoke.exe
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   macos-clang:
@@ -196,7 +196,7 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Verify macOS toolchain
@@ -219,8 +219,8 @@ jobs:
       - name: Exercise native wire decoder mutations
         shell: bash
         run: |
-          bazel build //Compiler/Fuzzing:wire_fuzz_smoke
-          ./bazel-bin/Compiler/Fuzzing/wire_fuzz_smoke
+          bazel build //Talac/Fuzzing:wire_fuzz_smoke
+          ./bazel-bin/Talac/Fuzzing/wire_fuzz_smoke
 
       - name: Test native compiler with ${{ matrix.sanitizer }} sanitizer
         shell: bash

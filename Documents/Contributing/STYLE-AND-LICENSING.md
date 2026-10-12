@@ -8,14 +8,14 @@ pattern. This page gives external contributors the high-impact rules that format
 
 ## Names and file ownership
 
-- The canonical C++ namespace root is `Visual::XSharp`; classes, functions, and namespace components use PascalCase.
+- The canonical C++ namespace root is `Tala`; classes, functions, and namespace components use PascalCase.
   Locals use camelCase, constants `kPascalCase`, and macros `UPPER_SNAKE_CASE`.
 - C++20 implementation files use `.cpp`; C++-only headers use `.hpp`. A small C11 `.h` is allowed only for an actual
   stable external ABI such as AARC, with `extern "C"` guards for C++ callers and a C++20 implementation. Do not add a
   project-owned `.c` runtime or revive the retired C compiler route.
-- Public compiler headers live under `Compiler/Headers/Visual/XSharp/` and are included as `Visual/XSharp/...`.
-  Haskell module names follow their existing `Visual.XSharp.*` ownership; renewed Kotlin package names use
-  `com.progmasoft.visual.xsharp.*`.
+- Public compiler headers live under `Talac/Headers/Progmasoft/Tala/` and are included as `Tala/...`.
+  Haskell module names follow their existing `Tala.*` ownership; renewed Kotlin package names use
+  `com.progmasoft.tala.*`.
 - Tests and fixtures live next to their owning component, not in a new root `tests/` bucket. Build targets list their
   owned sources explicitly; do not add a broad recursive glob merely to avoid editing a BUILD file.
 - The repository's Go developer tooling lives in `helpers/`. Do not add a second build graph or a new scripting language for

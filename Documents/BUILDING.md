@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Building Visual X#
+# Building Tala
 
 The repository has one native build graph: Bazel. The portable Go developer command provides host detection, toolchain
 diagnostics, native-suite execution, and sanitizer selection without becoming a second graph. Cabal and Gradle remain the
@@ -9,7 +9,7 @@ direct build interfaces for their Haskell and Kotlin ownership boundaries.
 
 ## Official hosts
 
-Official Visual X# development is supported on:
+Official Tala development is supported on:
 
 - Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD;
 - macOS 15 Sequoia, using Clang/LLD and the Apple SDK; and
@@ -104,7 +104,7 @@ go run ./helpers/cmd/develop build
 go run ./helpers/cmd/develop test
 ```
 
-`build` compiles `vxs`, `vxsi`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
+`build` compiles `talac`, `tali`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
 `test` performs the same build and then executes each native program directly. This
 avoids introducing Git Bash/MSYS solely for Bazel's POSIX-oriented `cc_test` launcher on Windows while retaining the same
 suite set on macOS.
@@ -116,18 +116,18 @@ go run ./helpers/cmd/develop version 0.5.1
 ```
 
 The check compares `MODULE.bazel`, the changelog heading, the Haskell package, and the Kotlin project runtime using exact
-release lines. If a Bazel-built `vxs` is available, its `version` output must agree as well. This Go command replaces the
+release lines. If a Bazel-built `talac` is available, its `version` output must agree as well. This Go command replaces the
 retired root `release.java`; repository automation does not require a Java script runtime.
 
 Useful component targets for incremental work are:
 
 ```powershell
-bazelisk build //Compiler/Core:core
-bazelisk build //Compiler/Codegen/Xpp:xpp
-bazelisk build //Compiler/Codegen/Xmm:xmm
-bazelisk build //Compiler/Backend/LLVM:llvm_backend
-bazelisk build //Compiler/Linker:native_linker
-bazelisk build //Compiler/Driver:core_pipeline
+bazelisk build //Talac/Core:core
+bazelisk build //Talac/Codegen/Xpp:xpp
+bazelisk build //Talac/Codegen/Xmm:xmm
+bazelisk build //Talac/Backend/LLVM:llvm_backend
+bazelisk build //Talac/Linker:native_linker
+bazelisk build //Talac/Driver:core_pipeline
 ```
 
 Bazel owns only the native graph. It does not replace Cabal for Haskell packages or Gradle for Kotlin configuration and
@@ -150,16 +150,16 @@ Get-ChildItem Haskell -Filter *.cabal -Recurse | ForEach-Object {
 Kotlin:
 
 ```powershell
-.\ProjectSystem\gradlew.bat -p ProjectSystem test
+.\Tazel\gradlew.bat -p ProjectSystem test
 ```
 
 The repository wrapper pins the Gradle distribution used by the project. Use it instead of a machine-global Gradle command.
 JDK 25 must be visible to the wrapper process. Kotlin Script Runner remains an external runtime requirement; it is not
-embedded into `vxs`.
+embedded into `talac`.
 
 ## Building the private frontend
 
-The Haskell driver package produces the private frontend consumed by `vxs`. Build all compiler packages together so Cabal
+The Haskell driver package produces the private frontend consumed by `talac`. Build all compiler packages together so Cabal
 selects one coherent local package set:
 
 ```powershell
@@ -171,8 +171,8 @@ try {
 }
 ```
 
-The Cabal package builds the Haskell frontend as `vxs-frontend.dll` on Windows, `libvxs-frontend.dylib` on macOS, and
-`libvxs-frontend.so` on Linux. The native driver loads only the matching library beside its executable; it does not search
+The Cabal package builds the Haskell frontend as `tala-frontend.dll` on Windows, `libtala-frontend.dylib` on macOS, and
+`libtala-frontend.so` on Linux. The native driver loads only the matching library beside its executable; it does not search
 the project directory or accept an arbitrary library from `PATH`. The versioned C11 ABI is the only boundary, and a
 synchronous callback copies output bytes into C++-owned memory before Haskell releases them.
 
@@ -184,15 +184,15 @@ Build and validate an install-shaped compiler directory with one command:
 go run ./helpers/cmd/develop bundle
 ```
 
-The command performs both build-system steps deliberately: Bazel produces the C++20 `vxs` driver and Cabal produces the
+The command performs both build-system steps deliberately: Bazel produces the C++20 `talac` driver and Cabal produces the
 Haskell frontend shared library. It then stages a fresh directory with this shape:
 
 ```text
 dist/
-`-- visual-xsharp-<version>-<platform>-<arch>/
-    |-- vxs[.exe]
-    |-- vxsi[.exe]
-    |-- vxs-frontend.dll | libvxs-frontend.dylib | libvxs-frontend.so
+`-- tala-<version>-<platform>-<arch>/
+    |-- talac[.exe]
+    |-- tali[.exe]
+    |-- tala-frontend.dll | libtala-frontend.dylib | libtala-frontend.so
     |-- LICENSE.txt
     |-- PATENTS
     |-- LICENSES/
@@ -205,13 +205,13 @@ The brackets above describe the host suffix; they are not literal filename chara
 compiler version, host platform, and architecture so separately built bundles do not silently overwrite one another.
 `dist/` is ignored generated output and is not committed.
 
-The bundle contains two executables and one shared library. Users invoke `vxs`; the driver calls the adjacent
-`vxs-frontend` library in-process through the versioned C ABI, and `vxsi` is the REPL executable that `vxs interactive`
-locates on `PATH`. Do not move `vxs` without its matching library or place an unrelated library beside it.
+The bundle contains two executables and one shared library. Users invoke `talac`; the driver calls the adjacent
+`tala-frontend` library in-process through the versioned C ABI, and `tali` is the REPL executable that `talac interactive`
+locates on `PATH`. Do not move `talac` without its matching library or place an unrelated library beside it.
 
 Staging is not considered successful merely because both build systems returned zero. The bundle command invokes the
-staged tools, checks the compiler version, compiles a real `.vxs` fixture to a `.vxse`, and executes that native program.
-It also invokes `vxs interactive -Eval "5 + 5"` with only the staged bundle directory added to `PATH`, checks the result,
+staged tools, checks the compiler version, compiles a real `.tala` fixture to a `.vxse`, and executes that native program.
+It also invokes `talac interactive --eval "5 + 5"` with only the staged bundle directory added to `PATH`, checks the result,
 and opens/exits the no-argument REPL. It fails if either companion cannot be discovered, compilation does not produce the
 expected executable, or a smoke program exits incorrectly. Finally it writes `SHA256SUMS` for all staged executables and
 legal payloads. Consumers can use that manifest to
@@ -230,7 +230,7 @@ The native graph is configured by tracked Bazel files and a small environment di
 | `.bazelversion` | Bazelisk-selected Bazel version |
 | `.bazelrc` | automatically selected Windows/ClangCL or macOS/Clang options |
 | `MODULE.bazel` | module identity and native dependencies |
-| `Compiler/Build/Bazel/llvm.bzl` | LLVM development-tree discovery |
+| `Talac/Build/Bazel/llvm.bzl` | LLVM development-tree discovery |
 | `LLVM_ROOT` | optional LLVM installation prefix |
 | `PATH` | discovery of `clang-cl`, `lld-link`, `llvm-config`, and Bazelisk |
 
@@ -238,7 +238,7 @@ The native graph is configured by tracked Bazel files and a small environment di
 `third_party/catch3` submodule and a local module override so native test sources do not depend on registry availability.
 Each test target links both Catch3's compiled extensions and its Catch2-compatible runner-with-main target.
 
-The rules_cc patch under `Compiler/Build/Bazel` is a narrow ClangCL toolchain workaround. It is not permission to accumulate
+The rules_cc patch under `Talac/Build/Bazel` is a narrow ClangCL toolchain workaround. It is not permission to accumulate
 general third-party patches in the compiler tree; remove it when the selected upstream release contains the fix.
 
 ## Sanitizers
@@ -277,7 +277,7 @@ go run ./helpers/cmd/develop tidy
 ```
 
 The command builds the native targets, asks Bazel for the compile action of every C++ source they depend on, and runs
-`clang-tidy` with the repository's `.clang-tidy` over each first-party translation unit under `Compiler/`,
+`clang-tidy` with the repository's `.clang-tidy` over each first-party translation unit under `Talac/`,
 `Interactive/`, and `Benchmarks/`. Each unit is analyzed with the exact flags Bazel compiled it with, so there is no
 second, hand-maintained compile database to drift. The build comes first because the analyzer needs generated and
 fetched headers and, on Windows, the parameter files that hold the commands.
@@ -286,7 +286,7 @@ A finding belongs to the file it is reported in. Findings located in vendored or
 and printed as a total, but do not fail the run; a compiler error fails it wherever it is reported, because the unit
 was then not analyzed. A first-party unit whose compile command is unavailable, an analyzer that exits unsuccessfully
 without an attributable diagnostic, and an action graph without first-party sources all fail the run rather than
-passing as clean. One analyzer process runs per logical processor; set `VXS_TIDY_JOBS` to change that. Bazel options
+passing as clean. One analyzer process runs per logical processor; set `TALA_TIDY_JOBS` to change that. Bazel options
 may follow a `--` separator.
 
 ```powershell
@@ -318,8 +318,8 @@ A finding is silenced by the comment that silences clang-tidy, with the name cla
 comment answers both tools. Findings in dependency headers are counted and not reported, and a unit the analyzer
 could not compile, or on which it stopped, fails the run, as for `tidy`.
 
-`VXS_ANALYZE_JOBS` sets the number of analyzer processes, `VXS_ANALYZE_FILTER` limits the run to the units whose path
-contains its value, and `VXS_ANALYZE_SARIF` names a file that receives every finding as SARIF, with the path of each
+`TALA_ANALYZE_JOBS` sets the number of analyzer processes, `TALA_ANALYZE_FILTER` limits the run to the units whose path
+contains its value, and `TALA_ANALYZE_SARIF` names a file that receives every finding as SARIF, with the path of each
 as a code flow.
 
 The libFuzzer entry points and benchmark programs are outside the built target set and are not analyzed by this
@@ -333,7 +333,7 @@ Generated trees are disposable. Prefer deleting only the build system's known ou
 bazelisk clean
 Push-Location Compiler
 try { cabal clean } finally { Pop-Location }
-.\ProjectSystem\gradlew.bat -p ProjectSystem clean
+.\Tazel\gradlew.bat -p ProjectSystem clean
 ```
 
 For the native-only cleanup, `go run ./helpers/cmd/develop clean` performs an expunging Bazel clean.
@@ -355,7 +355,7 @@ or expose that prefix's `llvm-config` on `PATH`. Do not add `LLVM_DIR` with a pe
 
 ClangCL is the compiler, but Windows SDK and MSVC CRT/C++ development files still provide platform headers and import/static
 libraries. Install those components and start a PowerShell environment that exposes their include and library directories.
-The Visual Studio IDE and Visual Studio's compiler executable are not part of the Visual X# build contract.
+The Visual Studio IDE and Visual Studio's compiler executable are not part of the Tala build contract.
 
 ### `clang_rt` or runtime DLL is missing
 
@@ -365,7 +365,7 @@ depend on a temporary directory.
 
 ### Private frontend is missing
 
-Build the Haskell workspace and confirm the frontend is placed in the layout expected by `vxs`. Installing a same-named
+Build the Haskell workspace and confirm the frontend is placed in the layout expected by `talac`. Installing a same-named
 command globally is not a supported fix because it could mismatch the Core wire contract.
 
 For an install-shaped local layout, prefer `go run ./helpers/cmd/develop bundle`; it stages the matching Bazel and Cabal

@@ -30,8 +30,8 @@ go.work.sum text eol=lf
 # The seeds of the fuzz targets that do not read source text are bytes: lists
 # of arguments and records separated by NUL, and selector bytes. A line-ending
 # conversion would turn one input into another.
-/Compiler/Fuzzing/Corpus/cli/** binary
-/Compiler/Fuzzing/Corpus/differential/** binary
-/Compiler/Fuzzing/Corpus/ownership/** binary
-/Compiler/Fuzzing/Corpus/project/** binary
-/Compiler/Fuzzing/Corpus/repl/** binary
+/Talac/Fuzzing/Corpus/cli/** binary
+/Talac/Fuzzing/Corpus/differential/** binary
+/Talac/Fuzzing/Corpus/ownership/** binary
+/Talac/Fuzzing/Corpus/project/** binary
+/Talac/Fuzzing/Corpus/repl/** binary

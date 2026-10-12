@@ -3,7 +3,7 @@
 
 # Contributor guide
 
-Welcome. Visual X# is an experimental language and compiler, not a finished SDK. Contributions are valuable when they
+Welcome. Tala is an experimental language and compiler, not a finished SDK. Contributions are valuable when they
 improve a well-defined contract and make the result easier to verify. A public specification example may describe intended
 behavior that the current compiler cannot yet execute; treat the implementation status and tests as a separate question.
 
@@ -31,8 +31,8 @@ fix this guide in the same change.
 
 ## Repository boundaries
 
-`Progmasoft/visual-xsharp` contains the compiler, language specification, project system, Interactive, and ecosystem tools.
-The Visual X# language website, Progmasoft accounts/ViGet, Xide, and Catch3 each have their own repository and issue tracker.
+`Progmasoft/tala` contains the compiler, language specification, project system, Interactive, and ecosystem tools.
+The Tala language website, Progmasoft accounts/ViGet, Xide, and Catch3 each have their own repository and issue tracker.
 A nested checkout may sit physically below this directory without belonging to its Git index. Check `git remote -v` and
 `git status --short` before editing or committing across a repository boundary.
 

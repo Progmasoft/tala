@@ -1,0 +1,3195 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Declarations
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1.1 Case Sensitivity
+-- Demonstrates: Tala name resolution is case-sensitive.
+
+class User {}
+class user {}
+
+-- ============================================================================
+-- Example 2: 1.1 Case Sensitivity
+-- Demonstrates: The declarations above have different names.
+
+void Print() {}
+void print() {}
+
+-- ============================================================================
+-- Example 3: 1.2 Default Access
+-- Demonstrates: There is no declaration context whose default access is private.
+
+class User {              -- internal
+    String name;          -- internal
+    User(String name);    -- internal
+    void Print() {}       -- internal
+    class Helper {}       -- internal
+}
+
+-- ============================================================================
+-- Example 4: 1.3 Access Modifiers
+-- Demonstrates: protected is not a top-level access level.
+
+public class PublicType {}
+internal class NamespaceType {}
+fileprivate class FileType {}
+
+-- ============================================================================
+-- Example 5: 1.3 Access Modifiers
+-- Demonstrates: protected is not a top-level access level.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+protected class InvalidType {} -- INVALID
+private class InvalidType {}   -- INVALID
+
+-- ============================================================================
+-- Example 6: 1.3 Access Modifiers
+-- Demonstrates: private is declaration-scoped. An enclosing declaration does not automatically gain
+--   access to a nested declaration's private members.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Outer {
+    class Inner {
+        private int value;
+    }
+
+    void Read(Inner inner) {
+        inner.value; -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 7: 1.3 Access Modifiers
+-- Demonstrates: A derived AARC type may use inherited protected members.
+
+class Base {
+    protected int value;
+}
+
+class Child : Base {
+    public int Read() {
+        self.value
+    }
+}
+
+-- ============================================================================
+-- Example 8: 1.3 Access Modifiers
+-- Demonstrates: A derived AARC type may use inherited protected members.
+
+class Base {
+    protected int value;
+}
+
+object Application : Base {
+    public int Read() {
+        self.value
+    }
+}
+
+-- ============================================================================
+-- Example 9: 1.4 Declaration Order
+-- Demonstrates: Declaration order does not affect ordinary name visibility.
+
+class User {
+    Address address;
+}
+
+class Address {
+    String city;
+}
+
+-- ============================================================================
+-- Example 10: 1.4 Declaration Order
+-- Demonstrates: Forward declarations do not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Address; -- INVALID
+
+-- ============================================================================
+-- Example 11: 1.5 No Partial Declarations
+-- Demonstrates: partial does not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+partial class User {} -- INVALID
+
+-- ============================================================================
+-- Example 12: 1.5 No Partial Declarations
+-- Demonstrates: A nominal declaration is defined in one place.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {}
+class User {} -- INVALID: duplicate declaration
+
+-- ============================================================================
+-- Example 13: 3. data
+-- Demonstrates: A data declaration defines a CoW value type.
+
+data Point {
+    int x;
+    int y;
+}
+
+-- ============================================================================
+-- Example 14: 3.1 data Inheritance
+-- Demonstrates: A data declaration may inherit only from another data declaration.
+
+data Base {
+    int value;
+}
+
+data Child : Base {
+    int other;
+}
+
+-- ============================================================================
+-- Example 15: 3.2 final and sealed permits
+-- Demonstrates: data inheritance does not create nominal subtyping and does not create dynamic
+
+data Point final {
+    int x;
+    int y;
+}
+
+-- ============================================================================
+-- Example 16: 3.2 final and sealed permits
+-- Demonstrates: data inheritance does not create nominal subtyping and does not create dynamic
+
+data Node sealed permits Leaf, Branch {
+}
+
+-- ============================================================================
+-- Example 17: 4. data class
+-- Demonstrates: A data class defines an AARC reference type with data-first declaration syntax.
+
+data class User(String name, int age);
+
+-- ============================================================================
+-- Example 18: 4.1 Primary Constructor Properties
+-- Demonstrates: Primary constructor parameters create getter-only properties.
+
+data class User(String name, int age);
+
+-- ============================================================================
+-- Example 19: 4.1 Primary Constructor Properties
+-- Demonstrates: The generated properties are public unless an access modifier is written on the
+
+data class Session(public String id, private String token);
+
+-- ============================================================================
+-- Example 20: 4.1 Primary Constructor Properties
+-- Demonstrates: Explicit final is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+data class User(final String name); -- INVALID
+
+-- ============================================================================
+-- Example 21: 4.3 Inheritance Control
+-- Demonstrates: A data class does not automatically provide a copy member. Copying and moving are
+--   language built-ins described later in this document.
+
+data class Result(String message) final;
+
+-- ============================================================================
+-- Example 22: 4.3 Inheritance Control
+-- Demonstrates: A data class does not automatically provide a copy member. Copying and moving are
+--   language built-ins described later in this document.
+
+data class Result(String message)
+    sealed permits Success, Failure {
+}
+
+-- ============================================================================
+-- Example 23: 5. class
+-- Demonstrates: A class defines an AARC reference type.
+
+class User {
+}
+
+-- ============================================================================
+-- Example 24: 5. class
+-- Demonstrates: A class may have at most one direct base class.
+
+class Child : Base {
+}
+
+-- ============================================================================
+-- Example 25: 5.1 Virtual Dispatch
+-- Demonstrates: Methods are not virtual by default.
+
+class Base {
+    public virtual String Name() {
+        "Base"
+    }
+}
+
+-- ============================================================================
+-- Example 26: 5.1 Virtual Dispatch
+-- Demonstrates: An override must use override.
+
+class Child : Base {
+    public String Name() override {
+        "Child"
+    }
+}
+
+-- ============================================================================
+-- Example 27: 5.1 Virtual Dispatch
+-- Demonstrates: final override closes the override chain.
+
+class Child : Base {
+    public String Name() final override {
+        "Child"
+    }
+}
+
+-- ============================================================================
+-- Example 28: 5.2 Type-Level final
+-- Demonstrates: final follows the type name.
+
+class User final {
+}
+
+-- ============================================================================
+-- Example 29: 5.2 Type-Level final
+-- Demonstrates: final follows the type name.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+final class User {} -- INVALID
+
+-- ============================================================================
+-- Example 30: 5.3 sealed permits
+-- Demonstrates: final follows the type name.
+
+class Shape sealed permits Circle, Rectangle : Base {
+}
+
+-- ============================================================================
+-- Example 31: 5.3 sealed permits
+-- Demonstrates: Only declarations listed in permits may directly derive from the sealed declaration.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Shape sealed permits Circle {
+}
+
+class Circle : Shape {}    -- VALID
+class Rectangle : Shape {} -- INVALID
+
+-- ============================================================================
+-- Example 32: 5.3 sealed permits
+-- Demonstrates: Duplicate entries are invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Shape sealed permits Circle, Circle {} -- INVALID
+
+-- ============================================================================
+-- Example 33: 6. type
+-- Demonstrates: A type declaration defines a CoW value type with literal construction.
+
+type User {
+    String name;
+    int age;
+}
+
+-- ============================================================================
+-- Example 34: 6.1 Literal Construction
+-- Demonstrates: Explicit type form:
+
+User user = {
+    name = "Leitwolf",
+    age = 26
+};
+
+-- ============================================================================
+-- Example 35: 6.1 Literal Construction
+-- Demonstrates: Target-explicit form:
+
+auto user = User{
+    name = "Leitwolf",
+    age = 26
+};
+
+-- ============================================================================
+-- Example 36: 6.1 Literal Construction
+-- Demonstrates: There is no default filling of omitted fields.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+type User {
+    String name;
+    int age;
+}
+
+User user = {
+    name = "Leitwolf"
+}; -- INVALID: age missing
+
+-- ============================================================================
+-- Example 37: 7. Classic enum
+-- Demonstrates: A classic enum is a CoW value type with payloadless numeric members.
+
+enum Status {
+    PENDING,
+    APPROVED,
+    REJECTED,
+}
+
+-- ============================================================================
+-- Example 38: 7.1 Underlying Type
+-- Demonstrates: The underlying integer type is written with =.
+
+enum Status = byte {
+    PENDING = 0,
+    APPROVED = 1,
+}
+
+-- ============================================================================
+-- Example 39: 7.2 Automatic Values
+-- Demonstrates: The default underlying type is int.
+
+enum Direction {
+    NORTH, -- 0
+    EAST,  -- 1
+    SOUTH, -- 2
+    WEST,  -- 3
+}
+
+-- ============================================================================
+-- Example 40: 7.2 Automatic Values
+-- Demonstrates: Automatic numbering continues from the previous numeric value.
+
+enum Value = int {
+    FIRST = 5,
+    SECOND,   -- 6
+    THIRD = 10,
+    FOURTH,   -- 11
+}
+
+-- ============================================================================
+-- Example 316: 7.2 Member Values
+-- Demonstrates: The value of a member is a constant integer expression: integer literals and earlier members
+--   of the same enum, joined by the arithmetic, shift and bitwise operators. Inside the declaration of its
+--   enum the name of a member stands for its number; this is where the numbers behind the names are defined.
+--   The expression is computed in the underlying type, and a member without a value follows the computed one.
+
+enum Access = ubyte {
+    READ = 1,
+    WRITE = READ << 1,              -- 2
+    EXECUTE = WRITE * 2,            -- 4
+    ALL = READ | WRITE | EXECUTE,   -- 7
+    NEXT,                           -- 8
+    REST = !(EXECUTE + 1),          -- 250: the complement of 5 in ubyte
+}
+
+-- ============================================================================
+-- Example 317: 7.2 Member Values
+-- Demonstrates: A member value names earlier members only, of its own enum only, and is nothing but integer
+--   arithmetic. Outside the declaration a member is a value of the enum and never a number.
+-- Expected result: compile-time rejection; each INVALID marker is normative.
+
+enum Order {
+    FIRST = SECOND,          -- INVALID: SECOND is declared later
+    SECOND = SECOND + 1,     -- INVALID: a member does not name itself
+    THIRD = Access.READ,     -- INVALID: a member of another enum is not a number here
+    FOURTH = Compute(),      -- INVALID: a call is not a constant
+    FIFTH = 4 / 0,           -- INVALID: a constant division by zero
+    SIXTH = 1 < 2,           -- INVALID: a comparison is not an integer
+}
+
+-- ============================================================================
+-- Example 41: 7.3 Duplicate Numeric Values
+-- Demonstrates: Different enum members may have the same numeric value.
+
+enum Status {
+    NONE = 0,
+    UNKNOWN = 0,
+    READY = 1,
+}
+
+-- ============================================================================
+-- Example 42: 7.3 Duplicate Numeric Values
+-- Demonstrates: Different enum members may have the same numeric value.
+
+Status.NONE == Status.UNKNOWN -- true
+
+-- ============================================================================
+-- Example 43: 7.3 Duplicate Numeric Values
+-- Demonstrates: In match, a second branch for the same numeric value is unreachable.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+match (status) {
+    .NONE -> { ... },
+    .UNKNOWN -> { ... }, -- INVALID: same runtime value as .NONE
+    .READY -> { ... },
+}
+
+-- ============================================================================
+-- Example 311: 7.4 Operations on Enum Values
+-- Demonstrates: The values of a classic enum are compared with == and \=, with values of the same enum.
+--   Two members with the same numeric value are equal.
+
+Status.READY == status  -- bool
+status \= Status.NONE   -- bool
+
+-- ============================================================================
+-- Example 312: 7.4 Operations on Enum Values
+-- Demonstrates: A classic enum has no order and no arithmetic. Its members are names for values, and the
+--   numeric value behind a name is not a quantity.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Status.NONE < Status.READY   -- INVALID: enum values are not ordered
+Status.NONE + Status.READY   -- INVALID: enum values are not added
+Status.NONE == Level.LOW     -- INVALID: values of different enums
+
+-- ============================================================================
+-- Example 313: 7.5 Enums and Integers
+-- Demonstrates: A classic enum is a type of its own. There is no implicit conversion between an enum and an
+--   integer in either direction, whatever its underlying type is.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int code = Status.READY;  -- INVALID: an enum value is not an integer
+Status status = 1;        -- INVALID: an integer is not an enum value
+Status.NONE == 0          -- INVALID: an enum value is not compared with an integer
+
+-- ============================================================================
+-- Example 314: 7.6 Access to Members
+-- Demonstrates: The target-typed .Member spelling is the same for a classic enum as for an enum class: it
+--   names a member of the enum that the context expects, in a match pattern and in an expression whose
+--   target type is known.
+
+Status first = Status.READY;
+Status second = .READY;
+
+-- ============================================================================
+-- Example 315: 7.6 Access to Members
+-- Demonstrates: Target-typed .Member syntax requires a known target type, for a classic enum as well.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto status = .READY; -- INVALID
+
+-- ============================================================================
+-- Example 44: 8. enum class
+-- Demonstrates: An enum class is an AARC reference type whose cases are singleton instances.
+
+enum class Status(String message) {
+    case Success("Operation completed"),
+    case Error("Something went wrong"),
+    case Loading("Please wait"),
+
+    public void PrintMessage() {
+        Console.Println(message);
+    }
+}
+
+-- ============================================================================
+-- Example 45: 8. enum class
+-- Demonstrates: An enum class may derive from a class or data class, but no declaration may derive
+--   from the enum class itself.
+
+class Base {
+}
+
+enum class Status() : Base {
+    case Ready,
+}
+
+-- ============================================================================
+-- Example 46: 8. enum class
+-- Demonstrates: An enum class may derive from a class or data class, but no declaration may derive
+--   from the enum class itself.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Child : Status { -- INVALID
+}
+
+-- ============================================================================
+-- Example 47: 8.1 Case Rules
+-- Demonstrates: case is valid only inside an enum class.
+
+enum class Status() {
+    case Ready,
+    case Running,
+    case Failed,
+}
+
+-- ============================================================================
+-- Example 48: 8.1 Case Rules
+-- Demonstrates: Case names are case-sensitive and unique within the declaration.
+
+enum class Status() {
+    case Ready,
+    case READY,
+}
+
+-- ============================================================================
+-- Example 49: 8.1 Case Rules
+-- Demonstrates: A case name may not collide with another member name in the same enum class.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+enum class Status() {
+    case Ready,
+
+    public void Ready() { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 50: 8.1 Case Rules
+-- Demonstrates: Cases are implicitly public and do not take access modifiers.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+enum class Status() {
+    private case Ready, -- INVALID
+}
+
+-- ============================================================================
+-- Example 51: 8.2 Case Constructor Arguments
+-- Demonstrates: If the enum class has primary constructor parameters, each case supplies the required
+
+enum class Status(String message, int code) {
+    case Ready("Ready", 0),
+    case Failed("Failed", 1),
+}
+
+-- ============================================================================
+-- Example 52: 8.3 Empty Case Set Syntax
+-- Demonstrates: A non-payload enum class still uses ().
+
+enum class Direction() {
+    case North,
+    case South,
+}
+
+-- ============================================================================
+-- Example 53: 8.4 Access to Cases
+-- Demonstrates: A non-payload enum class still uses ().
+
+Status first = Status.Ready;
+Status second = .Ready;
+
+-- ============================================================================
+-- Example 54: 8.4 Access to Cases
+-- Demonstrates: Target-typed .Case syntax requires a known target type.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto status = .Ready; -- INVALID
+
+-- ============================================================================
+-- Example 55: 8.4 Access to Cases
+-- Demonstrates: Cases cannot be created with new.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+new Status();       -- INVALID
+new Status.Ready(); -- INVALID
+
+-- ============================================================================
+-- Example 56: 8.4 Access to Cases
+-- Demonstrates: The same case always yields the same AARC identity.
+
+Status first = Status.Ready;
+Status second = Status.Ready;
+
+first == second -- true
+
+-- ============================================================================
+-- Example 57: 9. object
+-- Demonstrates: An object declaration defines one named AARC singleton.
+
+object Application {
+}
+
+-- ============================================================================
+-- Example 58: 9. object
+-- Demonstrates: An object derives from System.Object unless another allowed base class is specified.
+
+class Base {
+}
+
+object Application : Base {
+}
+
+-- ============================================================================
+-- Example 59: 9. object
+-- Demonstrates: No declaration may derive from an object.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Child : Application { -- INVALID
+}
+
+-- ============================================================================
+-- Example 60: 9. object
+-- Demonstrates: An object may not contain another nested object.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+object Application {
+    object Logger { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 61: 10. Nested Types and static class
+-- Demonstrates: Real type declarations may be nested in another type where the containing declaration
+--   permits nested types.
+
+class Outer {
+    class NestedClass {}
+    data NestedData {}
+    data class NestedDataClass(String name);
+    type NestedType { int value; }
+
+    enum Status {
+        READY,
+        STOPPED,
+    }
+
+    enum class Result() {
+        case Success,
+        case Failure,
+    }
+
+    object Logger {}
+
+    interface Printable {
+        public void Print();
+    }
+}
+
+-- ============================================================================
+-- Example 62: 10. Nested Types and static class
+-- Demonstrates: A nested type has no implicit reference to an outer instance.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Outer {
+    int value;
+
+    class Nested {
+        public int Read() {
+            value -- INVALID
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 63: 10. Nested Types and static class
+-- Demonstrates: Use an explicit outer reference when needed.
+
+class Outer {
+    int value;
+
+    class Nested {
+        Outer owner;
+
+        public Nested(Outer owner);
+
+        public int Read() {
+            owner.value
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 64: 10. Nested Types and static class
+-- Demonstrates: Nested types are named through the containing type.
+
+Outer.Nested value;
+
+-- ============================================================================
+-- Example 65: 10. Nested Types and static class
+-- Demonstrates: They are not named through an instance.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Outer outer = new Outer();
+outer.Nested value; -- INVALID
+
+-- ============================================================================
+-- Example 66: 10.1 static class
+-- Demonstrates: A nested static class is allowed only inside class or data class.
+
+class Math {
+    public static class Constants {
+        public static float Pi = 3.14159;
+    }
+}
+
+-- ============================================================================
+-- Example 67: 11. Interfaces
+-- Demonstrates: An interface is a compile-time contract declaration. It is not a type.
+
+interface Printable {
+    public void Print();
+}
+
+-- ============================================================================
+-- Example 68: 11.2 Interface Members
+-- Demonstrates: An interface may declare method, property, and indexer contracts.
+
+interface Collection {
+    public int Size { get; }
+    public String self[int index] { get; }
+}
+
+-- ============================================================================
+-- Example 69: 12. concept
+-- Demonstrates: A concept is a compile-time template condition.
+
+template<typename T>
+concept Value = requires(T value) {
+    value.Print();
+}
+
+-- ============================================================================
+-- Example 70: 12. concept
+-- Demonstrates: Use a concept with requires:
+
+template<typename T>
+requires Value<T>
+class Box {
+}
+
+-- ============================================================================
+-- Example 71: 12.1 Requirement Forms
+-- Demonstrates: Simple expression requirement:
+
+requires(T value) {
+    value.Print();
+}
+
+-- ============================================================================
+-- Example 72: 12.1 Requirement Forms
+-- Demonstrates: Type requirement:
+
+requires(T value) {
+    typename T.ValueType;
+}
+
+-- ============================================================================
+-- Example 73: 12.1 Requirement Forms
+-- Demonstrates: Exact result type requirement:
+
+requires(T value) {
+    { value.Size() } -> int;
+}
+
+-- ============================================================================
+-- Example 74: 12.1 Requirement Forms
+-- Demonstrates: A safe-conversion requirement is explicit:
+
+requires(T value) {
+    { value.Size() } -> convertible int;
+}
+
+-- ============================================================================
+-- Example 75: 12.1 Requirement Forms
+-- Demonstrates: noexcept may be required:
+
+requires(T value) {
+    { value.Size() } noexcept -> int;
+}
+
+-- ============================================================================
+-- Example 76: 12.1 Requirement Forms
+-- Demonstrates: Nested requirement:
+
+requires(T value) {
+    requires OtherConcept<T>;
+}
+
+-- ============================================================================
+-- Example 77: 12.2 Recursive Concepts
+-- Demonstrates: Direct or indirect concept recursion is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+template<typename T>
+concept Recursive = Recursive<T>; -- INVALID
+
+-- ============================================================================
+-- Example 78: 13. typealias
+-- Demonstrates: A type alias creates another name for an existing type. It does not create nominal
+
+typealias UserId = long;
+typealias Name = String;
+
+-- ============================================================================
+-- Example 79: 13. typealias
+-- Demonstrates: A type alias creates another name for an existing type. It does not create nominal
+
+UserId id = 10;
+long raw = id;
+
+-- ============================================================================
+-- Example 80: 13.1 Alias Templates
+-- Demonstrates: The two declarations above use the same static type.
+
+template<typename T>
+typealias ListOf = System.Array<T>;
+
+-- ============================================================================
+-- Example 81: 13.1 Alias Templates
+-- Demonstrates: The two declarations above use the same static type.
+
+template<typename... Types>
+typealias VariantOf = System.Variant<Types...>;
+
+-- ============================================================================
+-- Example 82: 13.1 Alias Templates
+-- Demonstrates: Alias templates may use requires.
+
+template<typename T>
+requires Numeric<T>
+typealias NumericList = System.Array<T>;
+
+-- ============================================================================
+-- Example 83: 13.2 Alias Restrictions
+-- Demonstrates: has no fields, methods, constructors, or other members; - cannot inherit; - cannot
+--   implement interfaces; - cannot use final, sealed, or permits; - may form non-recursive alias
+--   chains; - may not be directly or indirectly recursive.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+typealias First = Second;
+typealias Second = First; -- INVALID
+
+-- ============================================================================
+-- Example 84: 13.2 Alias Restrictions
+-- Demonstrates: Aliases do not create overload-distinct types.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+typealias UserId = long;
+
+void Print(_ long value) {}
+void Print(_ UserId value) {} -- INVALID: same type surface
+
+-- ============================================================================
+-- Example 85: 14. Extensions
+-- Demonstrates: An extension adds callable/member surface to an existing target type without creating
+--   a new runtime type.
+
+extension StringExtensions : String {
+    public bool IsBlank() {
+        self.Length == 0
+    }
+}
+
+-- ============================================================================
+-- Example 86: 14.1 Generic Extensions
+-- Demonstrates: self refers to the extension target value.
+
+template<typename T>
+extension ArrayExtensions : System.Array<T> {
+    public T First() {
+        self[0]
+    }
+}
+
+-- ============================================================================
+-- Example 87: 14.2 Constrained Extensions
+-- Demonstrates: self refers to the extension target value.
+
+template<typename T>
+requires Printable<T>
+extension PrintableArrayExtensions : System.Array<T> {
+    public void PrintAll() {
+        for (T value : self) {
+            value.Print();
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 88: 14.4 Real Members Win
+-- Demonstrates: A real member on the target type takes precedence over an extension member.
+
+class User {
+    public String Name() {
+        "Real"
+    }
+}
+
+extension UserExtensions : User {
+    public String Name() {
+        "Extension"
+    }
+}
+
+user.Name(); -- calls User.Name
+
+-- ============================================================================
+-- Example 89: 14.4 Real Members Win
+-- Demonstrates: If a real member with the requested name exists, extension candidates with that name
+--   are not used merely because the real overload set fails.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public void Print(int count) {
+    }
+}
+
+extension UserExtensions : User {
+    public void Print() {
+    }
+}
+
+user.Print(); -- INVALID
+
+-- ============================================================================
+-- Example 90: 14.4 Real Members Win
+-- Demonstrates: An extension instance member may also be invoked explicitly through the extension
+--   declaration's static surface.
+
+user.Display();
+FirstExtensions.Display(user);
+
+-- ============================================================================
+-- Example 91: 15. Attributes
+-- Demonstrates: Tala supports general attributes.
+
+attribute Serializable;
+
+-- ============================================================================
+-- Example 92: 15. Attributes
+-- Demonstrates: Attributes may take arguments.
+
+attribute Range(int minimum, int maximum);
+
+-- ============================================================================
+-- Example 93: 15. Attributes
+-- Demonstrates: Usage:
+
+[Serializable]
+data class User(String name, int age);
+
+-- ============================================================================
+-- Example 94: 15. Attributes
+-- Demonstrates: Usage:
+
+class Settings {
+    [Range(0, 100)]
+    int volume;
+}
+
+-- ============================================================================
+-- Example 95: 15. Attributes
+-- Demonstrates: Multiple attributes may be written separately or in one attribute list.
+
+[Serializable]
+[Exhaustive]
+data class Result(String value);
+
+-- ============================================================================
+-- Example 96: 15. Attributes
+-- Demonstrates: Multiple attributes may be written separately or in one attribute list.
+
+[Serializable, Exhaustive]
+data class Result(String value);
+
+-- ============================================================================
+-- Example 97: 15. Attributes
+-- Demonstrates: An attribute may restrict its declaration targets.
+
+attribute Exhaustive
+    targets(data, data class, enum, enum class);
+
+-- ============================================================================
+-- Example 98: 15. Attributes
+-- Demonstrates: An attribute may restrict its declaration targets.
+
+attribute InlineHint
+    targets(method, constructor);
+
+-- ============================================================================
+-- Example 99: 15. Attributes
+-- Demonstrates: A repeatable attribute must opt in explicitly.
+
+repeatable attribute Route(String path)
+    targets(method);
+
+-- ============================================================================
+-- Example 100: 15. Attributes
+-- Demonstrates: Attributes may have access modifiers; the default is internal.
+
+public attribute Serializable;
+internal attribute CompilerGenerated;
+
+-- ============================================================================
+-- Example 101: 15. Attributes
+-- Demonstrates: Parameter attributes are written directly on the parameter.
+
+public void SetName([NonNull] String name) {
+}
+
+-- ============================================================================
+-- Example 102: 15. Attributes
+-- Demonstrates: Return attributes use return:.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+[return: NonNull]
+public String FindName() {
+    ...
+}
+
+-- ============================================================================
+-- Example 103: 16.1 Field Modifier Order
+-- Demonstrates: Example:
+
+private static final int Limit = 10;
+
+-- ============================================================================
+-- Example 104: 16.2 Local Bindings
+-- Demonstrates: Example:
+
+Type name = value;
+
+-- ============================================================================
+-- Example 105: 16.2 Local Bindings
+-- Demonstrates: auto requires an initializer.
+
+auto value = Create();
+
+-- ============================================================================
+-- Example 106: 16.2 Local Bindings
+-- Demonstrates: auto requires an initializer.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto value; -- INVALID
+
+-- ============================================================================
+-- Example 107: 16.2 Local Bindings
+-- Demonstrates: auto requires an initializer.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto value = null; -- INVALID: no inferable target type
+
+-- ============================================================================
+-- Example 108: 16.3 final
+-- Demonstrates: A final local binding must be initialized and cannot be rebound.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+final int count = 10;
+count = 20; -- INVALID
+
+-- ============================================================================
+-- Example 109: 16.3 final
+-- Demonstrates: For references, final freezes the binding, not the object.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+final User user = new User(name: "Ada");
+user.name = "Grace"; -- VALID if the member is mutable
+user = new User(name: "Other"); -- INVALID
+
+-- ============================================================================
+-- Example 110: 16.3 final
+-- Demonstrates: A final field may be initialized by a field initializer or during construction.
+
+class User {
+    final String id;
+
+    public User(String id);
+}
+
+-- ============================================================================
+-- Example 111: 17. Built-in Copy(...) and Move(...)
+-- Demonstrates: They are not members of a namespace, class, or instance.
+
+User copy = Copy(user);
+User moved = Move(user);
+
+-- ============================================================================
+-- Example 112: 17. Built-in Copy(...) and Move(...)
+-- Demonstrates: Move(binding) consumes the source binding. The source cannot be read again until it is
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+User first = LoadUser();
+User second = Move(first);
+
+Use(first); -- INVALID
+first = LoadUser(); -- valid again
+
+-- ============================================================================
+-- Example 113: 17. Built-in Copy(...) and Move(...)
+-- Demonstrates: A final binding cannot be moved.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+final User first = LoadUser();
+User second = Move(first); -- INVALID
+
+-- ============================================================================
+-- Example 114: 18.1 General Modifier Order
+-- Demonstrates: Examples:
+
+public static inline int Calculate(_ int value) noexcept {
+    value * 2
+}
+
+-- ============================================================================
+-- Example 115: 18.1 General Modifier Order
+-- Demonstrates: Examples:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public String Print() final override noexcept {
+    ...
+}
+
+-- ============================================================================
+-- Example 116: 18.2 Parameter Labels
+-- Demonstrates: By default, the parameter name is also the external argument label.
+
+void Rename(String name) {
+}
+
+Rename(name: "Tala");
+
+-- ============================================================================
+-- Example 117: 18.2 Parameter Labels
+-- Demonstrates: removes the external label.
+
+void Print(_ String text) {
+}
+
+Print("Hello");
+
+-- ============================================================================
+-- Example 118: 18.2 Parameter Labels
+-- Demonstrates: A separate external label may be written.
+
+void Move(x: int horizontal, y: int vertical) {
+}
+
+Move(x: 10, y: 20);
+
+-- ============================================================================
+-- Example 119: 18.6 Body Requirement
+-- Demonstrates: A normal method declaration requires a body.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public void Print(); -- INVALID
+}
+
+-- ============================================================================
+-- Example 120: 18.6 Body Requirement
+-- Demonstrates: Interface methods use ; as a contract declaration.
+
+interface Printable {
+    public void Print();
+}
+
+-- ============================================================================
+-- Example 121: 19. Constructors
+-- Demonstrates: access inline explicit Constructor(...)
+
+public inline explicit User(String name) {
+}
+
+-- ============================================================================
+-- Example 122: 19.1 Automatic self Assignment
+-- Demonstrates: In a non-explicit constructor, a parameter that is unused anywhere in the constructor
+--   body is automatically assigned to a same-named compatible direct field or property.
+
+class User {
+    String name;
+    int age;
+
+    public User(String name, int age) {
+    }
+}
+
+-- ============================================================================
+-- Example 123: 19.1 Automatic self Assignment
+-- Demonstrates: If a parameter is used anywhere in the constructor body, it is not automatically
+
+class User {
+    String name;
+
+    public User(String name) {
+        Validate(name);
+    }
+}
+
+-- ============================================================================
+-- Example 124: 19.2 Constructor ; Shorthand
+-- Demonstrates: A constructor may use ; when it relies on automatic self assignment.
+
+class User {
+    String name;
+    int age;
+
+    public User(String name, int age);
+}
+
+-- ============================================================================
+-- Example 125: 19.2 Constructor ; Shorthand
+-- Demonstrates: An explicit constructor cannot use the shorthand.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+public explicit User(String name); -- INVALID
+
+-- ============================================================================
+-- Example 126: 19.3 self(...) Delegation
+-- Demonstrates: A ; constructor requires an available parameterless base constructor because it cannot
+--   explicitly call a parameterized base constructor.
+
+class User {
+    String name;
+    int age;
+
+    public User(String name) {
+        self(name: name, age: 0);
+    }
+
+    public User(String name, int age);
+}
+
+-- ============================================================================
+-- Example 127: 19.4 super(...)
+-- Demonstrates: self(...) selects another constructor in the same declaration using normal constructor
+--   overload resolution.
+
+class Entity {
+    public Entity(long id) {
+    }
+}
+
+class User : Entity {
+    public User(long id) {
+        super(id: id);
+    }
+}
+
+-- ============================================================================
+-- Example 128: 19.5 Generated Default Constructor
+-- Demonstrates: If no constructor is declared, the compiler generates:
+
+public ClassName() {
+    super();
+}
+
+-- ============================================================================
+-- Example 129: 19.6 Constructor Overloads
+-- Demonstrates: explicit, inline, and access level are not overload identity.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public User(String name) {
+    }
+
+    private User(String name) { -- INVALID: same constructor surface
+    }
+}
+
+-- ============================================================================
+-- Example 130: 19.6 Constructor Overloads
+-- Demonstrates: Default arguments may create ambiguity.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public User(String name) {
+    }
+
+    public User(String name, int age = 0) {
+    }
+}
+
+new User(name: "Ada"); -- INVALID: ambiguous
+
+-- ============================================================================
+-- Example 131: 19.7 Constructor Access
+-- Demonstrates: new Type(...) considers only constructors accessible at the call site.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public User(String name) {
+    }
+
+    private User(int id) {
+    }
+}
+
+new User(name: "Ada"); -- VALID
+new User(id: 10);       -- INVALID
+
+-- ============================================================================
+-- Example 132: 19.7 Constructor Access
+-- Demonstrates: A private constructor may be called from the declaration that owns it.
+
+class User {
+    private User(int id) {
+    }
+
+    public static User FromId(int id) {
+        new User(id: id)
+    }
+}
+
+-- ============================================================================
+-- Example 133: 20. Instance Initialization
+-- Demonstrates: Initializers within one declaration run in source order.
+
+class Example {
+    int first = CreateFirst();
+    int second = CreateSecond(first);
+}
+
+-- ============================================================================
+-- Example 134: 20. Instance Initialization
+-- Demonstrates: A later member cannot be read before its initialization point.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Example {
+    int first = second; -- INVALID
+    int second = 10;
+}
+
+-- ============================================================================
+-- Example 135: 20. Instance Initialization
+-- Demonstrates: An initializer may use self only for already initialized members.
+
+class User {
+    String firstName = "Ada";
+    String displayName = self.firstName;
+}
+
+-- ============================================================================
+-- Example 136: 22. Return Rules
+-- Demonstrates: A value-returning function may return explicitly:
+
+int Sum(_ int left, _ int right) {
+    return left + right;
+}
+
+-- ============================================================================
+-- Example 137: 22. Return Rules
+-- Demonstrates: Or the final expression of the function body may supply the result:
+
+int Sum(_ int left, _ int right) {
+    left + right
+}
+
+-- ============================================================================
+-- Example 138: 22. Return Rules
+-- Demonstrates: Explicit returns and a final expression may coexist.
+
+int Divide(_ int left, _ int right) {
+    if (right == 0) {
+        return 0;
+    }
+
+    left / right
+}
+
+-- ============================================================================
+-- Example 139: 22. Return Rules
+-- Demonstrates: Recursive auto return inference requires at least one independently inferable result
+
+auto Factorial(_ int value) {
+    if (value <= 1) {
+        return 1;
+    }
+
+    value * Factorial(value - 1)
+}
+
+-- ============================================================================
+-- Example 140: 22. Return Rules
+-- Demonstrates: Recursive auto return inference requires at least one independently inferable result
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto Loop() {
+    Loop()
+} -- INVALID: no independent result type
+
+-- ============================================================================
+-- Example 141: 23. Properties
+-- Demonstrates: Recursive auto return inference requires at least one independently inferable result
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public String Name {
+    get {
+        ...
+    }
+
+    set {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 142: 23. Properties
+-- Demonstrates: Auto properties are supported.
+
+public String Name { get; set; }
+
+-- ============================================================================
+-- Example 143: 23. Properties
+-- Demonstrates: Auto properties may have an initializer.
+
+public int Volume { get; set; } = 50;
+
+-- ============================================================================
+-- Example 144: 23.1 Property Override
+-- Demonstrates: A property must be declared virtual to participate in normal class/data-class override
+
+class Base {
+    public virtual int Count {
+        get {
+            10
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 145: 23.1 Property Override
+-- Demonstrates: A property must be declared virtual to participate in normal class/data-class override
+
+class Child : Base {
+    public int Count override {
+        get {
+            20
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 146: 23.1 Property Override
+-- Demonstrates: final override closes the property override chain.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public int Value final override {
+    get {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 147: 24. Indexers
+-- Demonstrates: Indexers use self[...] syntax.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public String self[int index] {
+    get {
+        ...
+    }
+
+    set {
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 148: 24. Indexers
+-- Demonstrates: Auto indexer contracts are valid where the containing declaration kind supports them.
+
+public String self[int index] { get; }
+
+-- ============================================================================
+-- Example 149: 24. Indexers
+-- Demonstrates: Indexer override requires exact parameter count, parameter types, labels, result type,
+--   and accessor set.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Base {
+    public virtual String self[int index] {
+        get {
+            ...
+        }
+    }
+}
+
+class Child : Base {
+    public String self[int index] override {
+        get {
+            ...
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 150: 24. Indexers
+-- Demonstrates: Indexer override requires exact parameter count, parameter types, labels, result type,
+--   and accessor set.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Child : Base {
+    public String self[long index] override { -- INVALID
+        get {
+            ...
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 151: 25. op Pure Declarations
+-- Demonstrates: op marks a callable result-producing declaration as pure.
+
+op int Square(_ int value) {
+    value * value
+}
+
+-- ============================================================================
+-- Example 152: 25.1 Where op Is Valid
+-- Demonstrates: Examples:
+
+public op int Count {
+    get {
+        count
+    }
+}
+
+-- ============================================================================
+-- Example 153: 25.1 Where op Is Valid
+-- Demonstrates: Examples:
+
+public op int self[int index] {
+    get {
+        values[index]
+    }
+}
+
+-- ============================================================================
+-- Example 154: 25.1 Where op Is Valid
+-- Demonstrates: constructor destructor field setter
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op User(String name); -- INVALID
+op int value;         -- INVALID
+
+-- ============================================================================
+-- Example 155: 25.1 Where op Is Valid
+-- Demonstrates: op void is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op void Run() { -- INVALID
+}
+
+-- ============================================================================
+-- Example 156: 25.2 Purity
+-- Demonstrates: Local state is allowed.
+
+op int Calculate(_ int value) {
+    int result = value * 2;
+    result += 10;
+    result
+}
+
+-- ============================================================================
+-- Example 157: 25.2 Purity
+-- Demonstrates: Observable external mutation is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op String Rename(User user) {
+    user.name = "Ada"; -- INVALID
+    user.name
+}
+
+-- ============================================================================
+-- Example 158: 25.2 Purity
+-- Demonstrates: Observable external mutation is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op int Read() {
+    self.count++; -- INVALID
+    self.count
+}
+
+-- ============================================================================
+-- Example 159: 25.2 Purity
+-- Demonstrates: Reading an AARC object's state is pure if the read itself has no observable mutation.
+
+op String GetName(User user) {
+    user.name
+}
+
+-- ============================================================================
+-- Example 160: 25.2 Purity
+-- Demonstrates: Creating a local alias is pure.
+
+op String GetName(User user) {
+    User other = user;
+    other.name
+}
+
+-- ============================================================================
+-- Example 161: 25.2 Purity
+-- Demonstrates: Allocation by itself is not considered an observable side effect.
+
+op Point Create(_ int x, _ int y) {
+    new Point(x: x, y: y)
+}
+
+-- ============================================================================
+-- Example 162: 25.2 Purity
+-- Demonstrates: Copy(...) is pure.
+
+op User Clone(User user) {
+    Copy(user)
+}
+
+-- ============================================================================
+-- Example 163: 25.2 Purity
+-- Demonstrates: Move(...) is not pure because it consumes a binding.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op User Take(User user) {
+    Move(user) -- INVALID
+}
+
+-- ============================================================================
+-- Example 164: 25.2 Purity
+-- Demonstrates: Reading mutable static state is not pure.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Counter {
+    static int value;
+
+    public static op int Current() {
+        value -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 165: 25.2 Purity
+-- Demonstrates: Reading static final state is pure.
+
+class Constants {
+    static final int Base = 10;
+
+    public static op int Value() {
+        Base * 2
+    }
+}
+
+-- ============================================================================
+-- Example 166: 25.2 Purity
+-- Demonstrates: A normal pure function may be called from an op declaration.
+
+int Double(_ int value) {
+    value * 2
+}
+
+op int Quadruple(_ int value) {
+    Double(value) * 2
+}
+
+-- ============================================================================
+-- Example 167: 25.3 op and Overrides
+-- Demonstrates: op is not part of overload identity.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op int Value() {
+    1
+}
+
+int Value() { -- INVALID: same call surface
+    2
+}
+
+-- ============================================================================
+-- Example 168: 25.3 op and Overrides
+-- Demonstrates: If a base virtual member is op, an override must also be op.
+
+class Base {
+    public virtual op int Value() {
+        10
+    }
+}
+
+class Child : Base {
+    public op int Value() override {
+        20
+    }
+}
+
+-- ============================================================================
+-- Example 169: 25.4 op and Exceptions
+-- Demonstrates: Unchecked exceptions are discarded by the op context.
+
+op int Divide(_ int left, _ int right) {
+    left / right
+}
+
+-- ============================================================================
+-- Example 170: 25.4 op and Exceptions
+-- Demonstrates: An explicit unchecked throw is valid and is discarded.
+-- Expected result: accepted when the referenced declarations are available.
+
+op int Read() {
+    throw new RuntimeException(); -- VALID: unchecked exception is discarded
+}
+
+-- ============================================================================
+-- Example 171: 26. Expression Statements and Discard
+-- Demonstrates: A side-effect-capable call may appear as an expression statement.
+
+Save();
+
+-- ============================================================================
+-- Example 172: 26. Expression Statements and Discard
+-- Demonstrates: A pure value expression with no statement effect cannot appear alone.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+42;           -- INVALID
+name;         -- INVALID
+left + right; -- INVALID
+
+-- ============================================================================
+-- Example 173: 26. Expression Statements and Discard
+-- Demonstrates: Assignments and increment expressions may appear as statements.
+
+value = 10;
+count++;
+++index;
+
+-- ============================================================================
+-- Example 174: Normal function body + Expr();
+-- Demonstrates: Tala distinguishes three cases.
+
+void Run() {
+    Compute();
+}
+
+-- ============================================================================
+-- Example 175: op body + Expr();
+-- Demonstrates: result -> discarded unchecked exception -> normal exception behavior checked exception
+--   -> normal checked-exception rules
+
+op int Run() {
+    PureCompute();
+    10
+}
+
+-- ============================================================================
+-- Example 176: Explicit = Expr();
+-- Demonstrates: The expression must still satisfy op purity.
+
+_ = ReadFile();
+
+-- ============================================================================
+-- Example 177: Explicit = Expr();
+-- Demonstrates: = is a special statement form, not an ordinary assignment target.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int value = (_ = Save()); -- INVALID
+
+-- ============================================================================
+-- Example 178: Explicit = Expr();
+-- Demonstrates: Inside op, = may suppress checked and unchecked exceptions, but it does not bypass
+--   purity checking.
+
+op int Read() {
+    _ = PureCheckedOperation();
+    10
+}
+
+-- ============================================================================
+-- Example 179: 28. Static Initialization
+-- Demonstrates: A type may initialize static fields directly.
+
+class Configuration {
+    static String name = "Default";
+    static int version;
+}
+
+-- ============================================================================
+-- Example 180: 28. Static Initialization
+-- Demonstrates: A static { ... } initialization block is supported in declarations that can contain
+--   static members.
+
+class Configuration {
+    static String name;
+    static int version;
+
+    static {
+        name = LoadName();
+        version = LoadVersion();
+    }
+}
+
+-- ============================================================================
+-- Example 181: 29. self, Self, and super
+-- Demonstrates: self refers to the current instance.
+
+self.name
+self.Print()
+self[index]
+
+-- ============================================================================
+-- Example 182: 29. self, Self, and super
+-- Demonstrates: Self denotes the current dynamic type where the language surface explicitly permits
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public Self CreateLikeThis() {
+    ...
+}
+
+-- ============================================================================
+-- Example 183: 29. self, Self, and super
+-- Demonstrates: super explicitly selects base behavior.
+
+super.Name()
+
+-- ============================================================================
+-- Example 184: 30. Name Resolution and Shadowing
+-- Demonstrates: A local or parameter may shadow a member.
+
+class User {
+    String name;
+
+    public void Rename(String name) {
+        self.name = name;
+    }
+}
+
+-- ============================================================================
+-- Example 185: 30. Name Resolution and Shadowing
+-- Demonstrates: A declaration cannot be redeclared in the same local scope.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+public void Run(String value) {
+    int value = 10; -- INVALID
+}
+
+-- ============================================================================
+-- Example 186: 30. Name Resolution and Shadowing
+-- Demonstrates: A nested block may shadow an outer local or parameter.
+
+public void Run(String value) {
+    {
+        int value = 10;
+    }
+}
+
+-- ============================================================================
+-- Example 187: 30. Name Resolution and Shadowing
+-- Demonstrates: Field, property, method, and nested-type names share the member-name collision rules
+--   accepted by the declaration system. Methods may form overload sets; a field/property/nested type
+--   cannot silently share the same member name with a method.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class User {
+    String Value;
+
+    String Value() { -- INVALID
+        ...
+    }
+}
+
+-- ============================================================================
+-- Example 188: 30. Name Resolution and Shadowing
+-- Demonstrates: Static and instance methods cannot form two overloads that differ only by static.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    static void Run(int value) {
+    }
+
+    void Run(int value) { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 189: 30. Name Resolution and Shadowing
+-- Demonstrates: Static members are called through the type surface, not through an instance.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Counter.Current(); -- VALID
+counter.Current(); -- INVALID when Current is static
+
+-- ============================================================================
+-- Example 190: 31. if and guard Bindings
+-- Demonstrates: A declaration binding may appear in an if condition.
+
+if (auto user = FindUser()) {
+    Use(user);
+}
+
+-- ============================================================================
+-- Example 191: 31. if and guard Bindings
+-- Demonstrates: The binding is scoped to the if / else construct.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Use(user); -- INVALID after the if
+
+-- ============================================================================
+-- Example 192: 31. if and guard Bindings
+-- Demonstrates: A guard binding survives after the guard when the guard succeeds.
+
+guard (auto user = FindUser()) else {
+    return;
+}
+
+Use(user);
+
+-- ============================================================================
+-- Example 193: 31.1 if Expressions
+-- Demonstrates: An if used as an expression must be exhaustive and therefore requires an else branch.
+
+auto value = if (condition) {
+    1
+}
+else {
+    2
+};
+
+-- ============================================================================
+-- Example 295: 31. if and guard Bindings
+-- Demonstrates: A guard may also test a plain condition. The else block runs when the condition is false.
+
+guard (count > 0) else {
+    return 0;
+}
+
+Use(count);
+
+-- ============================================================================
+-- Example 296: 31. if and guard Bindings
+-- Demonstrates: The else block of a guard must leave the enclosing scope on every path, so the statements
+--   after the guard run only when the condition held.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+guard (ready) else {
+    Log("not ready"); -- INVALID: the block can complete normally
+}
+
+guard (ready) else {
+    if (strict) {
+        return;
+    }
+    -- INVALID: when strict is false the block completes normally
+}
+
+-- ============================================================================
+-- Example 297: 31. if and guard Bindings
+-- Demonstrates: Whether the else block leaves is decided by its control flow, not by the spelling of its last
+--   statement. return leaves the method; break and continue leave or continue the enclosing loop and are valid
+--   only where they have one; a loop that cannot end, a match all of whose arms leave and one of which always
+--   matches, and a call that is known never to return also do not complete.
+-- Context note: Fail is known never to return.
+
+while (HasNext()) {
+    auto item = Next();
+
+    guard (item.valid) else {
+        continue;
+    }
+
+    guard (item.size < limit) else {
+        break;
+    }
+
+    guard (item.kind \= 0) else {
+        if (strict) {
+            return;
+        }
+        else {
+            Fail("unknown kind");
+        }
+    }
+
+    Use(item);
+}
+
+-- ============================================================================
+-- Example 298: 31.1 if Expressions
+-- Demonstrates: A block of an if expression may leave instead of producing a value. return leaves the
+--   enclosing method and break and continue target the enclosing loop, under the rules those statements have
+--   anywhere else. A block that leaves produces no value; the expression has the type of the block that
+--   completes.
+
+auto size = if (item.valid) {
+    item.size
+}
+else {
+    return 0;
+};
+
+while (HasNext()) {
+    total += if (Next().skip) {
+        continue;
+    }
+    else {
+        1
+    };
+}
+
+-- ============================================================================
+-- Example 310: 31.1 if Expressions
+-- Demonstrates: An if or match expression none of whose branches completes normally is valid. It never
+--   produces a value, so whatever would have received the value is never evaluated and the statements after
+--   it are not reached. Each return is still checked against the return type of the method, and break and
+--   continue still need a loop.
+
+int Classify(bool known, int code) {
+    int result = if (known) {
+        return code;
+    }
+    else {
+        return 0;
+    };
+
+    return result; -- never reached
+}
+
+-- ============================================================================
+-- Example 299: 31.1 if Expressions
+-- Demonstrates: A block that can complete normally must end with its value.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto value = if (condition) {
+    Log("first"); -- INVALID: the block completes without a value
+}
+else {
+    2
+};
+
+auto other = if (condition) {
+    break; -- INVALID outside a loop: break needs a loop to leave
+}
+else {
+    2
+};
+
+-- ============================================================================
+-- Example 300: 31.1 if Expressions
+-- Demonstrates: Where a block ends with an expression that is its value, an if with an else or a match in
+--   that position is that value; no parentheses are needed. This applies to blocks used as values. It does
+--   not give a method body an implicit return: the return rules of methods are unchanged.
+
+auto sign = if (value < 0) {
+    -1
+}
+else {
+    if (value > 0) {
+        1
+    }
+    else {
+        0
+    }
+};
+
+-- ============================================================================
+-- Example 194: 32. match
+-- Demonstrates: Single-target form:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+match (number) {
+    1 -> {
+        ...
+    },
+
+    2 if condition -> {
+        ...
+    },
+
+    _ -> {
+        ...
+    },
+}
+
+-- ============================================================================
+-- Example 195: 32. match
+-- Demonstrates: Multiple-target form:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+match (a), (b) {
+    (1), (2) -> {
+        ...
+    },
+
+    (Type x), (_) -> {
+        ...
+    },
+}
+
+-- ============================================================================
+-- Example 301: 32. match
+-- Demonstrates: When no arm of a match statement matches, execution continues with the statement after it,
+--   like an if without an else.
+
+match (number) {
+    1 -> {
+        HandleOne();
+    },
+}
+
+Continue(); -- reached for every number, also when it is not 1
+
+-- ============================================================================
+-- Example 302: 32. match
+-- Demonstrates: A match used as an expression must be exhaustive: some arm must match whatever the targets
+--   are.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto text = match (number) { -- INVALID: no arm for other numbers
+    1 -> "one",
+    2 -> "two",
+};
+
+-- ============================================================================
+-- Example 303: 32. match
+-- Demonstrates: Exhaustiveness is established by a wildcard, by a type pattern that matches every possible
+--   value of its target, or by arms that cover both values of a bool target. An arm with a guard never
+--   counts, because its guard may be false.
+-- Expected result: the last match is rejected; the INVALID marker is normative.
+
+auto a = match (number) {
+    1 -> 10,
+    _ -> 0,
+};
+
+auto b = match (number) {
+    int n -> n * 2, -- every value of number is an int
+};
+
+auto c = match (flag) {
+    true -> 1,
+    false -> 0,
+};
+
+auto d = match (number) { -- INVALID: the only catch-all arm has a guard
+    _ if enabled -> 1,
+};
+
+-- ============================================================================
+-- Example 304: 32. match
+-- Demonstrates: A match over an enum is exhaustive when its arms cover every member; no wildcard is needed and
+--   the enum does not have to be marked [Exhaustive]. When the target may be null, null must be covered as
+--   well.
+-- Context note: Status has exactly the members NONE and READY.
+-- Expected result: the last match is rejected; the INVALID marker is normative.
+
+auto a = match (status) {
+    .NONE -> 0,
+    .READY -> 1,
+};
+
+auto b = match (maybeStatus) {
+    .NONE -> 0,
+    .READY -> 1,
+    null -> 2,
+};
+
+auto c = match (maybeStatus) { -- INVALID: null is not covered
+    .NONE -> 0,
+    .READY -> 1,
+};
+
+-- ============================================================================
+-- Example 305: 32. match
+-- Demonstrates: The comma after an arm is optional. An expression body is read like every expression, so a
+--   parenthesized pattern that follows it without a comma is read as the argument list of a call of the body.
+--   The compiler reports that reading and asks for the comma; it does not require commas elsewhere.
+-- Expected result: the second match is rejected; the INVALID marker is normative.
+
+auto a = match (number) {
+    0 -> 10
+    1 -> 20
+    _ -> 30
+};
+
+auto b = match (number) {
+    0 -> Twice
+    (1) -> 20 -- INVALID: read as Twice(1) -> 20; write `0 -> Twice,`
+    _ -> 30
+};
+
+-- ============================================================================
+-- Example 306: 32. match
+-- Demonstrates: The block of an arm of a match expression may leave instead of producing a value, like a
+--   block of an if expression. The match has the type of the arms that complete.
+
+auto size = match (kind) {
+    0 -> {
+        return 0;
+    },
+    int other -> other * 2,
+};
+
+-- ============================================================================
+-- Example 307: 32.1 Pattern Forms
+-- Demonstrates: A numeric constant pattern may be negative: a minus sign directly before a numeric literal is
+--   part of the constant. The constant must be a value of the type of its target, so the most negative value
+--   of a signed type is a valid pattern.
+-- Context note: small is a byte and code is a ubyte.
+
+match (number) {
+    -1 -> { ... },
+    0 -> { ... },
+}
+
+match (small) {
+    -128 -> { ... }, -- the least byte
+    127 -> { ... },
+}
+
+-- ============================================================================
+-- Example 308: 32.1 Pattern Forms
+-- Demonstrates: The minus sign belongs to a numeric literal only. It is not an operator, and no other
+--   expression is a pattern.
+-- Context note: small is a byte and code is a ubyte.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+match (number) {
+    -limit -> { ... }, -- INVALID: a name is not a numeric literal
+    1 + 1 -> { ... },  -- INVALID: an expression is not a pattern
+    -(1) -> { ... },   -- INVALID
+}
+
+match (small) {
+    -129 -> { ... }, -- INVALID: not a value of byte
+    128 -> { ... },  -- INVALID: not a value of byte
+}
+
+match (code) {
+    -1 -> { ... }, -- INVALID: not a value of ubyte
+}
+
+-- ============================================================================
+-- Example 309: 32.1 Pattern Forms
+-- Demonstrates: A type pattern applies no implicit numeric conversion: over a scalar target it matches only
+--   the type of the target itself. This does not restrict type patterns over reference types, which match
+--   the dynamic type of the target and its subtypes.
+-- Context note: number is an int.
+-- Expected result: the second match is rejected; the INVALID marker is normative.
+
+match (number) {
+    int n -> { Use(n); },
+}
+
+match (number) {
+    long n -> { Use(n); }, -- INVALID: an int is not matched as a long
+}
+
+-- ============================================================================
+-- Example 196: 32.1 Pattern Forms
+-- Demonstrates: Constant pattern:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+0 -> { ... }
+
+-- ============================================================================
+-- Example 197: 32.1 Pattern Forms
+-- Demonstrates: Null pattern:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+null -> { ... }
+
+-- ============================================================================
+-- Example 198: 32.1 Pattern Forms
+-- Demonstrates: Type + binding pattern:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+User user -> { ... }
+
+-- ============================================================================
+-- Example 199: 32.1 Pattern Forms
+-- Demonstrates: Type without binding:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+User _ -> { ... }
+
+-- ============================================================================
+-- Example 200: 32.1 Pattern Forms
+-- Demonstrates: Wildcard:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+_ -> { ... }
+
+-- ============================================================================
+-- Example 201: 32.1 Pattern Forms
+-- Demonstrates: Variant/nominal alternative pattern:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+Success success -> { ... }
+Failure failure -> { ... }
+
+-- ============================================================================
+-- Example 202: 32.1 Pattern Forms
+-- Demonstrates: Target-typed enum/enum-class case pattern:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+.Success -> { ... }
+
+-- ============================================================================
+-- Example 203: 32.2 Pattern Order
+-- Demonstrates: A branch shadowed completely by an earlier broader pattern is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+match (shape) {
+    Shape shape -> { ... },
+    Circle circle -> { ... }, -- INVALID: unreachable
+}
+
+-- ============================================================================
+-- Example 204: 32.3 Binding Scope
+-- Demonstrates: The same binding name cannot be introduced twice in one multi-target branch.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+match (left), (right) {
+    (Success value), (Success value) -> { -- INVALID
+    },
+}
+
+-- ============================================================================
+-- Example 205: 32.4 No Destructuring Pattern
+-- Demonstrates: Constructor-like destructuring patterns are not supported.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+User(name, age) -> { ... } -- INVALID
+
+-- ============================================================================
+-- Example 206: 32.4 No Destructuring Pattern
+-- Demonstrates: Bind the value and access members normally.
+
+User user -> {
+    Use(user.name);
+    Use(user.age);
+}
+
+-- ============================================================================
+-- Example 207: 33. Conditional Expressions
+-- Demonstrates: Normal ternary syntax is supported.
+
+condition ? first : second
+
+-- ============================================================================
+-- Example 208: 33. Conditional Expressions
+-- Demonstrates: GNU-style omitted-middle conditional syntax is also supported.
+
+left ?: fallback
+
+-- ============================================================================
+-- Example 209: 33. Conditional Expressions
+-- Demonstrates: left is tested using the normal Tala condition conversion rules. If it is truthy,
+--   the original left value is the result; otherwise fallback is evaluated.
+
+int count = ReadCount() ?: 10;
+
+-- ============================================================================
+-- Example 210: 33. Conditional Expressions
+-- Demonstrates: Null coalescing is separate:
+
+left ?? fallback
+
+-- ============================================================================
+-- Example 211: 33. Conditional Expressions
+-- Demonstrates: ?? tests only for null; it is not truthiness coalescing.
+
+User user = FindUser() ?? CreateGuest();
+
+-- ============================================================================
+-- Example 212: 35. Varargs
+-- Demonstrates: Runtime varargs use T... on a parameter.
+
+void PrintAll(_ String... values) {
+    for (String value : values) {
+        Console.Println(value);
+    }
+}
+
+-- ============================================================================
+-- Example 213: 35. Varargs
+-- Demonstrates: A runtime vararg parameter is seen as System.Array<T> in the function body.
+
+void PrintAll(_ String... values) {
+    System.Array<String> copy = values;
+}
+
+-- ============================================================================
+-- Example 214: 35. Varargs
+-- Demonstrates: A vararg accepts zero or more arguments.
+
+PrintAll();
+PrintAll("A");
+PrintAll("A", "B", "C");
+
+-- ============================================================================
+-- Example 215: 35. Varargs
+-- Demonstrates: A vararg may have an external label.
+
+void Log(messages: String... values) {
+}
+
+Log(messages: "First", "Second");
+
+-- ============================================================================
+-- Example 216: 35. Varargs
+-- Demonstrates: The label is written once for the vararg sequence.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Log(messages: "First", messages: "Second"); -- INVALID
+
+-- ============================================================================
+-- Example 217: 35. Varargs
+-- Demonstrates: A vararg cannot have a default value.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Print(String... values = []); -- INVALID
+
+-- ============================================================================
+-- Example 218: 35. Varargs
+-- Demonstrates: An array may be expanded into call arguments using ....
+
+System.Array<String> messages = GetMessages();
+PrintAll(messages...);
+
+-- ============================================================================
+-- Example 219: 35. Varargs
+-- Demonstrates: A fixed-arity overload is preferred over a vararg overload when both otherwise match
+--   the same call.
+
+void Print(_ String value) {
+}
+
+void Print(_ String... values) {
+}
+
+Print("Hello");   -- fixed-arity overload
+Print("A", "B"); -- vararg overload
+Print();          -- vararg overload
+
+-- ============================================================================
+-- Example 220: 36. Templates
+-- Demonstrates: Tala templates use C++-style compile-time specialization without type erasure.
+
+template<typename T>
+class Box {
+    T value;
+}
+
+-- ============================================================================
+-- Example 221: 36. Templates
+-- Demonstrates: Different concrete argument sets produce distinct concrete template types.
+
+Box<int>
+Box<String>
+
+-- ============================================================================
+-- Example 222: 36.1 Template Parameter Kinds
+-- Demonstrates: Type parameter:
+
+template<typename T>
+class Box {
+}
+
+-- ============================================================================
+-- Example 223: 36.1 Template Parameter Kinds
+-- Demonstrates: Value parameter:
+
+template<int Size>
+class Buffer {
+}
+
+-- ============================================================================
+-- Example 224: 36.1 Template Parameter Kinds
+-- Demonstrates: Template-template parameter:
+
+template<template<typename> class Container>
+class Wrapper {
+}
+
+-- ============================================================================
+-- Example 225: 36.2 Template Packs
+-- Demonstrates: Template-template parameter:
+
+template<typename... Types>
+class Tuple {
+}
+
+-- ============================================================================
+-- Example 226: 36.2 Template Packs
+-- Demonstrates: Pack expansion uses ....
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+PrintOne(values)...;
+Types...
+
+-- ============================================================================
+-- Example 227: 36.3 Template Wildcard
+-- Demonstrates: may be used as a template wildcard in matching/concept/requires contexts.
+
+Tuple<_, _>
+
+-- ============================================================================
+-- Example 228: 36.4 Deduction
+-- Demonstrates: An explicit requests deduction for that slot.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+CreatePair<String, _>(...)
+
+-- ============================================================================
+-- Example 229: 36.5 Function auto Sugar
+-- Demonstrates: A function parameter written with auto introduces an independent inferred template
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+auto Combine(auto left, auto right) {
+    ...
+}
+
+-- ============================================================================
+-- Example 230: 36.6 Default Template Arguments
+-- Demonstrates: Template defaults may refer to later template parameters.
+
+template<typename T = U, typename U = int>
+class Pair {
+}
+
+-- ============================================================================
+-- Example 231: 36.7 Constraint-Based Specialization
+-- Demonstrates: Use multiple constrained declarations with the same template surface.
+
+template<typename T>
+requires FirstConstraint<T>
+class Box {
+}
+
+-- ============================================================================
+-- Example 232: 36.7 Constraint-Based Specialization
+-- Demonstrates: Use multiple constrained declarations with the same template surface.
+
+template<typename T>
+requires MoreSpecificConstraint<T>
+class Box {
+}
+
+-- ============================================================================
+-- Example 233: 36.8 Lazy Member Instantiation
+-- Demonstrates: A template declaration may contain a member whose body is invalid for some concrete
+--   arguments if that member is never instantiated.
+
+template<typename T>
+class Box {
+    T value;
+
+    public void Print() {
+        value.Print();
+    }
+}
+
+-- ============================================================================
+-- Example 234: 36.8 Lazy Member Instantiation
+-- Demonstrates: A template declaration may contain a member whose body is invalid for some concrete
+--   arguments if that member is never instantiated.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Box<int> box; -- may be valid if Print is not instantiated
+box.Print();  -- INVALID if int has no matching Print
+
+-- ============================================================================
+-- Example 235: 36.9 Explicit Instantiation
+-- Demonstrates: Class-level requires constraints are checked when the concrete type is requested.
+
+template class Box<int>;
+
+-- ============================================================================
+-- Example 236: 36.9 Explicit Instantiation
+-- Demonstrates: Function form:
+
+template int Max<int>(_ int left, _ int right);
+
+-- ============================================================================
+-- Example 237: 36.10 Template Recursion
+-- Demonstrates: Recursive value-layout cycles are invalid when they require an infinitely sized CoW
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+template<typename T>
+data Node {
+    T value;
+    Node<T> next; -- INVALID: recursive value layout
+}
+
+-- ============================================================================
+-- Example 238: 36.10 Template Recursion
+-- Demonstrates: AARC reference recursion is valid.
+
+template<typename T>
+class Node {
+    T value;
+    Node<T> next;
+}
+
+-- ============================================================================
+-- Example 239: 37. Runtime Vararg vs Template Pack
+-- Demonstrates: Runtime vararg:
+
+template<typename T>
+void PrintAll(_ T... values) {
+}
+
+-- ============================================================================
+-- Example 240: 37. Runtime Vararg vs Template Pack
+-- Demonstrates: All runtime arguments share one deduced T.
+
+PrintAll(1, 2, 3); -- T = int
+
+-- ============================================================================
+-- Example 241: 37. Runtime Vararg vs Template Pack
+-- Demonstrates: All runtime arguments share one deduced T.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+PrintAll(1, "Two"); -- INVALID when no one exact T satisfies the call
+
+-- ============================================================================
+-- Example 242: 37. Runtime Vararg vs Template Pack
+-- Demonstrates: Heterogeneous compile-time parameter packs use a template pack:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+template<typename... Types>
+void PrintEach(_ Types... values) {
+    PrintOne(values)...;
+}
+
+-- ============================================================================
+-- Example 243: 38. Operators
+-- Demonstrates: Built-in and user-defined overloadable operators use Operator<...> declarations.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public static Vector Operator<+>(
+    _ Vector left,
+    _ Vector right
+) noexcept {
+    ...
+}
+
+-- ============================================================================
+-- Example 244: 38.2 Assignment Operators
+-- Demonstrates: A direct compound-assignment operator declaration is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+Operator<+=> -- INVALID
+
+-- ============================================================================
+-- Example 245: 38.4 Precedence and Associativity
+-- Demonstrates: A new binary operator must specify an existing precedence group and an associativity.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public static Result Operator<%%>(
+    _ Value left,
+    _ Value right
+) precedence Multiplicative associativity left {
+    ...
+}
+
+-- ============================================================================
+-- Example 246: 38.5 Prefix and Postfix
+-- Demonstrates: When one symbol has both prefix and postfix forms, the declaration identifies the form
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public static Counter Operator<++ prefix>(_ Counter value) noexcept {
+    ...
+}
+
+-- ============================================================================
+-- Example 247: 38.5 Prefix and Postfix
+-- Demonstrates: When one symbol has both prefix and postfix forms, the declaration identifies the form
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+public static Counter Operator<++ postfix>(_ Counter value) noexcept {
+    ...
+}
+
+-- ============================================================================
+-- Example 248: 38.6 Conversion Operators
+-- Demonstrates: Conversion declarations use:
+
+Operator<from>
+Operator<to>
+
+-- ============================================================================
+-- Example 249: 38.7 Template Operators
+-- Demonstrates: Operator declarations may be templates.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+template<typename T>
+requires Numeric<T>
+public static Vector<T> Operator<+>(
+    _ Vector<T> left,
+    _ Vector<T> right
+) noexcept {
+    ...
+}
+
+-- ============================================================================
+-- Example 250: 40.1 Namespace Import
+-- Demonstrates: They are not runtime statements.
+
+using System.Utils;
+
+-- ============================================================================
+-- Example 251: 40.2 Selected Import
+-- Demonstrates: Sub-namespaces are not imported recursively.
+
+using selected System {
+    Array,
+    Dictionary,
+};
+
+-- ============================================================================
+-- Example 252: 40.2 Selected Import
+-- Demonstrates: Selected collection imports name declarations from the canonical System collection catalog.
+-- Expected result: accepted when the referenced declarations are available.
+
+using selected System {
+    Array,
+    Dictionary,
+    Set,
+};
+
+-- ============================================================================
+-- Example 253: 40.3 Selected Alias Import
+-- Demonstrates: Alias selection uses:
+
+using selected alias System {
+    Array = Collection,
+};
+
+-- ============================================================================
+-- Example 254: 40.3 Selected Alias Import
+-- Demonstrates: The left side is the canonical source declaration and the right side is its local alias.
+-- Expected result: accepted when the referenced declarations are available.
+
+using selected alias System {
+    Array = Collection,
+    Dictionary = Map,
+};
+
+-- ============================================================================
+-- Example 255: 40.3 Selected Alias Import
+-- Demonstrates: A local alias name must be unique within the applicable import surface.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+using selected alias First {
+    Result = Value,
+};
+
+using selected alias Second {
+    OtherResult = Value, -- INVALID: duplicate local alias name
+};
+
+-- ============================================================================
+-- Example 256: 40.4 Scope
+-- Demonstrates: using is file-level only.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    using System.Utils; -- INVALID
+}
+
+-- ============================================================================
+-- Example 257: 41.1 #define
+-- Demonstrates: There is no textual substitution, macro expansion, token pasting, or function-like
+--   macro facility.
+
+#define AGE 26
+
+-- ============================================================================
+-- Example 258: 41.1 #define
+-- Demonstrates: A runtime declaration may use its compile-time value:
+
+#define AGE 26 -- compile-time
+
+int value = AGE; -- runtime binding initialized from the compile-time value
+
+-- ============================================================================
+-- Example 259: 41.1 #define
+-- Demonstrates: Directive values are compile-time constant expressions.
+
+#define BASE 10
+#define LIMIT BASE * 2
+
+-- ============================================================================
+-- Example 260: 41.1 #define
+-- Demonstrates: Runtime values cannot initialize directive symbols.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int value = 10;
+#define LIMIT value -- INVALID
+
+-- ============================================================================
+-- Example 261: 41.2 #setdef
+-- Demonstrates: #setdef changes the value of an existing directive symbol.
+
+#define AGE 26
+#setdef AGE 30
+
+-- ============================================================================
+-- Example 262: 41.3 #undef
+-- Demonstrates: #undef removes an existing directive symbol for subsequent source.
+
+#define AGE 26
+#undef AGE
+
+-- ============================================================================
+-- Example 263: 41.4 Source-Order Semantics
+-- Demonstrates: #define, #setdef, and #undef are source-order sensitive.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+#define AGE 26
+int first = AGE;
+
+#setdef AGE 30
+int second = AGE;
+
+#undef AGE
+int third = AGE; -- INVALID when no ordinary declaration resolves AGE
+
+-- ============================================================================
+-- Example 264: 41.5 Non-Textual Behavior
+-- Demonstrates: #define, #setdef, and #undef are source-order sensitive.
+
+#define NAME "Wolf"
+String text = "NAME";
+
+-- ============================================================================
+-- Example 265: 41.5 Non-Textual Behavior
+-- Demonstrates: text contains "NAME"; the string is not rewritten.
+
+#define AGE 26
+int USER_AGE = 10;
+
+-- ============================================================================
+-- Example 266: 42. Conditional Compiler Directives
+-- Demonstrates: They are not runtime if statements and are not macro preprocessing.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#if os(Windows)
+    ...
+#elseif os(Linux)
+    ...
+#elseif os(macOS)
+    ...
+#elseif os(FreeBSD)
+    ...
+#elseif os(OpenBSD)
+    ...
+#elseif os(NetBSD)
+    ...
+#elseif family(BSD)
+    ...
+#elseif family(Unix)
+    ...
+#elseif family(Windows)
+    ...
+#else
+    ...
+#endif
+
+-- ============================================================================
+-- Example 267: 42.1 Platform Predicates
+-- Demonstrates: os(...) and family(...) are compiler-directive predicates. They are not normal runtime
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+bool value = os(Windows); -- INVALID
+
+-- ============================================================================
+-- Example 268: 42.1 Platform Predicates
+-- Demonstrates: os(...) and family(...) are compiler-directive predicates. They are not normal runtime
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+if (family(Unix)) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 269: 42.2 Known OS Predicates
+-- Demonstrates: os(ReactOS) does not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+#if os(ReactOS) -- INVALID
+#endif
+
+-- ============================================================================
+-- Example 270: 42.4 Boolean Operators
+-- Demonstrates: not &&
+
+#if family(Unix) && not os(macOS)
+#endif
+
+-- ============================================================================
+-- Example 271: 42.4 Boolean Operators
+-- Demonstrates: not &&
+
+#if os(Windows) || family(BSD)
+#endif
+
+-- ============================================================================
+-- Example 272: 42.4 Boolean Operators
+-- Demonstrates: not &&
+
+#if not family(Windows)
+#endif
+
+-- ============================================================================
+-- Example 273: 42.4 Boolean Operators
+-- Demonstrates: Parentheses are supported.
+
+#if family(Unix) && (os(Linux) || os(macOS))
+#endif
+
+-- ============================================================================
+-- Example 274: 42.4 Boolean Operators
+-- Demonstrates: Directive symbols may participate in directive conditions.
+
+#define DEBUG true
+
+#if DEBUG && family(Unix)
+#endif
+
+-- ============================================================================
+-- Example 275: 42.5 Branch Selection
+-- Demonstrates: Branches are tested from top to bottom. The first true branch is selected.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#if os(FreeBSD)
+    ...
+#elseif family(BSD)
+    ...
+#elseif family(Unix)
+    ...
+#endif
+
+-- ============================================================================
+-- Example 276: 42.6 Placement
+-- Demonstrates: Conditional compiler directives may occur at file-level declaration boundaries and
+--   inside declaration bodies at statement/member boundaries.
+
+#if os(Windows)
+class PlatformService {
+}
+#else
+class PlatformService {
+}
+#endif
+
+-- ============================================================================
+-- Example 277: 42.6 Placement
+-- Demonstrates: Conditional compiler directives may occur at file-level declaration boundaries and
+--   inside declaration bodies at statement/member boundaries.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+class Service {
+#if os(Windows)
+    public void Run() {
+        ...
+    }
+#else
+    public void Run() {
+        ...
+    }
+#endif
+}
+
+-- ============================================================================
+-- Example 278: 42.6 Placement
+-- Demonstrates: They may not split one expression into syntactically incomplete fragments.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+int value =
+#if os(Windows)
+    10
+#else
+    20
+#endif
+; -- INVALID
+
+-- ============================================================================
+-- Example 279: 42.7 Nesting
+-- Demonstrates: #else must be the final branch before #endif.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+#if os(Windows)
+#else
+#elseif os(Linux) -- INVALID
+#endif
+
+-- ============================================================================
+-- Example 280: 43. Diagnostic Compiler Directives
+-- Demonstrates: Tala provides four diagnostic/message directives:
+
+#error "Unsupported platform"
+#warn "Fallback implementation is active"
+#info "Using Unix backend"
+#message "Building networking module"
+
+-- ============================================================================
+-- Example 281: 43. Diagnostic Compiler Directives
+-- Demonstrates: The message operand is a compile-time String expression.
+
+#define PLATFORM_NAME "Unix"
+#message "Platform: " + PLATFORM_NAME
+
+-- ============================================================================
+-- Example 282: 43. Diagnostic Compiler Directives
+-- Demonstrates: Runtime values are invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+String name = GetName();
+#message name -- INVALID
+
+-- ============================================================================
+-- Example 283: 44. Regions
+-- Demonstrates: They do not create a runtime or declaration scope.
+
+#region Networking
+
+class Client {
+}
+
+class Server {
+}
+
+#endregion
+
+-- ============================================================================
+-- Example 284: 44. Regions
+-- Demonstrates: The region name is optional.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#region
+...
+#endregion
+
+-- ============================================================================
+-- Example 285: 44. Regions
+-- Demonstrates: Regions may be nested.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#region Platform
+
+#region Windows
+...
+#endregion
+
+#region Unix
+...
+#endregion
+
+#endregion
+
+-- ============================================================================
+-- Example 286: 44. Regions
+-- Demonstrates: #endregion may optionally repeat the region name.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#region Networking
+...
+#endregion Networking
+
+-- ============================================================================
+-- Example 287: 44. Regions
+-- Demonstrates: If a closing name is written, it must match the opening region name case-sensitively.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+#region Networking
+...
+#endregion networking -- INVALID
+
+-- ============================================================================
+-- Example 288: 45.3 Function Bodies
+-- Demonstrates: Local function declarations do not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public void Run() {
+        int Calculate(_ int value) { -- INVALID
+            value * 2
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 289: 45.3 Function Bodies
+-- Demonstrates: Local type declarations do not exist.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class User {
+    public void Run() {
+        class Helper { -- INVALID
+        }
+    }
+}
+
+-- ============================================================================
+-- Example 290: 46. Constructed Template Type Classification
+-- Demonstrates: A constructed template type is a value type only when its declaration and every
+--   type argument are value types after substitution. Classification examines the complete type
+--   argument tree rather than only the outer declaration.
+
+template<typename T>
+data ValueCell {
+    T Value;
+}
+
+ValueCell<int> scalarCell;                 -- value type
+ValueCell<ValueCell<int>> nestedCell;      -- value type
+
+-- ============================================================================
+-- Example 291: 46. Constructed Template Type Classification
+-- Demonstrates: A reference-type argument makes a value-declared template specialization a
+--   reference type. The reference classification propagates through every enclosing constructed
+--   template type.
+
+template<typename T>
+data ValueCell {
+    T Value;
+}
+
+ValueCell<String> directReference = null;                  -- reference type
+ValueCell<ValueCell<String>> nestedReference = null;       -- reference type
+ValueCell<ValueCell<ValueCell<String>>> deepReference = null; -- reference type
+
+-- ============================================================================
+-- Example 292: 46. Constructed Template Type Classification
+-- Demonstrates: A reference declaration remains a reference type regardless of its arguments. A
+--   reference specialization also makes every value-declared specialization containing it a
+--   reference type.
+
+template<typename T>
+class ReferenceCell {
+    T Value;
+}
+
+template<typename T>
+data ValueCell {
+    T Value;
+}
+
+ReferenceCell<int> outerReference = null;               -- reference type
+ValueCell<ReferenceCell<int>> containedReference = null; -- reference type
+
+-- ============================================================================
+-- Example 293: 46. Constructed Template Type Classification
+-- Demonstrates: A completely value-classified specialization remains non-nullable even when it is
+--   nested. The invalid initializer distinguishes this rule from reference propagation.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+template<typename T>
+data ValueCell {
+    T Value;
+}
+
+ValueCell<ValueCell<int>> value = null; -- INVALID: the complete constructed type is a value type
+
+-- ============================================================================
+-- Example 294: 46. Constructed Template Type Classification
+-- Demonstrates: Only type arguments participate in recursive value/reference classification.
+--   Compile-time value arguments do not introduce a reference edge. An unresolved type parameter
+--   remains classification-dependent until substitution; aliases are classified after expansion.
+
+template<typename T, int Size>
+data Buffer {
+    T Value;
+}
+
+template<typename T>
+typealias NestedCell = ValueCell<ValueCell<T>>;
+
+Buffer<int, 32> values;         -- value type; 32 is not a type argument
+NestedCell<int> nestedValues;   -- value type after alias expansion
+NestedCell<String> nestedNames; -- reference type after alias expansion

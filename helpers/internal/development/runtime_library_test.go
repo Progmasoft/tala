@@ -15,7 +15,7 @@ func TestEveryHostHasARuntimeLibraryTheLinkerLooksFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	linker, err := os.ReadFile(filepath.Join(root, "Compiler", "Linker", "NativeLinker.cpp"))
+	linker, err := os.ReadFile(filepath.Join(root, "Talac", "Linker", "NativeLinker.cpp"))
 	if err != nil {
 		t.Fatal(err)
 	}

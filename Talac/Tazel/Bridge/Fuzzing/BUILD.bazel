@@ -1,0 +1,7 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+cc_binary(
+    name = "project_fuzzer",
+    srcs = ["ProjectFuzzer.cpp"],
+    deps = ["//Talac/Tazel/Bridge:project_driver", "@llvm//:llvm"],
+)

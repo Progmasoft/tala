@@ -57,7 +57,7 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Run instrumented native suites and export LCOV
@@ -78,7 +78,7 @@ jobs:
           go run ./helpers/cmd/develop test -- \
             --copt=-fprofile-instr-generate \
             --copt=-fcoverage-mapping \
-            '--per_file_copt=^Compiler/Runtime/Hosted/.*@-fno-profile-instr-generate,-fno-coverage-mapping' \
+            '--per_file_copt=^Talac/Runtime/Hosted/.*@-fno-profile-instr-generate,-fno-coverage-mapping' \
             --linkopt=-fprofile-instr-generate
 
           profiles=("$report_dir"/*.profraw)
@@ -91,7 +91,7 @@ jobs:
           binaries=()
           while IFS= read -r -d '' binary; do
             binaries+=("$binary")
-          done < <(find -L bazel-bin/Compiler bazel-bin/Interactive -type f -name '*_tests' -print0)
+          done < <(find -L bazel-bin/Talac bazel-bin/Interactive -type f -name '*_tests' -print0)
           if [[ "${#binaries[@]}" -lt 16 ]]; then
             echo "Expected at least 16 instrumented native suites; found ${#binaries[@]}" >&2
             exit 1
@@ -108,7 +108,7 @@ jobs:
             -ignore-filename-regex='(^|/)(third_party|external|bazel-out)/' \
             "${binaries[0]}" \
             "${objects[@]}" > "$report_dir/native.lcov"
-          if ! grep -q '^SF:.*Compiler/' "$report_dir/native.lcov"; then
+          if ! grep -q '^SF:.*Talac/' "$report_dir/native.lcov"; then
             echo 'The native LCOV report has no compiler source records' >&2
             exit 1
           fi
@@ -144,7 +144,7 @@ jobs:
       - name: Test Kotlin owners with JaCoCo
         shell: pwsh
         run: |
-          foreach ($component in @('ProjectSystem', 'Analyzer', 'Formatter', 'Linter')) {
+          foreach ($component in @('Tazel', 'Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
             gradle -p $component test jacocoTestReport
             if ($LASTEXITCODE -ne 0) {
               throw "JaCoCo test/report failed for $component"
@@ -160,10 +160,10 @@ jobs:
         with:
           name: kotlin-components-coverage
           path: |
-            ProjectSystem/build/reports/jacoco/test/jacocoTestReport.xml
-            Analyzer/build/reports/jacoco/test/jacocoTestReport.xml
-            Formatter/build/reports/jacoco/test/jacocoTestReport.xml
-            Linter/build/reports/jacoco/test/jacocoTestReport.xml
+            Tazel/build/reports/jacoco/test/jacocoTestReport.xml
+            Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
+            Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
+            Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
           if-no-files-found: error
           retention-days: 1
 
@@ -243,7 +243,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/ProjectSystem/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/Tazel/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-project-system
           name: kotlin-project-system
       - name: Upload Analyzer coverage
@@ -253,7 +253,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Analyzer/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-analyzer
           name: kotlin-analyzer
       - name: Upload Formatter coverage
@@ -263,7 +263,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Formatter/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-formatter
           name: kotlin-formatter
       - name: Upload Linter coverage
@@ -273,7 +273,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Linter/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-linter
           name: kotlin-linter
 

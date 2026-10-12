@@ -17,7 +17,7 @@ import (
 // rebuilt in an isolated HPC tree and retains inputs that hit new production
 // ticks, rather than pretending native callback coverage represents Haskell.
 func runHaskellFuzz(repository, corpusRoot, artifacts string, duration, jobs int, runner commandRunner) error {
-	directory := filepath.Join(repository, "Compiler")
+	directory := filepath.Join(repository, "Talac")
 	options := []string{"--enable-coverage", "--disable-tests", "--builddir=dist-fuzz-coverage"}
 	build := append([]string{"build", "exe:frontend-fuzz"}, options...)
 	if err := runner.Run(directory, nil, "cabal", build...); err != nil {
@@ -42,7 +42,7 @@ func runHaskellFuzz(repository, corpusRoot, artifacts string, duration, jobs int
 					return err
 				}
 			}
-			if err := syncSeedCorpus(filepath.Join(repository, "Compiler", "Fuzzing", "Corpus", stage), corpus); err != nil {
+			if err := syncSeedCorpus(filepath.Join(repository, "Talac", "Fuzzing", "Corpus", stage), corpus); err != nil {
 				return err
 			}
 			// An HPC executable loads an existing tick file at startup and aborts

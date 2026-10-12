@@ -5,9 +5,9 @@
 #include <string>
 #include <string_view>
 
-#include "Visual/XSharp/Interactive/ReplInput.hpp"
+#include "Progmasoft/Tala/Interactive/ReplInput.hpp"
 
-namespace Visual::XSharp::Interactive
+namespace Progmasoft::Tala::Interactive
 {
     auto
     ReadInputLine(std::istream &input,
@@ -70,4 +70,4 @@ namespace Visual::XSharp::Interactive
             return { ReplCommandKind::Unknown, {} };
         return { ReplCommandKind::Expression, line };
     }
-} // namespace Visual::XSharp::Interactive
+} // namespace Progmasoft::Tala::Interactive

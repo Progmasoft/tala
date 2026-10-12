@@ -1,0 +1,29 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "definite_initialization_tests",
+    srcs = [
+        "ControlFlowTests.cpp",
+        "DenseBitSetTests.cpp",
+        "ControlDependenceTests.cpp",
+        "DominanceTests.cpp",
+        "DefiniteInitializationTests.cpp",
+        "LivenessTests.cpp",
+        "OwnershipFlowTests.cpp",
+        "WorklistTests.cpp",
+    ],
+    deps = [
+        "//Talac/Analysis:control_flow",
+        "//Talac/Analysis:dense_bit_set",
+        "//Talac/Analysis:control_dependence",
+        "//Talac/Analysis:dominance",
+        "//Talac/Analysis:definite_initialization",
+        "//Talac/Analysis:liveness",
+        "//Talac/Analysis:ownership_flow",
+        "//Talac/Analysis:worklist",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)

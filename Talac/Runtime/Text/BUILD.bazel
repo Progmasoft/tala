@@ -1,0 +1,46 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# String concatenation, the conversions of the output format grammar, and
+# console output. A process that hosts generated code links this library and
+# exports its entry points; a native executable gets the same sources through
+# //Talac/Runtime/Freestanding.
+cc_library(
+    name = "text",
+    srcs = [
+        "Console.cpp",
+        "Format.cpp",
+        "Platform.cpp",
+        "Text.cpp",
+    ],
+    hdrs = [
+        "Format.hpp",
+        "Platform.hpp",
+        "Scalars.hpp",
+    ],
+    # Generated code is the only caller of most of these functions, and it
+    # finds them by name while a program runs. A linker that keeps only what
+    # the host itself calls would leave them out.
+    alwayslink = True,
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api",
+        "//Talac/Headers/Progmasoft/Tala/Runtime:text_api",
+        "//Talac/Runtime/AARC:aarc",
+    ],
+)
+
+# The sources as text, for the one translation unit of the freestanding
+# runtime.
+filegroup(
+    name = "sources",
+    srcs = [
+        "Console.cpp",
+        "Format.cpp",
+        "Format.hpp",
+        "Platform.cpp",
+        "Platform.hpp",
+        "Scalars.hpp",
+        "Text.cpp",
+    ],
+)

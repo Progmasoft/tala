@@ -17,7 +17,7 @@ cross-component rules that apply to every change.
 
 ## Language and API changes
 
-- Use the `.vxs` source extension and `.vxse` executable extension.
+- Use the `.tala` source extension and `.vxse` executable extension.
 - Do not introduce top-level runtime functions as entry points.
 - Do not change public API names incidentally during implementation work.
 - Fix spelling errors wherever they occur, including API spellings.
@@ -31,9 +31,9 @@ cross-component rules that apply to every change.
 - Project-owned `.c` implementation files are not accepted. A narrow C11 `.h` header is permitted for a stable external
   ABI such as `AARC.h`; its implementation remains C++20. OS and LLVM C headers may also be included where their platform
   APIs require them.
-- C++ namespaces, classes, and functions use PascalCase. The canonical C++ root is `Visual::XSharp`.
+- C++ namespaces, classes, and functions use PascalCase. The canonical C++ root is `Tala`.
 - C++ local variables use camelCase, constants use `kPascalCase`, and macros use `UPPER_SNAKE_CASE`.
-- The `vxs_aarc_*` runtime entry points are an intentional stable C ABI implemented in C++; do not generalize that
+- The `tala_aarc_*` runtime entry points are an intentional stable C ABI implemented in C++; do not generalize that
   exception into a C implementation layer.
 
 The checked-in `.clang-format` profile is the mechanical C++20 style authority and requires LLVM/Clang 23.1.0. It uses
@@ -41,7 +41,7 @@ four-space Allman layout, return types on their own line, system includes before
 bodies, leading continuation operators, west-const spelling, right-aligned pointer/reference declarators, and an 80-column
 limit. Run it only on project-owned C/C++ files; never reformat `third_party/` or generated sources.
 
-The style profile does not replace the Visual X# naming contract above. In particular, do not rename existing functions
+The style profile does not replace the Tala naming contract above. In particular, do not rename existing functions
 to camelCase or introduce storage/pointer prefixes from an external style guide. Public API naming changes remain explicit
 architecture decisions rather than formatting work.
 
@@ -111,7 +111,7 @@ Run the checks appropriate to the changed ownership boundary:
 
 - Haskell: keep every component on the repository-wide `GHC2024` edition, then run `cabal build all`, `cabal test all`,
   and `cabal check`.
-- Kotlin: `ProjectSystem\gradlew.bat -p ProjectSystem test`.
+- Kotlin: `Tazel\gradlew.bat -p ProjectSystem test`.
 - Native: `go run ./helpers/cmd/develop test` on an official Windows 10/11 or macOS Sequoia/Tahoe host.
 - Sanitizers: `go run ./helpers/cmd/develop sanitize address`; macOS also exposes `undefined` and `thread`.
 - C/C++ style: LLVM 23.1.0 `clang-format --dry-run --Werror` over project-owned `.cpp`, `.hpp`, `.hh`, and `.h` files.

@@ -20,8 +20,8 @@ import (
 const haskellFuzzTarget = "haskell"
 
 // fuzzTargetsVariable carries a selection of targets to the campaign, like
-// the other VXS_FUZZ_ settings. Empty means every target.
-const fuzzTargetsVariable = "VXS_FUZZ_TARGETS"
+// the other TALA_FUZZ_ settings. Empty means every target.
+const fuzzTargetsVariable = "TALA_FUZZ_TARGETS"
 
 // fuzzOptions are the settings of a fuzz command that its flags may give.
 // Each has an environment variable of the same meaning, which CI uses; a
@@ -58,13 +58,13 @@ func (options fuzzOptions) validate(stress bool, inventory []fuzzTarget) error {
 func (options fuzzOptions) apply(setenv func(string, string) error) error {
 	settings := []struct{ name, value string }{}
 	if options.seconds != 0 {
-		settings = append(settings, struct{ name, value string }{"VXS_FUZZ_SECONDS", strconv.Itoa(options.seconds)})
+		settings = append(settings, struct{ name, value string }{"TALA_FUZZ_SECONDS", strconv.Itoa(options.seconds)})
 	}
 	if options.jobs != 0 {
-		settings = append(settings, struct{ name, value string }{"VXS_FUZZ_JOBS", strconv.Itoa(options.jobs)})
+		settings = append(settings, struct{ name, value string }{"TALA_FUZZ_JOBS", strconv.Itoa(options.jobs)})
 	}
 	if options.corpus != "" {
-		settings = append(settings, struct{ name, value string }{"VXS_FUZZ_CORPUS", options.corpus})
+		settings = append(settings, struct{ name, value string }{"TALA_FUZZ_CORPUS", options.corpus})
 	}
 	if len(options.targets) != 0 {
 		settings = append(settings, struct{ name, value string }{fuzzTargetsVariable, strings.Join(options.targets, ",")})

@@ -10,8 +10,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/abimanifest"
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/repository"
+	"github.com/Progmasoft/tala/helpers/internal/abimanifest"
+	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"github.com/spf13/cobra"
 )
 

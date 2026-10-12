@@ -14,44 +14,44 @@ import (
 )
 
 var nativeTargets = []string{
-	"//Compiler/Artifact/Tests:source_path_tests",
-	"//Compiler/ADTs/Tests:adt_tests",
-	"//Compiler/Analysis/Tests:definite_initialization_tests",
-	"//Compiler/Backend/LLVM/Tests:llvm_backend_tests",
-	"//Compiler/Cli/Tests:cli_parser_tests",
-	"//Compiler/Cli/Commands/Tests:execution_status_tests",
-	"//Compiler/Cli/Commands/Tests:cli_command_tests",
-	"//Compiler/Cli/Commands/Tests:executable_run_tests",
-	"//Compiler/Core/Tests:callable_contract_tests",
-	"//Compiler/Core/Tests:core_pipeline_tests",
-	"//Compiler/Diagnostic/Tests:diagnostic_protocol_tests",
-	"//Compiler/Driver/Tests:artifact_wire_tests",
-	"//Compiler/Driver/Tests:closure_pipeline_tests",
-	"//Compiler/Driver/Tests:project_artifact_tests",
-	"//Compiler/Driver/Tests:scalar_pipeline_tests",
-	"//Compiler/Codegen/Xmm/Tests:xmm_verifier_tests",
-	"//Compiler/Codegen/Xpp/Tests:xpp_verifier_tests",
-	"//Compiler/Runtime/AARC/Tests:aarc_runtime_tests",
-	"//Compiler/Runtime/AARC/Tests:aarc_c_abi_tests",
-	"//Compiler/Runtime/Text/Tests:text_runtime_tests",
-	"//Compiler/Fuzzing:source_fuzz_smoke",
-	"//Compiler/Fuzzing:source_execution_smoke",
-	"//Compiler/Fuzzing:source_expression_smoke",
-	"//Compiler/Fuzzing:source_feature_smoke",
-	"//Compiler/Fuzzing:source_console_smoke",
-	"//Compiler/Fuzzing/Tests:coreprep_parity_tests",
-	"//Compiler/ProjectSystem/Bridge/Tests:project_registry_tests",
+	"//Talac/Artifact/Tests:source_path_tests",
+	"//Talac/ADTs/Tests:adt_tests",
+	"//Talac/Analysis/Tests:definite_initialization_tests",
+	"//Talac/Backend/LLVM/Tests:llvm_backend_tests",
+	"//Talac/Cli/Tests:cli_parser_tests",
+	"//Talac/Cli/Commands/Tests:execution_status_tests",
+	"//Talac/Cli/Commands/Tests:cli_command_tests",
+	"//Talac/Cli/Commands/Tests:executable_run_tests",
+	"//Talac/Core/Tests:callable_contract_tests",
+	"//Talac/Core/Tests:core_pipeline_tests",
+	"//Talac/Diagnostic/Tests:diagnostic_protocol_tests",
+	"//Talac/Driver/Tests:artifact_wire_tests",
+	"//Talac/Driver/Tests:closure_pipeline_tests",
+	"//Talac/Driver/Tests:project_artifact_tests",
+	"//Talac/Driver/Tests:scalar_pipeline_tests",
+	"//Talac/Codegen/Xmm/Tests:xmm_verifier_tests",
+	"//Talac/Codegen/Xpp/Tests:xpp_verifier_tests",
+	"//Talac/Runtime/AARC/Tests:aarc_runtime_tests",
+	"//Talac/Runtime/AARC/Tests:aarc_c_abi_tests",
+	"//Talac/Runtime/Text/Tests:text_runtime_tests",
+	"//Talac/Fuzzing:source_fuzz_smoke",
+	"//Talac/Fuzzing:source_execution_smoke",
+	"//Talac/Fuzzing:source_expression_smoke",
+	"//Talac/Fuzzing:source_feature_smoke",
+	"//Talac/Fuzzing:source_console_smoke",
+	"//Talac/Fuzzing/Tests:coreprep_parity_tests",
+	"//Talac/Tazel/Bridge/Tests:project_registry_tests",
 	"//Interactive/Tests:interactive_tests",
 }
 
 var nativePrograms = targetPrograms(nativeTargets)
 
 var nativeBenchmarkTargets = []string{
-	"//Compiler/Codegen/Xmm/Benches:xmm_benches",
-	"//Compiler/Codegen/Xpp/Benches:xpp_benches",
-	"//Compiler/Core/Benches:core_benches",
-	"//Compiler/Core/CorePrep/Benches:coreprep_benches",
-	"//Compiler/Driver/Benches:project_artifact_benches",
+	"//Talac/Codegen/Xmm/Benches:xmm_benches",
+	"//Talac/Codegen/Xpp/Benches:xpp_benches",
+	"//Talac/Core/Benches:core_benches",
+	"//Talac/Core/CorePrep/Benches:coreprep_benches",
+	"//Talac/Driver/Benches:project_artifact_benches",
 }
 
 var nativeBenchmarkPrograms = targetPrograms(nativeBenchmarkTargets)
@@ -81,8 +81,8 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 	if config != "" {
 		arguments = append(arguments, "--config="+config)
 	}
-	arguments = append(arguments, "//Compiler/Cli:vxs")
-	arguments = append(arguments, "//Interactive:vxsi")
+	arguments = append(arguments, "//Talac/Cli:talac")
+	arguments = append(arguments, "//Interactive:tali")
 	arguments = append(arguments, nativeTargets...)
 	if runtimeLibraryTarget != "" {
 		arguments = append(arguments, runtimeLibraryTarget)
@@ -108,9 +108,9 @@ var runtimeLibraryName, runtimeLibraryTarget, runtimeLibraryOutput = runtimeLibr
 // Bazel target that builds it, and where Bazel leaves it below bazel-bin.
 func runtimeLibraryFor(goos string) (name string, target string, output string) {
 	if goos == "windows" {
-		return "vxs-runtime.lib", "//Compiler/Runtime/Freestanding:vxs_runtime", "Compiler/Runtime/Freestanding/vxs_runtime.lib"
+		return "tala-runtime.lib", "//Talac/Runtime/Freestanding:tala_runtime", "Talac/Runtime/Freestanding/tala_runtime.lib"
 	}
-	return "libvxs-runtime.a", "//Compiler/Runtime/Hosted:vxs_runtime", "Compiler/Runtime/Hosted/libvxs_runtime.a"
+	return "libtala-runtime.a", "//Talac/Runtime/Hosted:tala_runtime", "Talac/Runtime/Hosted/libtala_runtime.a"
 }
 
 // builtRuntimeLibrary is where Bazel leaves the archive of runtimeLibraryTarget.
@@ -129,7 +129,7 @@ func stageRuntimeForBuildOutputs(repository string) error {
 	if _, err := os.Stat(library); err != nil {
 		return fmt.Errorf("Bazel did not produce the runtime library: %w", err)
 	}
-	executablePaths := append([]string{"Compiler/Cli/vxs", "Interactive/vxsi"}, nativePrograms...)
+	executablePaths := append([]string{"Talac/Cli/talac", "Interactive/tali"}, nativePrograms...)
 	for _, relative := range executablePaths {
 		directory := filepath.Dir(filepath.Join(repository, "bazel-bin", filepath.FromSlash(relative)))
 		if err := copyFile(library, filepath.Join(directory, runtimeLibraryName), 0o644); err != nil {
@@ -147,21 +147,21 @@ func buildFrontendLibrary(repository string, runner commandRunner) (string, erro
 	if _, err := runner.LookPath("ghc"); err != nil {
 		return "", errors.New("required tool \"ghc\" was not found; install the pinned GHCup toolchain")
 	}
-	compilerDirectory := filepath.Join(repository, "Compiler")
+	compilerDirectory := filepath.Join(repository, "Talac")
 	fmt.Println("Building the in-process Haskell frontend shared library...")
-	if err := runner.Run(compilerDirectory, criterionEnvironment(), cabal, "build", "visual-xsharp-compiler"); err != nil {
+	if err := runner.Run(compilerDirectory, criterionEnvironment(), cabal, "build", "tala-compiler"); err != nil {
 		return "", fmt.Errorf("Haskell frontend shared-library build failed: %w", err)
 	}
 	return locateFrontendLibrary(compilerDirectory)
 }
 
 func locateFrontendLibrary(compilerDirectory string) (string, error) {
-	name := "libvxs-frontend.so"
+	name := "libtala-frontend.so"
 	switch runtime.GOOS {
 	case "windows":
-		name = "vxs-frontend.dll"
+		name = "tala-frontend.dll"
 	case "darwin":
-		name = "libvxs-frontend.dylib"
+		name = "libtala-frontend.dylib"
 	}
 	searchRoot := filepath.Join(compilerDirectory, "dist-newstyle", "build")
 	var candidates []string
@@ -175,7 +175,7 @@ func locateFrontendLibrary(compilerDirectory string) (string, error) {
 		if entry.IsDir() {
 			return nil
 		}
-		if entry.Name() == name && strings.Contains(filepath.ToSlash(path), "/f/vxs-frontend/") {
+		if entry.Name() == name && strings.Contains(filepath.ToSlash(path), "/f/tala-frontend/") {
 			info, err := entry.Info()
 			if err != nil {
 				return err
@@ -211,7 +211,7 @@ func executableSuffix() string {
 
 func stageFrontendForBuildOutputs(repository string, frontendLibrary string) error {
 	frontendName := filepath.Base(frontendLibrary)
-	executablePaths := append([]string{"Compiler/Cli/vxs", "Interactive/vxsi"}, nativePrograms...)
+	executablePaths := append([]string{"Talac/Cli/talac", "Interactive/tali"}, nativePrograms...)
 	for _, relative := range executablePaths {
 		executable := filepath.Join(repository, "bazel-bin", filepath.FromSlash(relative)+executableSuffix())
 		if _, err := os.Stat(executable); err != nil {
@@ -275,7 +275,7 @@ func runHaskellBenchmarks(repository string, runner commandRunner, options bench
 		return errors.New("required tool \"cabal\" was not found; install GHCup's Cabal tool to run Haskell benchmarks")
 	}
 	fmt.Println("\nRunning Criterion Core and CorePrep benchmarks...")
-	compilerDirectory := filepath.Join(repository, "Compiler")
+	compilerDirectory := filepath.Join(repository, "Talac")
 	benchmarkEnvironment := criterionEnvironment()
 	if results != "" {
 		// Criterion appends to a report that is already there; a result set
@@ -284,7 +284,7 @@ func runHaskellBenchmarks(repository string, runner commandRunner, options bench
 			return fmt.Errorf("cannot replace the earlier Haskell benchmark report: %w", err)
 		}
 	}
-	arguments := append([]string{"bench", "visual-xsharp-core:core-benches", "--enable-benchmarks"}, options.criterionArguments(results)...)
+	arguments := append([]string{"bench", "tala-core:core-benches", "--enable-benchmarks"}, options.criterionArguments(results)...)
 	if err := runner.Run(compilerDirectory, benchmarkEnvironment, cabal, arguments...); err != nil {
 		return fmt.Errorf("Haskell benchmark run failed: %w", err)
 	}

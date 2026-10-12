@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: visual-formatter-${{ github.ref }}
+  group: talafmt-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,26 +42,26 @@ jobs:
 
       - name: Check formatter configuration DSL
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p Formatter spotlessCheck test
+        run: .\Tazel\gradlew.bat -p Ecosystem/talafmt spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
-      - name: Build Visual Formatter
+      - name: Build talafmt
         shell: pwsh
-        working-directory: Compiler
-        run: cabal build visual-formatter
+        working-directory: Talac
+        run: cabal build talafmt
 
-      - name: Test Visual Formatter
+      - name: Test talafmt
         shell: pwsh
-        working-directory: Compiler
-        run: cabal test visual-formatter-tests
+        working-directory: Talac
+        run: cabal test talafmt-tests
 
       - name: Check package metadata
         shell: pwsh
-        working-directory: Formatter
+        working-directory: Ecosystem/talafmt
         run: cabal check
 
       - name: Check patch hygiene

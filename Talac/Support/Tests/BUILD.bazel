@@ -1,0 +1,19 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# A measuring instrument, not a test: it runs one native stage on a stack of
+# a chosen size, so that the stack a stage needs per level of nesting can be
+# found by searching for the smallest size that completes.
+cc_binary(
+    name = "stack_probe",
+    srcs = ["StackProbe.cpp"],
+    deps = [
+        "//Talac/Core:core",
+        "//Talac/Driver:pipeline",
+        "//Talac/Headers/Progmasoft/Tala:pipeline_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "//Talac/Support:compiler_stack",
+        "@llvm//:llvm",
+    ],
+)

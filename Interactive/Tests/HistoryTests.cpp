@@ -5,15 +5,15 @@
 #include <cstddef>
 #include <string>
 
-#include "Visual/XSharp/Interactive/History.hpp"
+#include "Progmasoft/Tala/Interactive/History.hpp"
 
 namespace
 {
-    namespace History = Visual::XSharp::Interactive::Runtime;
+    namespace History = Progmasoft::Tala::Interactive::Runtime;
 } // namespace
 
 TEST_CASE("interactive history preserves successful-cell order and duplicates",
-          "[vxsi][history]")
+          "[tali][history]")
 {
     History::History history;
 
@@ -27,7 +27,7 @@ TEST_CASE("interactive history preserves successful-cell order and duplicates",
     REQUIRE(history.Entries()[2] == "3 * 4");
 }
 
-TEST_CASE("interactive history ignores empty cells", "[vxsi][history][input]")
+TEST_CASE("interactive history ignores empty cells", "[tali][history][input]")
 {
     History::History history;
 
@@ -41,7 +41,7 @@ TEST_CASE("interactive history ignores empty cells", "[vxsi][history][input]")
 
 TEST_CASE(
     "interactive history retains a fixed newest-window and evicts oldest first",
-    "[vxsi][history][limits]")
+    "[tali][history][limits]")
 {
     History::History history;
 
@@ -60,7 +60,7 @@ TEST_CASE(
 }
 
 TEST_CASE("interactive history clear permits a fresh session history",
-          "[vxsi][history][reset]")
+          "[tali][history][reset]")
 {
     History::History history;
     history.Append("before reset");

@@ -4,14 +4,14 @@
 # Static member calls and method overloads
 
 This document describes the implemented compiler path for the declaration and call forms already shown in
-[`Spec/Language/Decls.vxs`](../Spec/Language/Decls.vxs), especially Examples 187–189. It records implementation coverage;
-it does not redefine Visual X# syntax or claim that every declaration feature in the Spec is implemented.
+[`Spec/Language/Decls.tala`](../Spec/Language/Decls.tala), especially Examples 187–189. It records implementation coverage;
+it does not redefine Tala syntax or claim that every declaration feature in the Spec is implemented.
 
 ## Supported source form
 
 The current executable subset accepts a call written as a type name followed by one member name and an argument list:
 
-```vxs
+```talac
 class Counter {
     public static int Current() {
         42
@@ -27,7 +27,7 @@ class Program {
 
 Methods with one source spelling may form an overload set when their ordered parameter-type lists differ:
 
-```vxs
+```talac
 class Formatter {
     public static String Format(int value) {
         "integer"
@@ -78,7 +78,7 @@ language behavior even where the frontend does not yet implement the correspondi
 
 ### Parser
 
-`Visual.XSharp.Parser` consumes the dot and member identifier as postfix syntax. The resulting `MemberAccessExpression`
+`Progmasoft.Tala.Parser` consumes the dot and member identifier as postfix syntax. The resulting `MemberAccessExpression`
 stores:
 
 1. the full selector span;
@@ -136,8 +136,8 @@ plus the ordered parameter-type sequence. The following do not create a distinct
 - a different access modifier; or
 - changing only `static` to instance or instance to `static`.
 
-This follows the declaration rules in `Spec/Language/Decls.vxs`, including Example 188. A duplicate signature is
-reported once at the later declaration as `VXT0028`.
+This follows the declaration rules in `Spec/Language/Decls.tala`, including Example 188. A duplicate signature is
+reported once at the later declaration as `TAT0028`.
 
 For a type-qualified call, resolution proceeds in this order:
 
@@ -172,7 +172,7 @@ Overload selection intentionally uses the Type Checker's existing exact compatib
 ranking algorithm. For example, if a caller has a `long` parameter, an `int` overload is not selected just because the
 values might fit:
 
-```vxs
+```talac
 class Numbers {
     public static int Read(int value) {
         value
@@ -192,8 +192,8 @@ converted just because one candidate would accept a different type. Return conte
 return type is not part of overload identity.
 
 The compiler does not use declaration order as a tie-breaker. When more than one candidate accepts a contextual literal
-under the current exact typing rules, the call is ambiguous and reports `VXT0030`. Adding conversion preference rules
-would require a separately specified Visual X# ranking rule; this implementation does not invent one.
+under the current exact typing rules, the call is ambiguous and reports `TAT0030`. Adding conversion preference rules
+would require a separately specified Tala ranking rule; this implementation does not invent one.
 
 ## Access and static surface
 
@@ -202,9 +202,9 @@ member-resolution slice. Other access levels are visible within the current comp
 frontend unit boundary. Inheritance-aware protected access and assembly/file boundaries beyond a single semantic unit
 remain future resolution work; this implementation does not claim to complete all access semantics in the Spec.
 
-Calling an instance method through a type name reports `VXT0031`. Calling a selector through a value, call result, or
-other non-type receiver reports `VXT0032`; the frontend does not synthesize dynamic dispatch. A private/protected-only
-candidate family that is not visible reports `VXT0033`. A same-name visible static overload remains usable even when an
+Calling an instance method through a type name reports `TAT0031`. Calling a selector through a value, call result, or
+other non-type receiver reports `TAT0032`; the frontend does not synthesize dynamic dispatch. A private/protected-only
+candidate family that is not visible reports `TAT0033`. A same-name visible static overload remains usable even when an
 inaccessible sibling overload exists; inaccessible declarations do not poison the public candidate set.
 
 ## Diagnostics
@@ -213,18 +213,18 @@ All diagnostics below originate in the Type Checker unless otherwise noted.
 
 | Code | Meaning |
 | --- | --- |
-| `VXN0001` | The receiver is an unresolved name; emitted by Name Resolution before member lookup. |
-| `VXT0008` | No accessible candidate has the supplied argument count. |
-| `VXT0009` | Candidate arity is available, but no candidate accepts the typed argument list exactly. |
-| `VXT0028` | A declaration repeats an overload signature already owned by the same type and spelling. |
-| `VXT0029` | No member with the requested spelling exists on the selected type. |
-| `VXT0030` | More than one candidate remains viable. |
-| `VXT0031` | The requested family exists only as instance methods when invoked through a type. |
-| `VXT0032` | The selector receiver is not a declared type name. |
-| `VXT0033` | Matching candidates exist but are not accessible from the call site. |
-| `VXT0034` | A member selector is used without a supported direct method call. |
-| `VXT0080` | A method reference names a method with several overloads, and the place does not expect the type of exactly one of them. |
-| `VXT0081` | A method reference whose receiver is not a type: bound method references need instance members. |
+| `TAN0001` | The receiver is an unresolved name; emitted by Name Resolution before member lookup. |
+| `TAT0008` | No accessible candidate has the supplied argument count. |
+| `TAT0009` | Candidate arity is available, but no candidate accepts the typed argument list exactly. |
+| `TAT0028` | A declaration repeats an overload signature already owned by the same type and spelling. |
+| `TAT0029` | No member with the requested spelling exists on the selected type. |
+| `TAT0030` | More than one candidate remains viable. |
+| `TAT0031` | The requested family exists only as instance methods when invoked through a type. |
+| `TAT0032` | The selector receiver is not a declared type name. |
+| `TAT0033` | Matching candidates exist but are not accessible from the call site. |
+| `TAT0034` | A member selector is used without a supported direct method call. |
+| `TAT0080` | A method reference names a method with several overloads, and the place does not expect the type of exactly one of them. |
+| `TAT0081` | A method reference whose receiver is not a type: bound method references need instance members. |
 
 The checker preserves a source span on member-call diagnostics. An unresolved receiver remains a Name Resolution failure
 instead of being replaced by a fabricated Type Checker error. This makes the phase boundary visible to the CLI, analyzer,
@@ -234,19 +234,19 @@ and editor tooling.
 
 The compiler test suite separates syntax, semantics, and lowering assertions:
 
-- `Compiler/Haskell/Driver/test/StaticMemberParserTests.hs` checks AST shape, source spelling, postfix association,
+- `Talac/Haskell/Driver/test/StaticMemberParserTests.hs` checks AST shape, source spelling, postfix association,
   selector spans, malformed inputs, and use in surrounding expression contexts.
-- `Compiler/Haskell/Driver/test/StaticMemberSemanticTests.hs` checks candidate filtering, access, static/instance
+- `Talac/Haskell/Driver/test/StaticMemberSemanticTests.hs` checks candidate filtering, access, static/instance
   distinctions, exact type matching, wrong arity, duplicate signatures, diagnostic stage/span/severity, the scalar
   pairwise overload matrix, and selected `SymbolId` values.
-- `Compiler/Haskell/Driver/test/StaticMemberOverloadTests.hs` exercises ordered two- and three-parameter type vectors,
+- `Talac/Haskell/Driver/test/StaticMemberOverloadTests.hs` exercises ordered two- and three-parameter type vectors,
   reversed declaration order, per-position mismatch diagnostics, and the declaration identity behind each typed call.
-- `Compiler/Haskell/Driver/test/StaticMemberCoreTests.hs` checks that selected declaration identities survive into Core
+- `Talac/Haskell/Driver/test/StaticMemberCoreTests.hs` checks that selected declaration identities survive into Core
   and CorePrep, including source ownership, repeated calls, argument order, and lowering of owner-local calls.
-- `Compiler/Haskell/Driver/test/StaticMemberProjectTests.hs` checks physical source order, per-namespace catalogs,
+- `Talac/Haskell/Driver/test/StaticMemberProjectTests.hs` checks physical source order, per-namespace catalogs,
   source ownership, and cross-file binding using the project entry contract.
-- `Compiler/Haskell/Driver/test/Main.hs` runs all four suites with the existing compiler and Core tests.
-- `Compiler/Haskell/Driver/visual-xsharp-compiler.cabal` lists each test module explicitly; new modules must not rely
+- `Talac/Haskell/Driver/test/Main.hs` runs all four suites with the existing compiler and Core tests.
+- `Talac/Haskell/Driver/tala-compiler.cabal` lists each test module explicitly; new modules must not rely
   on implicit source globs.
 
 The pairwise scalar matrix tries every distinct ordered pair from the current scalar catalog as a two-overload family,
@@ -254,10 +254,10 @@ then calls each requested type through a value already declared with that type. 
 signatures and wrong argument count for every scalar parameter type. Those cases guard against an accidental special
 case for only `int`, `long`, or `String`.
 
-Run the focused compiler suite from `Compiler/Haskell/Driver`:
+Run the focused compiler suite from `Talac/Haskell/Driver`:
 
 ```powershell
-cabal test visual-xsharp-compiler-tests --test-show-details=direct
+cabal test tala-compiler-tests --test-show-details=direct
 ```
 
 The repository-wide Haskell suite is run from `Compiler` with `cabal test all`. The focused suite must pass before the
@@ -337,7 +337,7 @@ falling back to an arbitrary declaration:
    numeric, string, or user-defined conversions.
 8. Exactly one viable candidate supplies the callee `ResolvedName`, function annotation, and result type.
 9. No viable candidate produces the diagnostic selected by the first failed stage; multiple viable candidates produce
-   `VXT0030` rather than being resolved by source order.
+   `TAT0030` rather than being resolved by source order.
 
 The checker currently supports contextual typing already defined for literals. If a literal is viable for two
 different parameter types, that creates two viable candidates and is reported as ambiguity. A named local or
@@ -350,15 +350,15 @@ The failure classification intentionally distinguishes these situations:
 
 | Condition after receiver resolution | Result |
 | --- | --- |
-| No declaration owns the selected spelling | `VXT0029`. |
-| The type has the spelling but only instance methods are present | `VXT0031`. |
-| The method family exists but is inaccessible | `VXT0033`. |
-| The accessible family has no matching argument count | `VXT0008`. |
-| At least one accessible candidate has matching arity, but none accepts the typed arguments | `VXT0009`. |
-| More than one candidate is viable | `VXT0030`. |
-| The receiver is an unresolved name | `VXN0001` from Name Resolution. |
-| The receiver is a value, call, or other unsupported expression | `VXT0032`. |
-| A valid selector is used without the currently supported call shape | `VXT0034`. |
+| No declaration owns the selected spelling | `TAT0029`. |
+| The type has the spelling but only instance methods are present | `TAT0031`. |
+| The method family exists but is inaccessible | `TAT0033`. |
+| The accessible family has no matching argument count | `TAT0008`. |
+| At least one accessible candidate has matching arity, but none accepts the typed arguments | `TAT0009`. |
+| More than one candidate is viable | `TAT0030`. |
+| The receiver is an unresolved name | `TAN0001` from Name Resolution. |
+| The receiver is a value, call, or other unsupported expression | `TAT0032`. |
+| A valid selector is used without the currently supported call shape | `TAT0034`. |
 
 When a member call is rejected, its selector remains visible in the typed tree with an error annotation rather than
 being rewritten as a global identifier. That preserves source spelling and position for diagnostics and prevents

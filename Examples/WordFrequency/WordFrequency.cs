@@ -11,7 +11,7 @@ public static class WordFrequency
 {
     public static void Main()
     {
-        string[] words = ["visual", "xsharp", "visual", "compiler", "xsharp", "visual"];
+        string[] words = ["visual", "tala", "visual", "compiler", "tala", "visual"];
         Dictionary<string, int> counts = [];
 
         foreach (var word in words)

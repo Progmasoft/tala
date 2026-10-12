@@ -16,11 +16,11 @@ change set:
   the loop fixed point of the integer analysis on nested loops, and wire
   encoding, CorePrep lowering and CorePrep verification on `else if` chains
   and on sequences of `if` statements;
-- the time of `vxs check` on whole programs of those shapes, and of the
+- the time of `talac check` on whole programs of those shapes, and of the
   sanitized `source_fuzz_smoke` program.
 
 "Before" is commit `5ffdbdff` for the Criterion measurements and `main` at
-`d9bd54e4` for `vxs check` and the smoke program. "After" is commit
+`d9bd54e4` for `talac check` and the smoke program. "After" is commit
 `35d9c1ab`. The stack tables and the operator chain table name their
 revisions themselves; "now" is the working tree this file is committed with.
 
@@ -35,7 +35,7 @@ revisions themselves; "now" is the working tree this file is committed with.
 
 ## Stack per level of nesting
 
-`//Compiler/Support/Tests:stack_probe` builds a Core module of a given shape
+`//Talac/Support/Tests:stack_probe` builds a Core module of a given shape
 and depth and runs one stage on a thread whose stack has a given size; the
 process is ended by the operating system when the stack is too small. The
 smallest size that completes was found by bisection, to within 0.5 percent or
@@ -44,8 +44,8 @@ between the two largest depths measured. Windows rounds a stack to 64 KiB, so
 small totals are coarse and the slopes are the meaningful figures.
 
 ```powershell
-go -C helpers run ./cmd/develop build -- //Compiler/Support/Tests:stack_probe
-bazel-bin/Compiler/Support/Tests/stack_probe.exe statements 1024 decode 708
+go -C helpers run ./cmd/develop build -- //Talac/Support/Tests:stack_probe
+bazel-bin/Talac/Support/Tests/stack_probe.exe statements 1024 decode 708
 ```
 
 The shapes are `statements`, an `if` nested in an `if`; `operands`, an
@@ -112,7 +112,7 @@ pipeline copies only the bodies of closures.
 
 The slopes above come from one native stage at a time on synthetic Core. The
 figures in this section are from whole compilations of source text: the
-frontend and every native stage run on one thread, as in `vxs`, and the
+frontend and every native stage run on one thread, as in `talac`, and the
 stack that thread committed is read at the end.
 
 What is measured is the committed stack, not the bytes in use. It is an upper
@@ -130,8 +130,8 @@ figures and figures derived from them are kept apart below: a derived figure
 is called extrapolated where it appears.
 
 ```powershell
-go -C helpers run ./cmd/develop build -- //Compiler/Fuzzing:source_stack_probe
-bazel-bin/Compiler/Fuzzing/source_stack_probe.exe program.vxs 262144
+go -C helpers run ./cmd/develop build -- //Talac/Fuzzing:source_stack_probe
+bazel-bin/Talac/Fuzzing/source_stack_probe.exe program.tala 262144
 ```
 
 The second argument is the reservation in KiB; 262144 is the 256 MiB of the
@@ -152,19 +152,19 @@ level 256, an expression at level 1024. Committed stack, KiB:
 | 255 nested `match` arms, limit | 196 | 464 |
 | 255 nested `while` whose condition stores, limit | 172 | 416 |
 | 255 nested blocks used as values, limit | 784 | 1348 |
-| 256 nested `if`, rejected with `VXP0039` | 32 | 36 |
+| 256 nested `if`, rejected with `TAP0039` | 32 | 36 |
 | 1023 additions nested to the right, limit | 2004 | 3484 |
 | 1023 nested calls, limit | 2572 | 4720 |
 | conditional chain of 1022 tests, limit | 548 | 1504 |
 | 1023 unary operators, limit | 72 | 76 |
-| 1024 additions nested to the right, rejected with `VXP0040` | 32 | 40 |
+| 1024 additions nested to the right, rejected with `TAP0040` | 32 | 40 |
 | sum of 7000 operands | 72 | 76 |
 | 3000 comparisons joined by `&&` | 72 | 76 |
 | `else if` chain of 1400 links | 68 | 76 |
 | `match` of 2000 arms | 72 | 76 |
 
 The harness accepts at most 64 KiB of source, which bounds the chains
-measured here; `vxs check` itself was run on a sum of 50000 operands and on an
+measured here; `talac check` itself was run on a sum of 50000 operands and on an
 `else if` chain of 4000 links. The frontend adds almost nothing: Haskell code
 runs on stacks of its own, and a program the frontend rejects commits 32 to
 40 KiB. Chains commit what the smallest program does.
@@ -219,7 +219,7 @@ an extrapolation, not a measurement.
 ### Reserve and commit
 
 The compiler thread reserves 256 MiB of address space and commits what it
-touches. `vxs check` on this branch and on `main`, which has no compiler
+touches. `talac check` on this branch and on `main`, which has no compiler
 thread, one process and eight at once; MiB, the largest of the processes
 except where summed:
 
@@ -288,7 +288,7 @@ in the code are unchanged.
 
 ```powershell
 Set-Location Compiler
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks --benchmark-options="--match pattern NestedLoop Chain Sequence --time-limit 0.1"
+cabal bench tala-core:core-benches --enable-benchmarks --benchmark-options="--match pattern NestedLoop Chain Sequence --time-limit 0.1"
 ```
 
 Criterion estimates, one run of each revision. The sample limit is short and
@@ -342,7 +342,7 @@ times lower than before; the cause was not investigated.
 
 ## Whole programs
 
-`vxs check -File` on one method of the given shape, one run each, wall time
+`talac check -File` on one method of the given shape, one run each, wall time
 in seconds. `crash` is a stack overflow without a diagnostic.
 
 | Program | Size | Before | After |

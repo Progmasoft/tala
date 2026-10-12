@@ -5,7 +5,7 @@
 
 ## Summary
 
-Visual X# now has one production source route for the implemented language subset. The C++20 `vxs` driver starts the private
+Tala now has one production source route for the implemented language subset. The C++20 `talac` driver starts the private
 Haskell frontend, receives bounded verified Core, and continues through CorePrep, Xpp, Xmm, and LLVM. The old C lexer/parser,
 macro, HIR/MIR, and C-to-Rust syntax-packet route has been removed rather than retained as a fallback.
 
@@ -63,7 +63,7 @@ exact ratios and target rounding; floating `//` lowers to the specified integer 
 and LLVM. Transcendental folding, CFG/mutable-body inlining, and speculative optimization remain unimplemented.
 
 Project compilation now enters the Haskell frontend as source roots plus project-relative exclusion patterns. The frontend
-owns recursive `.vxs` discovery, strict UTF-8 decoding, canonical root containment, overlapping-root de-duplication, and
+owns recursive `.tala` discovery, strict UTF-8 decoding, canonical root containment, overlapping-root de-duplication, and
 stable path ordering. Each physical file is parsed independently. Files declaring the same namespace are merged before the
 Renamer, so duplicate declarations and cross-file members share one semantic namespace without requiring directory names to
 mirror namespace segments.
@@ -89,13 +89,13 @@ the specification is not changed to match them.
 
 | Pending | Specified by | Today | Needs |
 | --- | --- | --- | --- |
-| a binding in the condition of `if`, `guard` or `while`, as in `guard (auto user = Find()) else { return; }` | `Spec/Language/Decls.vxs`, examples 190 to 192 | `VXP0035` | optional values |
-| evaluation by need beyond local bindings of scalar type: arguments, results, other types, assigned and captured variables | `Spec/Language/Evaluation.vxs` | computed where they are written; see [Evaluation by need](EVALUATION.md) | thunks as values in the IR and the runtime |
-| a call that does not return as a way of leaving a `guard` block or a block used as a value | example 297 | every call is assumed to return, so the block is taken to complete: `VXT0061` or `VXT0046` | a way to know that a call does not return; how that is expressed in the language is not decided here |
-| a `match` over a subject that may be null | example 304 | `VXT0055` | nullable subjects |
-| an enum declared inside a class | the nested declarations of section 9 | `VXP0006` | qualified type names |
+| a binding in the condition of `if`, `guard` or `while`, as in `guard (auto user = Find()) else { return; }` | `Spec/Language/Decls.tala`, examples 190 to 192 | `TAP0035` | optional values |
+| evaluation by need beyond local bindings of scalar type: arguments, results, other types, assigned and captured variables | `Spec/Language/Evaluation.tala` | computed where they are written; see [Evaluation by need](EVALUATION.md) | thunks as values in the IR and the runtime |
+| a call that does not return as a way of leaving a `guard` block or a block used as a value | example 297 | every call is assumed to return, so the block is taken to complete: `TAT0061` or `TAT0046` | a way to know that a call does not return; how that is expressed in the language is not decided here |
+| a `match` over a subject that may be null | example 304 | `TAT0055` | nullable subjects |
+| an enum declared inside a class | the nested declarations of section 9 | `TAP0006` | qualified type names |
 | `enum class`, the enum with payloads | section 8 | not parsed | the object model |
-| type patterns over class hierarchies | examples 198 to 203 | `VXT0057` | class hierarchies |
+| type patterns over class hierarchies | examples 198 to 203 | `TAT0057` | class hierarchies |
 
 Implemented and verified through native execution, unoptimized and
 optimized: `return`, `break` and `continue` out of a block used as a value,
@@ -122,7 +122,7 @@ backend diagnostics; they must not be approximated with C-family behavior.
 
 The repository contains:
 
-- verified Haskell and C++20 Core models with a shared bounded `VXCR` `.core` codec contract;
+- verified Haskell and C++20 Core models with a shared bounded `TACR` `.core` codec contract;
 - a native Core semantic verifier and Core-to-CorePrep adapter that atomizes expressions and constructs explicit CFGs;
 - matching bounded Haskell and C++20 internal CorePrep wire codecs;
 - recursive type, symbol spelling, qualified-name, and UTF-32 string preservation;
@@ -145,8 +145,8 @@ The repository contains:
 - AARC object headers, strong/weak/unowned runtime calls, and closure payload destructors; and
 - in-memory LLVM IR and bitcode serialization with explicit `.ll`/`.bc` writers.
 
-The production frontend boundary uses public `VXCR` Core. The internal `VXCP` codec remains tested for in-process and golden
-contract coverage, but the CLI does not expose CorePrep. Bounded `VXPP` and `VXMM` v7 codecs now own public Xpp/Xmm disk
+The production frontend boundary uses public `TACR` Core. The internal `TACP` codec remains tested for in-process and golden
+contract coverage, but the CLI does not expose CorePrep. Bounded `TAPP` and `TAMM` v7 codecs now own public Xpp/Xmm disk
 artifacts and forward-only pipeline resumption. LLVM target-machine emission and typed C++20 LLD invocation produce `.o`,
 `.asm`, and `.vxse` artifacts. Project object and assembly requests produce one flattened output per source in the selected
 entry namespace; each owner boundary verifies the source catalog, and the driver replaces the set through a recoverable
@@ -157,8 +157,8 @@ unit.
 
 | Capability | Status | Boundary |
 | --- | --- | --- |
-| bounded VXCR v10 decode | connected | C++20 Core reader, closure records, template arguments, source ownership, and scalar payload validation |
-| native Core semantic verification | connected | `Compiler/Core` |
+| bounded TACR v10 decode | connected | C++20 Core reader, closure records, template arguments, source ownership, and scalar payload validation |
+| native Core semantic verification | connected | `Talac/Core` |
 | Core-to-CorePrep atomization/CFG | connected | dedicated adapter |
 | CorePrep structural/semantic verification | connected | native CorePrep verifier |
 | Xpp lowering/optimization/verification | connected | C++20 Xpp packages |
@@ -171,12 +171,12 @@ unit.
 | callable that remembers its result | connected | Core, CorePrep, Xpp, Xmm and LLVM carry `Memoize`; the frontend produces it for arguments passed by need |
 | runtime calls | connected | one operation with a catalog of functions in Core, CorePrep, Xpp, Xmm and LLVM |
 | console output, string concatenation and equality | connected | `Console.Print`, `Println`, `Printf`, `Printfn`, the four `Error` forms and `Format`; see [Console output and strings](CONSOLE-IO.md) |
-| the runtime in a native executable | connected | `vxs-runtime.lib` on Windows, without a C runtime, and `libvxs-runtime.a` on Linux and macOS, over the C library; the ownership and text runtime, linked with every executable |
+| the runtime in a native executable | connected | `tala-runtime.lib` on Windows, without a C runtime, and `libtala-runtime.a` on Linux and macOS, over the C library; the ownership and text runtime, linked with every executable |
 | integer division by zero and shifts outside the width | connected | a check before the instruction stops the program |
 | recursive constructed-type classification | Haskell/native semantic models complete, process connection pending | frontend and Core nominal catalogs |
-| Xpp/Xmm disk codecs | connected | bounded v7 `VXPP`/`VXMM` readers and writers |
+| Xpp/Xmm disk codecs | connected | bounded v7 `TAPP`/`TAMM` readers and writers |
 | project per-source object/assembly emission | connected for the selected namespace | source ownership through CorePrep, Xpp, and Xmm |
-| VXCI `-Header` | registered and rejected explicitly | export/ABI semantics and a header writer are not connected |
+| TCI `-Header` | registered and rejected explicitly | export/ABI semantics and a header writer are not connected |
 
 ## Retired Rust and C implementations
 
@@ -189,10 +189,10 @@ versioned ABI, while its implementation, ownership, and tests are C++20.
 
 The native C++20 CLI uses a declarative typed schema for command scope, option arity, duplicate rejection, defaults, and value
 conversion. It has no DIMCLI dependency. The Kotlin project evaluator continues to own project discovery, configuration, and
-the SQLite lock file. It is not a second executable: `vxs` starts the evaluator main class from bundled JVM libraries. VXDC
+the SQLite lock file. It is not a second executable: `talac` starts the evaluator main class from bundled JVM libraries. TADC
 remains a separate command.
 
-`vxs check` without `-File` now evaluates the project, passes its source policy to the private Haskell frontend, resolves the
+`talac check` without `-File` now evaluates the project, passes its source policy to the private Haskell frontend, resolves the
 entry by namespace/class identity, and consumes verified Core through the native LLVM boundary. Project
 `build -Emit core|llvmll|llvmbc` uses the same route and writes an artifact named after the entry class. No source file is
 guessed from the entry spelling.
@@ -211,7 +211,7 @@ Known gaps include:
 
 | Input | `check` | Core emit | LLVM IR/BC | object/assembly | binary/run |
 | --- | --- | --- | --- | --- | --- |
-| explicit `.vxs` | connected | connected | connected subset | connected subset | connected subset |
+| explicit `.tala` | connected | connected | connected subset | connected subset | connected subset |
 | project source set | connected | connected | connected subset | per-source route pending | binary connected subset |
 | public `.core` | connected | not a conversion target | connected subset | connected subset | connected subset |
 | `.xpp` | connected | not an earlier conversion target | connected subset | connected subset | connected subset |
@@ -224,12 +224,12 @@ without a native layout still fails before producing a misleading artifact.
 ## Ecosystem status
 
 Analyzer, Formatter, and Linter have canonical top-level projects, separate Haskell/Kotlin ownership, and independent CI.
-Their typed Kotlin configuration models are implemented. Visual Formatter additionally evaluates the real Kotlin receiver
-and transfers its encoding contract to `vfmt`; the Analyzer and Linter evaluator bridges remain pending. `vxs format` and
-`vxs lint` dispatch installed tools across compiler-discovered project paths; they are not compiler-internal passes.
+Their typed Kotlin configuration models are implemented. talafmt additionally evaluates the real Kotlin receiver
+and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. `talac format` and
+`talac lint` dispatch installed tools across compiler-discovered project paths; they are not compiler-internal passes.
 
-Visual Formatter and Visual Linter use their own version lines. Visual Analyzer now provides the editor-facing
-`visual-analyzer` stdio LSP executable. It is not a compiler CLI command. See [Ecosystem tools](ECOSYSTEM.md) for the product
+talafmt and talalint use their own version lines. tala-analyzer now provides the editor-facing
+`tala-analyzer` stdio LSP executable. It is not a compiler CLI command. See [Ecosystem tools](ECOSYSTEM.md) for the product
 boundary and current configuration surfaces.
 
 ## Data that is intentionally not duplicated
@@ -238,7 +238,7 @@ boundary and current configuration surfaces.
 - The project evaluator does not expand source globs into compilation units.
 - CorePrep is not serialized as a public project artifact.
 - The compiler does not contain formatter/linter rule configuration.
-- A ViGet `.vipkg` does not add a second `MANIFEST.TOML` beside `Visual.XSharp.kts`.
+- A ViGet `.vipkg` does not add a second `MANIFEST.TOML` beside `BUILD.kts`.
 - JVM support does not own an Xmm reader/writer.
 - Standard-library namespaces are not repeated as package dependencies.
 - The native driver does not shell-join LLD arguments or use DIMCLI.

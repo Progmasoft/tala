@@ -1,0 +1,1599 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: SQLite3
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: Tala — SQLite3
+-- Demonstrates: Typical import:
+
+using System.Data.Sqlite3;
+
+-- ============================================================================
+-- Example 2: Tala — SQLite3
+-- Demonstrates: Busy timeout configuration additionally uses:
+
+using System.Timing;
+
+-- ============================================================================
+-- Example 3: 2. Opening a connection
+-- Demonstrates: A database is opened with:
+
+SqliteConnection connection =
+        SqliteConnection.Open("database.db");
+
+-- ============================================================================
+-- Example 4: 2. Opening a connection
+-- Demonstrates: The normal cleanup pattern is:
+
+SqliteConnection connection =
+        SqliteConnection.Open("database.db");
+
+defer connection.Close();
+
+-- ============================================================================
+-- Example 5: 2.1 In-memory databases
+-- Demonstrates: SQLite in-memory databases use the normal SQLite name:
+
+SqliteConnection connection =
+        SqliteConnection.Open(":memory:");
+
+-- ============================================================================
+-- Example 6: 2.2 Open modes
+-- Demonstrates: An explicit open mode may be supplied:
+
+SqliteConnection connection =
+        SqliteConnection.Open(
+            "app.db",
+            SqliteOpenMode.READ_WRITE_CREATE
+        );
+
+-- ============================================================================
+-- Example 7: 2.2 Open modes
+-- Demonstrates: Therefore:
+
+SqliteConnection.Open("app.db");
+
+-- ============================================================================
+-- Example 8: 2.2 Open modes
+-- Demonstrates: is equivalent in open mode to:
+
+SqliteConnection.Open(
+    "app.db",
+    SqliteOpenMode.READ_WRITE_CREATE
+);
+
+-- ============================================================================
+-- Example 9: 2.3 SQLite URI names
+-- Demonstrates: SQLite URI interpretation is explicit.
+
+SqliteConnection connection =
+        SqliteConnection.OpenUri(
+            "file:app.db?mode=ro"
+        );
+
+-- ============================================================================
+-- Example 10: 3. Connection state and closing
+-- Demonstrates: The open state may be queried:
+
+bool open = connection.IsOpen();
+
+-- ============================================================================
+-- Example 11: 3. Connection state and closing
+-- Demonstrates: A connection is closed with:
+
+connection.Close();
+
+-- ============================================================================
+-- Example 12: 3. Connection state and closing
+-- Demonstrates: Close() is idempotent:
+-- Expected result: accepted when the referenced declarations are available.
+
+connection.Close();
+connection.Close(); -- VALID
+
+-- ============================================================================
+-- Example 13: 3.1 Active child resources
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+SqliteConnection connection =
+        SqliteConnection.Open("app.db");
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT id FROM users"
+        );
+
+connection.Close(); -- INVALID: command is still active
+
+-- ============================================================================
+-- Example 14: 3.1 Active child resources
+-- Demonstrates: VALID:
+
+SqliteConnection connection =
+        SqliteConnection.Open("app.db");
+
+defer connection.Close();
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT id FROM users"
+        );
+
+defer command.Close();
+
+-- ============================================================================
+-- Example 15: 3.1 Active child resources
+-- Demonstrates: For a command with a reader:
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+defer reader.Close();
+
+-- ============================================================================
+-- Example 16: 4. Busy timeout
+-- Demonstrates: A connection-level busy timeout may be configured:
+
+connection.BusyTimeout(
+    Duration.Of(seconds: 5)
+);
+
+-- ============================================================================
+-- Example 17: 4. Busy timeout
+-- Demonstrates: The default is equivalent to:
+
+connection.BusyTimeout(
+    Duration.Zero
+);
+
+-- ============================================================================
+-- Example 18: 5. Connection change information
+-- Demonstrates: The number of rows changed by the most recent completed database-changing statement on
+--   the connection is available through:
+
+int changed = connection.Changes();
+
+-- ============================================================================
+-- Example 19: 5. Connection change information
+-- Demonstrates: The total number of row changes accumulated by the connection is available through:
+
+int total = connection.TotalChanges();
+
+-- ============================================================================
+-- Example 20: 5. Connection change information
+-- Demonstrates: The rowid generated by the most recent successful rowid-producing insert on the
+--   connection is available through:
+
+int rowId = connection.LastInsertRowId();
+
+-- ============================================================================
+-- Example 21: 6. Creating commands
+-- Demonstrates: A SQL command is created through its connection:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT id, name FROM users WHERE id = ?"
+        );
+
+-- ============================================================================
+-- Example 22: 6.1 One statement per command
+-- Demonstrates: VALID:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT id FROM users;"
+        );
+
+-- ============================================================================
+-- Example 23: 6.1 One statement per command
+-- Demonstrates: INVALID:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT 1; SELECT 2;"
+        );
+
+-- ============================================================================
+-- Example 24: 6.2 SQL text
+-- Demonstrates: The SQL represented by the command may be inspected:
+
+String sql = command.Sql();
+
+-- ============================================================================
+-- Example 25: 7. Parameters
+-- Demonstrates: Parameters may be bound by index:
+
+SqliteParameter parameter =
+        command.Bind(1, 42);
+
+-- ============================================================================
+-- Example 26: 7. Parameters
+-- Demonstrates: or by SQLite parameter name:
+
+SqliteParameter parameter =
+        command.Bind(":id", 42);
+
+-- ============================================================================
+-- Example 27: 7. Parameters
+-- Demonstrates: The result may be discarded when no parameter handle is needed:
+
+command.Bind(":id", 42);
+
+-- ============================================================================
+-- Example 28: 7. Parameters
+-- Demonstrates: Supported named parameter forms include the normal SQLite named parameter tokens:
+
+command.Bind(":id", 42);
+command.Bind("@name", "Ada");
+command.Bind("$age", 26);
+
+-- ============================================================================
+-- Example 29: 7.1 Parameter indices
+-- Demonstrates: VALID:
+
+command.Bind(1, "Ada");
+
+-- ============================================================================
+-- Example 30: 7.2 Rebinding
+-- Demonstrates: A SqliteParameter may be rebound:
+
+SqliteParameter id =
+        command.Bind(":id", 1);
+
+String first =
+        command.ExecuteScalar<String>();
+
+id.Value(2);
+
+String second =
+        command.ExecuteScalar<String>();
+
+-- ============================================================================
+-- Example 31: 7.3 SQL NULL
+-- Demonstrates: Tala null binds SQLite SQL NULL:
+
+parameter.Value(null);
+
+-- ============================================================================
+-- Example 32: 7.3 SQL NULL
+-- Demonstrates: or:
+
+command.Bind(":value", null);
+
+-- ============================================================================
+-- Example 33: 7.4 Clearing bindings
+-- Demonstrates: All bindings may be removed:
+
+command.ClearBindings();
+
+-- ============================================================================
+-- Example 34: 7.4 Clearing bindings
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "INSERT INTO users(name) VALUES(:name)"
+        );
+
+command.ClearBindings();
+
+command.ExecuteNonQuery(); -- INVALID
+
+-- ============================================================================
+-- Example 35: 7.5 Parameter metadata
+-- Demonstrates: The parameter count is available through:
+
+int count = command.ParameterCount();
+
+-- ============================================================================
+-- Example 36: 7.5 Parameter metadata
+-- Demonstrates: A parameter's source name may be queried by one-based index:
+
+Optional<String> name =
+        command.ParameterName(1);
+
+-- ============================================================================
+-- Example 37: 8.3 Boolean values
+-- Demonstrates: Example:
+
+command.Bind(":enabled", true);
+
+-- ============================================================================
+-- Example 38: 8.5 BLOB values
+-- Demonstrates: A byte array binds as SQLite BLOB:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+Array<byte> payload = ...;
+
+command.Bind(":payload", payload);
+
+-- ============================================================================
+-- Example 39: 8.6 Optional values
+-- Demonstrates: An empty optional binds SQL NULL:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+Optional<String> nickname = ...;
+
+command.Bind(":nickname", nickname);
+
+-- ============================================================================
+-- Example 40: 8.7 No arbitrary object serialization
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+data User {
+    String Name,
+}
+
+User user = ...;
+
+command.Bind(":user", user); -- INVALID
+
+-- ============================================================================
+-- Example 41: 9. Zero-filled BLOB binding
+-- Demonstrates: A zero-filled SQLite BLOB of a requested size may be bound without first constructing
+--   a same-sized Tala byte array:
+
+command.BindZeroBlob(
+    ":content",
+    size: 1024 * 1024
+);
+
+-- ============================================================================
+-- Example 42: 10. Command execution
+-- Demonstrates: Commands provide three primary execution forms:
+
+int changed =
+        command.ExecuteNonQuery();
+
+T value =
+        command.ExecuteScalar<T>();
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+-- ============================================================================
+-- Example 43: 10.1 ExecuteNonQuery()
+-- Demonstrates: Example:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "INSERT INTO users(name, age) VALUES(?, ?)"
+        );
+
+command.Bind(1, "Ada");
+command.Bind(2, 26);
+
+int changed =
+        command.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 44: 10.2 ExecuteScalar<T>()
+-- Demonstrates: ExecuteScalar<T>() executes a result-producing statement and returns the first column
+--   of the first row.
+
+int count =
+        connection.CreateCommand(
+            "SELECT COUNT(*) FROM users"
+        ).ExecuteScalar<int>();
+
+-- ============================================================================
+-- Example 45: 10.2 ExecuteScalar<T>()
+-- Demonstrates: SQL NULL may be represented explicitly with Optional<T>:
+
+Optional<String> nickname =
+        command.ExecuteScalar<Optional<String>>();
+
+-- ============================================================================
+-- Example 46: 10.3 ExecuteReader()
+-- Demonstrates: ExecuteReader() creates a SqliteDataReader:
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+defer reader.Close();
+
+-- ============================================================================
+-- Example 47: 10.3 ExecuteReader()
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+command.ExecuteReader(); -- INVALID
+
+-- ============================================================================
+-- Example 48: 11. Prepared command reuse
+-- Demonstrates: Its parameter bindings remain available between completed executions until explicitly
+--   rebound or cleared.
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT name FROM users WHERE id = :id"
+        );
+
+SqliteParameter id =
+        command.Bind(":id", 1);
+
+String first =
+        command.ExecuteScalar<String>();
+
+id.Value(2);
+
+String second =
+        command.ExecuteScalar<String>();
+
+-- ============================================================================
+-- Example 49: 12. Closing commands
+-- Demonstrates: A command is closed with:
+
+command.Close();
+
+-- ============================================================================
+-- Example 50: 12. Closing commands
+-- Demonstrates: Its state may be queried:
+
+bool closed = command.IsClosed();
+
+-- ============================================================================
+-- Example 51: 12. Closing commands
+-- Demonstrates: Close() is idempotent:
+-- Expected result: accepted when the referenced declarations are available.
+
+command.Close();
+command.Close(); -- VALID
+
+-- ============================================================================
+-- Example 52: 12. Closing commands
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+command.Close(); -- INVALID
+
+-- ============================================================================
+-- Example 53: 13. Reading rows
+-- Demonstrates: A reader advances with:
+
+bool hasRow = reader.Read();
+
+-- ============================================================================
+-- Example 54: 13. Reading rows
+-- Demonstrates: Typical use:
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+defer reader.Close();
+
+while (reader.Read()) {
+    int id = reader.GetInt(0);
+    String name = reader.GetString(1);
+}
+
+-- ============================================================================
+-- Example 55: 14. Reader typed getters
+-- Demonstrates: Typed getters are available by ordinal and by column name:
+
+int id = reader.GetInt(0);
+int id = reader.GetInt("id");
+
+float score = reader.GetFloat(1);
+float score = reader.GetFloat("score");
+
+String name = reader.GetString(2);
+String name = reader.GetString("name");
+
+Array<byte> blob = reader.GetBlob(3);
+Array<byte> blob = reader.GetBlob("payload");
+
+bool enabled = reader.GetBool(4);
+bool enabled = reader.GetBool("enabled");
+
+-- ============================================================================
+-- Example 56: 14. Reader typed getters
+-- Demonstrates: SQL NULL may be tested with:
+
+bool isNull = reader.IsNull(0);
+bool isNull = reader.IsNull("nickname");
+
+-- ============================================================================
+-- Example 57: 15. Generic reader access
+-- Demonstrates: A value may also be read through:
+
+T value = reader.Get<T>(index);
+
+-- ============================================================================
+-- Example 58: 15. Generic reader access
+-- Demonstrates: or:
+
+T value = reader.Get<T>(name);
+
+-- ============================================================================
+-- Example 59: 15. Generic reader access
+-- Demonstrates: Examples:
+
+int id =
+        reader.Get<int>("id");
+
+String name =
+        reader.Get<String>("name");
+
+-- ============================================================================
+-- Example 60: 15. Generic reader access
+-- Demonstrates: SQL NULL is represented with Optional<T>:
+
+Optional<String> nickname =
+        reader.Get<Optional<String>>(
+            "nickname"
+        );
+
+-- ============================================================================
+-- Example 61: 16. SQLite storage conversion
+-- Demonstrates: INVALID when the runtime value is TEXT:
+
+int value =
+        reader.Get<int>("name");
+
+-- ============================================================================
+-- Example 62: 17. Reader metadata
+-- Demonstrates: The number of result columns is:
+
+int count =
+        reader.ColumnCount();
+
+-- ============================================================================
+-- Example 63: 17. Reader metadata
+-- Demonstrates: A column name is:
+
+String name =
+        reader.ColumnName(0);
+
+-- ============================================================================
+-- Example 64: 17. Reader metadata
+-- Demonstrates: An ordinal may be resolved from a name:
+
+int ordinal =
+        reader.ColumnOrdinal("name");
+
+-- ============================================================================
+-- Example 65: 17.1 Runtime storage kind
+-- Demonstrates: The runtime SQLite storage kind is available through:
+
+SqliteValueKind kind =
+        reader.ValueKind("amount");
+
+-- ============================================================================
+-- Example 66: 17.2 Declared type
+-- Demonstrates: The declared SQL type of a result column, when available, may be read with:
+
+Optional<String> type =
+        reader.DeclaredType("price");
+
+-- ============================================================================
+-- Example 67: 18. Reader BLOB ownership
+-- Demonstrates: GetBlob(...) returns an independent Tala Array<byte> value.
+
+Array<byte> payload =
+        reader.GetBlob("payload");
+
+-- ============================================================================
+-- Example 68: 19. Reader failures and closing
+-- Demonstrates: A reader is closed with:
+
+reader.Close();
+
+-- ============================================================================
+-- Example 69: 19. Reader failures and closing
+-- Demonstrates: Close() is idempotent:
+-- Expected result: accepted when the referenced declarations are available.
+
+reader.Close();
+reader.Close(); -- VALID
+
+-- ============================================================================
+-- Example 70: 20. Transactions
+-- Demonstrates: A transaction is started with:
+
+SqliteTransaction transaction =
+        connection.BeginTransaction();
+
+-- ============================================================================
+-- Example 71: 20.1 Transaction modes
+-- Demonstrates: An explicit transaction mode may be supplied:
+
+connection.BeginTransaction(
+    SqliteTransaction.Mode.DEFERRED
+);
+
+connection.BeginTransaction(
+    SqliteTransaction.Mode.IMMEDIATE
+);
+
+connection.BeginTransaction(
+    SqliteTransaction.Mode.EXCLUSIVE
+);
+
+-- ============================================================================
+-- Example 72: 20.2 Commit and rollback
+-- Demonstrates: A transaction is completed with:
+
+transaction.Commit();
+
+-- ============================================================================
+-- Example 73: 20.2 Commit and rollback
+-- Demonstrates: or:
+
+transaction.Rollback();
+
+-- ============================================================================
+-- Example 74: 20.2 Commit and rollback
+-- Demonstrates: Completion may be queried:
+
+bool completed =
+        transaction.IsCompleted();
+
+-- ============================================================================
+-- Example 75: 20.2 Commit and rollback
+-- Demonstrates: A safe cleanup pattern is:
+
+SqliteTransaction transaction =
+        connection.BeginTransaction();
+
+defer {
+    if (not transaction.IsCompleted()) {
+        transaction.Rollback();
+    }
+}
+
+-- ============================================================================
+-- Example 76: 20.3 No nested BeginTransaction()
+-- Demonstrates: INVALID:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+SqliteTransaction outer =
+        connection.BeginTransaction();
+
+SqliteTransaction inner =
+        connection.BeginTransaction(); -- INVALID
+
+-- ============================================================================
+-- Example 77: 21. Savepoints
+-- Demonstrates: A savepoint is created through an active transaction:
+
+transaction.Savepoint(
+    "before_update"
+);
+
+-- ============================================================================
+-- Example 78: 21. Savepoints
+-- Demonstrates: Rollback to the savepoint without ending the transaction:
+
+transaction.RollbackTo(
+    "before_update"
+);
+
+-- ============================================================================
+-- Example 79: 21. Savepoints
+-- Demonstrates: Release it:
+
+transaction.Release(
+    "before_update"
+);
+
+-- ============================================================================
+-- Example 80: 21. Savepoints
+-- Demonstrates: Example:
+
+SqliteTransaction transaction =
+        connection.BeginTransaction();
+
+transaction.Savepoint(
+    "user_update"
+);
+
+try {
+    UpdateUser();
+}
+catch (SqliteException e) {
+    transaction.RollbackTo(
+        "user_update"
+    );
+}
+
+transaction.Release(
+    "user_update"
+);
+
+transaction.Commit();
+
+-- ============================================================================
+-- Example 81: 22. Transaction state
+-- Demonstrates: The connection's SQLite autocommit state may be queried:
+
+bool autoCommit =
+        connection.IsAutoCommit();
+
+-- ============================================================================
+-- Example 82: 22. Transaction state
+-- Demonstrates: The transaction state for the main database may be queried:
+
+SqliteTransactionState state =
+        connection.TransactionState();
+
+-- ============================================================================
+-- Example 83: 22. Transaction state
+-- Demonstrates: For an attached database:
+
+SqliteTransactionState state =
+        connection.TransactionState(
+            "analytics"
+        );
+
+-- ============================================================================
+-- Example 84: 23. Incremental BLOB access
+-- Demonstrates: An existing SQLite BLOB may be opened incrementally:
+
+SqliteBlob blob =
+        connection.OpenBlob(
+            table: "files",
+            column: "content",
+            rowId: 42
+        );
+
+defer blob.Close();
+
+-- ============================================================================
+-- Example 85: 23. Incremental BLOB access
+-- Demonstrates: Writable access is explicit:
+
+SqliteBlob blob =
+        connection.OpenBlob(
+            database: "main",
+            table: "files",
+            column: "content",
+            rowId: 42,
+            writable: true
+        );
+
+-- ============================================================================
+-- Example 86: 23.1 Size
+-- Demonstrates: The BLOB size is:
+
+int size =
+        blob.Size();
+
+-- ============================================================================
+-- Example 87: 23.2 Reading
+-- Demonstrates: A region may be read with:
+
+Array<byte> bytes =
+        blob.Read(
+            offset: 1024,
+            count: 4096
+        );
+
+-- ============================================================================
+-- Example 88: 23.3 Writing
+-- Demonstrates: A writable BLOB may be updated with:
+
+blob.Write(
+    offset: 1024,
+    data
+);
+
+-- ============================================================================
+-- Example 89: 23.4 Reopening for another row
+-- Demonstrates: The handle may be redirected to another rowid of the same database/table/column:
+
+blob.Reopen(43);
+
+-- ============================================================================
+-- Example 90: 23.5 Closing
+-- Demonstrates: Reopen(...) does not change the selected database, table, or column.
+
+blob.Close();
+bool closed = blob.IsClosed();
+
+-- ============================================================================
+-- Example 91: 24. PRAGMA access
+-- Demonstrates: Simple scalar PRAGMA values may be written through:
+
+connection.SetPragma(
+    "foreign_keys",
+    true
+);
+
+-- ============================================================================
+-- Example 92: 24. PRAGMA access
+-- Demonstrates: and read through:
+
+bool enabled =
+        connection.GetPragma<bool>(
+            "foreign_keys"
+        );
+
+-- ============================================================================
+-- Example 93: 24. PRAGMA access
+-- Demonstrates: Examples:
+
+connection.SetPragma(
+    "journal_mode",
+    "WAL"
+);
+
+String mode =
+        connection.GetPragma<String>(
+            "journal_mode"
+        );
+
+int pageSize =
+        connection.GetPragma<int>(
+            "page_size"
+        );
+
+-- ============================================================================
+-- Example 94: 24. PRAGMA access
+-- Demonstrates: Database qualification is permitted:
+
+connection.SetPragma(
+    "main.cache_size",
+    10000
+);
+
+-- ============================================================================
+-- Example 95: 24. PRAGMA access
+-- Demonstrates: PRAGMAs that naturally produce tabular results use ordinary SQL:
+
+SqliteDataReader reader =
+        connection
+            .CreateCommand(
+                "PRAGMA table_info(users)"
+            )
+            .ExecuteReader();
+
+-- ============================================================================
+-- Example 96: 25. Attaching databases
+-- Demonstrates: Another database may be attached to an open connection:
+
+connection.AttachDatabase(
+    "analytics.db",
+    as: "analytics"
+);
+
+-- ============================================================================
+-- Example 97: 25. Attaching databases
+-- Demonstrates: An in-memory database may also be attached:
+
+connection.AttachDatabase(
+    ":memory:",
+    as: "tempdb"
+);
+
+-- ============================================================================
+-- Example 98: 25. Attaching databases
+-- Demonstrates: Detach with:
+
+connection.DetachDatabase(
+    "analytics"
+);
+
+-- ============================================================================
+-- Example 99: 25. Attaching databases
+-- Demonstrates: SQLite URI attachment is explicit:
+
+connection.AttachDatabaseUri(
+    "file:analytics.db?mode=ro",
+    as: "analytics"
+);
+
+-- ============================================================================
+-- Example 100: 26. WAL checkpoints
+-- Demonstrates: A WAL checkpoint may be requested with:
+
+SqliteCheckpointResult result =
+        connection.Checkpoint();
+
+-- ============================================================================
+-- Example 101: 26. WAL checkpoints
+-- Demonstrates: Example:
+
+SqliteCheckpointResult result =
+        connection.Checkpoint(
+            SqliteCheckpointMode.TRUNCATE
+        );
+
+-- ============================================================================
+-- Example 102: 26. WAL checkpoints
+-- Demonstrates: For an attached database:
+
+SqliteCheckpointResult result =
+        connection.Checkpoint(
+            SqliteCheckpointMode.FULL,
+            database: "analytics"
+        );
+
+-- ============================================================================
+-- Example 103: 26. WAL checkpoints
+-- Demonstrates: The result value is:
+
+data SqliteCheckpointResult {
+    int LogFrames,
+    int CheckpointedFrames,
+    bool Busy,
+}
+
+-- ============================================================================
+-- Example 104: 27. Backup
+-- Demonstrates: A database may be backed up to a database file:
+
+connection.BackupTo(
+    "backup.db"
+);
+
+-- ============================================================================
+-- Example 105: 27. Backup
+-- Demonstrates: Explicit replacement:
+
+connection.BackupTo(
+    "backup.db",
+    replaceExisting: true
+);
+
+-- ============================================================================
+-- Example 106: 27. Backup
+-- Demonstrates: In-memory databases may be backed up:
+
+SqliteConnection connection =
+        SqliteConnection.Open(":memory:");
+
+connection.BackupTo(
+    "snapshot.db"
+);
+
+-- ============================================================================
+-- Example 107: 27.1 Connection-to-connection backup
+-- Demonstrates: An open connection may be used as the destination:
+
+source.BackupTo(
+    destination
+);
+
+-- ============================================================================
+-- Example 108: 27.1 Connection-to-connection backup
+-- Demonstrates: Database names may be selected:
+
+source.BackupTo(
+    destination,
+    sourceDatabase: "analytics",
+    destinationDatabase: "main"
+);
+
+-- ============================================================================
+-- Example 109: 28. Restore
+-- Demonstrates: A database file may be restored into the current connection:
+
+connection.RestoreFrom(
+    "backup.db"
+);
+
+-- ============================================================================
+-- Example 110: 29. Database serialization
+-- Demonstrates: A database image may be copied into a byte array:
+
+Array<byte> bytes =
+        connection.Serialize();
+
+-- ============================================================================
+-- Example 111: 29. Database serialization
+-- Demonstrates: An attached schema may be selected:
+
+Array<byte> bytes =
+        connection.Serialize(
+            database: "analytics"
+        );
+
+-- ============================================================================
+-- Example 112: 29.1 Deserialization
+-- Demonstrates: A database image may be loaded from a byte array:
+
+connection.Deserialize(bytes);
+
+-- ============================================================================
+-- Example 113: 29.1 Deserialization
+-- Demonstrates: A target database and read-only mode may be specified:
+
+connection.Deserialize(
+    bytes,
+    database: "main",
+    readOnly: true
+);
+
+-- ============================================================================
+-- Example 114: 30. SQL dump file
+-- Demonstrates: A connection may record successful database-changing SQL operations into a replayable
+--   SQL dump file:
+
+connection.SqliteDumpFile(
+    enabled: true,
+    "sql.dump"
+);
+
+-- ============================================================================
+-- Example 115: 30.1 Dump output
+-- Demonstrates: For example:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "INSERT INTO users(name) VALUES(:name)"
+        );
+
+command.Bind(":name", "Ada");
+command.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 116: 30.2 Disabling dump recording
+-- Demonstrates: Dump recording is disabled with:
+
+connection.SqliteDumpFile(
+    enabled: false,
+    "sql.dump"
+);
+
+-- ============================================================================
+-- Example 117: 31. Executing SQL scripts
+-- Demonstrates: Multiple SQL statements may be executed as a script:
+
+connection.ExecuteScript("""
+    CREATE TABLE users (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL
+    );
+
+    CREATE INDEX users_name
+        ON users(name);
+""");
+
+-- ============================================================================
+-- Example 118: 31. Executing SQL scripts
+-- Demonstrates: To make a migration atomic, use an explicit transaction:
+
+SqliteTransaction transaction =
+        connection.BeginTransaction();
+
+defer {
+    if (not transaction.IsCompleted()) {
+        transaction.Rollback();
+    }
+}
+
+connection.ExecuteScript("""
+    CREATE TABLE users (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL
+    );
+
+    CREATE INDEX users_name
+        ON users(name);
+""");
+
+transaction.Commit();
+
+-- ============================================================================
+-- Example 119: 32. Interrupting execution
+-- Demonstrates: A running SQLite operation may be requested to stop:
+
+connection.Interrupt();
+
+-- ============================================================================
+-- Example 120: 32. Interrupting execution
+-- Demonstrates: Example:
+
+try {
+    command.ExecuteReader();
+}
+catch (SqliteException e) {
+    if (e.Code() == SqliteResult.INTERRUPT) {
+        -- interrupted
+    }
+}
+
+-- ============================================================================
+-- Example 121: 33. User-defined scalar SQL functions
+-- Demonstrates: A typed scalar SQL function may be registered on a connection:
+
+connection.CreateFunction(
+    "square",
+    \(int value) -> value * value
+);
+
+-- ============================================================================
+-- Example 122: 33. User-defined scalar SQL functions
+-- Demonstrates: Multiple parameters are supported:
+
+connection.CreateFunction(
+    "full_name",
+    \(String first, String last) ->
+        first + " " + last
+);
+
+-- ============================================================================
+-- Example 123: 33. User-defined scalar SQL functions
+-- Demonstrates: A deterministic function may be marked:
+
+connection.CreateFunction(
+    "square",
+    \(int value) -> value * value,
+    deterministic: true
+);
+
+-- ============================================================================
+-- Example 124: 33.1 Removing a function
+-- Demonstrates: A registered function may be removed by name and arity:
+
+connection.RemoveFunction(
+    "square",
+    arity: 1
+);
+
+-- ============================================================================
+-- Example 125: 34. Custom collations
+-- Demonstrates: A custom collation may be registered:
+
+connection.CreateCollation(
+    "VISUAL",
+    \(String a, String b) ->
+        CompareNames(a, b)
+);
+
+-- ============================================================================
+-- Example 126: 34. Custom collations
+-- Demonstrates: A collation may be removed:
+
+connection.RemoveCollation(
+    "VISUAL"
+);
+
+-- ============================================================================
+-- Example 127: 35. Loadable SQLite extensions
+-- Demonstrates: A native SQLite extension may be explicitly loaded:
+
+connection.LoadExtension(
+    "spellfix"
+);
+
+-- ============================================================================
+-- Example 128: 35. Loadable SQLite extensions
+-- Demonstrates: An explicit entry point may be supplied:
+
+connection.LoadExtension(
+    "my_extension",
+    entryPoint: "sqlite3_my_extension_init"
+);
+
+-- ============================================================================
+-- Example 129: 36. Error model
+-- Demonstrates: Typical handling:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+try {
+    ...
+}
+catch (SqliteException e) {
+    Console.Printfn(
+        "SQLite error %d: %s",
+        e.Code(),
+        e.Message()
+    );
+}
+
+-- ============================================================================
+-- Example 130: 36. Error model
+-- Demonstrates: The exception exposes:
+
+SqliteResult code =
+        e.Code();
+
+int extended =
+        e.ExtendedCode();
+
+String message =
+        e.Message();
+
+Optional<int> offset =
+        e.ErrorOffset();
+
+-- ============================================================================
+-- Example 131: 36.4 SQL error offset
+-- Demonstrates: When the failure includes a meaningful SQL source offset, it is available through:
+
+Optional<int> offset =
+        e.ErrorOffset();
+
+-- ============================================================================
+-- Example 132: 37. No per-error exception subclass hierarchy
+-- Demonstrates: Applications inspect:
+
+e.Code()
+e.ExtendedCode()
+
+-- ============================================================================
+-- Example 133: 37. No per-error exception subclass hierarchy
+-- Demonstrates: Example:
+
+catch (SqliteException e) {
+    if (e.Code() == SqliteResult.BUSY) {
+        HandleBusy();
+    }
+    else {
+        throw;
+    }
+}
+
+-- ============================================================================
+-- Example 134: 39. No artificial asynchronous SQLite API
+-- Demonstrates: When background execution is desired, normal Tala threading may be used
+
+Task<int> task =
+        Task.Run(\ -> {
+            return command.ExecuteScalar<int>();
+        });
+
+int result =
+        await task;
+
+-- ============================================================================
+-- Example 135: 40. Complete basic example
+-- Demonstrates: The choice to move synchronous database work to another task is therefore visible in
+--   application code.
+
+using System.Data.Sqlite3;
+using System.Timing;
+
+SqliteConnection connection =
+        SqliteConnection.Open(
+            "app.db",
+            SqliteOpenMode.READ_WRITE_CREATE
+        );
+
+defer connection.Close();
+
+connection.BusyTimeout(
+    Duration.Of(seconds: 5)
+);
+
+connection.SetPragma(
+    "foreign_keys",
+    true
+);
+
+connection.ExecuteScript("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        nickname TEXT
+    );
+""");
+
+SqliteTransaction transaction =
+        connection.BeginTransaction(
+            SqliteTransaction.Mode.IMMEDIATE
+        );
+
+defer {
+    if (not transaction.IsCompleted()) {
+        transaction.Rollback();
+    }
+}
+
+SqliteCommand insert =
+        connection.CreateCommand(
+            """
+            INSERT INTO users(name, nickname)
+            VALUES(:name, :nickname)
+            """
+        );
+
+defer insert.Close();
+
+insert.Bind(":name", "Ada");
+insert.Bind(":nickname", null);
+
+int changed =
+        insert.ExecuteNonQuery();
+
+int rowId =
+        connection.LastInsertRowId();
+
+transaction.Commit();
+
+SqliteCommand query =
+        connection.CreateCommand(
+            """
+            SELECT id, name, nickname
+            FROM users
+            WHERE id = :id
+            """
+        );
+
+defer query.Close();
+
+query.Bind(":id", rowId);
+
+SqliteDataReader reader =
+        query.ExecuteReader();
+
+defer reader.Close();
+
+while (reader.Read()) {
+    int id =
+            reader.Get<int>("id");
+
+    String name =
+            reader.Get<String>("name");
+
+    Optional<String> nickname =
+            reader.Get<Optional<String>>(
+                "nickname"
+            );
+}
+
+-- ============================================================================
+-- Example 136: 41. Complete prepared-command reuse example
+-- Demonstrates: The choice to move synchronous database work to another task is therefore visible in
+--   application code.
+
+SqliteConnection connection =
+        SqliteConnection.Open("app.db");
+
+defer connection.Close();
+
+SqliteCommand command =
+        connection.CreateCommand(
+            """
+            SELECT name
+            FROM users
+            WHERE id = :id
+            """
+        );
+
+defer command.Close();
+
+SqliteParameter id =
+        command.Bind(":id", 1);
+
+String first =
+        command.ExecuteScalar<String>();
+
+id.Value(2);
+
+String second =
+        command.ExecuteScalar<String>();
+
+-- ============================================================================
+-- Example 137: 42. Complete savepoint example
+-- Demonstrates: Bindings remain in place between completed executions.
+
+SqliteConnection connection =
+        SqliteConnection.Open("app.db");
+
+defer connection.Close();
+
+SqliteTransaction transaction =
+        connection.BeginTransaction();
+
+defer {
+    if (not transaction.IsCompleted()) {
+        transaction.Rollback();
+    }
+}
+
+transaction.Savepoint(
+    "before_optional_change"
+);
+
+try {
+    SqliteCommand command =
+            connection.CreateCommand(
+                """
+                UPDATE users
+                SET name = :name
+                WHERE id = :id
+                """
+            );
+
+    defer command.Close();
+
+    command.Bind(":name", "Ada");
+    command.Bind(":id", 42);
+
+    command.ExecuteNonQuery();
+}
+catch (SqliteException e) {
+    transaction.RollbackTo(
+        "before_optional_change"
+    );
+}
+
+transaction.Release(
+    "before_optional_change"
+);
+
+transaction.Commit();
+
+-- ============================================================================
+-- Example 138: 43. Complete incremental BLOB example
+-- Demonstrates: A large BLOB may first be allocated:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            """
+            INSERT INTO files(content)
+            VALUES(:content)
+            """
+        );
+
+defer command.Close();
+
+command.BindZeroBlob(
+    ":content",
+    size: 1024 * 1024
+);
+
+command.ExecuteNonQuery();
+
+int rowId =
+        connection.LastInsertRowId();
+
+-- ============================================================================
+-- Example 139: 43. Complete incremental BLOB example
+-- Demonstrates: It may then be updated incrementally:
+
+SqliteBlob blob =
+        connection.OpenBlob(
+            table: "files",
+            column: "content",
+            rowId: rowId,
+            writable: true
+        );
+
+defer blob.Close();
+
+blob.Write(
+    offset: 0,
+    firstChunk
+);
+
+blob.Write(
+    offset: firstChunk.Length(),
+    secondChunk
+);
+
+-- ============================================================================
+-- Example 140: 44.1 Binding SQL NULL
+-- Demonstrates: VALID:
+
+command.Bind(":nickname", null);
+
+-- ============================================================================
+-- Example 141: 44.2 Reusing a command
+-- Demonstrates: VALID:
+
+SqliteParameter id =
+        command.Bind(":id", 1);
+
+command.ExecuteScalar<String>();
+
+id.Value(2);
+
+command.ExecuteScalar<String>();
+
+-- ============================================================================
+-- Example 142: 44.3 Executing while reader active
+-- Demonstrates: INVALID:
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+command.ExecuteScalar<int>();
+
+-- ============================================================================
+-- Example 143: 44.4 Closing command while reader active
+-- Demonstrates: INVALID:
+
+SqliteDataReader reader =
+        command.ExecuteReader();
+
+command.Close();
+
+-- ============================================================================
+-- Example 144: 44.5 Closing connection while command active
+-- Demonstrates: INVALID:
+
+SqliteCommand command =
+        connection.CreateCommand(
+            "SELECT 1"
+        );
+
+connection.Close();
+
+-- ============================================================================
+-- Example 145: 44.6 Repeated resource close
+-- Demonstrates: VALID:
+
+reader.Close();
+reader.Close();
+
+command.Close();
+command.Close();
+
+blob.Close();
+blob.Close();
+
+connection.Close();
+connection.Close();
+
+-- ============================================================================
+-- Example 146: 44.7 Repeated transaction completion
+-- Demonstrates: INVALID:
+
+transaction.Commit();
+transaction.Commit();
+
+-- ============================================================================
+-- Example 147: 44.7 Repeated transaction completion
+-- Demonstrates: INVALID:
+
+transaction.Rollback();
+transaction.Rollback();
+
+-- ============================================================================
+-- Example 148: 44.8 Typed NULL access
+-- Demonstrates: INVALID when the SQL value is NULL:
+
+String name =
+        reader.Get<String>(
+            "nickname"
+        );
+
+-- ============================================================================
+-- Example 149: 44.8 Typed NULL access
+-- Demonstrates: VALID:
+
+Optional<String> name =
+        reader.Get<Optional<String>>(
+            "nickname"
+        );
+
+-- ============================================================================
+-- Example 150: 44.9 Ambiguous column name
+-- Demonstrates: followed by:
+
+reader.Get<int>("id");
+
+-- ============================================================================
+-- Example 151: 44.10 Multiple statements in one command
+-- Demonstrates: INVALID:
+
+connection.CreateCommand(
+    "SELECT 1; SELECT 2;"
+);
+
+-- ============================================================================
+-- Example 152: 44.10 Multiple statements in one command
+-- Demonstrates: VALID:
+
+connection.ExecuteScript(
+    "SELECT 1; SELECT 2;"
+);

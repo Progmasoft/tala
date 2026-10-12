@@ -1,0 +1,74 @@
+cabal-version: 3.12
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+name: tala-core
+version: 0.5.1
+synopsis: Tala Core and CorePrep models, verification, and wire codecs
+license: MPL-2.0
+author: Progmasoft
+maintainer: support@progmasoft.com
+build-type: Simple
+
+library
+    exposed-modules:
+        Progmasoft.Tala.Core
+        Progmasoft.Tala.Core.Artifact
+        Progmasoft.Tala.Core.CorePrep
+        Progmasoft.Tala.Core.CorePrep.Verifier
+        Progmasoft.Tala.Core.CorePrep.Wire
+        Progmasoft.Tala.Core.CorePrep.Wire.Decode
+        Progmasoft.Tala.Core.CorePrep.Wire.Encode
+        Progmasoft.Tala.Core.CorePrep.Wire.Format
+        Progmasoft.Tala.Core.Monomorphization
+        Progmasoft.Tala.Core.Optimizer
+        Progmasoft.Tala.Core.Optimizer.IntegerFacts
+        Progmasoft.Tala.Core.Scalar
+        Progmasoft.Tala.Core.Specialization
+        Progmasoft.Tala.Core.Symbols
+        Progmasoft.Tala.Core.Template
+        Progmasoft.Tala.Core.Verifier
+        Progmasoft.Tala.Core.Wire
+        Progmasoft.Tala.Desugarer
+        Progmasoft.Tala.Desugarer.Branching
+        Progmasoft.Tala.Desugarer.Captures
+        Progmasoft.Tala.Desugarer.Effects
+        Progmasoft.Tala.Desugarer.Handing
+        Progmasoft.Tala.Desugarer.Laziness
+        Progmasoft.Tala.Desugarer.Sequencing
+        Progmasoft.Tala.Desugarer.Symbols
+        Progmasoft.Tala.Desugarer.Workers
+    other-modules:
+        Progmasoft.Tala.Core.Optimizer.Analysis
+        Progmasoft.Tala.Core.Optimizer.Constant
+        Progmasoft.Tala.Core.Optimizer.ControlFlow
+        Progmasoft.Tala.Core.Optimizer.EffectInference
+        Progmasoft.Tala.Core.Optimizer.Floating
+        Progmasoft.Tala.Core.Optimizer.Inline
+        Progmasoft.Tala.Core.Optimizer.Liveness
+        Progmasoft.Tala.Core.Optimizer.Pipeline
+        Progmasoft.Tala.Core.Optimizer.Types
+        Progmasoft.Tala.Core.Monomorphization.Discovery
+        Progmasoft.Tala.Core.Monomorphization.Graph
+        Progmasoft.Tala.Core.Monomorphization.Types
+    hs-source-dirs: src
+    build-depends:
+        base >=4.20 && <4.23,
+        bytestring >=0.12 && <0.14,
+        containers >=0.7 && <0.9,
+        filepath >=1.5 && <1.6,
+        mtl >=2.3 && <2.4,
+        tala-syntax
+    default-language: GHC2024
+
+benchmark core-benches
+    type: exitcode-stdio-1.0
+    main-is: Main.hs
+    hs-source-dirs: Benches
+    build-depends:
+        base >=4.20 && <4.23,
+        criterion >=1.6.4 && <1.7,
+        deepseq >=1.5 && <1.6,
+        tala-core,
+        tala-syntax
+    default-language: GHC2024
+    ghc-options: -threaded -rtsopts

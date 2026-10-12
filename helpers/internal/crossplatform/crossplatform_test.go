@@ -145,13 +145,13 @@ func write(t *testing.T, root string, name string, content string) {
 func TestTheArchiveHoldsTheListedFilesAsTheyAre(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "MODULE.bazel", "module()\n")
-	write(t, root, "Compiler/a.cpp", "int a;\r\n")
-	write(t, root, "ProjectSystem/gradlew", "#!/bin/sh\n")
+	write(t, root, "Talac/a.cpp", "int a;\r\n")
+	write(t, root, "Tazel/gradlew", "#!/bin/sh\n")
 	if err := os.MkdirAll(filepath.Join(root, "third_party", "catch3"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	var stream bytes.Buffer
-	written, err := WriteArchive(&stream, root, []string{"Compiler/a.cpp", "MODULE.bazel", "ProjectSystem/gradlew", "deleted.txt", "third_party/catch3"})
+	written, err := WriteArchive(&stream, root, []string{"Talac/a.cpp", "MODULE.bazel", "Tazel/gradlew", "deleted.txt", "third_party/catch3"})
 	if err != nil || written != 3 {
 		t.Fatalf("wrote %d files, %v", written, err)
 	}
@@ -173,10 +173,10 @@ func TestTheArchiveHoldsTheListedFilesAsTheyAre(t *testing.T) {
 		contents[header.Name] = string(data)
 		modes[header.Name] = header.Mode
 	}
-	if len(contents) != 3 || contents["Compiler/a.cpp"] != "int a;\r\n" || contents["MODULE.bazel"] != "module()\n" {
+	if len(contents) != 3 || contents["Talac/a.cpp"] != "int a;\r\n" || contents["MODULE.bazel"] != "module()\n" {
 		t.Fatalf("archive = %v", contents)
 	}
-	if modes["ProjectSystem/gradlew"] != 0o755 || modes["Compiler/a.cpp"] != 0o644 {
+	if modes["Tazel/gradlew"] != 0o755 || modes["Talac/a.cpp"] != 0o644 {
 		t.Fatalf("modes = %v", modes)
 	}
 }
@@ -190,7 +190,7 @@ func TestTheImageNameFollowsTheBuildFileAndNotItsLineEndings(t *testing.T) {
 	if first == ImageName(target, []byte("FROM a\nRUN c\n")) {
 		t.Fatal("a changed build file keeps its image")
 	}
-	if !strings.HasPrefix(first, "localhost/visual-xsharp-cross-ubuntu-26.04:") {
+	if !strings.HasPrefix(first, "localhost/tala-cross-ubuntu-26.04:") {
 		t.Fatalf("image name = %s", first)
 	}
 	if CacheVolume(target) == CacheVolume(Target{Name: "fedora-43"}) {
@@ -224,9 +224,9 @@ func (engine *fakeEngine) Output(directory string, name string, arguments ...str
 		}
 		return "linux\n", nil
 	case name == "podman" && arguments[0] == "images":
-		return "localhost/visual-xsharp-cross-ubuntu-26.04:abc\t2.7 GB\ndocker.io/library/ubuntu:26.04\t112 MB\n", nil
+		return "localhost/tala-cross-ubuntu-26.04:abc\t2.7 GB\ndocker.io/library/ubuntu:26.04\t112 MB\n", nil
 	case name == "podman" && arguments[0] == "volume":
-		return "visual-xsharp-cross-ubuntu-26.04\nsomeone-elses-volume\n", nil
+		return "tala-cross-ubuntu-26.04\nsomeone-elses-volume\n", nil
 	case name == "podman" && arguments[0] == "system":
 		return "TYPE  TOTAL\n", nil
 	case name == "podman" && arguments[0] == "image":
@@ -235,7 +235,7 @@ func (engine *fakeEngine) Output(directory string, name string, arguments ...str
 		}
 		return "", errors.New("exit status 1")
 	case name == "git" && strings.Contains(strings.Join(arguments, " "), "--cached"):
-		return "MODULE.bazel\x00Compiler/a.cpp\x00", nil
+		return "MODULE.bazel\x00Talac/a.cpp\x00", nil
 	case name == "git":
 		return "new.txt\x00", nil
 	}
@@ -256,7 +256,7 @@ func (engine *fakeEngine) Run(directory string, input io.Reader, output io.Write
 		}
 		engine.archives = append(engine.archives, count)
 		for target, fails := range engine.runFails {
-			if fails && strings.Contains(strings.Join(arguments, " "), "visual-xsharp-cross-"+target) {
+			if fails && strings.Contains(strings.Join(arguments, " "), "tala-cross-"+target) {
 				return errors.New("exit status 1")
 			}
 		}
@@ -268,7 +268,7 @@ func checkout(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	write(t, root, "MODULE.bazel", "module()\n")
-	write(t, root, "Compiler/a.cpp", "int a;\n")
+	write(t, root, "Talac/a.cpp", "int a;\n")
 	write(t, root, "new.txt", "new\n")
 	for _, target := range Targets("linux") {
 		if target.Runs() {
@@ -355,7 +355,7 @@ func TestCleanRemovesOnlyWhatThisToolCreated(t *testing.T) {
 	if !strings.Contains(calls, "podman rmi --force") || !strings.Contains(calls, "podman volume rm") || !strings.Contains(calls, "podman image prune") {
 		t.Fatalf("calls = %v", engine.calls)
 	}
-	if err := Usage(engine, &output); err != nil || !strings.Contains(output.String(), "visual-xsharp-cross-ubuntu-26.04") ||
+	if err := Usage(engine, &output); err != nil || !strings.Contains(output.String(), "tala-cross-ubuntu-26.04") ||
 		strings.Contains(output.String(), "someone-elses-volume") {
 		t.Fatalf("usage: %q, %v", output.String(), err)
 	}

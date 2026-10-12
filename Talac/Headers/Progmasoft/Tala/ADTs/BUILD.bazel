@@ -1,0 +1,13 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "dense_id_map",
+    hdrs = ["DenseIdMap.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    # DenseMap's allocation hooks live in LLVMSupport rather than being fully
+    # header-only. The local LLVM repository exposes the configured component
+    # archive through this target on both Windows and macOS.
+    deps = ["@llvm//:llvm"],
+)

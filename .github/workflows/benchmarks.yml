@@ -69,19 +69,19 @@ jobs:
         shell: pwsh
         run: >-
           bazel build
-          //Compiler/Codegen/Xpp/Benches:xpp_benches
-          //Compiler/Codegen/Xmm/Benches:xmm_benches
-          //Compiler/Core/Benches:core_benches
-          //Compiler/Core/CorePrep/Benches:coreprep_benches
+          //Talac/Codegen/Xpp/Benches:xpp_benches
+          //Talac/Codegen/Xmm/Benches:xmm_benches
+          //Talac/Core/Benches:core_benches
+          //Talac/Core/CorePrep/Benches:coreprep_benches
           //Interactive/Benches:interactive_benches
 
       - name: Smoke native benchmark registration
         shell: pwsh
         run: |
-          .\bazel-bin\Compiler\Core\Benches\core_benches.exe --benchmark_filter="CoreVerify/8" --benchmark_min_time=0.001s
-          .\bazel-bin\Compiler\Core\CorePrep\Benches\coreprep_benches.exe --benchmark_filter="Verify/4" --benchmark_min_time=0.001s
-          .\bazel-bin\Compiler\Codegen\Xpp\Benches\xpp_benches.exe --benchmark_filter="Verify/4" --benchmark_min_time=0.001s
-          .\bazel-bin\Compiler\Codegen\Xmm\Benches\xmm_benches.exe --benchmark_filter="Lower/4" --benchmark_min_time=0.001s
+          .\bazel-bin\Talac\Core\Benches\core_benches.exe --benchmark_filter="CoreVerify/8" --benchmark_min_time=0.001s
+          .\bazel-bin\Talac\Core\CorePrep\Benches\coreprep_benches.exe --benchmark_filter="Verify/4" --benchmark_min_time=0.001s
+          .\bazel-bin\Talac\Codegen\Xpp\Benches\xpp_benches.exe --benchmark_filter="Verify/4" --benchmark_min_time=0.001s
+          .\bazel-bin\Talac\Codegen\Xmm\Benches\xmm_benches.exe --benchmark_filter="Lower/4" --benchmark_min_time=0.001s
           .\bazel-bin\Interactive\Benches\interactive_benches.exe --benchmark_filter="BenchmarkCellLowerAddInvokeReset" --benchmark_min_time=0.001s
 
       - name: Update Haskell package index
@@ -90,13 +90,13 @@ jobs:
 
       - name: Build Haskell Criterion benchmarks
         shell: pwsh
-        working-directory: Compiler
-        run: cabal build visual-xsharp-core:bench:core-benches --enable-benchmarks
+        working-directory: Talac
+        run: cabal build tala-core:bench:core-benches --enable-benchmarks
 
       - name: Smoke Haskell Criterion benchmarks
         shell: pwsh
-        working-directory: Compiler
-        run: cabal bench visual-xsharp-core:core-benches --enable-benchmarks --benchmark-options="-n 1 --match pattern Core/Verify/8"
+        working-directory: Talac
+        run: cabal bench tala-core:core-benches --enable-benchmarks --benchmark-options="-n 1 --match pattern Core/Verify/8"
 
       - name: Check patch hygiene
         shell: pwsh

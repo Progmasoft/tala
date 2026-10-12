@@ -1,0 +1,12 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The stack the compiler runs on. The frontend's nesting limits are stated
+# against its size, so every program that hosts the pipeline uses it. Depend
+# on //Talac/Support:compiler_stack, which carries the implementation.
+cc_library(
+    name = "compiler_stack_api",
+    hdrs = ["CompilerStack.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+)

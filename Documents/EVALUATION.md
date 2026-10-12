@@ -3,11 +3,11 @@
 
 # Evaluation by need
 
-Visual X# is a lazy language with call-by-need evaluation. A value is computed
+Tala is a lazy language with call-by-need evaluation. A value is computed
 when it is first needed and at most once, and a value that is never needed is
 never computed. Effects are not lazy: they happen where they are written. The
 source has no notation for either; the compiler tells the two apart. The rules
-are in `Spec/Language/Evaluation.vxs`.
+are in `Spec/Language/Evaluation.tala`.
 
 This document says how much of that the compiler implements and how. It is an
 implementation reference, not the definition of the language.
@@ -153,7 +153,7 @@ program can tell:
 
 In the second case one thing differs: when the value and an operand evaluated
 before it in that statement both fail, the value fails first. The language
-leaves that open. Example 13 of `Spec/Language/Evaluation.vxs` says that
+leaves that open. Example 13 of `Spec/Language/Evaluation.tala` says that
 whether a program fails is determined and which of several failures one
 statement meets is not, and that a value which runs without end counts as one
 that cannot be computed. The order of statements and of effects is

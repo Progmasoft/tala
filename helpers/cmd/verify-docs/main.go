@@ -19,10 +19,10 @@ import (
 )
 
 var haddockPackages = []string{
-	"visual-xsharp-syntax",
-	"visual-xsharp-frontend",
-	"visual-xsharp-core",
-	"visual-xsharp-compiler",
+	"tala-syntax",
+	"tala-frontend",
+	"tala-core",
+	"tala-compiler",
 }
 
 var haddockCoverageLine = regexp.MustCompile(`(?m)^\s*(\d+)%\s+\(\s*(\d+)\s*/\s*(\d+)\)\s+in '([^']+)'`)
@@ -81,7 +81,7 @@ func verify() error {
 		fmt.Println("Doxygen public C++ API: no documentation warnings.")
 	}
 
-	compilerDirectory := filepath.Join(repository, "Compiler")
+	compilerDirectory := filepath.Join(repository, "Talac")
 	for _, packageName := range haddockPackages {
 		output, err := runCaptured(compilerDirectory, "cabal", "haddock", packageName)
 		fmt.Print(output)
@@ -105,7 +105,7 @@ func verify() error {
 }
 
 func printDoxygenDiagnostics(repository string) {
-	path := filepath.Join(repository, "Compiler", "dist-newstyle", "doxygen-warnings.log")
+	path := filepath.Join(repository, "Talac", "dist-newstyle", "doxygen-warnings.log")
 	contents, err := os.ReadFile(path)
 	if err != nil || len(contents) == 0 {
 		fmt.Println("Doxygen did not produce a warning log.")
@@ -136,7 +136,7 @@ func findRepositoryRoot() (string, error) {
 		}
 		parent := filepath.Dir(directory)
 		if parent == directory {
-			return "", errors.New("could not locate the XSharp Git root")
+			return "", errors.New("could not locate the Tala Git root")
 		}
 	}
 }

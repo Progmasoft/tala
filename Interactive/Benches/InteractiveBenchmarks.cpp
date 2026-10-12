@@ -6,13 +6,13 @@
 #include <string>
 #include <utility>
 
-#include "Visual/XSharp/Backend/LLVM.hpp"
-#include "Visual/XSharp/Core/CorePrep/Wire.hpp"
-#include "Visual/XSharp/Pipeline.hpp"
+#include "Progmasoft/Tala/Backend/LLVM.hpp"
+#include "Progmasoft/Tala/Core/CorePrep/Wire.hpp"
+#include "Progmasoft/Tala/Pipeline.hpp"
 
 namespace
 {
-    namespace Llvm = Visual::XSharp::Backend::LLVM;
+    namespace Llvm = Progmasoft::Tala::Backend::LLVM;
     namespace Core = Llvm::Core;
 
     [[nodiscard]] auto
@@ -33,10 +33,10 @@ namespace
                     0,
                     0 } } },
         };
-        const Core::CorePrepModule module{ { U"VXSI", U"Benchmark" },
+        const Core::CorePrepModule module{ { U"TALI", U"Benchmark" },
                                            { std::move(cell) } };
-        const auto xpp = visual_xsharp::xpp::lower(module);
-        const auto xmm = visual_xsharp::xmm::lower(xpp);
+        const auto xpp = tala::xpp::lower(module);
+        const auto xmm = tala::xmm::lower(xpp);
         return Llvm::Lower(xmm);
     }
 
@@ -54,7 +54,7 @@ namespace
                 state.SkipWithError("Xmm-to-LLVM cell lowering failed");
                 return;
             }
-            const auto name = "VXSI.Benchmark.Evaluate." + std::to_string(cell);
+            const auto name = "TALI.Benchmark.Evaluate." + std::to_string(cell);
             if (auto issue = session.AddModule(result.artifact->bitcode,
                                                name,
                                                name,

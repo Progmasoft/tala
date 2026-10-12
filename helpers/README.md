@@ -1,9 +1,9 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Visual X# developer helpers
+# Tala developer helpers
 
-This is an independent Go module, `github.com/Progmasoft/visual-xsharp/helpers`.
+This is an independent Go module, `github.com/Progmasoft/tala/helpers`.
 It contains developer applications and reusable implementation packages, not
 compiler runtime code or another build system. Bazel owns the native graph,
 Cabal owns Haskell packages, and Gradle owns Kotlin components.
@@ -69,7 +69,7 @@ and `verify-examples` take the checkout as `--root`; their earlier `-Root` and
 command is given. An invocation a command does not understand fails before
 it reads, probes or installs anything; each command has tests that hold that.
 
-Compiler options, Visual.XSharp.kts evaluation, and user project configuration
+Compiler options, BUILD.kts evaluation, and user project configuration
 are not parsed by these developer tools.
 
 ### Diagnostics without changing the machine

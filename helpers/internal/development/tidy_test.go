@@ -38,10 +38,10 @@ func TestTidyUnitsKeepOnlyFirstPartySourcesOnceInPathOrder(t *testing.T) {
 	graph := actionGraph(t,
 		[]string{"clang", "-Iexternal/llvm", "-c", "Interactive/Main.cpp", "-o", "bazel-out/bin/Interactive/Main.o"},
 		[]string{"clang", "-c", "external/+llvm+llvm/lib/Support.cpp", "-o", "bazel-out/bin/external/Support.o"},
-		[]string{"clang", "-DFIRST", "-c", "Compiler/Core/IR.cpp", "-o", "bazel-out/bin/Compiler/Core/IR.o"},
-		[]string{"clang", "-DSECOND", "-c", "Compiler/Core/IR.cpp", "-o", "bazel-out/bin/Compiler/Core/IR.pic.o"},
+		[]string{"clang", "-DFIRST", "-c", "Talac/Core/IR.cpp", "-o", "bazel-out/bin/Talac/Core/IR.o"},
+		[]string{"clang", "-DSECOND", "-c", "Talac/Core/IR.cpp", "-o", "bazel-out/bin/Talac/Core/IR.pic.o"},
 		[]string{"clang", "-c", "third_party/catch3/src/catch.cpp", "-o", "bazel-out/bin/third_party/catch.o"},
-		[]string{"clang", "-c", "bazel-out/bin/Compiler/Generated.cpp", "-o", "bazel-out/bin/Compiler/Generated.o"},
+		[]string{"clang", "-c", "bazel-out/bin/Talac/Generated.cpp", "-o", "bazel-out/bin/Talac/Generated.o"},
 		[]string{"clang", "-c", "Benchmarks/Main.cpp", "-o", "bazel-out/bin/Benchmarks/Main.o"},
 	)
 	units, err := tidyUnitsFromActions(graph, root)
@@ -55,13 +55,13 @@ func TestTidyUnitsKeepOnlyFirstPartySourcesOnceInPathOrder(t *testing.T) {
 			t.Fatalf("%s is not rooted at the execution root: %q", unit.File, unit.Directory)
 		}
 	}
-	want := []string{"Benchmarks/Main.cpp", "Compiler/Core/IR.cpp", "Interactive/Main.cpp"}
+	want := []string{"Benchmarks/Main.cpp", "Interactive/Main.cpp", "Talac/Core/IR.cpp"}
 	if !reflect.DeepEqual(files, want) {
 		t.Fatalf("selected %v, want %v", files, want)
 	}
 	// A source compiled by several targets keeps its first command.
-	if !strings.Contains(strings.Join(units[1].Arguments, " "), "-DFIRST") {
-		t.Fatalf("duplicate source did not keep its first command: %v", units[1].Arguments)
+	if !strings.Contains(strings.Join(units[2].Arguments, " "), "-DFIRST") {
+		t.Fatalf("duplicate source did not keep its first command: %v", units[2].Arguments)
 	}
 }
 
@@ -77,9 +77,9 @@ func TestTidyUnitsReadWindowsParameterFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	firstParty := "bazel-out/x64_windows-fastbuild/bin/Compiler/Core/_objs/core/IR.obj.params"
+	firstParty := "bazel-out/x64_windows-fastbuild/bin/Talac/Core/_objs/core/IR.obj.params"
 	vendored := "bazel-out/x64_windows-fastbuild/bin/external/+llvm+llvm/_objs/Support/Path.obj.params"
-	write(firstParty, "/nologo\r\n\"/DNAME=\\\"quoted value\\\"\"\r\n/I.\r\n/Fobazel-out/x64_windows-fastbuild/bin/Compiler/Core/_objs/core/IR.obj\r\n/c\r\nCompiler/Core/IR.cpp\r\n")
+	write(firstParty, "/nologo\r\n\"/DNAME=\\\"quoted value\\\"\"\r\n/I.\r\n/Fobazel-out/x64_windows-fastbuild/bin/Talac/Core/_objs/core/IR.obj\r\n/c\r\nTalac/Core/IR.cpp\r\n")
 	write(vendored, "/c\r\nexternal/+llvm+llvm/lib/Support/Path.cpp\r\n")
 	graph := actionGraph(t,
 		[]string{"clang-cl.exe", "@" + firstParty},
@@ -89,12 +89,12 @@ func TestTidyUnitsReadWindowsParameterFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(units) != 1 || units[0].File != "Compiler/Core/IR.cpp" {
+	if len(units) != 1 || units[0].File != "Talac/Core/IR.cpp" {
 		t.Fatalf("selected %v", units)
 	}
 	want := []string{
 		"clang-cl.exe", "/nologo", `/DNAME="quoted value"`, "/I.",
-		"/Fobazel-out/x64_windows-fastbuild/bin/Compiler/Core/_objs/core/IR.obj", "/c", "Compiler/Core/IR.cpp",
+		"/Fobazel-out/x64_windows-fastbuild/bin/Talac/Core/_objs/core/IR.obj", "/c", "Talac/Core/IR.cpp",
 	}
 	if !reflect.DeepEqual(units[0].Arguments, want) {
 		t.Fatalf("expanded %q, want %q", units[0].Arguments, want)
@@ -103,7 +103,7 @@ func TestTidyUnitsReadWindowsParameterFiles(t *testing.T) {
 
 func TestTidyUnitsRejectAnUnbuiltFirstPartyUnitButSkipAnUnbuiltDependency(t *testing.T) {
 	root := t.TempDir()
-	built := []string{"clang", "-c", "Compiler/Core/IR.cpp"}
+	built := []string{"clang", "-c", "Talac/Core/IR.cpp"}
 	// A dependency whose parameter file was never written is not ours to
 	// analyze, so its absence does not matter.
 	dependency := []string{"clang-cl.exe", "@bazel-out/x64_windows-fastbuild/bin/external/+llvm+llvm/_objs/Support/Path.obj.params"}
@@ -113,7 +113,7 @@ func TestTidyUnitsRejectAnUnbuiltFirstPartyUnitButSkipAnUnbuiltDependency(t *tes
 	}
 	// A first-party unit without its command must fail the run: skipping it
 	// would report a clean result for code that was never analyzed.
-	missing := []string{"clang-cl.exe", "@bazel-out/x64_windows-fastbuild/bin/Compiler/Cli/_objs/cli/Options.obj.params"}
+	missing := []string{"clang-cl.exe", "@bazel-out/x64_windows-fastbuild/bin/Talac/Cli/_objs/cli/Options.obj.params"}
 	if _, err := tidyUnitsFromActions(actionGraph(t, built, missing), root); err == nil || !strings.Contains(err.Error(), "Options.obj.params") {
 		t.Fatalf("an unbuilt first-party unit was skipped: %v", err)
 	}
@@ -137,10 +137,10 @@ func TestTidyUnitsRejectAnEmptyOrMalformedGraph(t *testing.T) {
 
 func TestTidySourceIgnoresOutputsAndOptions(t *testing.T) {
 	cases := map[string][]string{
-		"Compiler/Core/IR.cpp":  {"clang", "-c", "Compiler/Core/IR.cpp", "-o", "out/IR.o"},
-		"Compiler/Abi/Probe.c":  {"clang-cl.exe", "/c", "Compiler/Abi/Probe.c", "/Foout/Probe.obj"},
-		"Compiler/Cli/Main.cpp": {"clang-cl.exe", "/FdCompiler/Cli/stale.cpp", "/c", `Compiler\Cli\Main.cpp`},
-		"":                      {"clang", "-include", "prefix.h", "-o", "out/a.o"},
+		"Talac/Core/IR.cpp":  {"clang", "-c", "Talac/Core/IR.cpp", "-o", "out/IR.o"},
+		"Talac/Abi/Probe.c":  {"clang-cl.exe", "/c", "Talac/Abi/Probe.c", "/Foout/Probe.obj"},
+		"Talac/Cli/Main.cpp": {"clang-cl.exe", "/FdTalac/Cli/stale.cpp", "/c", `Talac\Cli\Main.cpp`},
+		"":                   {"clang", "-include", "prefix.h", "-o", "out/a.o"},
 	}
 	for want, arguments := range cases {
 		if got := tidySource(arguments); got != want {
@@ -160,7 +160,7 @@ func TestTidyJobsDefaultToLogicalProcessorsAndValidateOverride(t *testing.T) {
 	}
 	for _, invalid := range []string{"0", "-1", "many", "257", "1.5"} {
 		if _, err := tidyJobs(invalid, 8); err == nil {
-			t.Fatalf("VXS_TIDY_JOBS=%q was accepted", invalid)
+			t.Fatalf("TALA_TIDY_JOBS=%q was accepted", invalid)
 		}
 	}
 }
@@ -212,14 +212,14 @@ func TestRunTidyUnitsBoundsConcurrencyAndKeepsUnitOrder(t *testing.T) {
 func TestTidyFindingsBelongToTheFileTheyAreReportedIn(t *testing.T) {
 	root := `C:\work\execroot\_main`
 	report := strings.Join([]string{
-		"Compiler/Core/IR.cpp:10:5: error: use range-based for loop instead [modernize-loop-convert,-warnings-as-errors]",
+		"Talac/Core/IR.cpp:10:5: error: use range-based for loop instead [modernize-loop-convert,-warnings-as-errors]",
 		"   10 |     for (std::size_t i = 0; i < n; ++i)",
-		"Compiler/Core/IR.cpp:9:1: note: declared here",
+		"Talac/Core/IR.cpp:9:1: note: declared here",
 		`external/catch3+/src\catch2/internal/catch_result_type.hpp:53:16: error: out of range [clang-analyzer-optin.core.EnumCastOutOfRange,-warnings-as-errors]`,
-		"Compiler/Core/Tests/T.cpp:4:1: note: in instantiation here",
-		`C:/work/execroot/_main/Compiler\Headers/Visual/XSharp/Core/IR.hpp:3:1: warning: redundant [readability-redundant-declaration]`,
+		"Talac/Core/Tests/T.cpp:4:1: note: in instantiation here",
+		`C:/work/execroot/_main/Talac\Headers/Progmasoft/Tala/Core/IR.hpp:3:1: warning: redundant [readability-redundant-declaration]`,
 		"external/llvm/include/llvm/ADT/X.h:1:1: error: 'missing.h' file not found [clang-diagnostic-error]",
-		"bazel-out/k8-fastbuild/bin/_virtual_includes/a8083eb4/Visual/XSharp/Backend/LLVM.hpp:2:2: warning: ours [bugprone-x]",
+		"bazel-out/k8-fastbuild/bin/_virtual_includes/a8083eb4/Progmasoft/Tala/Backend/LLVM.hpp:2:2: warning: ours [bugprone-x]",
 		"bazel-out/k8-fastbuild/bin/external/+llvm+llvm/_virtual_includes/Support/llvm/X.h:2:2: warning: theirs [bugprone-x]",
 		`C:\Program Files\MSVC\include\xfilesystem_abi.h:134:1: error: theirs [clang-analyzer-optin.core.EnumCastOutOfRange,-warnings-as-errors]`,
 		"12 warnings generated.",
@@ -260,12 +260,12 @@ func TestTidyReportFailsOnFirstPartyFindingsAndUnexplainedExits(t *testing.T) {
 	}
 	mixed := []tidyOutcome{
 		{file: "a.cpp"},
-		{file: "Compiler/b.cpp", output: "Compiler/b.cpp:1:1: error: finding [bugprone-x,-warnings-as-errors]", err: failure},
+		{file: "Talac/b.cpp", output: "Talac/b.cpp:1:1: error: finding [bugprone-x,-warnings-as-errors]", err: failure},
 		// An analyzer that dies without a diagnostic is still a failure.
-		{file: "Compiler/c.cpp", err: errors.New("signal: killed")},
-		{file: "Compiler/d.cpp", output: "Stack dump: clang-tidy crashed", err: failure},
+		{file: "Talac/c.cpp", err: errors.New("signal: killed")},
+		{file: "Talac/d.cpp", output: "Stack dump: clang-tidy crashed", err: failure},
 		// A finding is a failure even if the analyzer exits successfully.
-		{file: "Compiler/e.cpp", output: "Compiler/e.cpp:2:2: warning: finding [performance-x]"},
+		{file: "Talac/e.cpp", output: "Talac/e.cpp:2:2: warning: finding [performance-x]"},
 	}
 	err := reportTidyOutcomes(mixed, "")
 	if err == nil || !strings.Contains(err.Error(), "4 of 5") {
@@ -275,14 +275,14 @@ func TestTidyReportFailsOnFirstPartyFindingsAndUnexplainedExits(t *testing.T) {
 
 func TestTidyDisablesTheTestFrameworkChecksOnlyForTests(t *testing.T) {
 	for _, production := range []string{
-		"Compiler/Core/IR.cpp", "Interactive/Main.cpp", "Compiler/Fuzzing/SourceFuzz.cpp", "Compiler/TestsSupport/Probe.cpp",
+		"Talac/Core/IR.cpp", "Interactive/Main.cpp", "Talac/Fuzzing/SourceFuzz.cpp", "Talac/TestsSupport/Probe.cpp",
 	} {
 		if override := tidyCheckOverride(production); override != "" {
 			t.Fatalf("%s lost checks: %q", production, override)
 		}
 	}
 	want := "-bugprone-unchecked-optional-access,-clang-analyzer-cplusplus.NewDeleteLeaks"
-	for _, test := range []string{"Compiler/Core/Tests/CorePipelineTests.cpp", "Interactive/Tests/InteractiveTests.cpp", "Tests/Top.cpp"} {
+	for _, test := range []string{"Talac/Core/Tests/CorePipelineTests.cpp", "Interactive/Tests/InteractiveTests.cpp", "Tests/Top.cpp"} {
 		if override := tidyCheckOverride(test); override != want {
 			t.Fatalf("%s override = %q, want %q", test, override, want)
 		}
@@ -294,7 +294,7 @@ func TestTidyQueryCoversEveryNativeTargetAndItsDependencies(t *testing.T) {
 	if !strings.HasPrefix(query, `mnemonic("CppCompile", deps(set(`) {
 		t.Fatalf("query does not select dependency compile actions: %s", query)
 	}
-	for _, target := range append([]string{"//Compiler/Cli:vxs", "//Interactive:vxsi"}, nativeTargets...) {
+	for _, target := range append([]string{"//Talac/Cli:talac", "//Interactive:tali"}, nativeTargets...) {
 		if !strings.Contains(query, target) {
 			t.Fatalf("query omits %s", target)
 		}

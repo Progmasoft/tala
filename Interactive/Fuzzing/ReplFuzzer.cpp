@@ -8,12 +8,12 @@
 #include <string>
 #include <variant>
 
-#include "Visual/XSharp/Interactive/Session.hpp"
+#include "Progmasoft/Tala/Interactive/Session.hpp"
 
 extern "C" int
 LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
 {
-    namespace Repl = Visual::XSharp::Interactive;
+    namespace Repl = Progmasoft::Tala::Interactive;
     Repl::Session session;
     std::int64_t expected{};
     bool hasPrevious{};
@@ -47,7 +47,7 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
         }
         const auto increment = static_cast<std::int64_t>(selector % 11U);
         const auto expression = std::string("return ")
-                                + (hasPrevious ? "vxsiPrevious + " : "")
+                                + (hasPrevious ? "taliPrevious + " : "")
                                 + std::to_string(increment) + ";";
         const auto history = session.History();
         if (session.TypeOf(expression).status != Repl::CellStatus::Type

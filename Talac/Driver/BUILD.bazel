@@ -1,0 +1,30 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "pipeline",
+    srcs = ["Pipeline.cpp"],
+    deps = [
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala:pipeline_api",
+    ],
+)
+
+cc_library(
+    name = "core_pipeline",
+    srcs = ["CorePipeline.cpp", "ProjectArtifacts.cpp"],
+    hdrs = ["CorePipeline.hpp", "ProjectArtifacts.hpp"],
+    deps = [
+        "//Talac/Artifact:source_path",
+        "//Talac/Cli/Arguments:arguments",
+        "//Talac/Linker:native_linker",
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Backend/LLVM:llvm_backend",
+        ":pipeline",
+        "@fmt//:fmt",
+    ],
+)

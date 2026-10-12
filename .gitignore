@@ -27,9 +27,10 @@ website/
 .vs/
 vcpkg-debug.log
 vcpkg_installed/
-ProjectSystem/sources/Tests/
-ProjectSystem/sources/main.vxs
+Tazel/sources/Tests/
+Tazel/sources/main.tala
 /bazel-bin
 /bazel-out
 /bazel-testlogs
 /bazel-xsharp
+/bazel-tala

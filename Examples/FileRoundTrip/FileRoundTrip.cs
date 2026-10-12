@@ -10,7 +10,7 @@ public static class FileRoundTrip
 {
     public static void Main()
     {
-        const string path = "visual-xsharp-example.txt";
+        const string path = "tala-example.txt";
         const string expected = "Lexer -> Parser -> Core -> Xpp -> Xmm";
         File.WriteAllText(path, expected);
         var actual = File.ReadAllText(path);

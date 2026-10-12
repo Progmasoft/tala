@@ -1,5 +1,5 @@
 module(
-    name = "visual_xsharp",
+    name = "tala",
     version = "0.5.1",
 )
 
@@ -36,12 +36,12 @@ local_path_override(
 single_version_override(
     module_name = "rules_cc",
     patch_strip = 0,
-    patches = ["//Compiler/Build/Bazel:rules_cc_clangcl_dumpbin.patch"],
+    patches = ["//Talac/Build/Bazel:rules_cc_clangcl_dumpbin.patch"],
     version = "0.2.22",
 )
 
 # LLVM is a machine toolchain, not a source dependency. The extension discovers
 # it through LLVM_ROOT or llvm-config on PATH and exposes only the components the
 # native backend owns.
-llvm = use_extension("//Compiler/Build/Bazel:llvm.bzl", "llvm")
+llvm = use_extension("//Talac/Build/Bazel:llvm.bzl", "llvm")
 use_repo(llvm, "llvm")

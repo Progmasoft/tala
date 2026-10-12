@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "coreprep_benches",
+    srcs = ["CorePrepBenches.cpp"],
+    deps = [
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_wire",
+        "@google_benchmark//:benchmark_main",
+    ],
+)

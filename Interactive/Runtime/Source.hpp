@@ -7,15 +7,15 @@
 #include <string>
 #include <string_view>
 
-#include "Visual/XSharp/Backend/LLVM.hpp"
-#include "Visual/XSharp/Xmm/IR.hpp"
+#include "Progmasoft/Tala/Backend/LLVM.hpp"
+#include "Progmasoft/Tala/Xmm/IR.hpp"
 
-namespace Visual::XSharp::Interactive::Runtime
+namespace Progmasoft::Tala::Interactive::Runtime
 {
     /// @brief Build a namespaced REPL compilation unit without touching disk.
     /// @param cellNumber Unique session cell identity included in the
     /// namespace.
-    /// @param expression User-entered Visual X# expression.
+    /// @param expression User-entered Tala expression.
     /// @param previous Prior scalar value when it has a lossless source
     /// spelling.
     /// @return Source text, or no value for invalid/oversize input.
@@ -30,6 +30,6 @@ namespace Visual::XSharp::Interactive::Runtime
     /// @param cellNumber Namespace identity used to reject stale modules.
     /// @return Mangled symbol when exactly one matching evaluator is present.
     [[nodiscard]] auto
-    EvaluationSymbol(const visual_xsharp::xmm::Module &module,
-                     std::uint64_t cellNumber) -> std::optional<std::string>;
-} // namespace Visual::XSharp::Interactive::Runtime
+    EvaluationSymbol(const tala::xmm::Module &module, std::uint64_t cellNumber)
+        -> std::optional<std::string>;
+} // namespace Progmasoft::Tala::Interactive::Runtime

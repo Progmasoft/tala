@@ -1,9 +1,0 @@
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
-
-package(default_visibility = ["//visibility:public"])
-
-cc_library(
-    name = "ownership",
-    srcs = ["Classification.cpp"],
-    deps = ["//Compiler/Headers/Visual/XSharp/Core:ownership_api"],
-)

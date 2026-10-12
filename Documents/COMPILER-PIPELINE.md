@@ -3,14 +3,14 @@
 
 # Compiler pipeline
 
-This document follows a Visual X# source set from project discovery to a native artifact. It describes the connected
+This document follows a Tala source set from project discovery to a native artifact. It describes the connected
 production route and names the stage that owns each invariant. See [Implementation status](IMPLEMENTATION.md) for coverage
 limits and [Architecture](ARCHITECTURE.md) for component boundaries.
 
 ## Route overview
 
 ```text
-Visual.XSharp.kts or -File
+BUILD.kts or -File
         |
         v
 project evaluation / explicit-input validation
@@ -28,7 +28,7 @@ Desugarer -> Core verifier -> specialization demand graph
 Core optimizer -> Core verifier
         |
         v
-bounded VXCR transport
+bounded TACR transport
         |
         v
 Core reader -> Core verifier -> Core-to-CorePrep adapter
@@ -47,9 +47,9 @@ LLVM IR -> LLVM verifier -> optimization -> target machine
         `--> LLD -> .vxse
 ```
 
-The user-facing compiler command remains `vxs`. The native driver calls the adjacent Haskell `vxs-frontend` shared library
+The user-facing compiler command remains `talac`. The native driver calls the adjacent Haskell `tala-frontend` shared library
 through a versioned C11 ABI; the library is not a second process or public compiler command. Native middle-end and backend
-libraries are linked into `vxs`; CorePrep is never exposed as a command or file type.
+libraries are linked into `talac`; CorePrep is never exposed as a command or file type.
 
 ## 1. Input selection
 
@@ -57,7 +57,7 @@ The CLI selects exactly one input mode.
 
 ### Explicit source
 
-`-File path.vxs` selects one source file. The extension and requested `-Build` kind must agree. The driver does not search
+`-File path.tala` selects one source file. The extension and requested `-Build` kind must agree. The driver does not search
 for a project merely to reinterpret that file, although project-independent CLI defaults still apply.
 
 ### Project source set
@@ -66,7 +66,7 @@ Without `-File`, source commands discover `BUILD.kts` by walking from the reques
 filesystem root. The Kotlin evaluator returns a typed project plan containing source roots, exclusions, entry identity,
 compiler settings, targets, test suites, output directories, and package metadata.
 
-The evaluator does not expand source roots into a list of `.vxs` files. That distinction keeps filesystem and language
+The evaluator does not expand source roots into a list of `.tala` files. That distinction keeps filesystem and language
 ownership in the frontend, prevents Kotlin and Haskell glob semantics from drifting, and lets Analyzer, Formatter, Linter,
 and the compiler share one source policy.
 
@@ -83,7 +83,7 @@ The Haskell driver owns recursive source discovery. For each configured root it:
 1. canonicalizes the project and source-root paths;
 2. rejects a root or traversed filesystem link that escapes the project root;
 3. walks directories in deterministic project-relative order;
-4. selects files whose extension is exactly `.vxs`;
+4. selects files whose extension is exactly `.tala`;
 5. applies normalized project-relative exclusion patterns;
 6. de-duplicates the same physical file reached through overlapping roots; and
 7. decodes every selected file as strict UTF-8 before lexing.
@@ -100,7 +100,7 @@ The Haskell lexer creates positioned tokens and retains enough source informatio
 structure early: radix digits, separators, escapes, Unicode scalar values, and unterminated constructs are lexical
 responsibilities.
 
-Source-oriented tools do not reconstruct text from those semantic tokens. `Visual.XSharp.SourceText` provides a parallel,
+Source-oriented tools do not reconstruct text from those semantic tokens. `Progmasoft.Tala.SourceText` provides a parallel,
 lossless fragment stream whose concatenation is exactly the original source. Code, line comments, long comments, character
 literals, normal strings, and raw strings retain their original spelling and half-open source spans. A masked view preserves
 line endings and character positions while hiding protected payloads, allowing structural tools to inspect braces without
@@ -112,7 +112,7 @@ does not decide which declaration an identifier denotes. Recovery must preserve 
 turning one malformed token into a cascade of unrelated names.
 
 The grammar does not acquire C-family constructs merely because the native backend is C++20. In particular, documentation
-and tests must use Visual X# declarations and control-flow forms from `Spec/`, not substitute `switch`, `case`, or a
+and tests must use Tala declarations and control-flow forms from `Spec/`, not substitute `switch`, `case`, or a
 top-level C-style entry function.
 
 ## 4. Renaming
@@ -161,12 +161,12 @@ Important current invariants include:
 - a project entry names a namespace-qualified class;
 - the selected class provides parameterless `public static void Main()`;
 - source `void` is the only no-result type; the native `unit` spelling is an internal marker;
-- scalar widths are Visual X# widths, not C or host widths;
+- scalar widths are Tala widths, not C or host widths;
 - numeric boolean context treats zero as false and nonzero as true;
 - two computed arithmetic operands must already have the same scalar type; and
 - range checks use unbounded compiler arithmetic before selecting a fixed-width representation.
 
-The first connected member-call slice follows the source forms in `Spec/Language/Decls.vxs` Examples 187–189. Direct
+The first connected member-call slice follows the source forms in `Spec/Language/Decls.tala` Examples 187–189. Direct
 `Type.Member(arguments)` calls resolve against top-level type declarations in the current semantic namespace. Method
 overloads are keyed by spelling and ordered parameter types; access, return type, and staticness do not distinguish a
 signature. Type-qualified calls consider only static candidates, filter access, and require one exact-type match. A
@@ -200,7 +200,7 @@ walks all type-bearing Core boundaries. It interns concrete parameterized
 types, retains semantic origin paths, follows nested type arguments to a fixed
 point, checks resource limits, validates dependency-graph invariants, and
 derives a stable child-before-parent emission order. Neither plan is serialized
-as part of `VXCR`.
+as part of `TACR`.
 
 This connected pass is not the complete template engine. Constraint ordering,
 lazy resolved-member reachability, explicit instantiation, a public native
@@ -208,7 +208,7 @@ mangling ABI, and persistent incremental caching remain separate work. The
 backend never guesses those source semantics.
 
 The Core verifier is not optional. It checks artifacts produced by the frontend and artifacts loaded from disk. The Haskell
-and C++20 implementations share the versioned `VXCR` contract and equivalent structural expectations. Limits cover document
+and C++20 implementations share the versioned `TACR` contract and equivalent structural expectations. Limits cover document
 size, collection counts, text lengths, nesting depth, expression depth, Unicode scalars, and closure structure.
 
 Source `void` is mapped once to the current resultless Core ABI marker. The marker's historical implementation name is
@@ -216,14 +216,14 @@ Source `void` is mapped once to the current resultless Core ABI marker. The mark
 
 ## 8. Process transport
 
-The private frontend writes bounded `VXCR` bytes to a temporary artifact selected by the native driver. The driver locates
+The private frontend writes bounded `TACR` bytes to a temporary artifact selected by the native driver. The driver locates
 the frontend relative to its installed or build-tree layout rather than searching the current directory or trusting an
 unrelated executable on `PATH`.
 
 Temporary files have one cleanup owner and are removed on success and failure. The native reader validates framing before
 allocating nested structures. A malformed document never reaches Xpp or LLVM merely because it has a `.core` extension.
 
-An internal `VXCP` CorePrep codec exists for contract and embedding tests. It is not accepted by `-Build core`, has no public
+An internal `TACP` CorePrep codec exists for contract and embedding tests. It is not accepted by `-Build core`, has no public
 extension, and is not an emit choice.
 
 ## 9. Core-to-CorePrep adaptation
@@ -254,8 +254,8 @@ The verifier also adapts explicit AARC operations to the shared ownership-flow a
 references from weak and unowned control handles, rejects release-after-release and use-after-release, and preserves every
 possible state at a control-flow join. See [Ownership-flow verification](OWNERSHIP-FLOW.md).
 
-The public `.xpp` artifact uses the bounded versioned `VXPP` reader/writer. Ordinary compilation still keeps Xpp in RAM
-unless the user explicitly selects Xpp input or output. The corresponding `.xmm` `VXMM` reader/writer also supports
+The public `.xpp` artifact uses the bounded versioned `TAPP` reader/writer. Ordinary compilation still keeps Xpp in RAM
+unless the user explicitly selects Xpp input or output. The corresponding `.xmm` `TAMM` reader/writer also supports
 verified forward resumption into LLVM.
 
 ## 11. Xmm
@@ -280,7 +280,7 @@ consumed or carries the wrong AARC representation. Xmm repeats ownership-flow ve
 and artifact readers cannot bypass the Xpp boundary.
 
 The backend compatibility `Verify` entry delegates to this verifier, but Xmm remains the owner. `.xmm` is a public artifact
-with a bounded, versioned `VXMM` reader/writer. Loaded Xmm is verified before optimization or LLVM lowering and again before
+with a bounded, versioned `TAMM` reader/writer. Loaded Xmm is verified before optimization or LLVM lowering and again before
 serialization.
 
 ## 12. LLVM lowering

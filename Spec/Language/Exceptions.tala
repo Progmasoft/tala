@@ -1,0 +1,800 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Exceptions
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 2. Checked and unchecked throwables
+-- Demonstrates: A user-defined exception inherits checkedness from its base type.
+
+class ParseException : Exception {
+} -- checked
+
+-- ============================================================================
+-- Example 2: 2. Checked and unchecked throwables
+-- Demonstrates: A user-defined exception inherits checkedness from its base type.
+
+class InvalidStateException : RuntimeException {
+} -- unchecked
+
+-- ============================================================================
+-- Example 3: 2. Checked and unchecked throwables
+-- Demonstrates: A user-defined exception inherits checkedness from its base type.
+
+class FatalEngineError : Error {
+} -- unchecked
+
+-- ============================================================================
+-- Example 4: 3. What may be thrown
+-- Demonstrates: Only System.Throwable values may be thrown.
+-- Expected result: accepted when the referenced declarations are available.
+
+throw new IOException();          -- VALID
+throw new RuntimeException();     -- VALID
+throw new AssertionError();       -- VALID
+
+-- ============================================================================
+-- Example 5: 3. What may be thrown
+-- Demonstrates: Non-throwable values are compile-time errors.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+throw "failed"; -- INVALID
+throw 42;       -- INVALID
+
+-- ============================================================================
+-- Example 6: 4. throw is an expression
+-- Demonstrates: throw expression is an expression whose static result type is the built-in bottom type
+
+throw new IllegalArgumentException();
+
+-- ============================================================================
+-- Example 7: 4. throw is an expression
+-- Demonstrates: Because its result is never, it may appear wherever the surrounding expression can
+--   accept a non-returning branch.
+
+String name =
+    value ?? throw new IllegalArgumentException();
+
+-- ============================================================================
+-- Example 8: 4. throw is an expression
+-- Demonstrates: Because its result is never, it may appear wherever the surrounding expression can
+--   accept a non-returning branch.
+
+return user \= null
+    ? user.Name
+    : throw new NullPointerException();
+
+-- ============================================================================
+-- Example 9: 4. throw is an expression
+-- Demonstrates: Checked-exception analysis still applies when throw occurs inside another expression.
+
+String LoadName() throws IOException {
+    return cachedName ?? throw new IOException();
+}
+
+-- ============================================================================
+-- Example 10: 5. Throwing a nullable throwable
+-- Demonstrates: Therefore a statically throwable expression may still evaluate to null.
+
+Throwable error = null;
+throw error;
+
+-- ============================================================================
+-- Example 11: 6. throws
+-- Demonstrates: A callable declares escaping exceptions with throws.
+
+void Load() throws IOException {
+    ReadFile();
+}
+
+-- ============================================================================
+-- Example 12: 6. throws
+-- Demonstrates: Multiple types are comma-separated:
+
+void Load() throws IOException, SQLException {
+}
+
+-- ============================================================================
+-- Example 13: 6. throws
+-- Demonstrates: Only Throwable types may appear in a throws list.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Work() throws String { -- INVALID
+}
+
+-- ============================================================================
+-- Example 14: 6.1 Duplicate and redundant entries
+-- Demonstrates: A type MUST NOT appear more than once.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Load() throws IOException, IOException { -- INVALID
+}
+
+-- ============================================================================
+-- Example 15: 6.1 Duplicate and redundant entries
+-- Demonstrates: A throws list MUST NOT contain both a throwable type and a subtype already covered by
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Load()
+    throws IOException, FileNotFoundException { -- INVALID
+}
+
+-- ============================================================================
+-- Example 16: 6.2 Unchecked types in throws
+-- Demonstrates: Unchecked exceptions may be written in a throws list.
+
+void Parse() throws IllegalArgumentException {
+}
+
+-- ============================================================================
+-- Example 17: 7. Catch or declare
+-- Demonstrates: A checked exception may be propagated:
+
+void Load() throws IOException {
+    ReadFile();
+}
+
+-- ============================================================================
+-- Example 18: 7. Catch or declare
+-- Demonstrates: or handled:
+
+void Load() {
+    try {
+        ReadFile();
+    }
+    catch (IOException e) {
+        Handle(e);
+    }
+}
+
+-- ============================================================================
+-- Example 19: 7. Catch or declare
+-- Demonstrates: If neither happens, the program is ill-formed.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Load() {
+    ReadFile(); -- INVALID: IOException may escape
+}
+
+-- ============================================================================
+-- Example 20: 7. Catch or declare
+-- Demonstrates: Unchecked exceptions do not require catch-or-declare.
+-- Expected result: accepted when the referenced declarations are available.
+
+void Parse() {
+    throw new IllegalArgumentException(); -- VALID
+}
+
+-- ============================================================================
+-- Example 21: 8. Checked-exception flow analysis
+-- Demonstrates: If all paths for a checked exception are caught, no declaration is required.
+
+void Work() {
+    try {
+        Load();
+    }
+    catch (IOException e) {
+        Handle(e);
+    }
+}
+
+-- ============================================================================
+-- Example 22: 8. Checked-exception flow analysis
+-- Demonstrates: Catching only a subtype does not necessarily handle the entire base exception family.
+
+void Work() throws IOException {
+    try {
+        Load();
+    }
+    catch (FileNotFoundException e) {
+        Recover(e);
+    }
+}
+
+-- ============================================================================
+-- Example 23: 9. try and catch
+-- Demonstrates: Tala exception handling uses try followed by one or more catch clauses.
+
+try {
+    Load();
+}
+catch (FileNotFoundException e) {
+    Recover(e);
+}
+catch (IOException e) {
+    Report(e);
+}
+
+-- ============================================================================
+-- Example 24: 9. try and catch
+-- Demonstrates: A try MUST have at least one catch.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Work();
+} -- INVALID
+
+-- ============================================================================
+-- Example 25: 9. try and catch
+-- Demonstrates: Tala has no finally.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Work();
+}
+finally { -- INVALID
+    Cleanup();
+}
+
+-- ============================================================================
+-- Example 26: 10. Catch parameters
+-- Demonstrates: A catch parameter type MUST be System.Throwable or a subclass.
+-- Expected result: accepted when the referenced declarations are available.
+
+catch (IOException e) { -- VALID
+}
+
+-- ============================================================================
+-- Example 27: 10. Catch parameters
+-- Demonstrates: A catch parameter type MUST be System.Throwable or a subclass.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (String e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 28: 10. Catch parameters
+-- Demonstrates: The catch parameter exists only inside its catch body.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Work();
+}
+catch (IOException e) {
+    Console.Errorln(e);
+}
+
+Console.Errorln(e); -- INVALID
+
+-- ============================================================================
+-- Example 29: 10. Catch parameters
+-- Demonstrates: A catch binding is implicitly final.
+
+catch (IOException e) {
+    -- e cannot be rebound
+}
+
+-- ============================================================================
+-- Example 30: 11. Catch matching and ordering
+-- Demonstrates: More specific catches therefore normally precede more general catches.
+
+try {
+    Load();
+}
+catch (FileNotFoundException e) {
+}
+catch (IOException e) {
+}
+
+-- ============================================================================
+-- Example 31: 11. Catch matching and ordering
+-- Demonstrates: A catch that is completely covered by an earlier catch is compile-time unreachable.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Load();
+}
+catch (IOException e) {
+}
+catch (FileNotFoundException e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 32: 12. Catch-all forms
+-- Demonstrates: There is no bare catch syntax.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch { -- INVALID
+}
+
+-- ============================================================================
+-- Example 33: 12. Catch-all forms
+-- Demonstrates: To catch the Exception family:
+
+catch (Exception e) {
+}
+
+-- ============================================================================
+-- Example 34: 12. Catch-all forms
+-- Demonstrates: To catch every throwable, including Error:
+
+catch (Throwable e) {
+}
+
+-- ============================================================================
+-- Example 35: 13. Multi-catch
+-- Demonstrates: A single catch may match multiple throwable types with |.
+
+try {
+    Work();
+}
+catch (IOException | SQLException e) {
+    Handle(e);
+}
+
+-- ============================================================================
+-- Example 36: 13. Multi-catch
+-- Demonstrates: Every alternative MUST be a Throwable type.
+-- Expected result: accepted when the referenced declarations are available.
+
+catch (IOException | SQLException e) { -- VALID
+}
+
+-- ============================================================================
+-- Example 37: 13. Multi-catch
+-- Demonstrates: Every alternative MUST be a Throwable type.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (IOException | String e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 38: 13.1 Redundant alternatives
+-- Demonstrates: It also MUST NOT contain two alternatives where one covers the other.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (IOException | FileNotFoundException e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 39: 13.2 Static type of the binding
+-- Demonstrates: For example:
+
+catch (IOException | SQLException e) {
+    -- e has their nearest common throwable supertype
+}
+
+-- ============================================================================
+-- Example 40: 13.3 Ordering with other catches
+-- Demonstrates: Multi-catch participates in the same top-to-bottom reachability rules.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Work();
+}
+catch (IOException | SQLException e) {
+}
+catch (FileNotFoundException e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 41: 13.3 Ordering with other catches
+-- Demonstrates: This ordering is valid:
+
+try {
+    Work();
+}
+catch (FileNotFoundException e) {
+}
+catch (IOException | SQLException e) {
+}
+
+-- ============================================================================
+-- Example 42: 14. Exception filters
+-- Demonstrates: Tala has no exception-filter syntax.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (IOException e) when (CanHandle(e)) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 43: 14. Exception filters
+-- Demonstrates: Conditional handling is written inside the catch body.
+
+catch (IOException e) {
+    if (not CanHandle(e)) {
+        throw;
+    }
+
+    Handle(e);
+}
+
+-- ============================================================================
+-- Example 44: 15. Rethrow
+-- Demonstrates: A bare:
+
+throw;
+
+-- ============================================================================
+-- Example 45: 15. Rethrow
+-- Demonstrates: It is valid only inside an active catch body.
+
+try {
+    Load();
+}
+catch (IOException e) {
+    Log(e);
+    throw;
+}
+
+-- ============================================================================
+-- Example 46: 15. Rethrow
+-- Demonstrates: Outside a catch it is invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+throw; -- INVALID
+
+-- ============================================================================
+-- Example 47: 15. Rethrow
+-- Demonstrates: A nested callable does not inherit the enclosing catch's rethrow context.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (IOException e) {
+    auto action = () => {
+        throw; -- INVALID
+    };
+}
+
+-- ============================================================================
+-- Example 48: 16. throw; versus throw e
+-- Demonstrates: Bare rethrow preserves the existing throwable and its current throw history.
+
+catch (IOException e) {
+    throw;
+}
+
+-- ============================================================================
+-- Example 49: 16. throw; versus throw e
+-- Demonstrates: Explicitly throwing the binding is a new throw operation:
+
+catch (IOException e) {
+    throw e;
+}
+
+-- ============================================================================
+-- Example 50: 16. throw; versus throw e
+-- Demonstrates: Therefore, code that only intends to propagate the currently caught throwable SHOULD
+
+throw;
+
+-- ============================================================================
+-- Example 51: 17. Stack traces
+-- Demonstrates: A throwable receives its initial throw origin when it is first actually thrown, not
+--   merely when its object is constructed.
+
+IOException error = new IOException("failed");
+
+-- no throw origin yet
+
+throw error;
+
+-- ============================================================================
+-- Example 52: 18. Throwable information
+-- Demonstrates: Built-in throwable families support construction patterns equivalent to:
+
+new IOException();
+new IOException("File could not be read.");
+new IOException("File could not be read.", cause);
+
+-- ============================================================================
+-- Example 53: 19. Exception chaining
+-- Demonstrates: Wrapping an exception does not implicitly assign the caught throwable as the new
+
+try {
+    Load();
+}
+catch (IOException e) {
+    throw new RuntimeException("Loading failed.");
+}
+
+-- ============================================================================
+-- Example 54: 19. Exception chaining
+-- Demonstrates: To preserve the relationship, the cause is passed explicitly:
+
+try {
+    Load();
+}
+catch (IOException e) {
+    throw new RuntimeException("Loading failed.", e);
+}
+
+-- ============================================================================
+-- Example 55: 20. defer and stack unwinding
+-- Demonstrates: Tala has no finally; scope cleanup uses defer.
+
+Resource resource = Open();
+
+defer {
+    resource.Close();
+}
+
+Work();
+
+-- ============================================================================
+-- Example 56: 22. Overrides and checked exceptions
+-- Demonstrates: Given:
+
+class Base {
+    virtual void Load() throws IOException {
+    }
+}
+
+-- ============================================================================
+-- Example 57: 22. Overrides and checked exceptions
+-- Demonstrates: an override may narrow the checked exception:
+
+class Child : Base {
+    override void Load() throws FileNotFoundException {
+    }
+}
+
+-- ============================================================================
+-- Example 58: 22. Overrides and checked exceptions
+-- Demonstrates: or remove checked exceptions entirely:
+
+class Child : Base {
+    override void Load() {
+    }
+}
+
+-- ============================================================================
+-- Example 59: 22. Overrides and checked exceptions
+-- Demonstrates: It may not introduce a broader checked type:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Child : Base {
+    override void Load() throws Exception { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 60: 22. Overrides and checked exceptions
+-- Demonstrates: It may not introduce an unrelated checked type:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Child : Base {
+    override void Load() throws SQLException { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 61: 22. Overrides and checked exceptions
+-- Demonstrates: Unchecked exceptions do not widen the caller's checked-exception obligation.
+
+class Child : Base {
+    override void Load() throws IllegalArgumentException {
+    }
+}
+
+-- ============================================================================
+-- Example 62: 23. noexcept
+-- Demonstrates: noexcept is a strong callable contract stating that no throwable may escape normally
+--   through that callable boundary.
+
+void Work() noexcept {
+}
+
+-- ============================================================================
+-- Example 63: 23. noexcept
+-- Demonstrates: A checked throwable that can statically escape a noexcept callable is a compile-time
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Work() noexcept {
+    ReadFile(); -- INVALID if IOException may escape
+}
+
+-- ============================================================================
+-- Example 64: 23. noexcept
+-- Demonstrates: Handling the throwable satisfies the contract:
+
+void Work() noexcept {
+    try {
+        ReadFile();
+    }
+    catch (IOException e) {
+        Handle(e);
+    }
+}
+
+-- ============================================================================
+-- Example 65: 24. noexcept and overriding
+-- Demonstrates: A base noexcept contract may not be weakened.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+class Base {
+    virtual void Work() noexcept {
+    }
+}
+
+class Child : Base {
+    override void Work() { -- INVALID
+    }
+}
+
+-- ============================================================================
+-- Example 66: 25. Interaction with op
+-- Demonstrates: The special discard statement:
+
+_ = Expr();
+
+-- ============================================================================
+-- Example 67: VALID — checked exception declared
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+void Load() throws IOException {
+    ReadFile();
+}
+
+-- ============================================================================
+-- Example 68: VALID — checked exception caught
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+void Load() {
+    try {
+        ReadFile();
+    }
+    catch (IOException e) {
+        Handle(e);
+    }
+}
+
+-- ============================================================================
+-- Example 69: INVALID — checked exception escapes undeclared
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+void Load() {
+    ReadFile(); -- INVALID
+}
+
+-- ============================================================================
+-- Example 70: VALID — unchecked throw
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+void Validate(int value) {
+    if (value < 0) {
+        throw new IllegalArgumentException();
+    }
+}
+
+-- ============================================================================
+-- Example 71: VALID — throw expression
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+String name =
+    user.Name ?? throw new NullPointerException();
+
+-- ============================================================================
+-- Example 72: VALID — ordered catches
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+try {
+    Load();
+}
+catch (FileNotFoundException e) {
+}
+catch (IOException e) {
+}
+
+-- ============================================================================
+-- Example 73: INVALID — unreachable catch
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Load();
+}
+catch (IOException e) {
+}
+catch (FileNotFoundException e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 74: VALID — multi-catch
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+try {
+    Work();
+}
+catch (IOException | SQLException e) {
+    Handle(e);
+}
+
+-- ============================================================================
+-- Example 75: INVALID — redundant multi-catch alternative
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+catch (IOException | FileNotFoundException e) { -- INVALID
+}
+
+-- ============================================================================
+-- Example 76: VALID — rethrow
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+try {
+    Load();
+}
+catch (IOException e) {
+    Log(e);
+    throw;
+}
+
+-- ============================================================================
+-- Example 77: INVALID — bare rethrow outside catch
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+throw; -- INVALID
+
+-- ============================================================================
+-- Example 78: INVALID — finally
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+try {
+    Work();
+}
+finally { -- INVALID
+}
+
+-- ============================================================================
+-- Example 79: VALID — cleanup through defer
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+Resource resource = Open();
+
+defer {
+    resource.Close();
+}
+
+Work();
+
+-- ============================================================================
+-- Example 80: VALID — explicit cause
+-- Demonstrates: Thread/task-specific behavior for throwables escaping thread or task entry points is
+--   defined by Threading.md, not by this document.
+
+try {
+    Load();
+}
+catch (IOException e) {
+    throw new RuntimeException("Loading failed.", e);
+}
+
+-- ============================================================================
+-- Example 81: 28. Compact reference
+-- Demonstrates: Core syntax:
+
+throw throwableExpression;
+throw;
+
+void Work() throws IOException, SQLException {
+}
+
+try {
+}
+catch (IOException e) {
+}
+
+try {
+}
+catch (IOException | SQLException e) {
+}

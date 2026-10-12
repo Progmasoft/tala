@@ -57,44 +57,44 @@ func TestEveryRequestedCheckerIsNamedOnceAndInItsOwnGroup(t *testing.T) {
 
 func TestAnalyzerCommandKeepsMeaningAndDropsOutputs(t *testing.T) {
 	compile := []string{"-std=c++20", "-Iexternal/llvm/include", "-DNDEBUG", "-Werror", "-Wall", "-MD", "-MF", "out/a.d",
-		"-c", "Compiler/Core/Verifier.cpp", "-o", "out/a.o"}
-	got := analyzerCommand(compile, "Compiler/Core/Verifier.cpp", []string{"security.ArrayBound"})
+		"-c", "Talac/Core/Verifier.cpp", "-o", "out/a.o"}
+	got := analyzerCommand(compile, "Talac/Core/Verifier.cpp", []string{"security.ArrayBound"})
 	want := []string{"--analyze", "-Xclang", "-analyzer-output=text", "-Xclang", "-analyzer-checker=security.ArrayBound", "-Wno-error",
-		"-std=c++20", "-Iexternal/llvm/include", "-DNDEBUG", "-Wall", "Compiler/Core/Verifier.cpp"}
+		"-std=c++20", "-Iexternal/llvm/include", "-DNDEBUG", "-Wall", "Talac/Core/Verifier.cpp"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("analyzer command =\n%v\nwant\n%v", got, want)
 	}
 
-	windows := []string{"/nologo", "/std:c++20", "/clang:-Werror", "/WX", "/showIncludes", "/c", "Compiler/Core/Verifier.cpp",
+	windows := []string{"/nologo", "/std:c++20", "/clang:-Werror", "/WX", "/showIncludes", "/c", "Talac/Core/Verifier.cpp",
 		"/Fobazel-out/a.obj", "/Fdbazel-out/a.pdb"}
-	got = analyzerCommand(windows, "Compiler/Core/Verifier.cpp", nil)
-	want = []string{"--analyze", "-Xclang", "-analyzer-output=text", "-Wno-error", "/nologo", "/std:c++20", "Compiler/Core/Verifier.cpp"}
+	got = analyzerCommand(windows, "Talac/Core/Verifier.cpp", nil)
+	want = []string{"--analyze", "-Xclang", "-analyzer-output=text", "-Wno-error", "/nologo", "/std:c++20", "Talac/Core/Verifier.cpp"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("clang-cl analyzer command =\n%v\nwant\n%v", got, want)
 	}
 }
 
 func TestAnalyzerCommandSparesTestsTheLeakChecker(t *testing.T) {
-	got := strings.Join(analyzerCommand([]string{"-c", "Compiler/Core/Tests/CoreTests.cpp"}, "Compiler/Core/Tests/CoreTests.cpp", nil), " ")
+	got := strings.Join(analyzerCommand([]string{"-c", "Talac/Core/Tests/CoreTests.cpp"}, "Talac/Core/Tests/CoreTests.cpp", nil), " ")
 	if !strings.Contains(got, "-analyzer-disable-checker=cplusplus.NewDeleteLeaks") {
 		t.Fatalf("a test unit keeps the leak checker: %s", got)
 	}
-	got = strings.Join(analyzerCommand([]string{"-c", "Compiler/Core/Verifier.cpp"}, "Compiler/Core/Verifier.cpp", nil), " ")
+	got = strings.Join(analyzerCommand([]string{"-c", "Talac/Core/Verifier.cpp"}, "Talac/Core/Verifier.cpp", nil), " ")
 	if strings.Contains(got, "-analyzer-disable-checker") {
 		t.Fatalf("a production unit loses a checker: %s", got)
 	}
 }
 
-const analyzerReport = `C:/work/execroot/_main/Compiler/Core/Verifier.cpp:41:12: warning: Dereference of null pointer (loaded from variable 'node') [core.NullDereference]
+const analyzerReport = `C:/work/execroot/_main/Talac/Core/Verifier.cpp:41:12: warning: Dereference of null pointer (loaded from variable 'node') [core.NullDereference]
    41 |     return node->kind;
       |            ^~~~
-C:/work/execroot/_main/Compiler/Core/Verifier.cpp:38:9: note: Assuming 'node' is null
-C:\work\execroot\_main\Compiler\Core\Verifier.cpp:41:12: note: Dereference of null pointer (loaded from variable 'node')
-Compiler/Core/Verifier.cpp:77:5: warning: Use of invalidated iterator [alpha.cplusplus.InvalidatedIterator]
+C:/work/execroot/_main/Talac/Core/Verifier.cpp:38:9: note: Assuming 'node' is null
+C:\work\execroot\_main\Talac\Core\Verifier.cpp:41:12: note: Dereference of null pointer (loaded from variable 'node')
+Talac/Core/Verifier.cpp:77:5: warning: Use of invalidated iterator [alpha.cplusplus.InvalidatedIterator]
 external/+llvm+llvm/include/llvm/ADT/SmallVector.h:9:3: warning: Called C++ object pointer is null [core.CallAndMessage]
 external/+llvm+llvm/include/llvm/ADT/SmallVector.h:8:3: note: not ours
-Compiler/Core/Verifier.cpp:12:9: warning: unused variable 'spare' [-Wunused-variable]
-bazel-out/x64_windows-fastbuild/bin/Compiler/Headers/_virtual_includes/headers/Visual/XSharp/Core/IR.hpp:5:1: warning: Potential leak of memory [cplusplus.NewDeleteLeaks]
+Talac/Core/Verifier.cpp:12:9: warning: unused variable 'spare' [-Wunused-variable]
+bazel-out/x64_windows-fastbuild/bin/Talac/Headers/_virtual_includes/headers/Progmasoft/Tala/Core/IR.hpp:5:1: warning: Potential leak of memory [cplusplus.NewDeleteLeaks]
 2 warnings generated.
 `
 
@@ -107,11 +107,11 @@ func TestAnalyzerFindingsAreAttributedAndKeepTheirSteps(t *testing.T) {
 		t.Fatalf("findings = %+v, want three in first-party code", ours)
 	}
 	first := ours[0]
-	if first.File != "Compiler/Core/Verifier.cpp" || first.Line != 41 || first.Column != 12 || first.Checker != "core.NullDereference" ||
+	if first.File != "Talac/Core/Verifier.cpp" || first.Line != 41 || first.Column != 12 || first.Checker != "core.NullDereference" ||
 		first.Message != "Dereference of null pointer (loaded from variable 'node')" || first.advisory() {
 		t.Fatalf("first finding = %+v", first)
 	}
-	if len(first.Steps) != 2 || first.Steps[0].Line != 38 || first.Steps[1].File != "Compiler/Core/Verifier.cpp" {
+	if len(first.Steps) != 2 || first.Steps[0].Line != 38 || first.Steps[1].File != "Talac/Core/Verifier.cpp" {
 		t.Fatalf("steps of the first finding = %+v", first.Steps)
 	}
 	if !ours[1].advisory() || len(ours[1].Steps) != 0 {
@@ -148,10 +148,10 @@ func TestASuppressionCommentSilencesTheCheckerItNames(t *testing.T) {
 
 func TestSuppressedFindingsAreDroppedAndCounted(t *testing.T) {
 	repository := t.TempDir()
-	writeAnalyzedSource(t, repository, "Compiler/Core/A.cpp", "int first;\r\n// NOLINTNEXTLINE(clang-analyzer-core.DivideZero)\r\nint second = 1 / zero;\r\n")
+	writeAnalyzedSource(t, repository, "Talac/Core/A.cpp", "int first;\r\n// NOLINTNEXTLINE(clang-analyzer-core.DivideZero)\r\nint second = 1 / zero;\r\n")
 	findings := []analyzerFinding{
-		{File: "Compiler/Core/A.cpp", Line: 3, Checker: "core.DivideZero"},
-		{File: "Compiler/Core/A.cpp", Line: 1, Checker: "core.DivideZero"},
+		{File: "Talac/Core/A.cpp", Line: 3, Checker: "core.DivideZero"},
+		{File: "Talac/Core/A.cpp", Line: 1, Checker: "core.DivideZero"},
 		{File: "bazel-out/k8/bin/_virtual_includes/x/A.hpp", Line: 3, Checker: "core.DivideZero"},
 	}
 	kept, dropped := withoutSuppressed(repository, findings)
@@ -182,14 +182,14 @@ func TestTheProbeIsRecognizedInBothFormsAndNothingElseIs(t *testing.T) {
 
 func TestAFindingInAnExposedHeaderBelongsToTheHeaderInTheRepository(t *testing.T) {
 	repository := t.TempDir()
-	writeAnalyzedSource(t, repository, "Compiler/Headers/Visual/XSharp/Core/IR.hpp", "#pragma once\n")
-	writeAnalyzedSource(t, repository, "Interactive/Headers/Visual/XSharp/Interactive/Session.hpp", "#pragma once\n")
+	writeAnalyzedSource(t, repository, "Talac/Headers/Progmasoft/Tala/Core/IR.hpp", "#pragma once\n")
+	writeAnalyzedSource(t, repository, "Interactive/Headers/Progmasoft/Tala/Interactive/Session.hpp", "#pragma once\n")
 	cases := map[string]string{
-		"bazel-out/x64_windows-fastbuild/bin/_virtual_includes/5e79d2ff/Visual/XSharp/Core/IR.hpp":   "Compiler/Headers/Visual/XSharp/Core/IR.hpp",
-		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Interactive/Session.hpp": "Interactive/Headers/Visual/XSharp/Interactive/Session.hpp",
-		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Missing.hpp":             "bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Visual/XSharp/Missing.hpp",
-		"bazel-out/k8-fastbuild/bin/Compiler/Generated/Table.hpp":                                    "bazel-out/k8-fastbuild/bin/Compiler/Generated/Table.hpp",
-		"Compiler/Core/Verifier.cpp":                   "Compiler/Core/Verifier.cpp",
+		"bazel-out/x64_windows-fastbuild/bin/_virtual_includes/5e79d2ff/Progmasoft/Tala/Core/IR.hpp":   "Talac/Headers/Progmasoft/Tala/Core/IR.hpp",
+		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Progmasoft/Tala/Interactive/Session.hpp": "Interactive/Headers/Progmasoft/Tala/Interactive/Session.hpp",
+		"bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Progmasoft/Tala/Missing.hpp":             "bazel-out/k8-fastbuild/bin/_virtual_includes/headers/Progmasoft/Tala/Missing.hpp",
+		"bazel-out/k8-fastbuild/bin/Talac/Generated/Table.hpp":                                         "bazel-out/k8-fastbuild/bin/Talac/Generated/Table.hpp",
+		"Talac/Core/Verifier.cpp":                      "Talac/Core/Verifier.cpp",
 		"external/llvm/include/llvm/ADT/SmallVector.h": "external/llvm/include/llvm/ADT/SmallVector.h",
 	}
 	for path, want := range cases {
@@ -198,18 +198,18 @@ func TestAFindingInAnExposedHeaderBelongsToTheHeaderInTheRepository(t *testing.T
 		}
 	}
 	findings := inRepository(repository, []analyzerFinding{{
-		File:  "bazel-out/k8-fastbuild/bin/_virtual_includes/a/Visual/XSharp/Core/IR.hpp",
-		Steps: []analyzerStep{{File: "bazel-out/k8-fastbuild/bin/_virtual_includes/b/Visual/XSharp/Core/IR.hpp"}, {File: "Compiler/Core/Verifier.cpp"}},
+		File:  "bazel-out/k8-fastbuild/bin/_virtual_includes/a/Progmasoft/Tala/Core/IR.hpp",
+		Steps: []analyzerStep{{File: "bazel-out/k8-fastbuild/bin/_virtual_includes/b/Progmasoft/Tala/Core/IR.hpp"}, {File: "Talac/Core/Verifier.cpp"}},
 	}})
-	if findings[0].File != "Compiler/Headers/Visual/XSharp/Core/IR.hpp" || findings[0].Steps[0].File != findings[0].File ||
-		findings[0].Steps[1].File != "Compiler/Core/Verifier.cpp" {
+	if findings[0].File != "Talac/Headers/Progmasoft/Tala/Core/IR.hpp" || findings[0].Steps[0].File != findings[0].File ||
+		findings[0].Steps[1].File != "Talac/Core/Verifier.cpp" {
 		t.Fatalf("findings = %+v", findings)
 	}
 }
 
 func TestFilterUnitsKeepsMatchingPaths(t *testing.T) {
-	units := []tidyUnit{{File: "Compiler/Core/Verifier.cpp"}, {File: "Interactive/Session.cpp"}, {File: "Compiler/Core/Tests/CoreTests.cpp"}}
-	if kept := filterUnits(units, "Compiler/Core/"); len(kept) != 2 {
+	units := []tidyUnit{{File: "Talac/Core/Verifier.cpp"}, {File: "Interactive/Session.cpp"}, {File: "Talac/Core/Tests/CoreTests.cpp"}}
+	if kept := filterUnits(units, "Talac/Core/"); len(kept) != 2 {
 		t.Fatalf("kept %v", kept)
 	}
 	if kept := filterUnits(units, "Nowhere"); len(kept) != 0 {
@@ -218,29 +218,29 @@ func TestFilterUnitsKeepsMatchingPaths(t *testing.T) {
 }
 
 func TestAnalyzerFindingsAreReadInTheFormOfClangCl(t *testing.T) {
-	report := "Compiler\\Core\\Verifier.cpp(6,12): warning: Dereference of null pointer (loaded from variable 'chosen') [core.NullDereference]\n" +
+	report := "Talac\\Core\\Verifier.cpp(6,12): warning: Dereference of null pointer (loaded from variable 'chosen') [core.NullDereference]\n" +
 		"    6 |     return *chosen;\n" +
-		"Compiler\\Core\\Verifier.cpp(3,19): note: Assuming 'flag' is false\n" +
-		"C:\\work\\execroot\\_main\\Compiler\\Core\\Verifier.cpp(3,5): note: 'chosen' initialized to a null pointer value\n" +
+		"Talac\\Core\\Verifier.cpp(3,19): note: Assuming 'flag' is false\n" +
+		"C:\\work\\execroot\\_main\\Talac\\Core\\Verifier.cpp(3,5): note: 'chosen' initialized to a null pointer value\n" +
 		"external\\llvm\\include\\llvm\\ADT\\SmallVector.h(9,3): warning: Called C++ object pointer is null [core.CallAndMessage]\n" +
-		"Compiler\\Core\\Verifier.cpp(2,1): error: unknown type name 'Thing'\n"
+		"Talac\\Core\\Verifier.cpp(2,1): error: unknown type name 'Thing'\n"
 	ours, foreign, compileErrors := analyzerFindings(report, `C:\work\execroot\_main`)
 	if len(ours) != 1 || foreign != 1 || len(compileErrors) != 1 {
 		t.Fatalf("findings %+v, foreign %d, compile errors %v", ours, foreign, compileErrors)
 	}
 	finding := ours[0]
-	if finding.File != "Compiler/Core/Verifier.cpp" || finding.Line != 6 || finding.Column != 12 || finding.Checker != "core.NullDereference" {
+	if finding.File != "Talac/Core/Verifier.cpp" || finding.Line != 6 || finding.Column != 12 || finding.Checker != "core.NullDereference" {
 		t.Fatalf("finding = %+v", finding)
 	}
-	if len(finding.Steps) != 2 || finding.Steps[0].Line != 3 || finding.Steps[0].Column != 19 || finding.Steps[1].File != "Compiler/Core/Verifier.cpp" {
+	if len(finding.Steps) != 2 || finding.Steps[0].Line != 3 || finding.Steps[0].Column != 19 || finding.Steps[1].File != "Talac/Core/Verifier.cpp" {
 		t.Fatalf("steps = %+v", finding.Steps)
 	}
 }
 
 func TestACompilerErrorMeansTheUnitWasNotAnalyzed(t *testing.T) {
-	report := "Compiler/Core/Verifier.cpp:3:10: fatal error: 'missing.hpp' file not found\n" +
-		"Compiler/Core/Verifier.cpp:9:1: error: unknown type name 'Thing'\n" +
-		"Compiler/Core/Verifier.cpp:9:1: note: did you mean 'Think'?\n"
+	report := "Talac/Core/Verifier.cpp:3:10: fatal error: 'missing.hpp' file not found\n" +
+		"Talac/Core/Verifier.cpp:9:1: error: unknown type name 'Thing'\n" +
+		"Talac/Core/Verifier.cpp:9:1: note: did you mean 'Think'?\n"
 	ours, foreign, compileErrors := analyzerFindings(report, "")
 	if len(ours) != 0 || foreign != 0 || len(compileErrors) != 2 {
 		t.Fatalf("findings %v, foreign %d, compile errors %v", ours, foreign, compileErrors)
@@ -248,11 +248,11 @@ func TestACompilerErrorMeansTheUnitWasNotAnalyzed(t *testing.T) {
 }
 
 func TestUniqueFindingsDropWhatSeveralUnitsReport(t *testing.T) {
-	header := analyzerFinding{File: "Compiler/Headers/A.hpp", Line: 4, Column: 2, Checker: "core.DivideZero", Message: "Division by zero"}
-	later := analyzerFinding{File: "Compiler/Headers/A.hpp", Line: 9, Column: 1, Checker: "core.DivideZero", Message: "Division by zero"}
-	other := analyzerFinding{File: "Compiler/Core/B.cpp", Line: 1, Column: 1, Checker: "alpha.core.Conversion", Message: "Loss of sign"}
+	header := analyzerFinding{File: "Talac/Headers/A.hpp", Line: 4, Column: 2, Checker: "core.DivideZero", Message: "Division by zero"}
+	later := analyzerFinding{File: "Talac/Headers/A.hpp", Line: 9, Column: 1, Checker: "core.DivideZero", Message: "Division by zero"}
+	other := analyzerFinding{File: "Talac/Core/B.cpp", Line: 1, Column: 1, Checker: "alpha.core.Conversion", Message: "Loss of sign"}
 	got := uniqueFindings([]analyzerFinding{later, header, other, header})
-	if len(got) != 3 || got[0].File != "Compiler/Core/B.cpp" || got[1].Line != 4 || got[2].Line != 9 {
+	if len(got) != 3 || got[0].File != "Talac/Core/B.cpp" || got[1].Line != 4 || got[2].Line != 9 {
 		t.Fatalf("unique findings = %+v", got)
 	}
 }

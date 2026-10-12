@@ -1,0 +1,16 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "text_runtime_tests",
+    srcs = ["TextRuntimeTests.cpp"],
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api",
+        "//Talac/Headers/Progmasoft/Tala/Runtime:text_api",
+        "//Talac/Runtime/AARC:aarc",
+        "//Talac/Runtime/Text:text",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)

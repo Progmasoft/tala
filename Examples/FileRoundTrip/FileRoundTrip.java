@@ -9,7 +9,7 @@ public final class FileRoundTrip {
     private FileRoundTrip() {}
 
     public static void main(String[] args) throws IOException {
-        var path = Path.of("visual-xsharp-example.txt");
+        var path = Path.of("tala-example.txt");
         var expected = "Lexer -> Parser -> Core -> Xpp -> Xmm";
         Files.writeString(path, expected);
         var actual = Files.readString(path);
