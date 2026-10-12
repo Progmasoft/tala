@@ -246,7 +246,7 @@ func uniqueFindings(findings []analyzerFinding) []analyzerFinding {
 var publicHeader = regexp.MustCompile(`^bazel-out/[^/]+/bin/_virtual_includes/[^/]+/(.+)$`)
 
 // headerRoots are the directories whose headers Bazel exposes that way.
-var headerRoots = []string{"Compiler/Headers", "Interactive/Headers"}
+var headerRoots = []string{"Talac/Headers", "Interactive/Headers"}
 
 // sourceLocation returns the file in the repository a location names. A
 // header below the output tree is the copy of a header under one of the
@@ -366,7 +366,7 @@ func probeReported(output string) bool {
 // analyze, an option it ignores or a report in a form this command cannot
 // read would otherwise look like clean code.
 func proveAnalyzerReports(runner commandRunner, compiler string, checkers []string) error {
-	directory, err := os.MkdirTemp("", "vxs-analyze-probe-")
+	directory, err := os.MkdirTemp("", "tala-analyze-probe-")
 	if err != nil {
 		return err
 	}
@@ -405,23 +405,23 @@ func printFinding(finding analyzerFinding) {
 // Bazel and runs the Clang Static Analyzer over every first-party
 // translation unit, each with the compiler and the options it is built with.
 //
-// VXS_ANALYZE_JOBS sets how many analyzer processes run at once,
-// VXS_ANALYZE_SARIF names a file that receives every finding as SARIF, and
-// VXS_ANALYZE_FILTER limits the run to the units whose path contains it,
+// TALA_ANALYZE_JOBS sets how many analyzer processes run at once,
+// TALA_ANALYZE_SARIF names a file that receives every finding as SARIF, and
+// TALA_ANALYZE_FILTER limits the run to the units whose path contains it,
 // for trying a change on one directory.
 func runAnalyze(repository string, runner commandRunner, bazelArguments []string) error {
-	jobs, err := tidyJobs(os.Getenv("VXS_ANALYZE_JOBS"), runtime.NumCPU())
+	jobs, err := tidyJobs(os.Getenv("TALA_ANALYZE_JOBS"), runtime.NumCPU())
 	if err != nil {
-		return errors.New("VXS_ANALYZE_JOBS must be an integer in [1, 256]")
+		return errors.New("TALA_ANALYZE_JOBS must be an integer in [1, 256]")
 	}
 	units, root, err := compiledUnits(repository, runner, bazelArguments)
 	if err != nil {
 		return err
 	}
-	if filter := os.Getenv("VXS_ANALYZE_FILTER"); filter != "" {
+	if filter := os.Getenv("TALA_ANALYZE_FILTER"); filter != "" {
 		units = filterUnits(units, filter)
 		if len(units) == 0 {
-			return fmt.Errorf("VXS_ANALYZE_FILTER=%q matches no first-party translation unit", filter)
+			return fmt.Errorf("TALA_ANALYZE_FILTER=%q matches no first-party translation unit", filter)
 		}
 	}
 	// Each unit is analyzed by the compiler that compiles it, so that the
@@ -490,7 +490,7 @@ func runAnalyze(repository string, runner commandRunner, bazelArguments []string
 	if suppressed != 0 {
 		fmt.Printf("\n%d findings are silenced by a NOLINT comment in the source.\n", suppressed)
 	}
-	if target := os.Getenv("VXS_ANALYZE_SARIF"); target != "" {
+	if target := os.Getenv("TALA_ANALYZE_SARIF"); target != "" {
 		document, err := analyzerSarif(findings, strings.SplitN(version, "\n", 2)[0])
 		if err != nil {
 			return err

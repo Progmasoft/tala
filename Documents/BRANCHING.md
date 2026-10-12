@@ -8,7 +8,7 @@ used as an expression, for `guard` and for a block written as a statement:
 what is accepted, in what order things are evaluated, and where the
 implemented subset ends. It describes an implementation and is not the
 language contract: the language is defined by `Spec/`, here
-`Spec/Language/Decls.vxs`, sections 31 and 32, and where this page and the
+`Spec/Language/Decls.tala`, sections 31 and 32, and where this page and the
 specification differ the specification is right and the compiler is wrong.
 Where the specification is silent, what the compiler does today is a state of
 the implementation and not a decision about the language. The diagnostics are
@@ -17,7 +17,7 @@ listed in [Diagnostics](DIAGNOSTICS.md); the lowering is described in
 
 ## Match
 
-```vxs
+```tala
 int kind = match (code), (strict) {
     (0), (_) -> 10,
     (1), (true) -> 20,
@@ -39,7 +39,7 @@ int kind = match (code), (strict) {
   as in the grammar. An expression body is parsed like every expression, so
   a parenthesized pattern that follows it without a comma is read as the
   argument list of a call of the body; the arrow that then follows is
-  reported as `VXP0038`, which says what was read.
+  reported as `TAP0038`, which says what was read.
 
 ### Patterns
 
@@ -87,7 +87,7 @@ without a guard accepts everything it accepts.
 
 ## If as an expression
 
-```vxs
+```tala
 int larger = if (first > second) { first } else { second };
 ```
 
@@ -99,7 +99,7 @@ start of a statement is the `if` statement, as before, with one exception: as
 the last item of a block used as a value, an `if` whose two blocks both end
 with a value is the value of that block.
 
-```vxs
+```tala
 int sign = if (value < 0) { 0 - 1 } else { if (value > 0) { 1 } else { 0 } };
 ```
 
@@ -111,7 +111,7 @@ run in order, and names declared in the block end with it.
 
 A block may leave instead of yielding a value:
 
-```vxs
+```tala
 int size = if (count > 0) { count * 2 } else { return 0; };
 
 while (index < limit) {
@@ -132,7 +132,7 @@ lowered as its statements alone: nothing is stored for it.
 
 A value block may also stand in the condition or the update clause of a
 loop. Both belong to their loop, as examples 79 to 83 of
-`Spec/Language/Iteration.vxs` state. A `break` in either leaves that loop,
+`Spec/Language/Iteration.tala` state. A `break` in either leaves that loop,
 with the effects of the condition or the update up to it. A `continue` in
 the condition abandons the rest of the condition and evaluates it again,
 without running the body or, in a `for`, the update; a condition that always
@@ -140,7 +140,7 @@ continues is an endless loop. A `continue` in the update clause ends the
 update, and the condition is tested next. A callable is not inside the loops
 around the place that creates it.
 
-```vxs
+```tala
 while (if (index >= limit) { break; } else { true }) { index += 1; }
 
 for (int i = 0; i < 6; i += if (skip) { skip = false; continue; } else { 1 }) { }
@@ -149,12 +149,12 @@ for (int i = 0; i < 6; i += if (skip) { skip = false; continue; } else { 1 }) { 
 An expression none of whose blocks completes is valid and never yields a
 value:
 
-```vxs
+```tala
 int result = if (known) { return code; } else { return 0; };
 ```
 
 Whether an expression completes is a fact about control flow that the
-compiler keeps apart from types (`Visual.XSharp.Completion`); there is no
+compiler keeps apart from types (`Progmasoft.Tala.Completion`); there is no
 type for it in the language. What would have received the value, here the
 binding, is not held to a type and is not lowered: the statement becomes the
 conditional over the two `return` statements, with no result slot and no
@@ -165,7 +165,7 @@ evaluated before it keep their effects, and nothing after it is evaluated.
 
 ## Guard
 
-```vxs
+```tala
 guard (count > 0) else {
     return 0;
 }
@@ -174,7 +174,7 @@ guard (count > 0) else {
 The block runs when the condition is false. It must not complete normally on
 any path, so the statements after the guard run only when the condition held.
 That is decided from the control flow of the block, by the rule given under
-`VXT0061` in [Diagnostics](DIAGNOSTICS.md): `return`, `break` and `continue`
+`TAT0061` in [Diagnostics](DIAGNOSTICS.md): `return`, `break` and `continue`
 leave, and so do an `if` both of whose blocks leave, a loop that cannot end,
 and a statement `match` that always selects an arm and all of whose arms
 leave. A call is assumed to return.
@@ -194,7 +194,7 @@ name that is in scope around it.
   rejected for the same reason.
 - A `match` over a classic enum uses case patterns, `.Member`. The pattern
   accepts the value of the member, so two members with one value are one
-  case and the second arm for it can never be selected (`VXT0053`). The
+  case and the second arm for it can never be selected (`TAT0053`). The
   match accepts every value, and needs no `_` arm, when its arms without
   guards name every value of the enum; with several subjects, every
   combination of the values of enums and `bool` subjects, up to 256
@@ -218,12 +218,12 @@ name that is in scope around it.
 
 | Concern | Location |
 | --- | --- |
-| grammar | `Visual.XSharp.Parser.Match` and the statement and primary-expression dispatch of `Visual.XSharp.Parser` |
-| scoping of pattern bindings and nested blocks | `Visual.XSharp.Resolver.Renamer` |
-| typing rules | `Visual.XSharp.TypeChecker.Branching` |
-| lowering to Core | `Visual.XSharp.Desugarer.Branching` |
+| grammar | `Progmasoft.Tala.Parser.Match` and the statement and primary-expression dispatch of `Progmasoft.Tala.Parser` |
+| scoping of pattern bindings and nested blocks | `Progmasoft.Tala.Resolver.Renamer` |
+| typing rules | `Progmasoft.Tala.TypeChecker.Branching` |
+| lowering to Core | `Progmasoft.Tala.Desugarer.Branching` |
 | grammar, typing, lowered shapes, evaluation | `BranchingTests.hs`, with the programs of `BranchingEvaluationCases.hs` |
 | match against the `if` chain it stands for | `BranchingOracleTests.hs` |
 | diagnostic positions, damaged input, templates | `BranchingDiagnosticTests.hs` |
-| native execution in both pipeline modes | `Compiler/Fuzzing/BranchingExecutionCases.cpp` |
-| generated programs with an independent host model | shape 13 of `Compiler/Fuzzing/SourceFuzz.cpp` |
+| native execution in both pipeline modes | `Talac/Fuzzing/BranchingExecutionCases.cpp` |
+| generated programs with an independent host model | shape 13 of `Talac/Fuzzing/SourceFuzz.cpp` |

@@ -26,7 +26,7 @@ func TestFuzzJobsDefaultKeepsAPhysicalCorePerTarget(t *testing.T) {
 	}
 	for _, bad := range []string{"0", "-1", "65", "two", "1.5"} {
 		if _, err := fuzzJobs(bad, 8); err == nil {
-			t.Fatalf("accepted invalid VXS_FUZZ_JOBS %q", bad)
+			t.Fatalf("accepted invalid TALA_FUZZ_JOBS %q", bad)
 		}
 	}
 }

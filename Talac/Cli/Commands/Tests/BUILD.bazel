@@ -1,0 +1,51 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "execution_status_tests",
+    srcs = ["ExecutionStatusTests.cpp"],
+    deps = [
+        "//Talac/Cli/Commands:execution_status",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+cc_binary(
+    name = "cli_command_tests",
+    srcs = ["CliCommandTests.cpp", "FrontendHeaderC11Tests.cpp"],
+    deps = [
+        ":frontend_header_c11_compile",
+        "//Talac/Cli/Commands:commands",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+# Programs built into native executables and started as processes. The test
+# drives the command line in its own process, so the Haskell frontend library
+# has to stand beside it, where the development helper stages it.
+cc_binary(
+    name = "executable_run_tests",
+    srcs = ["ExecutableRunTests.cpp"],
+    deps = [
+        "//Talac/Cli/Commands:commands",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+# Compile the ABI header with a real C11 frontend to keep C++ types outside the
+# boundary. This is a test-only C translation unit, never production code.
+cc_library(
+    name = "frontend_header_c11_compile",
+    srcs = ["FrontendHeaderC11.c"],
+    copts = select({
+        "@platforms//os:windows": ["/std:c11"],
+        "//conditions:default": ["-std=c11"],
+    }),
+    visibility = ["//visibility:private"],
+    deps = ["//Talac/Headers/Progmasoft/Tala:frontend_abi"],
+)

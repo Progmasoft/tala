@@ -3,7 +3,7 @@
 
 # Ownership-flow verification
 
-Visual X# resolves source ownership before native lowering, but the Xpp and Xmm
+Tala resolves source ownership before native lowering, but the Xpp and Xmm
 layers still defend their own explicit AARC contract. A structurally valid
 register is not necessarily a live object reference: it may hold a weak control
 handle, an unowned control handle, or a strong handle that has already been
@@ -88,11 +88,11 @@ Xpp reserves these ownership diagnostics:
 
 | Code | Meaning |
 | --- | --- |
-| VXP1042 | a released strong, weak, or unowned handle is used or released again |
-| VXP1043 | an operation receives the wrong runtime handle representation |
-| VXP1044 | incoming paths disagree about liveness or representation |
+| TAP1042 | a released strong, weak, or unowned handle is used or released again |
+| TAP1043 | an operation receives the wrong runtime handle representation |
+| TAP1044 | incoming paths disagree about liveness or representation |
 
-Xmm reports the equivalent conditions as VXL1046, VXL1047, and VXL1048. Every
+Xmm reports the equivalent conditions as TAL1046, TAL1047, and TAL1048. Every
 issue carries the owning function, block, and instruction index. Return
 diagnostics use the terminator position, which is the instruction count of its
 block.
@@ -123,7 +123,7 @@ collector and does not weaken deterministic AARC verification.
 ## Ownership placement
 
 CorePrep names values and does not say who releases them.
-`Visual::XSharp::Xpp::PlaceOwnership` runs once, on the Xpp form lowered from
+`Progmasoft::Tala::Xpp::PlaceOwnership` runs once, on the Xpp form lowered from
 CorePrep and after the Xpp optimizer when that is enabled, and makes ownership
 explicit. An Xpp artifact read from disk already carries the result and is not
 placed again.
@@ -179,16 +179,16 @@ produces those only as capture modes of a closure.
 
 Five layers protect the contract:
 
-1. Compiler/Analysis/Tests/OwnershipFlowTests.cpp tests the reusable state
+1. Talac/Analysis/Tests/OwnershipFlowTests.cpp tests the reusable state
    lattice, fixed point, malformed CFG handling, loops, joins, and deterministic
    facts.
-2. Compiler/Codegen/Xpp/Tests/OwnershipVerifierTests.cpp tests symbolic storage,
+2. Talac/Codegen/Xpp/Tests/OwnershipVerifierTests.cpp tests symbolic storage,
    direct function identities, strong/weak/unowned conversion, returns, and Xpp
    diagnostic codes.
-3. Compiler/Codegen/Xmm/Tests/OwnershipVerifierTests.cpp repeats the boundary
+3. Talac/Codegen/Xmm/Tests/OwnershipVerifierTests.cpp repeats the boundary
    cases for typed virtual registers and confirms the main Xmm verifier
    publishes ownership failures.
-4. Compiler/Codegen/Xpp/Tests/OwnershipPlacementTests.cpp runs the placed
+4. Talac/Codegen/Xpp/Tests/OwnershipPlacementTests.cpp runs the placed
    function on a reference-count model that knows nothing of the pass: along
    every path, taking each loop around once more than it must be entered, each
    reference must be released exactly once and nothing may be used after its

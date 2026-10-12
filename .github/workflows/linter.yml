@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: visual-linter-${{ github.ref }}
+  group: talalint-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,26 +42,26 @@ jobs:
 
       - name: Check linter configuration DSL
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p Linter spotlessCheck test
+        run: .\Tazel\gradlew.bat -p Ecosystem/talalint spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
-      - name: Build Visual Linter
+      - name: Build talalint
         shell: pwsh
-        working-directory: Compiler
-        run: cabal build visual-linter
+        working-directory: Talac
+        run: cabal build talalint
 
-      - name: Test Visual Linter
+      - name: Test talalint
         shell: pwsh
-        working-directory: Compiler
-        run: cabal test visual-linter-tests
+        working-directory: Talac
+        run: cabal test talalint-tests
 
       - name: Check package metadata
         shell: pwsh
-        working-directory: Linter
+        working-directory: Ecosystem/talalint
         run: cabal check
 
       - name: Check patch hygiene

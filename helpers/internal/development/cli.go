@@ -17,8 +17,8 @@ import (
 func newCommand(runner commandRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "develop",
-		Short:         "Visual X# native developer command",
-		Long:          "Visual X# native developer command\n\nBuild, verify, package, and diagnose the native toolchain.",
+		Short:         "Tala native developer command",
+		Long:          "Tala native developer command\n\nBuild, verify, package, and diagnose the native toolchain.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
@@ -224,9 +224,9 @@ func newFuzzCommand(runner commandRunner, name, description string, stress bool,
 		},
 	}
 	flags := command.Flags()
-	flags.IntVar(&options.seconds, "seconds", 0, "time budget of each target in seconds, 1 to 3600 (default: VXS_FUZZ_SECONDS, or the command's own)")
-	flags.IntVar(&options.jobs, "jobs", 0, "targets to run at once, 1 to 64 (default: VXS_FUZZ_JOBS, or one per four logical processors)")
-	flags.StringVar(&options.corpus, "corpus", "", "directory that keeps the corpus between runs (default: VXS_FUZZ_CORPUS, or a temporary one)")
+	flags.IntVar(&options.seconds, "seconds", 0, "time budget of each target in seconds, 1 to 3600 (default: TALA_FUZZ_SECONDS, or the command's own)")
+	flags.IntVar(&options.jobs, "jobs", 0, "targets to run at once, 1 to 64 (default: TALA_FUZZ_JOBS, or one per four logical processors)")
+	flags.StringVar(&options.corpus, "corpus", "", "directory that keeps the corpus between runs (default: TALA_FUZZ_CORPUS, or a temporary one)")
 	flags.StringArrayVar(&options.targets, "target", nil, "run this target only; repeat for several (see fuzz-targets)")
 	return command
 }

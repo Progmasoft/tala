@@ -1,0 +1,29 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "aarc_c_api",
+    hdrs = ["AARC.h"],
+    strip_include_prefix = "/Talac/Headers",
+)
+
+cc_library(
+    name = "aarc_api",
+    hdrs = ["AARC.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":aarc_c_api"],
+)
+
+cc_library(
+    name = "text_c_api",
+    hdrs = ["Text.h"],
+    strip_include_prefix = "/Talac/Headers",
+)
+
+cc_library(
+    name = "text_api",
+    hdrs = ["Text.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":text_c_api"],
+)

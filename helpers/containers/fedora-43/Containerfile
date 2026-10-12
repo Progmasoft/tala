@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+# The Fedora 43 host of the compiler, as the workflows install it: Clang and
+# LLVM from the distribution, GHC 9.10.3, Cabal 3.16.1.0 and Bazel through a
+# pinned Bazelisk. `cross-platform-test` builds this image and runs the
+# repository's own commands in it.
+
+# GHC is taken from the official Haskell image and not installed here. An
+# installation unpacks and copies some forty thousand files one at a time,
+# which takes more than an hour in a container on a small machine; a copy of
+# the installed tree takes a minute. What a build of the compiler never reads
+# is left behind: the documentation and the profiling libraries, which are
+# more than half of the tree.
+FROM docker.io/library/haskell:9.10.3-slim-bookworm AS ghc
+RUN rm -rf /opt/ghc/9.10.3/share/doc \
+    && find /opt/ghc/9.10.3 \( -name '*.p_hi' -o -name '*.p_o' -o -name '*_p.a' -o -name '*.p_dyn_hi' \) -delete
+
+FROM registry.fedoraproject.org/fedora:43
+
+ARG TARGETARCH
+
+RUN dnf install -y \
+        ca-certificates clang clang-tools-extra curl findutils gcc gcc-c++ git \
+        gmp-devel golang gzip libffi-devel libxml2-devel libzstd-devel lld \
+        llvm-devel llvm-static make ncurses-devel perl tar unzip which xz \
+        zlib-devel \
+    && dnf clean all
+
+COPY --from=ghc /opt/ghc/9.10.3 /opt/ghc/9.10.3
+ENV PATH=/opt/ghc/9.10.3/bin:${PATH}
+
+# GHCup is one program, used here for Cabal alone. It is taken at a fixed
+# release and refused unless it has the checksum that release publishes for
+# the architecture.
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+        amd64) machine=x86_64; digest=9ed5da5449b48043a0d17e767c05d2ef585e25a639bb934329496c6d2fad9cf8 ;; \
+        arm64) machine=aarch64; digest=65a5f05120288ee4f1a81d28825374b6af317456a351a586adfce90c6dc29e3b ;; \
+        *) echo "no GHCup pin for ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/ghcup \
+        "https://downloads.haskell.org/~ghcup/0.2.6.2/${machine}-linux-ghcup-0.2.6.2"; \
+    echo "${digest}  /usr/local/bin/ghcup" | sha256sum -c -; \
+    chmod 0755 /usr/local/bin/ghcup; \
+    GHCUP_INSTALL_BASE_PREFIX=/opt ghcup install cabal 3.16.1.0 --isolate /opt/cabal/bin; \
+    ln -s /opt/cabal/bin/cabal /usr/local/bin/cabal; \
+    rm -rf /opt/.ghcup /usr/local/bin/ghcup; \
+    ghc --numeric-version; cabal --numeric-version
+
+RUN GOBIN=/usr/local/bin go install github.com/bazelbuild/bazelisk@v1.29.0 \
+    && ln -s /usr/local/bin/bazelisk /usr/local/bin/bazel \
+    && go clean -cache -modcache
+
+WORKDIR /work

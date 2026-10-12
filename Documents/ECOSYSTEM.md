@@ -3,7 +3,7 @@
 
 # Ecosystem tools
 
-Visual Analyzer, Visual Formatter, and Visual Linter are separate products with separate versions, build layers, and CI
+tala-analyzer, talafmt, and talalint are separate products with separate versions, build layers, and CI
 workflows. The compiler coordinates project source policy, but it does not embed these tools or force them to share the
 compiler release number.
 
@@ -11,45 +11,45 @@ compiler release number.
 
 | Product | Primary implementation | Public executable | Configuration |
 | --- | --- | --- | --- |
-| Visual Analyzer | Haskell LSP plus editor hosts | `visual-analyzer` stdio binary | `Visual.Analyzer.kts` |
-| Visual Formatter | Haskell formatter | `vfmt` | `Visual.Formatter.kts` |
-| Visual Linter | Haskell semantic/source linter | `vlint` | `Visual.Linter.kts` |
+| tala-analyzer | Haskell LSP plus editor hosts | `tala-analyzer` stdio binary | `tala-analyzer.kts` |
+| talafmt | Haskell formatter | `talafmt` | `talafmt.kts` |
+| talalint | Haskell semantic/source linter | `talalint` | `talalint.kts` |
 
 Each product also contains a Kotlin Script DSL model. All three configuration hosts require JRE 25 and Kotlin Script Runner;
 the runtime is not embedded into the Haskell tool.
 
-The Kotlin projects provide typed scopes, defaults, validation, and immutable configuration snapshots. Visual Formatter
+The Kotlin projects provide typed scopes, defaults, validation, and immutable configuration snapshots. talafmt
 also has a real Kotlin scripting evaluator used by the project-wide CLI bridge; the other tool evaluators remain separate
 integration work. A checked-in DSL type alone must not be described as proof of end-to-end script evaluation.
 
 ## Shared project source policy
 
-`vxs format` and `vxs lint` operate on the complete project. They evaluate `Visual.XSharp.kts`, obtain the same main source
-roots and exclusions used by the compiler, and ask the Haskell source-discovery layer for the deterministic `.vxs` list.
+`talac format` and `talac lint` operate on the complete project. They evaluate `BUILD.kts`, obtain the same main source
+roots and exclusions used by the compiler, and ask the Haskell source-discovery layer for the deterministic `.tala` list.
 They do not independently search for files in Kotlin.
 
 ```text
-vxs format
-vxs format -Dry-Run
-vxs lint
+talac format
+talac format -Dry-Run
+talac lint
 ```
 
-`format` requires `vfmt`; a project containing `Visual.Formatter.kts` also requires the installed `vfmt-config` evaluator.
-`lint` requires `vlint`. If the corresponding configuration file is absent from the project root, the installed tool uses
+`format` requires `talafmt`; a project containing `talafmt.kts` also requires the installed `talafmt-config` evaluator.
+`lint` requires `talalint`. If the corresponding configuration file is absent from the project root, the installed tool uses
 its defaults. When present, configuration is selected for that tool only:
 
 ```text
-Visual.Formatter.kts
-Visual.Linter.kts
-Visual.Analyzer.kts
+talafmt.kts
+talalint.kts
+tala-analyzer.kts
 ```
 
 The compiler project file does not grow formatter or linter rule blocks. Tool versioning and configuration remain owned by
 the tool.
 
-## Visual Analyzer
+## tala-analyzer
 
-Visual Analyzer ships the `visual-analyzer` stdio LSP binary. The Haskell `lsp` package handles standard JSON-RPC framing,
+tala-analyzer ships the `tala-analyzer` stdio LSP binary. The Haskell `lsp` package handles standard JSON-RPC framing,
 process lifecycle, and incremental document synchronization. The analyzer calls the shared compiler frontend and publishes
 diagnostics and hierarchical document symbols with UTF-16 positions. Editor-specific hosts launch this server; no Protobuf
 dialect is required.
@@ -85,27 +85,27 @@ coordinates them but does not merge their version or rule configuration.
 The repository can contain IntelliJ Platform and VS Code host code without making either editor the language architecture.
 Editor hosts should be thin protocol/UI adapters; Lexer through CorePrep remains in the Haskell language layer.
 
-## Visual Formatter
+## talafmt
 
-Visual Formatter provides `vfmt`.
+talafmt provides `talafmt`.
 
 ```text
-vfmt File.vxs
-vfmt -In-Place File.vxs
-vfmt -Dry-Run File.vxs
-vfmt -Help
+talafmt File.tala
+talafmt -In-Place File.tala
+talafmt -Dry-Run File.tala
+talafmt -Help
 ```
 
 Default mode writes formatted source to standard output. `-In-Place` replaces the selected source. `-Dry-Run` reports
 whether formatting would change the file without writing formatted output or modifying the source. `-Help` describes the
-standalone tool, not `vxs` compiler options.
+standalone tool, not `talac` compiler options.
 
 Formatter configuration includes version selection, column and indentation widths, tab behavior, brace style, parenthesis
 and punctuation spacing, line endings, final newline policy, sorting, input/output encoding, and byte-order-mark emission.
-The current configuration model defaults to UTF-8 input/output and no BOM. During `vxs format`, source discovery examines
+The current configuration model defaults to UTF-8 input/output and no BOM. During `talac format`, source discovery examines
 paths without decoding source contents. The formatter then decodes each file with `encoding.input` and writes it with
 `encoding.output` and `emitByteOrderMark`; compiler builds continue to require strict UTF-8 independently. Project format
-is in-place by default, while `vxs format -Dry-Run` performs byte-accurate checks without writing.
+is in-place by default, while `talac format -Dry-Run` performs byte-accurate checks without writing.
 
 Formatting must be parser-gated and idempotent. The formatter may normalize physical source layout, but it must not invent
 language forms, change name identity, turn an invalid source into a different valid program, or apply C-family `switch/case`
@@ -120,18 +120,18 @@ surface until their corresponding layout passes exist; they are not silently tre
 Install the package globally through ViGet:
 
 ```text
-vxs install -Global Progmasoft.VisualFormatter
+talac install -Global Progmasoft.Talafmt
 ```
 
-## Visual Linter
+## talalint
 
-Visual Linter provides `vlint`. Its standalone control surface includes:
+talalint provides `talalint`. Its standalone control surface includes:
 
 ```text
-vlint File.vxs
-vlint -Fix File.vxs
-vlint -List-Checks
-vlint -Help
+talalint File.tala
+talalint -Fix File.tala
+talalint -List-Checks
+talalint -Help
 ```
 
 `-List-Checks` lists the installed linter's checks without compiling a project. `-Fix` applies fixes classified as applicable
@@ -163,12 +163,12 @@ classification.
 Install the package globally through ViGet:
 
 ```text
-vxs install -Global Progmasoft.VisualLinter
+talac install -Global Progmasoft.Talalint
 ```
 
 ## Configuration independence
 
-Formatter and Linter configurations are not sections of `Visual.XSharp.kts`. Their defaulting rules are:
+Formatter and Linter configurations are not sections of `BUILD.kts`. Their defaulting rules are:
 
 1. use the tool configuration file in the project root when it exists;
 2. otherwise use the installed tool's default configuration; and
@@ -179,15 +179,15 @@ rule evolution, Analyzer protocol features, and compiler language support can sh
 
 ## Distribution and registry paths
 
-ViGet is the one hosted package registry. Visual X# packages and Kotlin DSL plugins occupy distinct catalogs:
+ViGet is the one hosted package registry. Tala packages and Kotlin DSL plugins occupy distinct catalogs:
 
 ```text
 https://viget.progmasoft.com/<Publisher>/<Name>/
 https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/
 ```
 
-The first path contains Visual X#-authored `.vipkg` packages. The second contains Kotlin DSL plugin JARs. A DSL plugin is not
-a `.vipkg`, and a Visual X# library is not loaded as JVM build logic.
+The first path contains Tala-authored `.vipkg` packages. The second contains Kotlin DSL plugin JARs. A DSL plugin is not
+a `.vipkg`, and a Tala library is not loaded as JVM build logic.
 
 Publisher identity is the Progmasoft Account name. Account management and dashboards belong under the account service, not
 under a fake registry dashboard path:
@@ -221,9 +221,9 @@ alternative DSL-plugin repository coordinate.
 Each ecosystem root is a small multi-language project:
 
 ```text
-Analyzer/    Cabal + Gradle + editor-host build metadata
-Formatter/   Cabal + Gradle
-Linter/      Cabal + Gradle
+Ecosystem/tala-analyzer/    Cabal + Gradle + editor-host build metadata
+Ecosystem/talafmt/   Cabal + Gradle
+Ecosystem/talalint/      Cabal + Gradle
 ```
 
 Cabal owns Haskell implementation/tests. Gradle owns Kotlin DSL models/tests. Editor host package systems own only their host
@@ -233,11 +233,11 @@ without coupling all releases to the compiler workflow.
 ## Boundary rules
 
 - Do not move language parsing or type checking into editor code.
-- Do not make `vxs` silently format or lint during ordinary compilation.
-- Do not make Formatter/Linter installation a compiler build dependency.
+- Do not make `talac` silently format or lint during ordinary compilation.
+- Do not make Ecosystem/talafmt/Linter installation a compiler build dependency.
 - Do not use filesystem layout as namespace identity.
 - Do not call an unevaluated Kotlin model an active configuration evaluator.
-- Do not treat `visual-analyzer` as a compiler driver: it is an editor-facing stdio LSP process.
+- Do not treat `tala-analyzer` as a compiler driver: it is an editor-facing stdio LSP process.
 - Do not publish DSL plugin JARs in the `.vipkg` catalog.
 - Do not add user-configurable remote repository lists; ViGet is the hosted registry.
 - Do not share release numbers merely because components live in one source repository.

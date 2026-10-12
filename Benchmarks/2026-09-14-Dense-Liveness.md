@@ -18,8 +18,8 @@ four-point block-size series. The new values below are the mean of three runs.
 Commands:
 
 ```text
-bazelisk run -c opt //Compiler/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s --benchmark_repetitions=3 --benchmark_report_aggregates_only=true
-bazelisk run -c opt //Compiler/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s --benchmark_repetitions=3 --benchmark_report_aggregates_only=true
+bazelisk run -c opt //Talac/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s --benchmark_repetitions=3 --benchmark_report_aggregates_only=true
+bazelisk run -c opt //Talac/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s --benchmark_repetitions=3 --benchmark_report_aggregates_only=true
 ```
 
 | Stage | 4 blocks | 16 blocks | 64 blocks | 256 blocks | 2026-09-13 at 256 |

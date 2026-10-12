@@ -1,0 +1,29 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "xpp",
+    hdrs = [
+        "IR.hpp",
+        "OwnershipPlacement.hpp",
+        "OwnershipVerifier.hpp",
+        "Verifier.hpp",
+        "Wire.hpp",
+    ],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Artifact:wire_support_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_model",
+    ],
+)
+
+cc_library(
+    name = "control_flow_api",
+    hdrs = ["ControlFlow.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        ":xpp",
+        "//Talac/Headers/Progmasoft/Tala/Analysis:dominance_api",
+    ],
+)

@@ -21,7 +21,7 @@ on:
     - cron: '17 2 * * *'
 
 env:
-  VXS_FUZZ_SECONDS: ${{ inputs.seconds || '90' }}
+  TALA_FUZZ_SECONDS: ${{ inputs.seconds || '90' }}
 
 permissions:
   contents: read
@@ -47,11 +47,11 @@ jobs:
       - name: Restore synchronized fuzz corpus
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/vxs-fuzz-corpus
-          key: vxs-fuzz-windows-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tala-fuzz-corpus
+          key: tala-fuzz-windows-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            vxs-fuzz-windows-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}
-            vxs-fuzz-windows-
+            tala-fuzz-windows-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
+            tala-fuzz-windows-
       - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
@@ -82,27 +82,27 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Run bounded coverage-guided campaign
         shell: pwsh
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz
       - name: Run nightly ASan and UBSan stress campaign
         if: github.event_name == 'schedule'
         shell: pwsh
         env:
-          VXS_FUZZ_SECONDS: '900'
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_SECONDS: '900'
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fuzz-windows-${{ github.run_id }}
-          path: ${{ runner.temp }}/vxs-fuzz-*/
+          path: ${{ runner.temp }}/tala-fuzz-*/
           if-no-files-found: warn
           retention-days: 14
 
@@ -126,11 +126,11 @@ jobs:
       - name: Restore synchronized fuzz corpus
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/vxs-fuzz-corpus
-          key: vxs-fuzz-${{ matrix.runner }}-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tala-fuzz-corpus
+          key: tala-fuzz-${{ matrix.runner }}-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            vxs-fuzz-${{ matrix.runner }}-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}
-            vxs-fuzz-${{ matrix.runner }}-
+            tala-fuzz-${{ matrix.runner }}-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
+            tala-fuzz-${{ matrix.runner }}-
       - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
@@ -150,32 +150,32 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Run bounded coverage-guided campaign
         shell: bash
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz
       - name: Run bounded ThreadSanitizer ownership campaign
         shell: bash
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-thread
       - name: Run nightly ASan and UBSan stress campaign
         if: github.event_name == 'schedule'
         shell: bash
         env:
-          VXS_FUZZ_SECONDS: '900'
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_SECONDS: '900'
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fuzz-${{ matrix.runner }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/vxs-fuzz-*/
+          path: ${{ runner.temp }}/tala-fuzz-*/
           if-no-files-found: warn
           retention-days: 14
 
@@ -195,11 +195,11 @@ jobs:
       - name: Restore synchronized fuzz corpus
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/vxs-fuzz-corpus
-          key: vxs-fuzz-ubuntu-2604-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tala-fuzz-corpus
+          key: tala-fuzz-ubuntu-2604-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            vxs-fuzz-ubuntu-2604-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}
-            vxs-fuzz-ubuntu-2604-
+            tala-fuzz-ubuntu-2604-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
+            tala-fuzz-ubuntu-2604-
       - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
@@ -220,32 +220,32 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Run bounded coverage-guided campaign
         shell: bash
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz
       - name: Run bounded ThreadSanitizer ownership campaign
         shell: bash
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-thread
       - name: Run nightly ASan and UBSan stress campaign
         if: github.event_name == 'schedule'
         shell: bash
         env:
-          VXS_FUZZ_SECONDS: '900'
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_SECONDS: '900'
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fuzz-ubuntu-${{ github.run_id }}
-          path: ${{ runner.temp }}/vxs-fuzz-*/
+          path: ${{ runner.temp }}/tala-fuzz-*/
           if-no-files-found: warn
           retention-days: 14
 
@@ -279,11 +279,11 @@ jobs:
       - name: Restore synchronized fuzz corpus
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: ${{ runner.temp }}/vxs-fuzz-corpus
-          key: vxs-fuzz-fedora-43-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tala-fuzz-corpus
+          key: tala-fuzz-fedora-43-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            vxs-fuzz-fedora-43-${{ hashFiles('Compiler/Fuzzing/Corpus/**') }}
-            vxs-fuzz-fedora-43-
+            tala-fuzz-fedora-43-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
+            tala-fuzz-fedora-43-
       - name: Install GHC and Cabal
         uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
@@ -291,27 +291,27 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Run bounded coverage-guided campaign
         shell: bash
         env:
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz
       - name: Run nightly ASan and UBSan stress campaign
         if: github.event_name == 'schedule'
         shell: bash
         env:
-          VXS_FUZZ_SECONDS: '900'
-          VXS_FUZZ_CORPUS: ${{ runner.temp }}/vxs-fuzz-corpus
+          TALA_FUZZ_SECONDS: '900'
+          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: fuzz-fedora-${{ github.run_id }}
-          path: ${{ runner.temp }}/vxs-fuzz-*/
+          path: ${{ runner.temp }}/tala-fuzz-*/
           if-no-files-found: warn
           retention-days: 14
 

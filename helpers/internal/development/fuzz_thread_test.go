@@ -19,7 +19,7 @@ func TestThreadFuzzPlanInstrumentsOnlyThreadedTargets(t *testing.T) {
 	} {
 		plan := threadFuzzBuildArguments(example.fuzz, example.sanitizer, example.runtime)
 		joined := strings.Join(plan, " ")
-		for _, required := range []string{"--config=" + example.fuzz, "--config=" + example.sanitizer, "//Compiler/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
+		for _, required := range []string{"--config=" + example.fuzz, "--config=" + example.sanitizer, "//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
 			if !strings.Contains(joined, required) {
 				t.Fatalf("thread plan lacks %s: %v", required, plan)
 			}

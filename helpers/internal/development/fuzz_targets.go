@@ -16,18 +16,18 @@ type fuzzTarget struct {
 
 func nativeFuzzTargets() []fuzzTarget {
 	return []fuzzTarget{
-		{"//Compiler/Fuzzing:wire_fuzzer", "wire_fuzzer", "wire", "16384", "768", false, false},
-		{"//Compiler/Fuzzing:lexer_fuzzer", "lexer_fuzzer", "lexer", "65536", "1024", true, false},
-		{"//Compiler/Fuzzing:parser_fuzzer", "parser_fuzzer", "parser", "65536", "1536", true, false},
-		{"//Compiler/Fuzzing:source_llvm_fuzzer", "source_llvm_fuzzer", "source", "65536", "4096", true, false},
+		{"//Talac/Fuzzing:wire_fuzzer", "wire_fuzzer", "wire", "16384", "768", false, false},
+		{"//Talac/Fuzzing:lexer_fuzzer", "lexer_fuzzer", "lexer", "65536", "1024", true, false},
+		{"//Talac/Fuzzing:parser_fuzzer", "parser_fuzzer", "parser", "65536", "1536", true, false},
+		{"//Talac/Fuzzing:source_llvm_fuzzer", "source_llvm_fuzzer", "source", "65536", "4096", true, false},
 		// The generator reads at most 33 bytes: 31 expression selectors at depth
 		// four, then one shape and one trip-count byte. Bound mutations close to
 		// that semantic input instead of evolving unused tails.
-		{"//Compiler/Fuzzing:differential_fuzzer", "differential_fuzzer", "differential", "64", "4096", true, false},
-		{"//Compiler/Cli/Fuzzing:cli_fuzzer", "cli_fuzzer", "cli", "16384", "768", false, false},
-		{"//Compiler/ProjectSystem/Bridge/Fuzzing:project_fuzzer", "project_fuzzer", "project", "65536", "768", false, false},
+		{"//Talac/Fuzzing:differential_fuzzer", "differential_fuzzer", "differential", "64", "4096", true, false},
+		{"//Talac/Cli/Fuzzing:cli_fuzzer", "cli_fuzzer", "cli", "16384", "768", false, false},
+		{"//Talac/Tazel/Bridge/Fuzzing:project_fuzzer", "project_fuzzer", "project", "65536", "768", false, false},
 		{"//Interactive/Fuzzing:repl_fuzzer", "repl_fuzzer", "repl", "64", "4096", true, false},
-		{"//Compiler/Runtime/AARC/Fuzzing:ownership_fuzzer", "ownership_fuzzer", "ownership", "64", "768", false, true},
+		{"//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer", "ownership_fuzzer", "ownership", "64", "768", false, true},
 	}
 }
 

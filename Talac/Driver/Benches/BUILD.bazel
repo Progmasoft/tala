@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# This measures the driver's two new project-artifact costs in isolation. It is
+# deliberately outside correctness CI because filesystem timings are noisy.
+cc_binary(
+    name = "project_artifact_benches",
+    srcs = ["ProjectArtifactBenches.cpp"],
+    deps = [
+        "//Talac/Driver:core_pipeline",
+        "@google_benchmark//:benchmark_main",
+    ],
+)

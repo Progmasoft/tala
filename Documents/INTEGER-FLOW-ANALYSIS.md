@@ -6,7 +6,7 @@ contract for the Haskell Core optimizer, not a source-language specification.
 The source language's integer types, overflow behavior, and operator semantics
 remain defined by `Spec/`.
 
-The Haskell Core package exposes `Visual.XSharp.Core.Optimizer.IntegerFacts`
+The Haskell Core package exposes `Progmasoft.Tala.Core.Optimizer.IntegerFacts`
 so compiler tooling can inspect the same sound facts used by the optimizer.
 `LoopFactSummary` reports distinct header, condition, body, update, normal-exit,
 and return states; consumers should not reconstruct loop edges from statement

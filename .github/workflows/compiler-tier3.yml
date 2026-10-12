@@ -10,6 +10,9 @@ on:
   push:
     branches:
       - main
+  # By hand, for a branch that has no pull request yet:
+  # `go run ./helpers/cmd/cross-platform-test ci`.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -60,7 +63,7 @@ jobs:
           cabal: 3.16.1.0
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Verify toolchain and Go helpers
@@ -80,8 +83,8 @@ jobs:
       - name: Exercise wire decoder mutations
         shell: bash
         run: |
-          bazel build //Compiler/Fuzzing:wire_fuzz_smoke
-          ./bazel-bin/Compiler/Fuzzing/wire_fuzz_smoke
+          bazel build //Talac/Fuzzing:wire_fuzz_smoke
+          ./bazel-bin/Talac/Fuzzing/wire_fuzz_smoke
 
       - name: Verify ASan and UBSan runtimes and native suites
         shell: bash

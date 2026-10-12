@@ -34,29 +34,29 @@ func checkReleaseMetadata(repository string, currentHost host, requested string,
 	})
 	checks = append(checks,
 		checkFileLineOnce(filepath.Join(repository, "CHANGELOG.md"), "## "+requested+" - ", true, "CHANGELOG heading"),
-		checkFileLineOnce(filepath.Join(repository, "Compiler", "Haskell", "Syntax", "visual-xsharp-syntax.cabal"), "version: "+requested, false, "Haskell syntax version"),
-		checkFileLineOnce(filepath.Join(repository, "Compiler", "Haskell", "Frontend", "visual-xsharp-frontend.cabal"), "version: "+requested, false, "Haskell frontend version"),
-		checkFileLineOnce(filepath.Join(repository, "Compiler", "Haskell", "Core", "visual-xsharp-core.cabal"), "version: "+requested, false, "Haskell Core version"),
-		checkFileLineOnce(filepath.Join(repository, "Compiler", "Haskell", "Driver", "visual-xsharp-compiler.cabal"), "version: "+requested, false, "Haskell compiler version"),
-		checkFileLineOnce(filepath.Join(repository, "Compiler", "Cli", "Arguments", "Options.cpp"), "#    define VXS_PROJECT_VERSION \""+requested+"\"", false, "native CLI fallback version"),
-		checkFileLineOnce(filepath.Join(repository, "ProjectSystem", "build.gradle.kts"), "version = \""+requested+"\"", false, "Kotlin project runtime version"),
-		checkFileLineOnce(filepath.Join(repository, "ProjectSystem", "Visual.XSharp.kts"), "version = \""+requested+"\"", false, "default compiler model version"),
+		checkFileLineOnce(filepath.Join(repository, "Talac", "Haskell", "Syntax", "tala-syntax.cabal"), "version: "+requested, false, "Haskell syntax version"),
+		checkFileLineOnce(filepath.Join(repository, "Talac", "Haskell", "Frontend", "tala-frontend.cabal"), "version: "+requested, false, "Haskell frontend version"),
+		checkFileLineOnce(filepath.Join(repository, "Talac", "Haskell", "Core", "tala-core.cabal"), "version: "+requested, false, "Haskell Core version"),
+		checkFileLineOnce(filepath.Join(repository, "Talac", "Haskell", "Driver", "tala-compiler.cabal"), "version: "+requested, false, "Haskell compiler version"),
+		checkFileLineOnce(filepath.Join(repository, "Talac", "Cli", "Arguments", "Options.cpp"), "#    define TALA_PROJECT_VERSION \""+requested+"\"", false, "native CLI fallback version"),
+		checkFileLineOnce(filepath.Join(repository, "Tazel", "build.gradle.kts"), "version = \""+requested+"\"", false, "Kotlin project runtime version"),
+		checkFileLineOnce(filepath.Join(repository, "Tazel", "BUILD.kts"), "version = \""+requested+"\"", false, "default compiler model version"),
 	)
 
-	compiler := filepath.Join(repository, "bazel-bin", "Compiler", "Cli", "vxs"+currentHost.executable)
+	compiler := filepath.Join(repository, "bazel-bin", "Talac", "Cli", "talac"+currentHost.executable)
 	if information, statErr := os.Stat(compiler); statErr == nil && !information.IsDir() {
 		output, outputErr := runner.OutputIn(repository, compiler, "version")
-		want := "vxs " + requested
+		want := "talac " + requested
 		checks = append(checks, releaseCheck{
-			name:   "vxs version",
+			name:   "talac version",
 			ok:     outputErr == nil && output == want,
 			detail: exactVersionDetail(output, want, outputErr),
 		})
 	} else {
 		checks = append(checks, releaseCheck{
-			name:   "vxs version",
+			name:   "talac version",
 			ok:     true,
-			detail: "Bazel vxs executable is not built; runtime version check skipped",
+			detail: "Bazel talac executable is not built; runtime version check skipped",
 		})
 	}
 

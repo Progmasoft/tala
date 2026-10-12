@@ -6,7 +6,7 @@ package development
 import (
 	"errors"
 	"fmt"
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/repository"
+	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"os"
 	"strings"
 )

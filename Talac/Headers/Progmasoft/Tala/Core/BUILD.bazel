@@ -1,0 +1,91 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "coreprep_model",
+    hdrs = [
+        "CorePrep.hpp",
+        "RuntimeCall.hpp",
+    ],
+    strip_include_prefix = "/Talac/Headers",
+    deps = ["//Talac/Headers/Progmasoft/Tala:namespace"],
+)
+
+cc_library(
+    name = "ownership_api",
+    hdrs = ["Ownership.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":coreprep_model"],
+)
+
+cc_library(
+    name = "model",
+    hdrs = ["IR.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        ":coreprep_model",
+        "//Talac/Headers/Progmasoft/Tala:namespace",
+    ],
+)
+
+cc_library(
+    name = "scalar",
+    hdrs = ["Scalar.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":coreprep_model"],
+)
+
+cc_library(
+    name = "template_api",
+    hdrs = ["Template.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        ":coreprep_model",
+        "//Talac/Headers/Progmasoft/Tala:namespace",
+    ],
+)
+
+cc_library(
+    name = "coreprep",
+    hdrs = [
+        "CorePrep/Prepare.hpp",
+        "CorePrep/Verifier.hpp",
+        "CorePrep/Verifier/Semantics.hpp",
+    ],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        ":coreprep_model",
+        ":model",
+    ],
+)
+
+cc_library(
+    name = "coreprep_wire",
+    hdrs = [
+        "CorePrep/Wire.hpp",
+        "CorePrep/Wire/Format.hpp",
+    ],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":coreprep_model"],
+)
+
+cc_library(
+    name = "callable_api",
+    hdrs = ["Callable.hpp"],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [":coreprep"],
+)
+
+cc_library(
+    name = "core",
+    hdrs = [
+        "Verifier.hpp",
+        "Wire.hpp",
+    ],
+    strip_include_prefix = "/Talac/Headers",
+    deps = [
+        ":model",
+        ":coreprep",
+    ],
+)

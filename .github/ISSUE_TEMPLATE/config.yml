@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability privately
-    url: https://github.com/Progmasoft/visual-xsharp/security/advisories/new
+    url: https://github.com/Progmasoft/tala/security/advisories/new
     about: Do not disclose security-sensitive details in a public issue.
   - name: Project support
     url: mailto:support@progmasoft.com?subject=Visual%20X%23%20support

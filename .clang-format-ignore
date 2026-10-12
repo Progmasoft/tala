@@ -11,7 +11,7 @@
 **/*.java
 **/*.js
 **/*.ts
-**/*.vxs
+**/*.tala
 **/*.xsproj
 **/*.xhir
 **/*.xmir

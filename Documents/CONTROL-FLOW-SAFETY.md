@@ -72,7 +72,7 @@ answers “does this identity exist and what is its type?” It does not answer
 
 After structural and type checks, the verifier translates the function to the
 common definite-initialization model. A read of existing but uninitialized
-storage produces `VXP1041` before Xmm lowering.
+storage produces `TAP1041` before Xmm lowering.
 
 Direct function identities are not local storage reads. A closure held in a
 local symbol is a storage read even though its type is callable. This
@@ -88,7 +88,7 @@ function's block vector may be serialized or optimized in any order without
 changing whether a register identity is known.
 
 The Xmm verifier then applies definite initialization using CFG edges. A read
-of a known register with no value on every incoming path produces `VXL1045`.
+of a known register with no value on every incoming path produces `TAL1045`.
 Undefined registers and incompatible register types remain separate errors.
 
 ### LLVM lowering
@@ -393,11 +393,11 @@ that construct its model directly.
 
 ## Diagnostic ownership
 
-`VXP1041` means that Xpp symbolic storage exists and has a valid type, but its
+`TAP1041` means that Xpp symbolic storage exists and has a valid type, but its
 value is unavailable on at least one reachable path. The diagnostic identifies
 the function, block, and instruction or terminator position.
 
-`VXL1045` is the equivalent Xmm virtual-register failure. Reaching it after a
+`TAL1045` is the equivalent Xmm virtual-register failure. Reaching it after a
 verified Xpp module generally indicates a lowering or optimization bug. It is
 still checked because Xmm is a serializable boundary and native APIs can build
 or decode Xmm independently.
@@ -446,16 +446,16 @@ checks that register type discovery is block-order independent.
 Focused native builds are:
 
 ```text
-bazelisk build //Compiler/Analysis/Tests:definite_initialization_tests
-bazelisk build //Compiler/Codegen/Xpp/Tests:xpp_verifier_tests
-bazelisk build //Compiler/Codegen/Xmm/Tests:xmm_verifier_tests
+bazelisk build //Talac/Analysis/Tests:definite_initialization_tests
+bazelisk build //Talac/Codegen/Xpp/Tests:xpp_verifier_tests
+bazelisk build //Talac/Codegen/Xmm/Tests:xmm_verifier_tests
 ```
 
 The Haskell frontend suite is:
 
 ```text
 cd Compiler
-cabal test visual-xsharp-compiler-tests --test-show-details=direct
+cabal test tala-compiler-tests --test-show-details=direct
 ```
 
 Repository-wide verification remains required before publishing a compiler

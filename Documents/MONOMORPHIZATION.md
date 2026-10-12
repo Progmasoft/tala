@@ -3,7 +3,7 @@
 
 # Template monomorphization
 
-Visual X# templates use compile-time monomorphization. They do not use JVM-style
+Tala templates use compile-time monomorphization. They do not use JVM-style
 type erasure, a universal boxed representation, or a runtime generic dictionary
 as the default execution model. Each required concrete template argument set
 produces a concrete declaration with concrete storage and callable signatures.
@@ -66,7 +66,7 @@ ambiguity.
 
 ## Source contract
 
-The normative syntax and behavior remain in `Spec/Language/Decls.vxs`. In
+The normative syntax and behavior remain in `Spec/Language/Decls.tala`. In
 particular:
 
 - template parameters may represent types, compile-time values, templates, or
@@ -277,7 +277,7 @@ discovery. Exceeding a limit reports the demand location or dependency origin
 that crossed it; the compiler does not silently truncate the plan.
 
 The plan is stored in `FrontendArtifacts` beside the verified unoptimized Core.
-It is not encoded into `VXCR`: it is deterministic derived data and can be
+It is not encoded into `TACR`: it is deterministic derived data and can be
 reconstructed from a loaded Core module. Keeping it out of the wire also avoids
 turning local queue identifiers into an accidental artifact ABI.
 

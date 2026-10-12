@@ -14,20 +14,20 @@ import (
 
 // HaskellModule is the generated Haskell module, relative to the repository
 // root.
-const HaskellModule = "Compiler/Haskell/Driver/test/BranchingEvaluationCases.hs"
+const HaskellModule = "Talac/Haskell/Driver/test/BranchingEvaluationCases.hs"
 
 // tables lists the case files in the order the Haskell tests report them.
 func tables() []Table {
 	return []Table{
 		{
-			Source:  "Compiler/Fuzzing/Cases/Selection.cases",
-			Include: "Compiler/Fuzzing/Generated/SelectionCases.inc",
+			Source:  "Talac/Fuzzing/Cases/Selection.cases",
+			Include: "Talac/Fuzzing/Generated/SelectionCases.inc",
 			Binding: "selectionCases",
 			Summary: "Which arm, block or body is selected, and how often each part runs.",
 		},
 		{
-			Source:  "Compiler/Fuzzing/Cases/Leaving.cases",
-			Include: "Compiler/Fuzzing/Generated/LeavingCases.inc",
+			Source:  "Talac/Fuzzing/Cases/Leaving.cases",
+			Include: "Talac/Fuzzing/Generated/LeavingCases.inc",
 			Binding: "leavingCases",
 			Summary: "Expressions that leave instead of yielding a value.",
 		},

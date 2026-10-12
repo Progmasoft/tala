@@ -1,4 +1,4 @@
-load("//Compiler/Runtime:host.bzl", "RUNTIME_HOST_DEPS", "RUNTIME_HOST_LINKOPTS")
+load("//Talac/Runtime:host.bzl", "RUNTIME_HOST_DEPS", "RUNTIME_HOST_LINKOPTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -12,12 +12,12 @@ cc_library(
     # runtime its code calls.
     linkopts = RUNTIME_HOST_LINKOPTS,
     deps = [
-        "//Compiler/Backend/LLVM:llvm_backend",
-        "//Compiler/Cli/Commands:frontend",
-        "//Compiler/Driver:pipeline",
-        "//Interactive/Headers/Visual/XSharp/Interactive:session",
-        "//Interactive/Headers/Visual/XSharp/Interactive:repl_input",
-        "//Compiler/Headers/Visual/XSharp/Core:scalar",
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Cli/Commands:frontend",
+        "//Talac/Driver:pipeline",
+        "//Interactive/Headers/Progmasoft/Tala/Interactive:session",
+        "//Interactive/Headers/Progmasoft/Tala/Interactive:repl_input",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
         "@fmt//:fmt",
     ] + RUNTIME_HOST_DEPS,
 )
@@ -26,18 +26,18 @@ cc_library(
     name = "interactive_arguments",
     srcs = ["Arguments.cpp"],
     deps = [
-        "//Interactive/Headers/Visual/XSharp/Interactive:arguments",
+        "//Interactive/Headers/Progmasoft/Tala/Interactive:arguments",
         "@fmt//:fmt",
     ],
 )
 
 cc_binary(
-    name = "vxsi",
+    name = "tali",
     srcs = ["Main.cpp"],
     deps = [
         ":interactive_arguments",
         ":interactive_runtime",
-        "//Compiler/Support:compiler_stack",
+        "//Talac/Support:compiler_stack",
         "@fmt//:fmt",
     ],
 )

@@ -9,9 +9,9 @@ build --keep_going
 
 # Apply explicit diagnostics to owned translation units, not to
 # external dependencies whose compatibility policy this repository does not own.
-build:windows --per_file_copt=^(Compiler|Interactive)/.*@/clang:-Wall,/clang:-Wextra,/clang:-Wpedantic,/clang:-Werror,/clang:-Wshadow,/clang:-Wformat=2,/clang:-Wcast-align,/clang:-Wcast-qual,/clang:-Wundef,/clang:-Wnull-dereference,/clang:-Wimplicit-fallthrough,/clang:-Wnon-virtual-dtor,/clang:-Woverloaded-virtual,/clang:-Wextra-semi,/clang:-Wmissing-field-initializers,/clang:-Wdouble-promotion,/clang:-Wimplicit-int-conversion,/clang:-Wimplicit-float-conversion,/clang:-Wdeprecated,/clang:-Wunreachable-code-aggressive,/clang:-Wvla,/clang:-Wthread-safety,/clang:-Wcomma
-build:linux --per_file_copt=^(Compiler|Interactive)/.*@-Wall,-Wextra,-Wpedantic,-Werror,-Wshadow,-Wformat=2,-Wcast-align,-Wcast-qual,-Wundef,-Wnull-dereference,-Wimplicit-fallthrough,-Wnon-virtual-dtor,-Woverloaded-virtual,-Wextra-semi,-Wmissing-field-initializers,-Wdouble-promotion,-Wimplicit-int-conversion,-Wimplicit-float-conversion,-Wdeprecated,-Wunreachable-code-aggressive,-Wvla,-Wthread-safety,-Wcomma
-build:macos --per_file_copt=^(Compiler|Interactive)/.*@-Wall,-Wextra,-Wpedantic,-Werror,-Wshadow,-Wformat=2,-Wcast-align,-Wcast-qual,-Wundef,-Wnull-dereference,-Wimplicit-fallthrough,-Wnon-virtual-dtor,-Woverloaded-virtual,-Wextra-semi,-Wmissing-field-initializers,-Wdouble-promotion,-Wimplicit-int-conversion,-Wimplicit-float-conversion,-Wdeprecated,-Wunreachable-code-aggressive,-Wvla,-Wthread-safety,-Wcomma
+build:windows --per_file_copt=^(Talac|Interactive)/.*@/clang:-Wall,/clang:-Wextra,/clang:-Wpedantic,/clang:-Werror,/clang:-Wshadow,/clang:-Wformat=2,/clang:-Wcast-align,/clang:-Wcast-qual,/clang:-Wundef,/clang:-Wnull-dereference,/clang:-Wimplicit-fallthrough,/clang:-Wnon-virtual-dtor,/clang:-Woverloaded-virtual,/clang:-Wextra-semi,/clang:-Wmissing-field-initializers,/clang:-Wdouble-promotion,/clang:-Wimplicit-int-conversion,/clang:-Wimplicit-float-conversion,/clang:-Wdeprecated,/clang:-Wunreachable-code-aggressive,/clang:-Wvla,/clang:-Wthread-safety,/clang:-Wcomma
+build:linux --per_file_copt=^(Talac|Interactive)/.*@-Wall,-Wextra,-Wpedantic,-Werror,-Wshadow,-Wformat=2,-Wcast-align,-Wcast-qual,-Wundef,-Wnull-dereference,-Wimplicit-fallthrough,-Wnon-virtual-dtor,-Woverloaded-virtual,-Wextra-semi,-Wmissing-field-initializers,-Wdouble-promotion,-Wimplicit-int-conversion,-Wimplicit-float-conversion,-Wdeprecated,-Wunreachable-code-aggressive,-Wvla,-Wthread-safety,-Wcomma
+build:macos --per_file_copt=^(Talac|Interactive)/.*@-Wall,-Wextra,-Wpedantic,-Werror,-Wshadow,-Wformat=2,-Wcast-align,-Wcast-qual,-Wundef,-Wnull-dereference,-Wimplicit-fallthrough,-Wnon-virtual-dtor,-Woverloaded-virtual,-Wextra-semi,-Wmissing-field-initializers,-Wdouble-promotion,-Wimplicit-int-conversion,-Wimplicit-float-conversion,-Wdeprecated,-Wunreachable-code-aggressive,-Wvla,-Wthread-safety,-Wcomma
 
 # rules_cc selects its Windows clang-cl branch through USE_CLANG_CL. LLVM_ROOT
 # remains an environment-owned discovery input rather than a committed path.
@@ -26,20 +26,20 @@ build:windows --features=static_link_msvcrt
 # LLVM headers are external even when instantiated by an owned translation
 # unit. clang-cl requires /imsvc to classify this existing include root as
 # system headers; this option is never applied to dependency translation units.
-build:windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/imsvcexternal/+llvm+llvm/include
+build:windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/imsvcexternal/+llvm+llvm/include
 # Some native rules_cc toolchains expand dependency includes with -I rather
 # than -isystem. Classify only the imported LLVM root for owned compilation;
 # keep every owned warning enabled and never change vendor translation flags.
-build:linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-isystemexternal/+llvm+llvm/include
-build:macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-isystemexternal/+llvm+llvm/include
+build:linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@-isystemexternal/+llvm+llvm/include
+build:macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@-isystemexternal/+llvm+llvm/include
 # Owned production, test, benchmark and fuzz translation units use explicit
 # result/error values. Dependencies retain their own exception policy.
 # rules_cc also passes /EHsc. clang-cl retains exceptions with that MSVC
 # option even when -fno-exceptions appears later; turn EH off explicitly.
-build:windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/EHs-c-
-build:windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/clang:-fno-exceptions
-build:macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-exceptions
-build:linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-exceptions
+build:windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/EHs-c-
+build:windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/clang:-fno-exceptions
+build:macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@-fno-exceptions
+build:linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@-fno-exceptions
 
 # Platform-specific configs are selected by Bazel itself. Developers use the
 # ordinary build command on both supported hosts; they never need to remember a
@@ -50,7 +50,7 @@ build:macos --host_cxxopt=-std=c++20
 
 # Bazel's Linux platform branch must use Clang for both host and target
 # compilation. GCC's standard library may provide ABI/runtime libraries, but
-# GCC is not selected as the compiler for Visual X# sources.
+# GCC is not selected as the compiler for Tala sources.
 build:linux --compiler=clang
 build:linux --repo_env=CC=clang
 build:linux --repo_env=BAZEL_COMPILER=clang
@@ -60,17 +60,17 @@ build:linux --host_cxxopt=-std=c++20
 # These profiles are implementation details of helpers/cmd/develop. Keeping the
 # compiler and linker flags here makes sanitizer builds reproducible while the
 # command presents host-aware names and diagnostics to developers.
-build:asan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=address
-build:asan-windows --repo_env=VXS_LLVM_SYSTEM_ALLOCATOR=1
+build:asan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Freestanding/.*@/clang:-fsanitize=address
+build:asan-windows --repo_env=TALA_LLVM_SYSTEM_ALLOCATOR=1
 # Clang's implicit absolute ignorelist otherwise appears as an undeclared input
 # to Bazel's Windows include scanner. The project currently owns no suppressions.
-build:asan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-ignorelist
+build:asan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-ignorelist
 # The official LLVM development archive is not built with MSVC STL container
 # annotations. Disable only those annotations so instrumented project code can
 # link the prebuilt LLVM libraries without /FAILIFMISMATCH conflicts.
-build:asan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/D_DISABLE_STRING_ANNOTATION
-build:asan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/D_DISABLE_VECTOR_ANNOTATION
-build:asan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/D_DISABLE_STL_ANNOTATION
+build:asan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/D_DISABLE_STRING_ANNOTATION
+build:asan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/D_DISABLE_VECTOR_ANNOTATION
+build:asan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/D_DISABLE_STL_ANNOTATION
 # rules_cc invokes lld-link directly rather than the clang driver. Name the
 # matching dynamic runtime and force its registration thunk into each binary;
 # LIB discovery still supplies the version-specific installation directory.
@@ -82,28 +82,32 @@ build:asan-windows --linkopt=/WHOLEARCHIVE:clang_rt.asan_static_runtime_thunk-x8
 
 # lld-link does not infer Clang's UBSan libraries. Link the runtime matching
 # clang-cl's resource directory; never silently substitute trap-only checks.
-build:ubsan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=undefined
-build:ubsan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-recover=all
-build:ubsan-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-ignorelist
+build:ubsan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Freestanding/.*@/clang:-fsanitize=undefined
+build:ubsan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-recover=all
+build:ubsan-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*@/clang:-fno-sanitize-ignorelist
 build:ubsan-windows --linkopt=/DEFAULTLIB:clang_rt.ubsan_standalone-x86_64.lib
 build:ubsan-windows --linkopt=/DEFAULTLIB:clang_rt.ubsan_standalone_cxx-x86_64.lib
 build:asan-ubsan-windows --config=asan-windows
 build:asan-ubsan-windows --config=ubsan-windows
-build:asan-ubsan-windows '--per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=address\\,undefined'
+build:asan-ubsan-windows '--per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Freestanding/.*@/clang:-fsanitize=address\\,undefined'
 
-build:asan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=address
+# The runtime library of a native executable on macOS and Linux is linked
+# into programs that are not sanitizer builds, by the C compiler of the
+# system and without a sanitizer runtime. It is therefore never instrumented,
+# like its Windows counterpart above.
+build:asan-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=address
 build:asan-macos --linkopt=-fsanitize=address
-build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=undefined
-build:ubsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-sanitize-recover=all
+build:ubsan-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=undefined
+build:ubsan-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fno-sanitize-recover=all
 build:ubsan-macos --linkopt=-fsanitize=undefined
-build:tsan-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=thread
+build:tsan-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=thread
 build:tsan-macos --linkopt=-fsanitize=thread
-build:asan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=address
+build:asan-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=address
 build:asan-linux --linkopt=-fsanitize=address
-build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=undefined
-build:ubsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fno-sanitize-recover=all
+build:ubsan-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=undefined
+build:ubsan-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fno-sanitize-recover=all
 build:ubsan-linux --linkopt=-fsanitize=undefined
-build:tsan-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=thread
+build:tsan-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=thread
 build:tsan-linux --linkopt=-fsanitize=thread
 build:asan-ubsan-macos --config=asan-macos
 build:asan-ubsan-macos --config=ubsan-macos
@@ -114,18 +118,18 @@ build:asan-ubsan-linux --linkopt=-fsanitize=address,undefined
 
 # Coverage-guided decoder campaigns instrument owned native translation units,
 # then link libFuzzer's main only into the dedicated driver binary.
-build:fuzz-windows --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*,-^Compiler/Runtime/Freestanding/.*@/clang:-fsanitize=fuzzer-no-link
+build:fuzz-windows --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Freestanding/.*@/clang:-fsanitize=fuzzer-no-link
 build:fuzz-windows --linkopt=/DEFAULTLIB:clang_rt.fuzzer-x86_64.lib
-build:fuzz-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=fuzzer-no-link
-build:fuzz-linux --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fsanitize=fuzzer-no-link
+build:fuzz-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
+build:fuzz-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --linkopt=-fsanitize=fuzzer
 # The host's Homebrew LLVM runtime is resolved by the developer helper. Bazel's macOS
 # linker can be Apple Clang, whose Xcode package omits libFuzzer's main.
 
 # Source-based coverage instruments project-owned C++ code in each native test
 # binary. The coverage workflow executes the same suite matrix as develop test.
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fprofile-instr-generate
-build:coverage-macos --per_file_copt=^(Compiler|Interactive|Benchmarks)/.*@-fcoverage-mapping
+build:coverage-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fprofile-instr-generate
+build:coverage-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fcoverage-mapping
 build:coverage-macos --linkopt=-fprofile-instr-generate
 
 test --test_output=errors

@@ -188,7 +188,7 @@ func TestMacOSFuzzerRuntimeFindsOnlyHomebrewRuntime(t *testing.T) {
 
 func TestSuccessfulFuzzCleanupStaysInsideItsTemporaryRoot(t *testing.T) {
 	root := t.TempDir()
-	work, err := os.MkdirTemp(root, "vxs-fuzz-")
+	work, err := os.MkdirTemp(root, "tala-fuzz-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestHelpSpellingsAreAccepted(t *testing.T) {
 		t.Fatal("doctor is not a help spelling")
 	}
 	if isHelp("-Help") {
-		t.Fatal("Go helper help must not inherit the vxs flag spelling")
+		t.Fatal("Go helper help must not inherit the talac flag spelling")
 	}
 }
 
@@ -289,7 +289,7 @@ func TestLocateToolUsesPathBeforeEnvironmentDiscovery(t *testing.T) {
 
 func TestParseModuleVersionReadsOnlyTheRootModuleDeclaration(t *testing.T) {
 	contents := `module(
-    name = "visual_xsharp",
+    name = "tala",
     version = "0.3.6",
 )
 bazel_dep(name = "fmt", version = "12.1.0")`
@@ -304,7 +304,7 @@ bazel_dep(name = "fmt", version = "12.1.0")`
 
 func TestParseModuleVersionRejectsMissingAndMalformedVersions(t *testing.T) {
 	for _, contents := range []string{
-		"module(\n    name = \"visual_xsharp\",\n)",
+		"module(\n    name = \"tala\",\n)",
 		"module(\n    version = \"0.3\",\n)",
 		"module(\n    version = \"0.next.0\",\n)",
 		"module(\n    version = \"0.3.6\",\n    version = \"0.3.7\",\n)",
@@ -373,8 +373,8 @@ func TestValidateBundleTargetRejectsTargetsOutsideExactDistributionRoot(t *testi
 	unsafeTargets := []string{
 		filepath.Join(repository, "dist"),
 		filepath.Join(repository, "dist", "other-product-0.3.6"),
-		filepath.Join(repository, "dist", "nested", "visual-xsharp-0.3.6-windows-x86_64"),
-		filepath.Join(repository, "visual-xsharp-0.3.6-windows-x86_64"),
+		filepath.Join(repository, "dist", "nested", "tala-0.3.6-windows-x86_64"),
+		filepath.Join(repository, "tala-0.3.6-windows-x86_64"),
 	}
 	for _, target := range unsafeTargets {
 		if err := validateBundleTarget(repository, target); err == nil {
@@ -382,7 +382,7 @@ func TestValidateBundleTargetRejectsTargetsOutsideExactDistributionRoot(t *testi
 		}
 	}
 
-	safe := filepath.Join(repository, "dist", "visual-xsharp-0.3.6-windows-x86_64")
+	safe := filepath.Join(repository, "dist", "tala-0.3.6-windows-x86_64")
 	if err := validateBundleTarget(repository, safe); err != nil {
 		t.Fatal(err)
 	}
@@ -407,14 +407,14 @@ func TestWriteBundleChecksumsIsSortedAndContentSensitive(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(bundle, "LICENSES"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(bundle, "vxs.exe"), []byte("compiler"), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(bundle, "talac.exe"), []byte("compiler"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	license := filepath.Join(bundle, "LICENSES", "exception.txt")
 	if err := os.WriteFile(license, []byte("license"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	files := []string{"vxs.exe", "LICENSES/exception.txt"}
+	files := []string{"talac.exe", "LICENSES/exception.txt"}
 	if err := writeBundleChecksums(bundle, files); err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestWriteBundleChecksumsIsSortedAndContentSensitive(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(first)), "\n")
-	if len(lines) != 2 || !strings.HasSuffix(lines[0], "  LICENSES/exception.txt") || !strings.HasSuffix(lines[1], "  vxs.exe") {
+	if len(lines) != 2 || !strings.HasSuffix(lines[0], "  LICENSES/exception.txt") || !strings.HasSuffix(lines[1], "  talac.exe") {
 		t.Fatalf("checksums are not deterministically sorted: %q", string(first))
 	}
 	if err := os.WriteFile(license, []byte("changed license"), 0o644); err != nil {
@@ -443,18 +443,18 @@ func TestWriteBundleChecksumsIsSortedAndContentSensitive(t *testing.T) {
 
 func TestCleanGeneratedPathsPreservesUnlistedDistribution(t *testing.T) {
 	repository := t.TempDir()
-	generated := filepath.Join(repository, "ProjectSystem", "build", "nested")
+	generated := filepath.Join(repository, "Tazel", "build", "nested")
 	if err := os.MkdirAll(generated, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	bundle := filepath.Join(repository, "dist", "visual-xsharp-0.3.6-windows-x86_64")
+	bundle := filepath.Join(repository, "dist", "tala-0.3.6-windows-x86_64")
 	if err := os.MkdirAll(bundle, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := cleanGeneratedPaths(repository, []string{"ProjectSystem/build"}); err != nil {
+	if err := cleanGeneratedPaths(repository, []string{"Tazel/build"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(repository, "ProjectSystem", "build")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(repository, "Tazel", "build")); !os.IsNotExist(err) {
 		t.Fatalf("generated build directory survived cleanup: %v", err)
 	}
 	if information, err := os.Stat(bundle); err != nil || !information.IsDir() {

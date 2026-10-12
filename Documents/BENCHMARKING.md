@@ -35,7 +35,7 @@ debuggers, power policy, or another process. Treat a possible regression as a re
 at least five repetitions on the same host:
 
 ```powershell
-bazelisk run -c opt //Compiler/Core/Benches:core_benches -- `
+bazelisk run -c opt //Talac/Core/Benches:core_benches -- `
   --benchmark_repetitions=5 --benchmark_report_aggregates_only=true
 ```
 
@@ -50,7 +50,7 @@ that exist only for the benchmark.
 For a quick linear-inlining smoke measurement:
 
 ```powershell
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks `
+cabal bench tala-core:core-benches --enable-benchmarks `
   --benchmark-options="--match pattern Core/InlineLinearBody/8 --time-limit 0.1"
 ```
 

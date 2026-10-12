@@ -1,0 +1,35 @@
+cabal-version: 3.12
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+name: tala-syntax
+version: 0.5.1
+synopsis: Tala source model, lexer, parser, and diagnostics
+license: MPL-2.0
+author: Progmasoft
+maintainer: support@progmasoft.com
+build-type: Simple
+
+library
+    exposed-modules:
+        Progmasoft.Tala.AST
+        Progmasoft.Tala.CharacterLiteral
+        Progmasoft.Tala.Diagnostic
+        Progmasoft.Tala.Diagnostic.Protocol
+        Progmasoft.Tala.FloatingLiteral
+        Progmasoft.Tala.Lexer
+        Progmasoft.Tala.Completion
+        Progmasoft.Tala.NestingLimits
+        Progmasoft.Tala.NumericLiteral
+        Progmasoft.Tala.Parser
+        Progmasoft.Tala.RuntimeCall
+        Progmasoft.Tala.SourceText
+        Progmasoft.Tala.SourceWarnings
+    other-modules:
+        Progmasoft.Tala.Parser.Cursor
+        Progmasoft.Tala.Parser.Match
+        Progmasoft.Tala.Parser.Token
+    hs-source-dirs: src
+    build-depends:
+        base >=4.20 && <4.23,
+        bytestring >=0.12 && <0.14
+    default-language: GHC2024

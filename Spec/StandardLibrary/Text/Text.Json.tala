@@ -1,0 +1,413 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: System.Text.Json
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Namespace and Core Surface
+-- Demonstrates: The JSON API is provided by:
+
+using System.Text.Json;
+
+-- ============================================================================
+-- Example 2: 2.1 Creating an ObjectMapper
+-- Demonstrates: An ObjectMapper is created through JsonMapper.Builder().
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .Build();
+
+-- ============================================================================
+-- Example 3: 2.1 Creating an ObjectMapper
+-- Demonstrates: A builder may configure parser syntax, serialization features, deserialization
+--   features, and property naming.
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .Enable(SerializationFeature.INDENT_OUTPUT)
+        .Disable(
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+        )
+        .PropertyNamingStrategy(
+            PropertyNamingStrategies.SNAKE_CASE
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 4: 2.2 Serialization
+-- Demonstrates: WriteAsString(...) serializes a value to JSON text.
+
+String json = mapper.WriteAsString(value);
+
+-- ============================================================================
+-- Example 5: 2.3 Deserialization
+-- Demonstrates: ReadValue<T>(...) parses JSON text and maps the result to T.
+
+User user = mapper.ReadValue<User>(json);
+
+-- ============================================================================
+-- Example 6: 3. JsonSerializerOptions
+-- Demonstrates: JsonSerializerOptions stores JSON parser syntax options.
+
+JsonSerializerOptions options = JsonSerializerOptions.NewBuilder()
+        .JsonComments(true)
+        .JsonTrailingComma(true)
+        .JsonEnableJson5Support(false)
+        .Build();
+
+-- ============================================================================
+-- Example 7: 4.1 JsonComments
+-- Demonstrates: When enabled:
+
+.JsonComments(true)
+
+-- ============================================================================
+-- Example 8: 4.3 JsonEnableJson5Support
+-- Demonstrates: When enabled:
+
+.JsonEnableJson5Support(true)
+
+-- ============================================================================
+-- Example 9: 5.1 JsonNonstandardDocComments
+-- Demonstrates: When enabled:
+
+.JsonNonstandardDocComments(true)
+
+-- ============================================================================
+-- Example 10: 5.1 JsonNonstandardDocComments
+-- Demonstrates: This option is independent from JsonComments.
+
+JsonMapper.Builder()
+        .JsonNonstandardDocComments(true)
+        .JsonComments(false)
+        .Build();
+
+-- ============================================================================
+-- Example 11: 6. JsonNonstandardNullDisable
+-- Demonstrates: When:
+
+.JsonNonstandardNullDisable(true)
+
+-- ============================================================================
+-- Example 12: 7. JsonNonstandardAutoStrings
+-- Demonstrates: with:
+
+.JsonNonstandardAutoStrings(true)
+
+-- ============================================================================
+-- Example 13: 8.1 JsonNonstandardDoEndBlocks
+-- Demonstrates: To permit the unquoted form:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .JsonNonstandardDoEndBlocks(true)
+        .JsonNonstandardAutoStrings(true)
+        .Build();
+
+-- ============================================================================
+-- Example 14: 8.2 JsonNonstandardBracesDisabled
+-- Demonstrates: The following configuration is invalid:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+JsonMapper.Builder()
+        .JsonNonstandardBracesDisabled(true)
+        .Build(); -- INVALID
+
+-- ============================================================================
+-- Example 15: 8.2 JsonNonstandardBracesDisabled
+-- Demonstrates: Valid configuration:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .JsonNonstandardDoEndBlocks(true)
+        .JsonNonstandardBracesDisabled(true)
+        .Build();
+
+-- ============================================================================
+-- Example 16: 9. Independence of Nonstandard Options
+-- Demonstrates: For example:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .JsonNonstandardDoEndBlocks(true)
+        .JsonNonstandardAutoStrings(false)
+        .Build();
+
+-- ============================================================================
+-- Example 17: 10. Serialization Features
+-- Demonstrates: Features are enabled or disabled on the mapper builder:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .Enable(SerializationFeature.INDENT_OUTPUT)
+        .Disable(SerializationFeature.WRITE_NULL_PROPERTIES)
+        .Build();
+
+-- ============================================================================
+-- Example 18: 11. Deserialization Features
+-- Demonstrates: Example:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .Disable(
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 19: 12. Property Naming Strategy
+-- Demonstrates: A mapper may define a global property naming strategy:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .PropertyNamingStrategy(
+            PropertyNamingStrategies.SNAKE_CASE
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 20: 12. Property Naming Strategy
+-- Demonstrates: Example:
+
+data UserInfo {
+    String FirstName,
+    int UserId,
+}
+
+-- ============================================================================
+-- Example 21: 12. Property Naming Strategy
+-- Demonstrates: With:
+
+.PropertyNamingStrategy(
+    PropertyNamingStrategies.SNAKE_CASE
+)
+
+-- ============================================================================
+-- Example 22: 13.1 [JsonName(...)]
+-- Demonstrates: [JsonName("...")] explicitly defines the JSON name of a mapped member.
+
+data User {
+    [JsonName("id")]
+    int UserId,
+
+    String FirstName,
+}
+
+-- ============================================================================
+-- Example 23: 13.1 [JsonName(...)]
+-- Demonstrates: Example with SNAKECASE:
+
+data User {
+    [JsonName("id")]
+    int UserId,
+
+    String FirstName,
+}
+
+-- ============================================================================
+-- Example 24: 13.2 [JsonIgnore]
+-- Demonstrates: [JsonIgnore] removes a mapped member from both serialization and deserialization.
+
+data User {
+    String Name,
+
+    [JsonIgnore]
+    String InternalToken,
+}
+
+-- ============================================================================
+-- Example 25: 14. data Mapping
+-- Demonstrates: JSON objects map naturally to Tala data declarations.
+
+data User {
+    String Name,
+    int Age,
+}
+
+-- ============================================================================
+-- Example 26: 14. data Mapping
+-- Demonstrates: Serialization:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+User user = ...;
+
+String json = mapper.WriteAsString(user);
+
+-- ============================================================================
+-- Example 27: 14. data Mapping
+-- Demonstrates: Deserialization:
+
+User user = mapper.ReadValue<User>(json);
+
+-- ============================================================================
+-- Example 28: 15. Nested data Mapping
+-- Demonstrates: Nested JSON objects recursively map to nested data values.
+
+data Address {
+    String City,
+    String Country,
+}
+
+data User {
+    String Name,
+    int Age,
+    Address Address,
+    Array<String> Roles,
+}
+
+-- ============================================================================
+-- Example 29: 15. Nested data Mapping
+-- Demonstrates: Deserialization:
+
+User user = mapper.ReadValue<User>(json);
+
+-- ============================================================================
+-- Example 30: 15. Nested data Mapping
+-- Demonstrates: Serialization:
+
+String json = mapper.WriteAsString(user);
+
+-- ============================================================================
+-- Example 31: 15. Nested data Mapping
+-- Demonstrates: The active property naming strategy and JSON attributes apply recursively to nested
+--   data declarations.
+
+data Address {
+    [JsonName("city")]
+    String City,
+
+    [JsonName("country")]
+    String Country,
+}
+
+-- ============================================================================
+-- Example 32: 16. Required Fields
+-- Demonstrates: Example:
+
+data User {
+    String Name,
+    int Age,
+}
+
+-- ============================================================================
+-- Example 33: 17. Optional<T> Mapping
+-- Demonstrates: Optional<T> fields have explicit missing/null semantics.
+
+data User {
+    String Name,
+    Optional<String> Nickname,
+}
+
+-- ============================================================================
+-- Example 34: 18. Array Mapping
+-- Demonstrates: A JSON array maps to Array<T> when each element can be mapped to T.
+
+Array<User> users =
+        mapper.ReadValue<Array<User>>(json);
+
+-- ============================================================================
+-- Example 35: 18. Array Mapping
+-- Demonstrates: Serialization is symmetric:
+
+String json = mapper.WriteAsString(users);
+
+-- ============================================================================
+-- Example 36: 19. JsonDocument
+-- Demonstrates: Parse strict/default JSON:
+
+JsonDocument document = JsonDocument.Parse(json);
+
+-- ============================================================================
+-- Example 37: 19. JsonDocument
+-- Demonstrates: Parse with options:
+
+JsonDocument document =
+        JsonDocument.Parse(json, options);
+
+-- ============================================================================
+-- Example 38: 19. JsonDocument
+-- Demonstrates: The document root is accessed with:
+
+JsonElement root = document.RootElement();
+
+-- ============================================================================
+-- Example 39: 19. JsonDocument
+-- Demonstrates: It may be explicitly closed:
+
+document.Close();
+
+-- ============================================================================
+-- Example 40: 19. JsonDocument
+-- Demonstrates: and may be used with the normal Tala cleanup pattern:
+
+JsonDocument document = JsonDocument.Parse(json);
+defer document.Close();
+
+-- ============================================================================
+-- Example 41: 20.1 Value Kind
+-- Demonstrates: using:
+
+element.ValueKind();
+
+-- ============================================================================
+-- Example 42: 20.2 Object Property Access
+-- Demonstrates: Required property access:
+
+JsonElement name = root.GetProperty("name");
+
+-- ============================================================================
+-- Example 43: 20.2 Object Property Access
+-- Demonstrates: Optional property lookup:
+
+Optional<JsonElement> age =
+        root.TryGetProperty("age");
+
+-- ============================================================================
+-- Example 44: 20.3 Array Access
+-- Demonstrates: Array length:
+
+int count = root.GetArrayLength();
+
+-- ============================================================================
+-- Example 45: 20.3 Array Access
+-- Demonstrates: Indexed access:
+
+JsonElement first = root[0];
+
+-- ============================================================================
+-- Example 46: 20.4 Typed Getters
+-- Demonstrates: Typed scalar access includes:
+
+String text = element.GetString();
+int number = element.GetInt();
+float value = element.GetFloat();
+bool flag = element.GetBool();
+
+-- ============================================================================
+-- Example 47: 21. JsonElement Lifetime
+-- Demonstrates: It remains tied to its originating JsonDocument.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+JsonDocument document = JsonDocument.Parse(json);
+JsonElement root = document.RootElement();
+
+document.Close();
+
+root.GetProperty("name"); -- INVALID runtime state
+
+-- ============================================================================
+-- Example 48: 23. Combined Nonstandard Example
+-- Demonstrates: The following mapper enables a Tala-specific JSON dialect:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .JsonNonstandardDocComments(true)
+        .JsonNonstandardHashComments(true)
+        .JsonNonstandardXamlComments(true)
+        .JsonNonstandardAutoStrings(true)
+        .JsonNonstandardDoEndBlocks(true)
+        .JsonNonstandardBracesDisabled(true)
+        .Build();
+
+-- ============================================================================
+-- Example 49: 24. Strict JSON Example
+-- Demonstrates: Default mapper configuration uses strict behavior for the optional syntax extensions
+--   defined here:
+
+ObjectMapper mapper = JsonMapper.Builder()
+        .Build();

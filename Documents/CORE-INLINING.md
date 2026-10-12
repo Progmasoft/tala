@@ -94,7 +94,7 @@ in two directions:
 - a parameter read twice duplicates an effectful argument;
 - an unused parameter erases an effectful argument.
 
-Visual X# solves both by distinguishing trivial and non-trivial arguments.
+Tala solves both by distinguishing trivial and non-trivial arguments.
 
 Variables and literals are trivial. Copying a variable read or a literal has no
 observable evaluation, so they may be substituted directly. Every other

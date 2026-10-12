@@ -1,0 +1,23 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "aarc",
+    srcs = ["Runtime.cpp"],
+    hdrs = ["Internal.hpp"],
+    # Generated code calls the runtime by name while a program runs; see
+    # //Talac/Runtime/Text.
+    alwayslink = True,
+    deps = ["//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api"],
+)
+
+# The sources as text, for the one translation unit of the freestanding
+# runtime.
+filegroup(
+    name = "sources",
+    srcs = [
+        "Internal.hpp",
+        "Runtime.cpp",
+    ],
+)

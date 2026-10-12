@@ -1,9 +1,9 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Visual X# developer helpers
+# Tala developer helpers
 
-This is an independent Go module, `github.com/Progmasoft/visual-xsharp/helpers`.
+This is an independent Go module, `github.com/Progmasoft/tala/helpers`.
 It contains developer applications and reusable implementation packages, not
 compiler runtime code or another build system. Bazel owns the native graph,
 Cabal owns Haskell packages, and Gradle owns Kotlin components.
@@ -15,6 +15,7 @@ helpers/
 ├── go.mod, go.sum          independently pinned dependency graph
 ├── cmd/
 │   ├── develop/            native build, test, fuzz, bundle, and cleanup
+│   ├── cross-platform-test/ the repository's checks for other platforms: workflows or containers
 │   ├── githelper/          guarded staging, commit, and push
 │   ├── prebuild/           required toolchain checks and installation
 │   ├── optional-packages/  optional example and comparison toolchains
@@ -24,8 +25,10 @@ helpers/
 │   ├── verify-examples/    example inventory and source-file contracts
 │   ├── verify-abi/         the ABI manifest against the sources it describes
 │   └── verify-benchmarks/  benchmark report/index consistency
+├── containers/             the images of the cross-platform targets
 └── internal/
     ├── abimanifest/       what the ABI manifest states, read back from the sources
+    ├── crossplatform/     workflow runs for a branch, and the Podman targets and runs
     ├── development/       host, process, build, bundle, fuzz, and release logic
     └── repository/        shared checkout-boundary discovery
 ```
@@ -52,6 +55,9 @@ go run ./helpers/cmd/verify-examples
 go run ./helpers/cmd/verify-abi
 go run ./helpers/cmd/verify-benchmarks
 go run ./helpers/cmd/verify-docs
+go run ./helpers/cmd/cross-platform-test ci --watch
+go run ./helpers/cmd/cross-platform-test targets
+go run ./helpers/cmd/cross-platform-test run --target ubuntu-26.04 --suite native
 ```
 
 Every command of this module defines its command line with Cobra: generated
@@ -63,7 +69,7 @@ and `verify-examples` take the checkout as `--root`; their earlier `-Root` and
 command is given. An invocation a command does not understand fails before
 it reads, probes or installs anything; each command has tests that hold that.
 
-Compiler options, Visual.XSharp.kts evaluation, and user project configuration
+Compiler options, BUILD.kts evaluation, and user project configuration
 are not parsed by these developer tools.
 
 ### Diagnostics without changing the machine

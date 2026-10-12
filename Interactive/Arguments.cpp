@@ -3,9 +3,9 @@
 
 #include <fmt/format.h>
 
-#include "Visual/XSharp/Interactive/Arguments.hpp"
+#include "Progmasoft/Tala/Interactive/Arguments.hpp"
 
-namespace Visual::XSharp::Interactive
+namespace Progmasoft::Tala::Interactive
 {
     auto
     ParseArguments(int argc, char **argv) -> Request
@@ -14,20 +14,18 @@ namespace Visual::XSharp::Interactive
             return {};
         if (argc == 2 && std::string_view(argv[1]) == "-Help")
             return Request{ RequestKind::Help, {}, {} };
-        if (argc == 3 && std::string_view(argv[1]) == "-Eval")
+        if (argc == 3 && std::string_view(argv[1]) == "--eval")
         {
             if (argv[2][0] == '\0')
-                return Request{
-                    RequestKind::Error,
-                    {},
-                    "-Eval requires a non-empty Visual X# expression"
-                };
+                return Request{ RequestKind::Error,
+                                {},
+                                "--eval requires a non-empty Tala expression" };
             return Request{ RequestKind::Evaluate, argv[2], {} };
         }
-        if (argc >= 2 && std::string_view(argv[1]) == "-Eval")
+        if (argc >= 2 && std::string_view(argv[1]) == "--eval")
             return Request{ RequestKind::Error,
                             {},
-                            "-Eval accepts exactly one expression argument" };
+                            "--eval accepts exactly one expression argument" };
         return Request{
             RequestKind::Error,
             {},
@@ -40,17 +38,17 @@ namespace Visual::XSharp::Interactive
     void
     PrintHelp()
     {
-        fmt::print("Visual X# Interactive\n\n"
+        fmt::print("Tala Interactive\n\n"
                    "Usage:\n"
-                   "  vxsi\n"
-                   "  vxsi -Eval <expression>\n"
-                   "  vxsi -Help\n\n"
-                   "With no arguments, vxsi opens a persistent ORC LLJIT "
+                   "  tali\n"
+                   "  tali --eval <expression>\n"
+                   "  tali -Help\n\n"
+                   "With no arguments, tali opens a persistent ORC LLJIT "
                    "session. Each complete input line is\n"
-                   "compiled by the Visual X# Haskell frontend and lowered "
+                   "compiled by the Tala Haskell frontend and lowered "
                    "through Core, CorePrep, Xpp, Xmm,\n"
                    "and LLVM before execution. The most recent supported "
-                   "scalar result is available as `vxsiPrevious`.\n\n"
+                   "scalar result is available as `taliPrevious`.\n\n"
                    "REPL commands:\n"
                    "  :help                 show this help\n"
                    "  :type <expression>   compile and report the expression "
@@ -61,8 +59,8 @@ namespace Visual::XSharp::Interactive
                    "  :quit                 leave the REPL (EOF also exits)\n\n"
                    "The current host invocation ABI prints void, booleans, "
                    "characters, integers up to 64 bits,\n"
-                   "and 32/64-bit floating values. Other Visual X# values are "
+                   "and 32/64-bit floating values. Other Tala values are "
                    "type-checked but not yet callable\n"
                    "through the scalar REPL ABI.\n");
     }
-} // namespace Visual::XSharp::Interactive
+} // namespace Progmasoft::Tala::Interactive

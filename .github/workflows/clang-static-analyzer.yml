@@ -65,7 +65,7 @@ jobs:
 
       - name: Resolve frontend package index
         shell: bash
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       # The helper builds the native targets first: the analyzer needs the
@@ -77,7 +77,7 @@ jobs:
       - name: Analyze first-party C++ path by path
         shell: bash
         env:
-          VXS_ANALYZE_SARIF: ${{ github.workspace }}/clang-static-analyzer.sarif
+          TALA_ANALYZE_SARIF: ${{ github.workspace }}/clang-static-analyzer.sarif
         run: go run ./helpers/cmd/develop analyze
 
       # The report is written into the checkout because `hashFiles` only

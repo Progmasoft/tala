@@ -1,0 +1,91 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Optional Values
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: System.Optional<T>
+-- Demonstrates: System.Optional<T> is a template class.
+
+template<typename T>
+class Optional {
+}
+
+-- ============================================================================
+-- Example 2: No Value
+-- Demonstrates: When the payload is a reference type, an existing Optional object may carry a null
+
+Optional<String> FindUser() {
+    return null;
+}
+
+-- ============================================================================
+-- Example 3: No Value
+-- Demonstrates: When the payload is a reference type, an existing Optional object may carry a null
+
+Optional<String> value = null;
+
+value.HasValue();          -- false
+value.ValueOr("Unknown");  -- "Unknown"
+value.Value();             -- System.InvalidOperationException
+
+-- ============================================================================
+-- Example 4: Value Present
+-- Demonstrates: HasValue(), ValueOr(...), and Value() have explicitly defined behavior when the
+--   Optional<T> object itself is null.
+
+Optional<String> value = new Optional("Wolf");
+
+value.HasValue();          -- true
+value.Value();             -- "Wolf"
+value.ValueOr("Unknown");  -- "Wolf"
+
+-- ============================================================================
+-- Example 5: Value Present with a Null Reference Payload
+-- Demonstrates: HasValue(), ValueOr(...), and Value() have explicitly defined behavior when the
+--   Optional<T> object itself is null.
+
+Optional<String> value = new Optional(null);
+
+value.HasValue();          -- true
+value.Value();             -- null
+value.ValueOr("Unknown");  -- null
+
+-- ============================================================================
+-- Example 6: VALID
+-- Demonstrates: ValueOr(...) returns its fallback only when the Optional<T> object is null. An
+--   existing Optional does not use the fallback even when its payload is null.
+
+Optional<String> value = null;
+
+-- ============================================================================
+-- Example 7: VALID
+-- Demonstrates: ValueOr(...) returns its fallback only when the Optional<T> object is null. An
+--   existing Optional does not use the fallback even when its payload is null.
+
+Optional<String> value = new Optional("Wolf");
+
+-- ============================================================================
+-- Example 8: VALID
+-- Demonstrates: ValueOr(...) returns its fallback only when the Optional<T> object is null. An
+--   existing Optional does not use the fallback even when its payload is null.
+
+Optional<String> value = new Optional(null);
+
+-- ============================================================================
+-- Example 9: VALID
+-- Demonstrates: ValueOr(...) returns its fallback only when the Optional<T> object is null. An
+--   existing Optional does not use the fallback even when its payload is null.
+
+String result = value.ValueOr("Unknown");
+
+-- ============================================================================
+-- Example 10: INVALID
+-- Demonstrates: Calling Value() on an empty Optional does not produce a normal value:
+
+Optional<String> value = null;
+String result = value.Value(); -- System.InvalidOperationException

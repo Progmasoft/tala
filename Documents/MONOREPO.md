@@ -6,15 +6,15 @@
 ## Buildable components
 
 ```text
-Interactive/     Visual X# Interactive (vxsi) source, owned public headers, tests, and LLJIT benchmarks
-Compiler/     Native vxs driver, public headers, modular C++20 implementation, Haskell packages, and build support
-ProjectSystem/ Kotlin project evaluator, VXDC, and Visual.XSharp.kts DSL
+Interactive/     Tala Interactive (tali) source, owned public headers, tests, and LLJIT benchmarks
+Talac/     Native talac driver, public headers, modular C++20 implementation, Haskell packages, and build support
+Tazel/ Kotlin project evaluator, TADC, and BUILD.kts DSL
 Spec/         Public language-design example suites
 third_party/  Pinned source dependencies
 ```
 
-Compiler-owned public headers live physically under `Compiler/Headers/Visual/XSharp/`. Bazel removes the physical
-`Compiler/Headers` prefix from consumers, so the stable include spelling remains `Visual/XSharp/...`.
+Compiler-owned public headers live physically under `Talac/Headers/Progmasoft/Tala/`. Bazel removes the physical
+`Talac/Headers` prefix from consumers, so the stable include spelling remains `Tala/...`.
 Tests and fixtures live below their owning component rather than in a root bucket. The superseded C23/LIL implementation
 has been removed; current compiler code has no legacy include boundary.
 
@@ -23,7 +23,7 @@ has been removed; current compiler code has no legacy include boundary.
 The compiler is decomposed by ownership rather than stored in one `src` directory:
 
 ```text
-Compiler/
+Talac/
 ├── ADTs/                  focused tests for compiler-owned LLVM ADT adapters
 ├── Analysis/              shared native dataflow implementations and tests
 ├── Backend/LLVM/          verified Xmm-to-LLVM lowering and target emission
@@ -40,13 +40,13 @@ Compiler/
 │   ├── Frontend/          Lexer through Desugarer
 │   ├── Core/              Core/CorePrep, optimization, verification, codecs
 │   └── Driver/            source loading and private frontend process
-├── Headers/Visual/XSharp/ public/native interface headers
+├── Headers/Progmasoft/Tala/ public/native interface headers
 ├── Linker/                typed LLD execution
-└── ProjectSystem/Bridge/  native-to-Kotlin project boundary
+└── Tazel/Bridge/  native-to-Kotlin project boundary
 ```
 
-The directory names are architectural seams even though `vxs` is the only public compiler command. The current distribution
-also stages the private Haskell `vxs-frontend` shared library beside it; splitting native components does not create additional
+The directory names are architectural seams even though `talac` is the only public compiler command. The current distribution
+also stages the private Haskell `tala-frontend` shared library beside it; splitting native components does not create additional
 publicly installed frontend/backend tools.
 
 ### Allowed dependency direction
@@ -66,24 +66,24 @@ not reverse this direction.
 The ecosystem tools have independent ownership and build systems:
 
 ```text
-Analyzer/         Haskell LSP and Kotlin configuration DSL
-Formatter/        Haskell vfmt executable and Kotlin configuration DSL
-Linter/           Haskell vlint executable and Kotlin configuration DSL
+Ecosystem/tala-analyzer/         Haskell LSP and Kotlin configuration DSL
+Ecosystem/talafmt/        Haskell talafmt executable and Kotlin configuration DSL
+Ecosystem/talalint/           Haskell talalint executable and Kotlin configuration DSL
 ```
 
 These canonical projects replace the retired `xs-analyzer`, `xsfmt`, and `xstidy` prototypes. Their Haskell components use
 Cabal, their Kotlin configuration layers use Gradle with an external JRE 25 and
-Kotlin Script Runner, and the Visual Analyzer editor integrations additionally use their platform-specific build systems.
+Kotlin Script Runner, and the tala-analyzer editor integrations additionally use their platform-specific build systems.
 
-Their first compiler-connected layer is intentionally narrow: Visual Analyzer exposes syntax, semantic, and full frontend
-analysis without a standalone executable; `vfmt` performs parser-gated physical source normalization; and `vlint` combines
+Their first compiler-connected layer is intentionally narrow: tala-analyzer exposes syntax, semantic, and full frontend
+analysis without a standalone executable; `talafmt` performs parser-gated physical source normalization; and `talalint` combines
 semantic compiler diagnostics with independently actionable source-hygiene checks. Kotlin configuration and editor hosts
 remain separate ownership layers and are not represented by placeholder implementations.
 
 The analyzer, formatter, and linter Kotlin modules currently provide typed scopes, defaults, validation, and immutable
 snapshots. Their future script evaluators remain a separate integration layer.
 
-Visual Formatter and Visual Linter use independent release lines rather than inheriting the compiler version. Analyzer,
+talafmt and talalint use independent release lines rather than inheriting the compiler version. Analyzer,
 Formatter, and Linter also have separate CI workflows so each project can evolve without coupling its validation gates to
 the others.
 
@@ -110,11 +110,11 @@ documentation claims.
 
 ## Project-system ownership
 
-`ProjectSystem/` owns `Visual.XSharp.kts`, plugin loading, immutable plan construction, dependency declarations, lockfile
-persistence, and VXDC. `Compiler/ProjectSystem/Bridge/` is only the native transport/launch boundary. Keeping these apart
+`Tazel/` owns `BUILD.kts`, plugin loading, immutable plan construction, dependency declarations, lockfile
+persistence, and TADC. `Talac/Tazel/Bridge/` is only the native transport/launch boundary. Keeping these apart
 prevents the C++ driver from becoming a second implementation of Kotlin validation rules.
 
-The JVM package root is `com.progmasoft.visual.xsharp.project`. Legacy `org.progmasoft` or `xs` package segments are not used
+The JVM package root is `com.progmasoft.tazel.project`. Legacy `org.progmasoft` or `xs` package segments are not used
 for renewed project-system code. JVM support does not implement Xmm readers/writers; native IR ownership remains C++20.
 
 ## Specification ownership
@@ -129,7 +129,7 @@ Spec/
 └── Interop/               FFI and inline assembly boundaries
 ```
 
-Each `.vxs` file is a topic suite of independent examples. Its directory structure improves navigation and does not impose a
+Each `.tala` file is a topic suite of independent examples. Its directory structure improves navigation and does not impose a
 namespace-to-file mapping on the compiler.
 
 ## Repository boundaries
@@ -146,7 +146,7 @@ subcommands and flags are needed. Bazel, Cabal, and Gradle retain build ownershi
 See [Developer helpers](../helpers/README.md) for commands and package boundaries.
 
 CMake may still appear as a project-system DSL plugin. That plugin integrates user projects with CMake; it is not the build
-system for the Visual X# compiler and therefore does not contradict Bazel ownership.
+system for the Tala compiler and therefore does not contradict Bazel ownership.
 
 ## Placement checklist
 
@@ -157,7 +157,7 @@ Before adding a directory or target, ask:
 3. Does the new dependency follow the allowed direction?
 4. Is this shipped source, a test, build support, generated output, or local deployment state?
 5. Can the file remain under 1500 lines through responsibility-based decomposition?
-6. Does a public header need the stable `Visual/XSharp/...` include spelling?
+6. Does a public header need the stable `Tala/...` include spelling?
 7. Would the placement accidentally revive a retired compiler route or prototype name?
 
 The goal is a monorepo made of coherent subprojects, not a flat directory and not several competing implementations of the

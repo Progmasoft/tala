@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1672 941" preserveAspectRatio="xMidYMid slice">
+  <title>Tala</title>
+  <desc>Tala logo with purple leopard on a dark background.</desc>
+  <defs>
+    <radialGradient id="bg" cx="51%" cy="44%" r="72%">
+      <stop offset="0" stop-color="#18122f"/>
+      <stop offset="0.55" stop-color="#100b22"/>
+      <stop offset="1" stop-color="#090516"/>
+    </radialGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9b0ff"/>
+      <stop offset="0.48" stop-color="#a77bff"/>
+      <stop offset="1" stop-color="#8457ea"/>
+    </linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f0edf7"/>
+    </linearGradient>
+  </defs>
+  <rect id="background" width="1672" height="941" fill="url(#bg)"/>
+  <g id="logo" fill-rule="evenodd" clip-rule="evenodd">
+    <path id="leopard" d="M 686 527 L 673 527 L 665 535 L 658 539 L 632 535 L 621 535 L 629 539 L 656 558 L 662 558 L 673 553 L 678 548 L 683 540 Z M 618 524 L 604 517 L 589 513 L 570 513 L 561 516 L 551 522 L 541 534 L 536 550 L 537 570 L 545 592 L 546 573 L 551 555 L 558 543 L 567 534 L 587 525 L 605 523 Z M 491 506 L 486 506 L 485 516 L 493 511 L 493 508 Z M 431 476 L 429 484 L 430 499 L 435 512 L 447 529 L 483 566 L 547 624 L 483 535 L 480 528 L 476 508 L 476 497 L 478 490 L 468 500 L 461 515 Z M 511 470 L 503 476 L 503 483 L 508 490 L 517 495 L 523 492 L 525 488 L 520 473 L 518 471 Z M 543 459 L 544 463 L 550 468 L 556 466 L 561 462 L 559 458 L 552 453 L 548 453 L 544 456 Z M 453 455 L 456 457 L 463 457 L 474 462 L 477 462 L 488 456 L 486 450 L 478 444 L 466 444 L 460 447 Z M 497 428 L 516 444 L 520 444 L 525 439 L 520 423 L 518 421 L 509 420 Z M 541 417 L 547 424 L 554 420 L 550 415 L 543 415 Z M 459 403 L 438 410 L 415 422 L 398 434 L 390 442 L 386 459 L 386 493 L 397 469 L 416 442 L 434 423 Z M 573 401 L 584 404 L 599 411 L 609 423 L 618 429 L 641 433 L 650 438 L 640 423 L 643 409 L 628 403 L 608 400 Z M 470 306 L 463 316 L 457 330 L 456 349 L 459 363 L 463 372 L 476 387 L 498 398 L 481 377 L 476 365 L 474 355 L 477 334 L 486 320 L 500 323 L 511 328 L 538 348 L 555 348 L 578 352 L 610 364 L 618 370 L 625 380 L 633 380 L 660 405 L 662 409 L 663 425 L 679 445 L 690 462 L 681 469 L 701 474 L 705 477 L 703 484 L 699 488 L 694 484 L 687 483 L 691 487 L 692 493 L 689 500 L 684 505 L 671 512 L 654 517 L 681 518 L 692 515 L 693 518 L 699 512 L 704 502 L 705 491 L 716 479 L 719 473 L 719 469 L 681 422 L 677 400 L 637 359 L 620 350 L 594 341 L 564 335 L 548 334 L 519 313 L 488 299 L 480 297 Z" fill="url(#purple)"/>
+    <path id="divider" d="M 772 324 L 771 594 L 772 600 L 774 600 L 774 324 Z" fill="#aa82ff"/>
+    <text id="tala" x="1053" y="521" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="170" fill="url(#white)">Tala</text>
+
+  </g>
+</svg>

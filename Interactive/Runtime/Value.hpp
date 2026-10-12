@@ -5,9 +5,9 @@
 #include <optional>
 #include <string>
 
-#include "Visual/XSharp/Backend/LLVM.hpp"
+#include "Progmasoft/Tala/Backend/LLVM.hpp"
 
-namespace Visual::XSharp::Interactive::Runtime
+namespace Progmasoft::Tala::Interactive::Runtime
 {
     [[nodiscard]] auto
     SourceBinding(const Backend::LLVM::JitValue &value)
@@ -17,5 +17,5 @@ namespace Visual::XSharp::Interactive::Runtime
     DisplayValue(const Backend::LLVM::JitValue &value) -> std::string;
 
     [[nodiscard]] auto
-    DisplayType(const visual_xsharp::core::Type &type) -> std::string;
-} // namespace Visual::XSharp::Interactive::Runtime
+    DisplayType(const tala::core::Type &type) -> std::string;
+} // namespace Progmasoft::Tala::Interactive::Runtime

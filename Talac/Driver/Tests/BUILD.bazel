@@ -1,0 +1,63 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+cc_binary(
+    name = "closure_pipeline_tests",
+    srcs = [
+        "ClosurePipelineTests.cpp",
+        "MemoizePipelineTests.cpp",
+        "RuntimeCallPipelineTests.cpp",
+    ],
+    deps = [
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+cc_binary(
+    name = "scalar_pipeline_tests",
+    srcs = ["ScalarPipelineTests.cpp"],
+    deps = [
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+cc_binary(
+    name = "artifact_wire_tests",
+    srcs = [
+        "ArtifactWireTests.cpp",
+        "WireSupportTests.cpp",
+    ],
+    deps = [
+        "//Talac/Artifact:wire_support",
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Core:core",
+        "//Talac/Driver:pipeline",
+        "//Talac/Headers/Progmasoft/Tala:pipeline_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)
+
+cc_binary(
+    name = "project_artifact_tests",
+    srcs = ["ProjectArtifactTests.cpp"],
+    deps = [
+        "//Talac/Driver:core_pipeline",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)

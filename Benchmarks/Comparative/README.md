@@ -13,7 +13,7 @@ measurement of loop code generation. Fortran is a free-form `.f90` source compil
 `-std=f2023`. The checksum makes incorrect or optimized-away work visible.
 
 This compares generated machine code for a narrow integer loop, not compiler quality in general. It does not compare
-Visual X# with these compilers, does not measure Visual X# compilation, and does not replace the project-owned C++20
+Tala with these compilers, does not measure Tala compilation, and does not replace the project-owned C++20
 Google Benchmark and Haskell Criterion suites. Keep compiler flags, CPU power state, count, and warm-up policy identical.
 
 ## Build commands

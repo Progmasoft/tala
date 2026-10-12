@@ -42,7 +42,7 @@ func TestFuzzDurationBounds(t *testing.T) {
 
 func TestSeedUpdatePreservesBothVersions(t *testing.T) {
 	source, destination := t.TempDir(), t.TempDir()
-	seed := filepath.Join(source, "program.vxs")
+	seed := filepath.Join(source, "program.tala")
 	if err := os.WriteFile(seed, []byte("original seed"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestSeedUpdatePreservesBothVersions(t *testing.T) {
 	if err != nil || len(entries) != 2 {
 		t.Fatalf("expected two deduplicated seed versions: %v, %v", entries, err)
 	}
-	original, err := os.ReadFile(filepath.Join(destination, "program.vxs"))
+	original, err := os.ReadFile(filepath.Join(destination, "program.tala"))
 	if err != nil || string(original) != "original seed" {
 		t.Fatalf("overwrote cached seed: %q, %v", original, err)
 	}

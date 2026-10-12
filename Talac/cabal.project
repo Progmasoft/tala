@@ -1,0 +1,20 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+packages:
+    Haskell/Syntax/tala-syntax.cabal
+    Haskell/Frontend/tala-frontend.cabal
+    Haskell/Core/tala-core.cabal
+    Haskell/Driver/tala-compiler.cabal
+    ../Ecosystem/tala-analyzer/tala-analyzer.cabal
+    ../Ecosystem/talafmt/talafmt.cabal
+    ../Ecosystem/talalint/talalint.cabal
+
+with-compiler: ghc
+optimization: 2
+tests: True
+benchmarks: False
+documentation: False
+write-ghc-environment-files: never
+
+import: Build/Warnings.project

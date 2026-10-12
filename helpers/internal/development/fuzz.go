@@ -53,7 +53,7 @@ func fuzzBuildArguments(configuration, sanitizerConfiguration, macRuntime string
 	if macRuntime != "" {
 		campaign = append(campaign, "--linkopt="+macRuntime)
 	}
-	smoke = append(smoke, "//Compiler/Fuzzing:wire_fuzz_smoke", "//Compiler/Fuzzing:source_fuzz_smoke", "//Compiler/Fuzzing:source_execution_smoke", "//Compiler/Fuzzing:source_expression_smoke", "//Compiler/Fuzzing:source_feature_smoke", "//Compiler/Fuzzing:source_console_smoke")
+	smoke = append(smoke, "//Talac/Fuzzing:wire_fuzz_smoke", "//Talac/Fuzzing:source_fuzz_smoke", "//Talac/Fuzzing:source_execution_smoke", "//Talac/Fuzzing:source_expression_smoke", "//Talac/Fuzzing:source_feature_smoke", "//Talac/Fuzzing:source_console_smoke")
 	for _, target := range nativeFuzzTargets() {
 		campaign = append(campaign, target.label)
 	}
@@ -74,7 +74,7 @@ func fuzzSanitizerEnvironment(environment []string) []string {
 }
 
 func runFuzzCampaign(repository string, currentHost host, runner commandRunner, stress bool, asan bool) error {
-	duration, err := fuzzDuration(stress, os.Getenv("VXS_FUZZ_SECONDS"))
+	duration, err := fuzzDuration(stress, os.Getenv("TALA_FUZZ_SECONDS"))
 	if err != nil {
 		return err
 	}
@@ -100,11 +100,11 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 	if temporaryRoot == "" {
 		temporaryRoot = os.TempDir()
 	}
-	work, err := os.MkdirTemp(temporaryRoot, "vxs-fuzz-")
+	work, err := os.MkdirTemp(temporaryRoot, "tala-fuzz-")
 	if err != nil {
 		return fmt.Errorf("could not create fuzz work directory: %w", err)
 	}
-	persistentCorpus := os.Getenv("VXS_FUZZ_CORPUS")
+	persistentCorpus := os.Getenv("TALA_FUZZ_CORPUS")
 	corpusRoot := persistentCorpus
 	if corpusRoot == "" {
 		corpusRoot = filepath.Join(work, "corpus")
@@ -124,7 +124,7 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 		if stage == "wire" {
 			continue
 		}
-		if err := syncSeedCorpus(filepath.Join(repository, "Compiler", "Fuzzing", "Corpus", stage), corpus); err != nil {
+		if err := syncSeedCorpus(filepath.Join(repository, "Talac", "Fuzzing", "Corpus", stage), corpus); err != nil {
 			return fmt.Errorf("could not synchronize the versioned %s seed corpus: %w", stage, err)
 		}
 		if readsSourceText(stage) {
@@ -136,11 +136,11 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 			if err != nil {
 				return fmt.Errorf("could not seed the %s corpus from the repository's sources: %w", stage, err)
 			}
-			fmt.Printf("The %s corpus holds %d of the repository's Visual X# sources as seeds.\n", stage, held)
+			fmt.Printf("The %s corpus holds %d of the repository's Tala sources as seeds.\n", stage, held)
 		}
 	}
 	wireGenerated := filepath.Join(work, "generated-wire-corpus")
-	smoke := filepath.Join(repository, "bazel-bin", "Compiler", "Fuzzing", "wire_fuzz_smoke"+currentHost.executable)
+	smoke := filepath.Join(repository, "bazel-bin", "Talac", "Fuzzing", "wire_fuzz_smoke"+currentHost.executable)
 	sanitizerConfiguration := ""
 	selectedEnvironment := []string(nil)
 	if asan {
@@ -179,7 +179,7 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 			return fmt.Errorf("could not add generated wire seeds to the persistent corpus: %w", err)
 		}
 	}
-	smokeSource := filepath.Join(repository, "bazel-bin", "Compiler", "Fuzzing", "source_fuzz_smoke"+currentHost.executable)
+	smokeSource := filepath.Join(repository, "bazel-bin", "Talac", "Fuzzing", "source_fuzz_smoke"+currentHost.executable)
 	if err := copyFile(frontendLibrary, filepath.Join(filepath.Dir(smokeSource), filepath.Base(frontendLibrary)), 0o755); err != nil {
 		return fmt.Errorf("could not stage Haskell frontend for source-fuzz smoke: %w", err)
 	}
@@ -220,7 +220,7 @@ func runFuzzCampaign(repository string, currentHost host, runner commandRunner, 
 		sanitizer:   sanitizerConfiguration,
 		executable:  currentHost.executable,
 	}
-	jobs, err := hostFuzzJobs(os.Getenv("VXS_FUZZ_JOBS"))
+	jobs, err := hostFuzzJobs(os.Getenv("TALA_FUZZ_JOBS"))
 	if err != nil {
 		return err
 	}
@@ -377,7 +377,7 @@ func fuzzDuration(stress bool, configured string) (int, error) {
 	}
 	duration, err := strconv.Atoi(configured)
 	if err != nil || duration < 1 || duration > 3600 {
-		return 0, errors.New("VXS_FUZZ_SECONDS must be an integer in [1, 3600]")
+		return 0, errors.New("TALA_FUZZ_SECONDS must be an integer in [1, 3600]")
 	}
 	return duration, nil
 }
@@ -466,7 +466,7 @@ func removeSuccessfulFuzzWork(temporaryRoot string, work string) error {
 		return err
 	}
 	relative, err := filepath.Rel(root, target)
-	if err != nil || filepath.Dir(relative) != "." || !strings.HasPrefix(relative, "vxs-fuzz-") {
+	if err != nil || filepath.Dir(relative) != "." || !strings.HasPrefix(relative, "tala-fuzz-") {
 		return fmt.Errorf("refusing to remove fuzz work outside the expected temporary root: %q", work)
 	}
 	if err := os.RemoveAll(target); err != nil {

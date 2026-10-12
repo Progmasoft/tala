@@ -1,0 +1,1921 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: MariaDB and MySQL
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 2. Namespaces
+-- Demonstrates: MariaDB:
+
+namespace Progmasoft.Database.MariaDb;
+
+-- ============================================================================
+-- Example 2: 2. Namespaces
+-- Demonstrates: Typical use:
+
+using Progmasoft.Database.MariaDb;
+
+-- ============================================================================
+-- Example 3: 2. Namespaces
+-- Demonstrates: MySQL:
+
+namespace Progmasoft.Database.MariaDb.MySql;
+
+-- ============================================================================
+-- Example 4: 2. Namespaces
+-- Demonstrates: Typical use:
+
+using Progmasoft.Database.MariaDb.MySql;
+
+-- ============================================================================
+-- Example 5: 3. MariaDbConnection
+-- Demonstrates: Progmasoft.Database.MySQL
+
+public class MariaDbConnection {
+    public MariaDbConnection(String connectionString);
+
+    public void Open();
+    public Future<void> OpenAsync();
+
+    public void Reset();
+    public Future<void> ResetAsync();
+
+    public void Close();
+
+    public bool IsOpen();
+    public bool IsBroken();
+
+    public MariaDbConnectionState State { get; }
+
+    public String Database { get; }
+    public String User { get; }
+    public String Host { get; }
+    public int Port { get; }
+
+    public String ConnectedHost { get; }
+    public int ConnectedPort { get; }
+
+    public String ServerVersion { get; }
+    public int ServerVersionId { get; }
+    public int ProtocolVersion { get; }
+
+    public MariaDbServerType ServerType { get; }
+
+    public String CharacterSet { get; }
+
+    public uint ServerThreadId { get; }
+
+    public bool UsesSsl { get; }
+
+    public bool IsAutoCommit { get; }
+
+    public String SessionTimeZone { get; }
+
+    public int WarningCount { get; }
+    public [MariaDbWarning] Warnings();
+
+    public MariaDbCommand CreateCommand(_ String sql);
+
+    public MariaDbTransaction BeginTransaction();
+
+    public MariaDbTransaction BeginTransaction(
+        MariaDbIsolationLevel isolation,
+        bool readOnly = false
+    );
+
+    public MariaDbTransaction BeginSnapshotTransaction();
+
+    public MariaDbTransaction BeginSnapshotTransaction(
+        MariaDbIsolationLevel isolation,
+        bool readOnly = false
+    );
+
+    public void ChangeDatabase(_ String database);
+
+    public void SetCharacterSet(_ String name);
+
+    public void SetSessionTimeZone(_ UtcOffset offset);
+    public void SetSessionTimeZone(_ TimeZone timeZone);
+
+    public void UseUtcTimeZone();
+    public void UseSystemTimeZone();
+
+    public void Ping();
+    public Future<void> PingAsync();
+
+    public void AbortCurrentOperation();
+    public Future<void> AbortCurrentOperationAsync();
+
+    public String EscapeIdentifier(_ String identifier);
+}
+
+-- ============================================================================
+-- Example 6: 3. MariaDbConnection
+-- Demonstrates: Construction stores the configuration. It does not imply an open network connection.
+
+MariaDbConnection connection =
+    new MariaDbConnection(
+        connectionString
+    );
+
+connection.Open();
+
+-- ============================================================================
+-- Example 7: 4. Connection state
+-- Demonstrates: Construction stores the configuration. It does not imply an open network connection.
+
+public enum MariaDbConnectionState {
+    CLOSED,
+    CONNECTING,
+    OPEN,
+    BROKEN,
+}
+
+-- ============================================================================
+-- Example 8: 4. Connection state
+-- Demonstrates: Close() is idempotent.
+
+connection.Close();
+connection.Close();
+
+-- ============================================================================
+-- Example 9: 5. Server type
+-- Demonstrates: AARC lifetime end also closes the native connection.
+
+public enum MariaDbServerType {
+    MARIADB,
+    MYSQL,
+    UNKNOWN,
+}
+
+-- ============================================================================
+-- Example 10: 5. Server type
+-- Demonstrates: MariaDbConnection can identify the connected server flavor.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+if (
+    connection.ServerType
+        == MariaDbServerType.MARIADB
+) {
+    ...
+}
+
+-- ============================================================================
+-- Example 11: 6. Ping
+-- Demonstrates: Ping() does not return a boolean.
+
+connection.Ping();
+
+-- ============================================================================
+-- Example 12: 6. Ping
+-- Demonstrates: Async:
+
+await connection.PingAsync();
+
+-- ============================================================================
+-- Example 13: 8. Database and character set
+-- Demonstrates: Database change:
+
+connection.ChangeDatabase(
+    "analytics"
+);
+
+-- ============================================================================
+-- Example 14: 8. Database and character set
+-- Demonstrates: Character set:
+
+connection.SetCharacterSet(
+    "utf8mb4"
+);
+
+-- ============================================================================
+-- Example 15: 8. Database and character set
+-- Demonstrates: After success:
+
+connection.CharacterSet
+
+-- ============================================================================
+-- Example 16: 9. Identifier escaping
+-- Demonstrates: reports the current connection character set.
+
+String name =
+    connection.EscapeIdentifier(
+        userSuppliedIdentifier
+    );
+
+-- ============================================================================
+-- Example 17: 10. MariaDbConnectionStringBuilder
+-- Demonstrates: No public EscapeValue convenience is required for normal application code.
+
+public class MariaDbConnectionStringBuilder {
+    public MariaDbConnectionStringBuilder();
+
+    public MariaDbConnectionStringBuilder Host(
+        _ String host
+    );
+
+    public MariaDbConnectionStringBuilder Host(
+        String host,
+        int port
+    );
+
+    public MariaDbConnectionStringBuilder AddHost(
+        _ String host
+    );
+
+    public MariaDbConnectionStringBuilder AddHost(
+        String host,
+        int port
+    );
+
+    public MariaDbConnectionStringBuilder Port(
+        _ int port
+    );
+
+    public MariaDbConnectionStringBuilder Database(
+        _ String database
+    );
+
+    public MariaDbConnectionStringBuilder User(
+        _ String user
+    );
+
+    public MariaDbConnectionStringBuilder Password(
+        _ String password
+    );
+
+    public MariaDbConnectionStringBuilder UnixSocket(
+        _ String path
+    );
+
+    public MariaDbConnectionStringBuilder ConnectTimeout(
+        _ Duration timeout
+    );
+
+    public MariaDbConnectionStringBuilder ReadTimeout(
+        _ Duration timeout
+    );
+
+    public MariaDbConnectionStringBuilder WriteTimeout(
+        _ Duration timeout
+    );
+
+    public MariaDbConnectionStringBuilder CharacterSet(
+        _ String name
+    );
+
+    public MariaDbConnectionStringBuilder SslMode(
+        _ MariaDbSslMode mode
+    );
+
+    public MariaDbConnectionStringBuilder SessionTimeZone(
+        _ UtcOffset offset
+    );
+
+    public MariaDbConnectionStringBuilder SessionTimeZone(
+        _ TimeZone timeZone
+    );
+
+    public MariaDbConnectionStringBuilder UtcTimeZone();
+
+    public MariaDbConnectionStringBuilder LocalInfile(
+        _ bool enabled
+    );
+
+    public MariaDbConnectionStringBuilder MultiStatements(
+        _ bool enabled
+    );
+
+    public MariaDbConnectionStringBuilder ConnectionAttribute(
+        String name,
+        String value
+    );
+
+    public MariaDbConnectionStringBuilder Parameter(
+        String name,
+        String value
+    );
+
+    public String Build();
+}
+
+-- ============================================================================
+-- Example 18: 11. TLS mode
+-- Demonstrates: No public EscapeValue convenience is required for normal application code.
+
+public enum MariaDbSslMode {
+    DISABLED,
+    PREFERRED,
+    REQUIRED,
+    VERIFY_CA,
+    VERIFY_IDENTITY,
+}
+
+-- ============================================================================
+-- Example 19: 11. TLS mode
+-- Demonstrates: Example:
+
+String connectionString =
+    new MariaDbConnectionStringBuilder()
+        .Host("db.example.com")
+        .Port(3306)
+        .Database("app")
+        .User("progmasoft")
+        .Password(secret)
+        .SslMode(
+            MariaDbSslMode.VERIFY_IDENTITY
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 20: 12. Multi-host opening
+-- Demonstrates: Hosts are attempted in builder order when establishing a new physical connection.
+
+String connectionString =
+    new MariaDbConnectionStringBuilder()
+        .Host(
+            "db-primary.example.com",
+            3306
+        )
+        .AddHost(
+            "db-secondary.example.com",
+            3306
+        )
+        .AddHost(
+            "db-third.example.com",
+            3306
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 21: 12. Multi-host opening
+-- Demonstrates: After opening:
+
+connection.ConnectedHost
+connection.ConnectedPort
+
+-- ============================================================================
+-- Example 22: 13. LOCAL INFILE
+-- Demonstrates: Explicit enable:
+
+String connectionString =
+    new MariaDbConnectionStringBuilder()
+        .Host("localhost")
+        .LocalInfile(true)
+        .Build();
+
+-- ============================================================================
+-- Example 23: 14. Multi-statements
+-- Demonstrates: Explicit opt-in:
+
+String connectionString =
+    new MariaDbConnectionStringBuilder()
+        .MultiStatements(true)
+        .Build();
+
+-- ============================================================================
+-- Example 24: 15. Connection attributes
+-- Demonstrates: Connection attributes describe the client session during connection establishment.
+
+new MariaDbConnectionStringBuilder()
+    .ConnectionAttribute(
+        "application",
+        "billing"
+    )
+    .ConnectionAttribute(
+        "instance",
+        "worker-3"
+    );
+
+-- ============================================================================
+-- Example 25: 16. MariaDbCommand
+-- Demonstrates: They are not SQL placeholders and not MySQL query attributes.
+
+public class MariaDbCommand {
+    public String Sql { get; }
+
+    public MariaDbParameter Bind(
+        _ int index,
+        _ auto value
+    );
+
+    public void ClearBindings();
+
+    public int ParameterCount { get; }
+
+    public void Prepare();
+    public Future<void> PrepareAsync();
+
+    public int ExecuteNonQuery();
+    public Future<int> ExecuteNonQueryAsync();
+
+    template<typename T>
+    public T ExecuteScalar();
+
+    template<typename T>
+    public Future<T> ExecuteScalarAsync();
+
+    public MariaDbReader ExecuteReader();
+    public Future<MariaDbReader> ExecuteReaderAsync();
+
+    public MariaDbResults ExecuteResults();
+    public Future<MariaDbResults> ExecuteResultsAsync();
+
+    public MariaDbBatch CreateBatch();
+
+    public int AffectedRows { get; }
+    public uint LastInsertId { get; }
+
+    public int WarningCount { get; }
+    public [MariaDbWarning] Warnings();
+}
+
+-- ============================================================================
+-- Example 26: 16. MariaDbCommand
+-- Demonstrates: Sql is immutable.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+command.Sql = "SELECT 2"; -- INVALID
+
+-- ============================================================================
+-- Example 27: 17. Parameter markers
+-- Demonstrates: Example:
+
+MariaDbCommand command =
+    connection.CreateCommand(
+        "INSERT INTO users(name, age) VALUES (?, ?)"
+    );
+
+command.Bind(0, "Ada");
+command.Bind(1, 26);
+
+command.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 28: 18. MariaDbParameter
+-- Demonstrates: :name @name $1
+
+public class MariaDbParameter {
+    public int Index { get; }
+
+    public auto Value {
+        get;
+        set;
+    }
+
+    public bool IsNull();
+}
+
+-- ============================================================================
+-- Example 29: 18. MariaDbParameter
+-- Demonstrates: Same-index rebinding updates the same logical slot.
+
+command.Bind(0, "A");
+command.Bind(0, "B");
+
+-- ============================================================================
+-- Example 30: 18. MariaDbParameter
+-- Demonstrates: SQL NULL:
+
+command.Bind(
+    0,
+    null
+);
+
+-- ============================================================================
+-- Example 31: 19. Preparation
+-- Demonstrates: Prepare() is explicit but optional.
+
+command.Prepare();
+
+-- ============================================================================
+-- Example 32: 19. Preparation
+-- Demonstrates: A command may also prepare lazily on first execution.
+
+command.Bind(0, 26);
+command.ExecuteReader();
+
+-- ============================================================================
+-- Example 33: 19. Preparation
+-- Demonstrates: Prepared command reuse:
+
+MariaDbParameter message =
+    command.Bind(
+        0,
+        "first"
+    );
+
+command.Prepare();
+command.ExecuteNonQuery();
+
+message.Value = "second";
+command.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 34: 20. Missing bindings
+-- Demonstrates: All required ? markers must have a binding when execution begins.
+
+MariaDbCommand command =
+    connection.CreateCommand(
+        "INSERT INTO pair(a, b) VALUES (?, ?)"
+    );
+
+command.Bind(0, 10);
+
+command.ExecuteNonQuery();
+-- unchecked MariaDbException
+
+-- ============================================================================
+-- Example 35: 21. ExecuteNonQuery
+-- Demonstrates: INSERT UPDATE DELETE DDL
+
+int affected =
+    command.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 36: 22. LastInsertId
+-- Demonstrates: By default PML uses changed/affected-row semantics rather than switching globally to
+--   matched-row semantics.
+
+uint id =
+    command.LastInsertId;
+
+-- ============================================================================
+-- Example 37: 23. ExecuteScalar
+-- Demonstrates: Declaration:
+
+template<typename T>
+public T ExecuteScalar();
+
+-- ============================================================================
+-- Example 38: 23. ExecuteScalar
+-- Demonstrates: Use:
+
+int count =
+    command.ExecuteScalar<int>();
+
+-- ============================================================================
+-- Example 39: 24. MariaDbReader
+-- Demonstrates: SQL NULL follows the same rule.
+
+public class MariaDbReader {
+    public int RowCount { get; }
+    public int ColumnCount { get; }
+    public bool HasRows { get; }
+
+    public bool Read();
+
+    public bool IsNull(_ int index);
+    public bool IsNull(_ String name);
+
+    template<typename T>
+    public T Get(_ int index);
+
+    template<typename T>
+    public T Get(_ String name);
+
+    public []byte GetRaw(_ int index);
+    public []byte GetRaw(_ String name);
+
+    public String ColumnName(_ int index);
+    public int ColumnIndex(_ String name);
+
+    public String OriginalColumnName(_ int index);
+    public String TableName(_ int index);
+    public String OriginalTableName(_ int index);
+    public String DatabaseName(_ int index);
+
+    public MariaDbType ColumnType(_ int index);
+
+    public bool IsUnsigned(_ int index);
+    public bool IsNullable(_ int index);
+    public bool IsPrimaryKey(_ int index);
+
+    public int ColumnSize(_ int index);
+    public int ColumnPrecision(_ int index);
+    public int ColumnScale(_ int index);
+
+    public int ValueSize(_ int index);
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 40: 26. Reader lifecycle
+-- Demonstrates: when the column cannot be found.
+
+MariaDbReader reader =
+    command.ExecuteReader();
+
+while (reader.Read()) {
+    String name =
+        reader.Get<String>(
+            "name"
+        );
+}
+
+-- ============================================================================
+-- Example 41: 26. Reader lifecycle
+-- Demonstrates: It exists for early release.
+
+reader.Close();
+
+-- ============================================================================
+-- Example 42: 27. Raw access
+-- Demonstrates: AARC lifetime end releases the underlying result resources.
+
+[]byte raw =
+    reader.GetRaw(0);
+
+-- ============================================================================
+-- Example 43: 27. Raw access
+-- Demonstrates: Therefore:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+if (reader.IsNull(0)) {
+    ...
+}
+else {
+    []byte raw =
+        reader.GetRaw(0);
+}
+
+-- ============================================================================
+-- Example 44: 29. MariaDbType
+-- Demonstrates: PML does not expose raw Connector/C field flag bitmasks in the normal API.
+
+public enum class MariaDbType() {
+    case TinyInt,
+    case SmallInt,
+    case MediumInt,
+    case Int,
+    case BigInt,
+
+    case Float,
+    case Double,
+    case Decimal,
+
+    case Bit,
+
+    case Char,
+    case VarChar,
+    case Text,
+
+    case Binary,
+    case VarBinary,
+    case Blob,
+
+    case Date,
+    case Time,
+    case DateTime,
+    case Timestamp,
+    case Year,
+
+    case Enum,
+    case Set,
+
+    case Json,
+    case Geometry,
+
+    case Null,
+    case Unknown,
+}
+
+-- ============================================================================
+-- Example 45: 30. Integer mapping
+-- Demonstrates: Use:
+
+reader.IsUnsigned(index)
+
+-- ============================================================================
+-- Example 46: 33. SQL NULL
+-- Demonstrates: Example:
+
+String nickname =
+    reader.Get<String>(
+        "nickname"
+    );
+
+Optional<int> age =
+    reader.Get<Optional<int>>(
+        "age"
+    );
+
+int requiredAge =
+    reader.Get<int>(
+        "age"
+    );
+
+-- ============================================================================
+-- Example 47: 34. DECIMAL
+-- Demonstrates: This is the lossless default.
+
+String price =
+    reader.Get<String>(
+        "price"
+    );
+
+-- ============================================================================
+-- Example 48: 35. BIT
+-- Demonstrates: BIT → uint
+
+uint flags =
+    reader.Get<uint>(
+        "permissions"
+    );
+
+-- ============================================================================
+-- Example 49: 35. BIT
+-- Demonstrates: BIT(1) additionally supports a safe boolean conversion:
+
+bool enabled =
+    reader.Get<bool>(
+        "enabled"
+    );
+
+-- ============================================================================
+-- Example 50: 37. JSON
+-- Demonstrates: String
+
+String json =
+    reader.Get<String>(
+        "payload"
+    );
+
+-- ============================================================================
+-- Example 51: 38. Geometry
+-- Demonstrates: For actual WKB, ask SQL to produce WKB:
+
+MariaDbCommand command =
+    connection.CreateCommand(
+        "SELECT ST_AsBinary(shape) AS shape FROM places"
+    );
+
+-- ============================================================================
+-- Example 52: 38. Geometry
+-- Demonstrates: Then:
+
+[]byte wkb =
+    reader.Get<[]byte>(
+        "shape"
+    );
+
+-- ============================================================================
+-- Example 53: 43. TIMESTAMP
+-- Demonstrates: A safe Instant conversion is available only when the session timezone is a fixed UTC
+
+connection.UseUtcTimeZone();
+
+Instant created =
+    reader.Get<Instant>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 54: 43. TIMESTAMP
+-- Demonstrates: In those cases:
+
+String value =
+    reader.Get<String>(
+        "created_at"
+    );
+
+-- ============================================================================
+-- Example 55: 45. Session timezone API
+-- Demonstrates: No separate Year type is required in this driver.
+
+public String SessionTimeZone { get; }
+
+public void SetSessionTimeZone(
+    _ UtcOffset offset
+);
+
+public void SetSessionTimeZone(
+    _ TimeZone timeZone
+);
+
+public void UseUtcTimeZone();
+public void UseSystemTimeZone();
+
+-- ============================================================================
+-- Example 56: 46. UTC convenience
+-- Demonstrates: SYSTEM +00:00 +03:00 Europe/Istanbul America/NewYork
+
+connection.UseUtcTimeZone();
+
+-- ============================================================================
+-- Example 57: 47. Named zones
+-- Demonstrates: It does not require a named timezone table entry called UTC.
+
+connection.SetSessionTimeZone(
+    TimeZone.Of(
+        "Europe/Istanbul"
+    )
+);
+
+-- ============================================================================
+-- Example 58: 49. MariaDbResults
+-- Demonstrates: represent current session state, not merely builder input.
+
+public class MariaDbResults {
+    public bool Next();
+
+    public bool HasResultSet { get; }
+
+    public MariaDbReader Reader { get; }
+
+    public int AffectedRows { get; }
+    public uint LastInsertId { get; }
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 59: 49. MariaDbResults
+-- Demonstrates: ExecuteResults():
+
+MariaDbResults results =
+    command.ExecuteResults();
+
+-- ============================================================================
+-- Example 60: 49. MariaDbResults
+-- Demonstrates: Example:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+MariaDbResults results =
+    command.ExecuteResults();
+
+while (results.Next()) {
+    if (results.HasResultSet) {
+        MariaDbReader reader =
+            results.Reader;
+
+        while (reader.Read()) {
+            ...
+        }
+    }
+    else {
+        Console.Println(
+            results.AffectedRows
+        );
+    }
+}
+
+-- ============================================================================
+-- Example 61: 50. ExecuteReader versus ExecuteResults
+-- Demonstrates: Convenience:
+
+command.ExecuteReader();
+
+-- ============================================================================
+-- Example 62: 50. ExecuteReader versus ExecuteResults
+-- Demonstrates: Use:
+
+command.ExecuteResults();
+
+-- ============================================================================
+-- Example 63: 51. MariaDbBatch
+-- Demonstrates: when stored programs or explicitly enabled multi-statements can yield multiple
+
+public class MariaDbBatch {
+    public int RowCount { get; }
+
+    public void Bind(
+        _ int index,
+        _ auto values
+    );
+
+    public int ExecuteNonQuery();
+    public Future<int> ExecuteNonQueryAsync();
+
+    public void Clear();
+}
+
+-- ============================================================================
+-- Example 64: 51. MariaDbBatch
+-- Demonstrates: Created from a command:
+
+MariaDbBatch batch =
+    command.CreateBatch();
+
+-- ============================================================================
+-- Example 65: 51. MariaDbBatch
+-- Demonstrates: Example:
+
+MariaDbCommand command =
+    connection.CreateCommand(
+        "INSERT INTO users(name, age) VALUES (?, ?)"
+    );
+
+MariaDbBatch batch =
+    command.CreateBatch();
+
+batch.Bind(
+    0,
+    new Array(
+        "Ada",
+        "Grace",
+        "Linus"
+    )
+);
+
+batch.Bind(
+    1,
+    new Array(
+        26,
+        37,
+        31
+    )
+);
+
+int affected =
+    batch.ExecuteNonQuery();
+
+-- ============================================================================
+-- Example 66: 52. Isolation levels
+-- Demonstrates: Clear() removes batch row bindings while preserving the logical command.
+
+public enum MariaDbIsolationLevel {
+    READ_UNCOMMITTED,
+    READ_COMMITTED,
+    REPEATABLE_READ,
+    SERIALIZABLE,
+}
+
+-- ============================================================================
+-- Example 67: 53. MariaDbTransaction
+-- Demonstrates: Clear() removes batch row bindings while preserving the logical command.
+
+public class MariaDbTransaction {
+    public MariaDbTransactionState State { get; }
+
+    public MariaDbIsolationLevel IsolationLevel { get; }
+    public bool IsReadOnly { get; }
+
+    public void Commit();
+    public Future<void> CommitAsync();
+
+    public void Rollback();
+    public Future<void> RollbackAsync();
+
+    public MariaDbSavepoint Savepoint(
+        _ String name
+    );
+
+    public bool IsActive();
+}
+
+-- ============================================================================
+-- Example 68: 53. MariaDbTransaction
+-- Demonstrates: State:
+
+public enum MariaDbTransactionState {
+    ACTIVE,
+    COMMITTED,
+    ROLLED_BACK,
+    FAILED,
+}
+
+-- ============================================================================
+-- Example 69: 54. Transaction ownership
+-- Demonstrates: Commands do not receive a separate mutable property such as:
+
+command.Transaction = transaction; -- not part of API
+
+-- ============================================================================
+-- Example 70: 55. Nested BeginTransaction
+-- Demonstrates: Starting a second top-level transaction while one is active is rejected by PML.
+
+MariaDbTransaction first =
+    connection.BeginTransaction();
+
+MariaDbTransaction second =
+    connection.BeginTransaction();
+-- unchecked MariaDbException
+
+-- ============================================================================
+-- Example 71: 56. Transaction completion
+-- Demonstrates: Repeated commit or rollback after completion is invalid.
+
+transaction.Commit();
+transaction.Commit();
+-- unchecked MariaDbException
+
+-- ============================================================================
+-- Example 72: 57. Snapshot transaction
+-- Demonstrates: There is never an implicit commit caused merely by transaction-object destruction.
+
+public MariaDbTransaction BeginSnapshotTransaction();
+
+public MariaDbTransaction BeginSnapshotTransaction(
+    MariaDbIsolationLevel isolation,
+    bool readOnly = false
+);
+
+-- ============================================================================
+-- Example 73: 57. Snapshot transaction
+-- Demonstrates: Example:
+
+MariaDbTransaction snapshot =
+    connection.BeginSnapshotTransaction(
+        MariaDbIsolationLevel.REPEATABLE_READ,
+        readOnly: true
+    );
+
+-- ============================================================================
+-- Example 74: 58. MariaDbSavepoint
+-- Demonstrates: Example:
+
+public class MariaDbSavepoint {
+    public String Name { get; }
+
+    public void Rollback();
+    public void Release();
+
+    public bool IsActive();
+}
+
+-- ============================================================================
+-- Example 75: 58. MariaDbSavepoint
+-- Demonstrates: PML makes the savepoint object single-use after rollback or release.
+
+savepoint.Rollback();
+savepoint.Rollback();
+-- unchecked MariaDbException
+
+-- ============================================================================
+-- Example 76: 59. MariaDbException
+-- Demonstrates: A transaction commit or rollback invalidates all of its savepoint objects.
+
+public class MariaDbException : RuntimeException {
+    public uint ErrorCode { get; }
+
+    public String SqlState { get; }
+
+    public String Message { get; }
+
+    public bool IsClientError { get; }
+    public bool IsServerError { get; }
+}
+
+-- ============================================================================
+-- Example 77: 59. MariaDbException
+-- Demonstrates: Application logic may inspect:
+
+error.ErrorCode
+error.SqlState
+
+-- ============================================================================
+-- Example 78: 60. MariaDbWarning
+-- Demonstrates: without parsing the human message.
+
+public data class MariaDbWarning(
+    uint ErrorCode,
+    String SqlState,
+    String Message
+);
+
+-- ============================================================================
+-- Example 79: 60. MariaDbWarning
+-- Demonstrates: Connection:
+
+public int WarningCount { get; }
+public [MariaDbWarning] Warnings();
+
+-- ============================================================================
+-- Example 80: 60. MariaDbWarning
+-- Demonstrates: Command:
+
+public int WarningCount { get; }
+public [MariaDbWarning] Warnings();
+
+-- ============================================================================
+-- Example 81: 61. AbortCurrentOperation
+-- Demonstrates: There is no warning callback API in the normal MariaDB surface.
+
+public void AbortCurrentOperation();
+public Future<void> AbortCurrentOperationAsync();
+
+-- ============================================================================
+-- Example 82: 61. AbortCurrentOperation
+-- Demonstrates: After abort:
+
+connection.State
+
+-- ============================================================================
+-- Example 83: 61. AbortCurrentOperation
+-- Demonstrates: To obtain a new usable physical session:
+
+connection.Close();
+connection.Open();
+
+-- ============================================================================
+-- Example 84: 63. MariaDbPoolOptions
+-- Demonstrates: Retry policy belongs to application logic that understands idempotency.
+
+public data MariaDbPoolOptions {
+    int MinSize,
+    int MaxSize,
+
+    Duration AcquireTimeout,
+    Duration IdleTimeout,
+    Duration MaxLifetime,
+
+    bool ValidateOnAcquire,
+}
+
+-- ============================================================================
+-- Example 85: 64. MariaDbConnectionPool
+-- Demonstrates: Retry policy belongs to application logic that understands idempotency.
+
+public class MariaDbConnectionPool {
+    public MariaDbConnectionPool(
+        String connectionString
+    );
+
+    public MariaDbConnectionPool(
+        String connectionString,
+        MariaDbPoolOptions options
+    );
+
+    public MariaDbConnectionLease Acquire();
+
+    public Future<MariaDbConnectionLease> AcquireAsync();
+
+    public int Size { get; }
+    public int IdleCount { get; }
+    public int InUseCount { get; }
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 86: 65. MariaDbConnectionLease
+-- Demonstrates: A normal connection Close() still closes its physical connection.
+
+public class MariaDbConnectionLease {
+    public MariaDbConnection Connection { get; }
+
+    public void Release();
+
+    public bool IsReleased();
+}
+
+-- ============================================================================
+-- Example 87: 65. MariaDbConnectionLease
+-- Demonstrates: Example:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+MariaDbConnectionLease lease =
+    pool.Acquire();
+
+MariaDbConnection connection =
+    lease.Connection;
+
+...
+
+lease.Release();
+
+-- ============================================================================
+-- Example 88: 65. MariaDbConnectionLease
+-- Demonstrates: After release, references obtained through the lease may no longer be used.
+
+MariaDbConnection connection =
+    lease.Connection;
+
+lease.Release();
+
+connection.Ping();
+-- unchecked MariaDbException
+
+-- ============================================================================
+-- Example 89: 78. Purpose
+-- Demonstrates: A future replication namespace may expose them separately.
+
+namespace Progmasoft.Database.MariaDb.MySql;
+
+-- ============================================================================
+-- Example 90: 80. MySqlConnection
+-- Demonstrates: The public types are distinct façade types.
+
+public class MySqlConnection {
+    public MySqlConnection(String connectionString);
+
+    public void Open();
+    public Future<void> OpenAsync();
+
+    public void Reset();
+    public Future<void> ResetAsync();
+
+    public void Close();
+
+    public bool IsOpen();
+    public bool IsBroken();
+
+    public MySqlConnectionState State { get; }
+
+    public String Database { get; }
+    public String User { get; }
+    public String Host { get; }
+    public int Port { get; }
+
+    public String ConnectedHost { get; }
+    public int ConnectedPort { get; }
+
+    public String ServerVersion { get; }
+    public int ServerVersionId { get; }
+    public int ProtocolVersion { get; }
+
+    public String CharacterSet { get; }
+
+    public uint ServerThreadId { get; }
+
+    public bool UsesSsl { get; }
+
+    public bool IsAutoCommit { get; }
+
+    public String SessionTimeZone { get; }
+
+    public int WarningCount { get; }
+    public [MySqlWarning] Warnings();
+
+    public MySqlCommand CreateCommand(_ String sql);
+
+    public MySqlTransaction BeginTransaction();
+
+    public MySqlTransaction BeginTransaction(
+        MySqlIsolationLevel isolation,
+        bool readOnly = false
+    );
+
+    public void ChangeDatabase(_ String database);
+
+    public void SetCharacterSet(_ String name);
+
+    public void SetSessionTimeZone(_ UtcOffset offset);
+    public void SetSessionTimeZone(_ TimeZone timeZone);
+
+    public void UseUtcTimeZone();
+    public void UseSystemTimeZone();
+
+    public void Ping();
+    public Future<void> PingAsync();
+
+    public void AbortCurrentOperation();
+    public Future<void> AbortCurrentOperationAsync();
+
+    public String EscapeIdentifier(_ String identifier);
+}
+
+-- ============================================================================
+-- Example 91: 82. MySqlConnectionState
+-- Demonstrates: Applications intentionally targeting MariaDB use the parent namespace.
+
+public enum MySqlConnectionState {
+    CLOSED,
+    CONNECTING,
+    OPEN,
+    BROKEN,
+}
+
+-- ============================================================================
+-- Example 92: 83. MySqlConnectionStringBuilder
+-- Demonstrates: The state and lifetime semantics mirror the parent driver.
+
+public class MySqlConnectionStringBuilder {
+    public MySqlConnectionStringBuilder();
+
+    public MySqlConnectionStringBuilder Host(
+        _ String host
+    );
+
+    public MySqlConnectionStringBuilder Host(
+        String host,
+        int port
+    );
+
+    public MySqlConnectionStringBuilder AddHost(
+        _ String host
+    );
+
+    public MySqlConnectionStringBuilder AddHost(
+        String host,
+        int port
+    );
+
+    public MySqlConnectionStringBuilder Port(
+        _ int port
+    );
+
+    public MySqlConnectionStringBuilder Database(
+        _ String database
+    );
+
+    public MySqlConnectionStringBuilder User(
+        _ String user
+    );
+
+    public MySqlConnectionStringBuilder Password(
+        _ String password
+    );
+
+    public MySqlConnectionStringBuilder UnixSocket(
+        _ String path
+    );
+
+    public MySqlConnectionStringBuilder ConnectTimeout(
+        _ Duration timeout
+    );
+
+    public MySqlConnectionStringBuilder ReadTimeout(
+        _ Duration timeout
+    );
+
+    public MySqlConnectionStringBuilder WriteTimeout(
+        _ Duration timeout
+    );
+
+    public MySqlConnectionStringBuilder CharacterSet(
+        _ String name
+    );
+
+    public MySqlConnectionStringBuilder SslMode(
+        _ MySqlSslMode mode
+    );
+
+    public MySqlConnectionStringBuilder SessionTimeZone(
+        _ UtcOffset offset
+    );
+
+    public MySqlConnectionStringBuilder SessionTimeZone(
+        _ TimeZone timeZone
+    );
+
+    public MySqlConnectionStringBuilder UtcTimeZone();
+
+    public MySqlConnectionStringBuilder LocalInfile(
+        _ bool enabled
+    );
+
+    public MySqlConnectionStringBuilder MultiStatements(
+        _ bool enabled
+    );
+
+    public MySqlConnectionStringBuilder ConnectionAttribute(
+        String name,
+        String value
+    );
+
+    public MySqlConnectionStringBuilder DefaultAuthenticationPlugin(
+        _ String name
+    );
+
+    public MySqlConnectionStringBuilder AuthenticationPluginDirectory(
+        _ String path
+    );
+
+    public MySqlConnectionStringBuilder ServerPublicKeyFile(
+        _ String path
+    );
+
+    public MySqlConnectionStringBuilder Parameter(
+        String name,
+        String value
+    );
+
+    public String Build();
+}
+
+-- ============================================================================
+-- Example 93: 84. MySqlSslMode
+-- Demonstrates: The state and lifetime semantics mirror the parent driver.
+
+public enum MySqlSslMode {
+    DISABLED,
+    PREFERRED,
+    REQUIRED,
+    VERIFY_CA,
+    VERIFY_IDENTITY,
+}
+
+-- ============================================================================
+-- Example 94: 85. MySQL authentication
+-- Demonstrates: A public-key file can be supplied:
+
+String connectionString =
+    new MySqlConnectionStringBuilder()
+        .Host("mysql.example.com")
+        .User("app")
+        .Password(secret)
+        .ServerPublicKeyFile(
+            "/etc/app/mysql-public-key.pem"
+        )
+        .Build();
+
+-- ============================================================================
+-- Example 95: 85. MySQL authentication
+-- Demonstrates: A default client authentication plugin may be selected explicitly when required:
+
+.DefaultAuthenticationPlugin(
+    "caching_sha2_password"
+)
+
+-- ============================================================================
+-- Example 96: 86. MySqlCommand
+-- Demonstrates: TLS remains the preferred normal transport for password confidentiality.
+
+public class MySqlCommand {
+    public String Sql { get; }
+
+    public MySqlParameter Bind(
+        _ int index,
+        _ auto value
+    );
+
+    public void ClearBindings();
+
+    public int ParameterCount { get; }
+
+    public void Prepare();
+    public Future<void> PrepareAsync();
+
+    public int ExecuteNonQuery();
+    public Future<int> ExecuteNonQueryAsync();
+
+    template<typename T>
+    public T ExecuteScalar();
+
+    template<typename T>
+    public Future<T> ExecuteScalarAsync();
+
+    public MySqlReader ExecuteReader();
+    public Future<MySqlReader> ExecuteReaderAsync();
+
+    public MySqlResults ExecuteResults();
+    public Future<MySqlResults> ExecuteResultsAsync();
+
+    public MySqlBatch CreateBatch();
+
+    public int AffectedRows { get; }
+    public uint LastInsertId { get; }
+
+    public int WarningCount { get; }
+    public [MySqlWarning] Warnings();
+}
+
+-- ============================================================================
+-- Example 97: 87. MySqlParameter
+-- Demonstrates: Indexes remain 0-based.
+
+public class MySqlParameter {
+    public int Index { get; }
+
+    public auto Value {
+        get;
+        set;
+    }
+
+    public bool IsNull();
+}
+
+-- ============================================================================
+-- Example 98: 88. Query attributes boundary
+-- Demonstrates: Therefore there is no misleading overload such as:
+
+command.Bind("traceparent", value); -- not a SQL named parameter
+
+-- ============================================================================
+-- Example 99: 89. MySqlReader
+-- Demonstrates: Future support, if added, must use an explicitly named query-attribute API and must
+--   not change placeholder semantics.
+
+public class MySqlReader {
+    public int RowCount { get; }
+    public int ColumnCount { get; }
+    public bool HasRows { get; }
+
+    public bool Read();
+
+    public bool IsNull(_ int index);
+    public bool IsNull(_ String name);
+
+    template<typename T>
+    public T Get(_ int index);
+
+    template<typename T>
+    public T Get(_ String name);
+
+    public []byte GetRaw(_ int index);
+    public []byte GetRaw(_ String name);
+
+    public String ColumnName(_ int index);
+    public int ColumnIndex(_ String name);
+
+    public String OriginalColumnName(_ int index);
+    public String TableName(_ int index);
+    public String OriginalTableName(_ int index);
+    public String DatabaseName(_ int index);
+
+    public MySqlType ColumnType(_ int index);
+
+    public bool IsUnsigned(_ int index);
+    public bool IsNullable(_ int index);
+    public bool IsPrimaryKey(_ int index);
+
+    public int ColumnSize(_ int index);
+    public int ColumnPrecision(_ int index);
+    public int ColumnScale(_ int index);
+
+    public int ValueSize(_ int index);
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 100: 90. MySqlType
+-- Demonstrates: Normal MySQL reader behavior is buffered, just like the parent MariaDB facade.
+
+public enum class MySqlType() {
+    case TinyInt,
+    case SmallInt,
+    case MediumInt,
+    case Int,
+    case BigInt,
+
+    case Float,
+    case Double,
+    case Decimal,
+
+    case Bit,
+
+    case Char,
+    case VarChar,
+    case Text,
+
+    case Binary,
+    case VarBinary,
+    case Blob,
+
+    case Date,
+    case Time,
+    case DateTime,
+    case Timestamp,
+    case Year,
+
+    case Enum,
+    case Set,
+
+    case Json,
+    case Geometry,
+
+    case Null,
+    case Unknown,
+}
+
+-- ============================================================================
+-- Example 101: 92. MySQL JSON
+-- Demonstrates: for database-layer separation.
+
+String json =
+    reader.Get<String>(
+        "payload"
+    );
+
+-- ============================================================================
+-- Example 102: 94. MySqlResults
+-- Demonstrates: The same no-guessing timezone rule applies.
+
+public class MySqlResults {
+    public bool Next();
+
+    public bool HasResultSet { get; }
+
+    public MySqlReader Reader { get; }
+
+    public int AffectedRows { get; }
+    public uint LastInsertId { get; }
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 103: 95. MySqlBatch
+-- Demonstrates: Semantics mirror MariaDbResults.
+
+public class MySqlBatch {
+    public int RowCount { get; }
+
+    public void Bind(
+        _ int index,
+        _ auto values
+    );
+
+    public int ExecuteNonQuery();
+    public Future<int> ExecuteNonQueryAsync();
+
+    public void Clear();
+}
+
+-- ============================================================================
+-- Example 104: 96. MySqlIsolationLevel
+-- Demonstrates: If the native combination cannot provide the defined native-batch contract, the
+--   operation fails rather than silently changing into a high-level per-row replay loop.
+
+public enum MySqlIsolationLevel {
+    READ_UNCOMMITTED,
+    READ_COMMITTED,
+    REPEATABLE_READ,
+    SERIALIZABLE,
+}
+
+-- ============================================================================
+-- Example 105: 97. MySqlTransaction
+-- Demonstrates: If the native combination cannot provide the defined native-batch contract, the
+--   operation fails rather than silently changing into a high-level per-row replay loop.
+
+public class MySqlTransaction {
+    public MySqlTransactionState State { get; }
+
+    public MySqlIsolationLevel IsolationLevel { get; }
+    public bool IsReadOnly { get; }
+
+    public void Commit();
+    public Future<void> CommitAsync();
+
+    public void Rollback();
+    public Future<void> RollbackAsync();
+
+    public MySqlSavepoint Savepoint(
+        _ String name
+    );
+
+    public bool IsActive();
+}
+
+-- ============================================================================
+-- Example 106: 97. MySqlTransaction
+-- Demonstrates: If the native combination cannot provide the defined native-batch contract, the
+--   operation fails rather than silently changing into a high-level per-row replay loop.
+
+public enum MySqlTransactionState {
+    ACTIVE,
+    COMMITTED,
+    ROLLED_BACK,
+    FAILED,
+}
+
+-- ============================================================================
+-- Example 107: 98. MySqlSavepoint
+-- Demonstrates: Use savepoints.
+
+public class MySqlSavepoint {
+    public String Name { get; }
+
+    public void Rollback();
+    public void Release();
+
+    public bool IsActive();
+}
+
+-- ============================================================================
+-- Example 108: 99. MySqlException
+-- Demonstrates: Same single-use high-level object semantics as MariaDB savepoints.
+
+public class MySqlException : RuntimeException {
+    public uint ErrorCode { get; }
+
+    public String SqlState { get; }
+
+    public String Message { get; }
+
+    public bool IsClientError { get; }
+    public bool IsServerError { get; }
+}
+
+-- ============================================================================
+-- Example 109: 100. MySqlWarning
+-- Demonstrates: The façade preserves MySQL server/client error code and SQLSTATE information when
+
+public data class MySqlWarning(
+    uint ErrorCode,
+    String SqlState,
+    String Message
+);
+
+-- ============================================================================
+-- Example 110: 101. MySqlPoolOptions
+-- Demonstrates: Warning snapshots follow the same contract as MariaDB warnings.
+
+public data MySqlPoolOptions {
+    int MinSize,
+    int MaxSize,
+
+    Duration AcquireTimeout,
+    Duration IdleTimeout,
+    Duration MaxLifetime,
+
+    bool ValidateOnAcquire,
+}
+
+-- ============================================================================
+-- Example 111: 102. MySqlConnectionPool
+-- Demonstrates: Warning snapshots follow the same contract as MariaDB warnings.
+
+public class MySqlConnectionPool {
+    public MySqlConnectionPool(
+        String connectionString
+    );
+
+    public MySqlConnectionPool(
+        String connectionString,
+        MySqlPoolOptions options
+    );
+
+    public MySqlConnectionLease Acquire();
+
+    public Future<MySqlConnectionLease> AcquireAsync();
+
+    public int Size { get; }
+    public int IdleCount { get; }
+    public int InUseCount { get; }
+
+    public void Close();
+}
+
+-- ============================================================================
+-- Example 112: 103. MySqlConnectionLease
+-- Demonstrates: Warning snapshots follow the same contract as MariaDB warnings.
+
+public class MySqlConnectionLease {
+    public MySqlConnection Connection { get; }
+
+    public void Release();
+
+    public bool IsReleased();
+}
+
+-- ============================================================================
+-- Example 113: 109. MariaDB declarations
+-- Demonstrates: No current method is reserved by this document.
+
+namespace Progmasoft.Database.MariaDb;
+
+public enum MariaDbConnectionState {
+    CLOSED,
+    CONNECTING,
+    OPEN,
+    BROKEN,
+}
+
+public enum MariaDbServerType {
+    MARIADB,
+    MYSQL,
+    UNKNOWN,
+}
+
+public enum MariaDbSslMode {
+    DISABLED,
+    PREFERRED,
+    REQUIRED,
+    VERIFY_CA,
+    VERIFY_IDENTITY,
+}
+
+public enum MariaDbIsolationLevel {
+    READ_UNCOMMITTED,
+    READ_COMMITTED,
+    REPEATABLE_READ,
+    SERIALIZABLE,
+}
+
+public enum MariaDbTransactionState {
+    ACTIVE,
+    COMMITTED,
+    ROLLED_BACK,
+    FAILED,
+}
+
+public enum class MariaDbType() {
+    case TinyInt,
+    case SmallInt,
+    case MediumInt,
+    case Int,
+    case BigInt,
+    case Float,
+    case Double,
+    case Decimal,
+    case Bit,
+    case Char,
+    case VarChar,
+    case Text,
+    case Binary,
+    case VarBinary,
+    case Blob,
+    case Date,
+    case Time,
+    case DateTime,
+    case Timestamp,
+    case Year,
+    case Enum,
+    case Set,
+    case Json,
+    case Geometry,
+    case Null,
+    case Unknown,
+}
+
+public class MariaDbException : RuntimeException {
+    public uint ErrorCode { get; }
+    public String SqlState { get; }
+    public String Message { get; }
+    public bool IsClientError { get; }
+    public bool IsServerError { get; }
+}
+
+public data class MariaDbWarning(
+    uint ErrorCode,
+    String SqlState,
+    String Message
+);
+
+-- ============================================================================
+-- Example 114: 110. MySQL declarations
+-- Demonstrates: The complete member surfaces are defined in the preceding normative sections.
+
+namespace Progmasoft.Database.MariaDb.MySql;
+
+public enum MySqlConnectionState {
+    CLOSED,
+    CONNECTING,
+    OPEN,
+    BROKEN,
+}
+
+public enum MySqlSslMode {
+    DISABLED,
+    PREFERRED,
+    REQUIRED,
+    VERIFY_CA,
+    VERIFY_IDENTITY,
+}
+
+public enum MySqlIsolationLevel {
+    READ_UNCOMMITTED,
+    READ_COMMITTED,
+    REPEATABLE_READ,
+    SERIALIZABLE,
+}
+
+public enum MySqlTransactionState {
+    ACTIVE,
+    COMMITTED,
+    ROLLED_BACK,
+    FAILED,
+}
+
+public enum class MySqlType() {
+    case TinyInt,
+    case SmallInt,
+    case MediumInt,
+    case Int,
+    case BigInt,
+    case Float,
+    case Double,
+    case Decimal,
+    case Bit,
+    case Char,
+    case VarChar,
+    case Text,
+    case Binary,
+    case VarBinary,
+    case Blob,
+    case Date,
+    case Time,
+    case DateTime,
+    case Timestamp,
+    case Year,
+    case Enum,
+    case Set,
+    case Json,
+    case Geometry,
+    case Null,
+    case Unknown,
+}
+
+public class MySqlException : RuntimeException {
+    public uint ErrorCode { get; }
+    public String SqlState { get; }
+    public String Message { get; }
+    public bool IsClientError { get; }
+    public bool IsServerError { get; }
+}
+
+public data class MySqlWarning(
+    uint ErrorCode,
+    String SqlState,
+    String Message
+);

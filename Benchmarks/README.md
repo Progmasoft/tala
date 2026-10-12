@@ -5,17 +5,17 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Compiler benchmarks
 
-Visual X# keeps microbenchmarks next to the implementation they measure and keeps recorded results in this directory.
+Tala keeps microbenchmarks next to the implementation they measure and keeps recorded results in this directory.
 The first benchmark surface covers the target-independent Core-through-Xmm pipeline, including the boundary shared by
 the Haskell frontend and C++20 native pipeline:
 
-- `Compiler/Core/Benches` measures native Core verification, VXCR encoding, VXCR decoding, and CorePrep preparation;
-- `Compiler/Core/CorePrep/Benches` measures native CorePrep verification and VXCP encoding/decoding;
-- `Compiler/Codegen/Xpp/Benches` measures Xpp verification, optimization, and artifact encoding/decoding;
-- `Compiler/Codegen/Xmm/Benches` measures Xpp-to-Xmm lowering plus Xmm verification, optimization, and artifact codecs;
-- `Compiler/Haskell/Core/Benches` measures the equivalent Haskell Core and CorePrep operations with Criterion.
+- `Talac/Core/Benches` measures native Core verification, TACR encoding, TACR decoding, and CorePrep preparation;
+- `Talac/Core/CorePrep/Benches` measures native CorePrep verification and TACP encoding/decoding;
+- `Talac/Codegen/Xpp/Benches` measures Xpp verification, optimization, and artifact encoding/decoding;
+- `Talac/Codegen/Xmm/Benches` measures Xpp-to-Xmm lowering plus Xmm verification, optimization, and artifact codecs;
+- `Talac/Haskell/Core/Benches` measures the equivalent Haskell Core and CorePrep operations with Criterion.
 - `Interactive/Benches` measures one production CorePrep-to-Xmm-to-LLVM lowering, ORC module-add/invoke, and resource-reset cycle.
-- `Compiler/Driver/Benches` measures project source-output planning and staged native-artifact replacement independently of
+- `Talac/Driver/Benches` measures project source-output planning and staged native-artifact replacement independently of
   frontend and LLVM lowering.
 
 Run every benchmark from the repository root:
@@ -56,13 +56,13 @@ machines measure the machines.
 Individual binaries and Criterion selectors remain available for focused investigations:
 
 ```powershell
-bazelisk run -c opt //Compiler/Core/Benches:core_benches -- --benchmark_filter=CoreEncode
-bazelisk run -c opt //Compiler/Core/CorePrep/Benches:coreprep_benches -- --benchmark_filter=Decode
-bazelisk run -c opt //Compiler/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize
-bazelisk run -c opt //Compiler/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Lower
-bazelisk run -c opt //Compiler/Driver/Benches:project_artifact_benches -- --benchmark_filter=PlanProjectSourceOutputs
+bazelisk run -c opt //Talac/Core/Benches:core_benches -- --benchmark_filter=CoreEncode
+bazelisk run -c opt //Talac/Core/CorePrep/Benches:coreprep_benches -- --benchmark_filter=Decode
+bazelisk run -c opt //Talac/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize
+bazelisk run -c opt //Talac/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Lower
+bazelisk run -c opt //Talac/Driver/Benches:project_artifact_benches -- --benchmark_filter=PlanProjectSourceOutputs
 Set-Location Compiler
-cabal bench visual-xsharp-core:core-benches --enable-benchmarks --benchmark-options="--match Core/Encode"
+cabal bench tala-core:core-benches --enable-benchmarks --benchmark-options="--match Core/Encode"
 ```
 
 ## Recording policy
@@ -87,7 +87,7 @@ statistical comparisons once it can provide fixed CPU frequency, warm-up policy,
 - `2026-09-23-Core-Floating-Folding.md` records the nested binary64 constant-folding workload.
 - `2026-09-24-Core-Integer-Folding.md` records the repeated 128-bit integer constant-folding workload.
 - `2026-09-24-Core-Integer-Flow.md` records guarded-division and contradictory-path integer-fact workloads.
-- `2026-09-24-VXSI-ORC.md` records the first Visual X# Interactive native-cell/JIT lifecycle baseline.
+- `2026-09-24-TALI-ORC.md` records the first Tala Interactive native-cell/JIT lifecycle baseline.
 - `2026-09-27-Project-Artifacts.md` records per-source planning and staged output costs on a Windows development host.
 - `2026-09-27-Loop-Comparisons.md` records the loop-unrolling comparison and a compiler-owned CorePrep loop workload.
 - `2026-09-28-Core-Loop-Integer-Flow.md` records loop-header widening and loop-carried Core fact costs.

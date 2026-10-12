@@ -1,0 +1,35 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Core and CorePrep share one implementation archive for now, while their
+# public models/codecs remain separately consumable header contracts.
+cc_library(
+    name = "core",
+    srcs = [
+        "CorePrep/Prepare.cpp",
+        "CorePrep/Verifier.cpp",
+        "CorePrep/Verifier/Semantics.cpp",
+        "CorePrep/Wire/Decode.cpp",
+        "CorePrep/Wire/Encode.cpp",
+        "IR.cpp",
+        "Scalar.cpp",
+        "Template.cpp",
+        "Verifier.cpp",
+        "Wire/Decode.cpp",
+        "Wire/Encode.cpp",
+        "Wire/Magic.hpp",
+    ],
+    deps = [
+        "//Talac/Artifact:source_path",
+        "//Talac/Headers/Progmasoft/Tala/ADTs:dense_id_map",
+        "//Talac/Headers/Progmasoft/Tala/Core:core",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep",
+        "//Talac/Headers/Progmasoft/Tala/Core:coreprep_wire",
+        "//Talac/Headers/Progmasoft/Tala/Core:model",
+        "//Talac/Headers/Progmasoft/Tala/Core:ownership_api",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "//Talac/Headers/Progmasoft/Tala/Core:template_api",
+        "//Talac/Core/Ownership:ownership",
+    ],
+)

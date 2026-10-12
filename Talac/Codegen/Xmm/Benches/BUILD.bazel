@@ -1,0 +1,16 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "xmm_benches",
+    srcs = ["XmmBenches.cpp"],
+    deps = [
+        "//Talac/Codegen/Xmm:xmm",
+        "//Talac/Codegen/Xpp:xpp",
+        "//Talac/Headers/Progmasoft/Tala/Core:scalar",
+        "//Talac/Headers/Progmasoft/Tala/Xmm:xmm",
+        "//Talac/Headers/Progmasoft/Tala/Xpp:xpp",
+        "@google_benchmark//:benchmark_main",
+    ],
+)

@@ -34,9 +34,9 @@ explicit terminator edges.
 
 ## Ownership
 
-`Compiler/Analysis/ControlFlow.cpp` validates the graph and provides canonical reachability, predecessor, successor,
-preorder, and reverse-postorder facts. `Compiler/Analysis/Dominance.cpp` consumes that result and adds structural facts.
-`Compiler/Analysis/ControlDependence.cpp` derives edge-sensitive execution dependence from post-dominance.
+`Talac/Analysis/ControlFlow.cpp` validates the graph and provides canonical reachability, predecessor, successor,
+preorder, and reverse-postorder facts. `Talac/Analysis/Dominance.cpp` consumes that result and adds structural facts.
+`Talac/Analysis/ControlDependence.cpp` derives edge-sensitive execution dependence from post-dominance.
 
 Xpp and Xmm each own only a small adapter:
 

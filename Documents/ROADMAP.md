@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# Visual X# roadmap
+# Tala roadmap
 
 This roadmap records intended sequencing rather than a compatibility promise.
 An item remains unavailable until its implementation, runtime contract, and
@@ -51,7 +51,7 @@ runtime features must not displace completion of that pipeline.
 - add optimizations only with pre/post verifier coverage;
 - complete Xpp/Xmm value, call, ownership, exception, and control-flow forms;
 - design versioned `.xpp` and `.xmm` codecs before connecting CLI emission; and
-- continue the subsystem-by-subsystem `Visual::XSharp` namespace migration without incidental public API breakage.
+- continue the subsystem-by-subsystem `Tala` namespace migration without incidental public API breakage.
 
 ### 4. Native backend and executable completeness
 
@@ -60,16 +60,16 @@ runtime features must not displace completion of that pipeline.
 - define the AARC closure environment and indirect invocation ABI;
 - connect project-wide object/assembly output with unambiguous names;
 - validate target-specific calling conventions and link inputs; and
-- keep `vxs` as the only public compiler command while the private Haskell frontend remains an adjacent companion process.
+- keep `talac` as the only public compiler command while the private Haskell frontend remains an adjacent companion process.
 
 ### 5. Project and ecosystem integration
 
 - connect the ViGet client to registered install/publication commands;
 - complete transitive dependency solving and deterministic lock updates;
 - connect named test suites to their framework runner;
-- complete Analyzer/Formatter/Linter Kotlin evaluator layers independently;
+- complete Ecosystem/tala-analyzer/Ecosystem/talafmt/Linter Kotlin evaluator layers independently;
 - preserve one source discovery policy across compiler and project-wide tools; and
-- keep Visual Formatter, Visual Linter, Visual Analyzer, and compiler release versions independent.
+- keep talafmt, talalint, tala-analyzer, and compiler release versions independent.
 
 ### 6. Legacy removal completed
 

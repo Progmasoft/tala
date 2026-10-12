@@ -40,7 +40,7 @@ lowering and source discovery.
 Command:
 
 ```powershell
-bazelisk run -c opt //Compiler/Driver/Benches:project_artifact_benches -- `
+bazelisk run -c opt //Talac/Driver/Benches:project_artifact_benches -- `
   --benchmark_min_time=0.5s --benchmark_repetitions=5 `
   --benchmark_report_aggregates_only=true
 ```

@@ -1,4 +1,4 @@
-module github.com/Progmasoft/visual-xsharp/helpers
+module github.com/Progmasoft/tala/helpers
 
 go 1.26.0
 

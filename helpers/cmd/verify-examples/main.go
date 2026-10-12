@@ -19,7 +19,7 @@ import (
 
 const examplesDirectoryName = "Examples"
 
-var comparativeSourceExtensions = []string{".vxs", ".cs", ".cpp", ".java", ".rs"}
+var comparativeSourceExtensions = []string{".tala", ".cs", ".cpp", ".java", ".rs"}
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
@@ -34,11 +34,11 @@ func newCommand(output, errorOutput io.Writer) *cobra.Command {
 	root := "."
 	command := &cobra.Command{
 		Use:   "verify-examples",
-		Short: "Verify the comparative Visual X# example catalogue.",
-		Long: `Verify the comparative Visual X# example catalogue.
+		Short: "Verify the comparative Tala example catalogue.",
+		Long: `Verify the comparative Tala example catalogue.
 
 The check compares the program names in Examples/README.md with the immediate
-program directories under Examples/ and requires matching .vxs, .cs, .cpp,
+program directories under Examples/ and requires matching .tala, .cs, .cpp,
 .java, and .rs source files in every program directory.`,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,

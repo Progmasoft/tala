@@ -3,7 +3,7 @@
 
 # Compiler ADT policy
 
-Visual X# uses LLVM ADTs where their ownership, allocation, and lookup behavior matches a compiler workload. This is a
+Tala uses LLVM ADTs where their ownership, allocation, and lookup behavior matches a compiler workload. This is a
 targeted implementation policy, not a requirement to replace every C++ standard-library container. Public IR models keep
 ordinary owning C++ types so they remain independent of a particular backend library.
 
@@ -25,11 +25,11 @@ boundaries. It uses `std::span` in the callable contract because that contract i
 
 ## Full-range identity maps
 
-LLVM's default integral `DenseMapInfo` reserves two key values for empty and tombstone buckets. Visual X# symbol IDs,
+LLVM's default integral `DenseMapInfo` reserves two key values for empty and tombstone buckets. Tala symbol IDs,
 virtual registers, block IDs, and wire identities are unsigned domain values. A container must not silently make two
 otherwise representable IDs unusable or reinterpret malformed input before a verifier can diagnose it.
 
-`Visual::XSharp::ADTs::DenseIdMap<Id, Value>` wraps `llvm::DenseMap` with a tagged internal key. Bucket state is separate
+`Progmasoft::Tala::ADTs::DenseIdMap<Id, Value>` wraps `llvm::DenseMap` with a tagged internal key. Bucket state is separate
 from the identity value, so zero, the maximum value, and the value immediately below the maximum all remain distinct map
 keys. Its deliberately small API provides:
 
@@ -44,7 +44,7 @@ and block catalogs. Tests exercise the complete unsigned boundary that a raw int
 
 ## Packed dataflow facts
 
-`Visual::XSharp::Analysis::DenseBitSet` remains the project contract used by definite initialization, ownership flow, and
+`Progmasoft::Tala::Analysis::DenseBitSet` remains the project contract used by definite initialization, ownership flow, and
 liveness. Its storage is `llvm::BitVector`, but the wrapper intentionally retains behavior LLVM does not promise as the
 compiler-facing API:
 
@@ -71,9 +71,9 @@ integral `DenseMap` for user-, wire-, symbol-, block-, or register-controlled id
 
 ## Build and test ownership
 
-The ADT contract lives under `Compiler/Headers/Visual/XSharp/ADTs/`. Its focused Catch3 binary is
-`//Compiler/ADTs/Tests:adt_tests`. Dataflow wrapper behavior remains in
-`//Compiler/Analysis/Tests:definite_initialization_tests`; Core, Xpp, and Xmm verifier suites protect semantic equivalence
+The ADT contract lives under `Talac/Headers/Progmasoft/Tala/ADTs/`. Its focused Catch3 binary is
+`//Talac/ADTs/Tests:adt_tests`. Dataflow wrapper behavior remains in
+`//Talac/Analysis/Tests:definite_initialization_tests`; Core, Xpp, and Xmm verifier suites protect semantic equivalence
 after container changes.
 
 LLVM ADTs use LLVMSupport allocation and error hooks and are therefore not purely header-only. Bazel dependencies must use

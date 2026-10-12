@@ -3,7 +3,7 @@
 
 # Test ownership
 
-Tests in the Visual X# monorepo live beside the component whose contract they
+Tests in the Tala monorepo live beside the component whose contract they
 protect. There is no repository-wide `tests/` bucket. This layout keeps Bazel
 labels, fixtures, and review ownership aligned with production boundaries.
 
@@ -11,11 +11,11 @@ labels, fixtures, and review ownership aligned with production boundaries.
 
 | Component | Test root | Primary responsibility |
 | --- | --- | --- |
-| Artifact paths | `Compiler/Artifact/Tests` | normalized source identity and portable path validation |
-| CLI | `Compiler/Cli/Tests` | commands, options, precedence, diagnostics |
-| Core | `Compiler/Core/Tests` | Core model, verifier, artifacts, golden wire |
-| Driver | `Compiler/Driver/Tests` | connected stage and end-to-end compiler flow |
-| LLVM backend | `Compiler/Backend/LLVM/Tests` | LLVM IR, object, and native artifact lowering |
+| Artifact paths | `Talac/Artifact/Tests` | normalized source identity and portable path validation |
+| CLI | `Talac/Cli/Tests` | commands, options, precedence, diagnostics |
+| Core | `Talac/Core/Tests` | Core model, verifier, artifacts, golden wire |
+| Driver | `Talac/Driver/Tests` | connected stage and end-to-end compiler flow |
+| LLVM backend | `Talac/Backend/LLVM/Tests` | LLVM IR, object, and native artifact lowering |
 | Haskell frontend | package-local `test/` trees | lexer through CorePrep semantics |
 
 A new component creates its own `Tests` directory when it gains tests. It does
@@ -50,8 +50,8 @@ or the number of stages involved.
 ## Fixture ownership
 
 Fixtures follow their tests. Core wire golden files live below
-`Compiler/Core/Tests/Fixtures`. Source projects used by the connected driver
-live below `Compiler/Driver/Tests/Fixtures`. Retired intermediate examples and
+`Talac/Core/Tests/Fixtures`. Source projects used by the connected driver
+live below `Talac/Driver/Tests/Fixtures`. Retired intermediate examples and
 their readers are removed rather than retained as a second pipeline.
 
 Do not create a common fixture directory merely because two components use the
@@ -73,17 +73,17 @@ binaries do not become production dependencies.
 Representative labels are:
 
 ```text
-//Compiler/Artifact/Tests:source_path_tests
-//Compiler/Cli/Tests:cli_parser_tests
-//Compiler/Cli/Commands/Tests:execution_status_tests
-//Compiler/Cli/Commands/Tests:cli_command_tests
-//Compiler/Cli/Commands/Tests:executable_run_tests
-//Compiler/Runtime/Text/Tests:text_runtime_tests
-//Compiler/Core/Tests:core_pipeline_tests
-//Compiler/Driver/Tests:closure_pipeline_tests
-//Compiler/Driver/Tests:project_artifact_tests
-//Compiler/Driver/Tests:scalar_pipeline_tests
-//Compiler/Backend/LLVM/Tests:llvm_backend_tests
+//Talac/Artifact/Tests:source_path_tests
+//Talac/Cli/Tests:cli_parser_tests
+//Talac/Cli/Commands/Tests:execution_status_tests
+//Talac/Cli/Commands/Tests:cli_command_tests
+//Talac/Cli/Commands/Tests:executable_run_tests
+//Talac/Runtime/Text/Tests:text_runtime_tests
+//Talac/Core/Tests:core_pipeline_tests
+//Talac/Driver/Tests:closure_pipeline_tests
+//Talac/Driver/Tests:project_artifact_tests
+//Talac/Driver/Tests:scalar_pipeline_tests
+//Talac/Backend/LLVM/Tests:llvm_backend_tests
 ```
 
 Targets list source files explicitly. Broad recursive globs are not used to
@@ -140,7 +140,7 @@ the configured toolchain environment rather than a machine-specific absolute
 path in source or Bazel files. Windows tests use ClangCL and C++20 according to
 the repository toolchain configuration.
 
-Filesystem tests use exact `.vxs` case rules and avoid assumptions about the
+Filesystem tests use exact `.tala` case rules and avoid assumptions about the
 current working directory. Paths should derive from declared Bazel data,
 package-local fixtures, or the source file location when the test is only
 built and run from a checkout.
@@ -152,12 +152,12 @@ change. A scalar pipeline change normally runs:
 
 ```powershell
 cabal test all
-bazelisk build //Compiler/Cli/Tests:cli_parser_tests `
-  //Compiler/Cli/Commands/Tests:execution_status_tests `
-  //Compiler/Driver/Tests:closure_pipeline_tests `
-  //Compiler/Driver/Tests:scalar_pipeline_tests `
-  //Compiler/Core/Tests:core_pipeline_tests `
-  //Compiler/Backend/LLVM/Tests:llvm_backend_tests
+bazelisk build //Talac/Cli/Tests:cli_parser_tests `
+  //Talac/Cli/Commands/Tests:execution_status_tests `
+  //Talac/Driver/Tests:closure_pipeline_tests `
+  //Talac/Driver/Tests:scalar_pipeline_tests `
+  //Talac/Core/Tests:core_pipeline_tests `
+  //Talac/Backend/LLVM/Tests:llvm_backend_tests
 ```
 
 The LLVM target requires the repository-supported LLVM discovery environment.

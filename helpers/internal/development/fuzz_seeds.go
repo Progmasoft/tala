@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// repositorySourceRoots are the directories whose Visual X# sources seed the
+// repositorySourceRoots are the directories whose Tala sources seed the
 // targets that read source text. They are the programs the repository already
 // maintains for other reasons: the examples, the samples of the specification
 // and the fixtures of the driver and analyzer tests. Seeding from them keeps
@@ -22,13 +22,13 @@ func repositorySourceRoots() []string {
 	return []string{
 		"Examples",
 		"Spec",
-		filepath.Join("Compiler", "Driver", "Tests", "Fixtures", "Source"),
-		filepath.Join("Compiler", "Core"),
-		filepath.Join("Analyzer", "Tests"),
+		filepath.Join("Talac", "Driver", "Tests", "Fixtures", "Source"),
+		filepath.Join("Talac", "Core"),
+		filepath.Join("Ecosystem", "tala-analyzer", "Tests"),
 	}
 }
 
-// readsSourceText reports whether a corpus holds Visual X# source text. The
+// readsSourceText reports whether a corpus holds Tala source text. The
 // other corpora hold selectors, argument lists or records of their own.
 func readsSourceText(corpus string) bool {
 	switch corpus {
@@ -38,7 +38,7 @@ func readsSourceText(corpus string) bool {
 	return false
 }
 
-// syncRepositorySources copies every Visual X# source under the seed roots
+// syncRepositorySources copies every Tala source under the seed roots
 // into a corpus and returns how many the corpus now holds from them. A source
 // longer than the input limit of the target is left out: the target would
 // reject it unread. A seed is named after its content, so a source that
@@ -56,7 +56,7 @@ func syncRepositorySources(repository string, destination string, limit int) (in
 			if walkErr != nil {
 				return walkErr
 			}
-			if entry.IsDir() || !entry.Type().IsRegular() || !strings.EqualFold(filepath.Ext(path), ".vxs") {
+			if entry.IsDir() || !entry.Type().IsRegular() || !strings.EqualFold(filepath.Ext(path), ".tala") {
 				return nil
 			}
 			info, err := entry.Info()
@@ -71,7 +71,7 @@ func syncRepositorySources(repository string, destination string, limit int) (in
 				return err
 			}
 			digest := sha256.Sum256(seed)
-			target := filepath.Join(destination, fmt.Sprintf("repository-%x.vxs", digest[:16]))
+			target := filepath.Join(destination, fmt.Sprintf("repository-%x.tala", digest[:16]))
 			if existing, err := os.Lstat(target); err == nil {
 				if !existing.Mode().IsRegular() {
 					return fmt.Errorf("cached corpus entry is not a regular file: %q", target)

@@ -133,7 +133,7 @@ func TestFuzzOptionsSetOnlyTheVariablesThatWereGiven(t *testing.T) {
 		t.Fatalf("apply() returned error: %v", err)
 	}
 	want := map[string]string{
-		"VXS_FUZZ_SECONDS": "45", "VXS_FUZZ_JOBS": "2", "VXS_FUZZ_CORPUS": "kept", "VXS_FUZZ_TARGETS": "wire,haskell",
+		"TALA_FUZZ_SECONDS": "45", "TALA_FUZZ_JOBS": "2", "TALA_FUZZ_CORPUS": "kept", "TALA_FUZZ_TARGETS": "wire,haskell",
 	}
 	for name, value := range want {
 		if set[name] != value {

@@ -1,6 +1,6 @@
 # Native error handling
 
-Visual X#'s owned C++20 compiler, Interactive, test, benchmark and fuzz
+Tala's owned C++20 compiler, Interactive, test, benchmark and fuzz
 translation units are compiled with `-fno-exceptions`. Windows passes the
 same Clang option through `clang-cl`. This policy does not change a
 dependency's compiler options or require dependencies to disable exceptions.

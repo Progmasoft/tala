@@ -17,10 +17,10 @@ func verifySanitizerRuntime(repository string, currentHost host, runner commandR
 	if err != nil {
 		return err
 	}
-	if err := runner.Run(repository, nil, bazel, cachedBuild([]string{"build", "--config=" + selected.config, "//Compiler/Sanitizers:sanitizer_probe"})...); err != nil {
+	if err := runner.Run(repository, nil, bazel, cachedBuild([]string{"build", "--config=" + selected.config, "//Talac/Sanitizers:sanitizer_probe"})...); err != nil {
 		return fmt.Errorf("sanitizer probe build failed: %w", err)
 	}
-	probe := filepath.Join(repository, "bazel-bin", "Compiler", "Sanitizers", "sanitizer_probe"+currentHost.executable)
+	probe := filepath.Join(repository, "bazel-bin", "Talac", "Sanitizers", "sanitizer_probe"+currentHost.executable)
 	if _, err := runner.RunWithInput(repository, selected.environment, "", probe, "clean"); err != nil {
 		return fmt.Errorf("sanitizer runtime could not start a clean probe: %w", err)
 	}

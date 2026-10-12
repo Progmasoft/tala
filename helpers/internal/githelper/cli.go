@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const longDescription = `Guarded Git workflow for the Visual X# repositories.
+const longDescription = `Guarded Git workflow for the Tala repositories.
 
 The helper stages safely, commits, and pushes without ever rewriting remote
 history. It keeps generated output and private agent notes out of the index
@@ -29,7 +29,7 @@ Typical topic-branch flow:
 func newCommand(runner gitRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "githelper",
-		Short:         "Guarded Git workflow for the Visual X# repositories",
+		Short:         "Guarded Git workflow for the Tala repositories",
 		Long:          longDescription,
 		SilenceUsage:  true,
 		SilenceErrors: true,

@@ -30,30 +30,30 @@ jobs:
 
       - name: Update Hackage package index
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Test Haskell frontend with HPC
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: |
           # Cabal's aggregate HTML report assumes that every instrumented module
           # belongs to one package. The frontend is intentionally split across
           # Syntax, Frontend, Core, and Driver packages, so run the instrumented
           # test executable directly and let hpc-codecov merge their mix data.
-          cabal build visual-xsharp-compiler-tests --enable-coverage
+          cabal build tala-compiler-tests --enable-coverage
           if ($LASTEXITCODE -ne 0) {
             throw "Cabal could not build the instrumented compiler tests"
           }
 
-          $testBinary = (cabal list-bin visual-xsharp-compiler-tests --enable-coverage).Trim()
+          $testBinary = (cabal list-bin tala-compiler-tests --enable-coverage).Trim()
           if (-not (Test-Path -LiteralPath $testBinary)) {
             throw "Cabal did not report a valid compiler test executable"
           }
 
           $reportDirectory = Join-Path $PWD "coverage"
           New-Item -ItemType Directory -Force $reportDirectory | Out-Null
-          $env:HPCTIXFILE = Join-Path $reportDirectory "visual-xsharp-compiler-tests.tix"
+          $env:HPCTIXFILE = Join-Path $reportDirectory "tala-compiler-tests.tix"
           try {
             & $testBinary
             if ($LASTEXITCODE -ne 0) {
@@ -65,14 +65,14 @@ jobs:
 
       - name: Convert HPC data to LCOV
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: |
           $toolVersion = "0.6.4.1"
           $expectedHash = "9805651928db5c168a453ae09dd26113c7fc9816314b7268f1d1a71f7196f55f"
           $tool = Join-Path $env:RUNNER_TEMP "hpc-codecov-$toolVersion.exe"
           $reportDirectory = Join-Path $PWD "coverage"
           $report = Join-Path $reportDirectory "haskell-frontend.lcov"
-          $tix = Join-Path $reportDirectory "visual-xsharp-compiler-tests.tix"
+          $tix = Join-Path $reportDirectory "tala-compiler-tests.tix"
 
           curl.exe -L --fail --retry 4 --retry-delay 3 `
             -o $tool `
@@ -96,7 +96,7 @@ jobs:
           )
 
           # The .mix files preserve package-relative source paths such as
-          # src/Visual/XSharp/Compiler.hs. Supply every Cabal package root so
+          # src/Progmasoft/Tala/Compiler.hs. Supply every Cabal package root so
           # the converter can resolve those paths without flattening packages.
           @(
             "Haskell/Driver",
@@ -125,7 +125,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: haskell-frontend-coverage
-          path: Compiler/coverage/haskell-frontend.lcov
+          path: Talac/coverage/haskell-frontend.lcov
           if-no-files-found: error
           retention-days: 1
 

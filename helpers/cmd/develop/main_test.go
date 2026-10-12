@@ -16,7 +16,7 @@ func TestDeveloperEntrypointDelegatesHelp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("developer help failed: %v\n%s", err, output)
 	}
-	for _, expected := range []string{"Visual X# native developer command", "fuzz-stress", "cold-clean-build", "bundle"} {
+	for _, expected := range []string{"Tala native developer command", "fuzz-stress", "cold-clean-build", "bundle"} {
 		if !strings.Contains(string(output), expected) {
 			t.Errorf("developer help is missing %q", expected)
 		}

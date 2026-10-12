@@ -6,9 +6,9 @@ cc_binary(
     name = "interactive_benches",
     srcs = ["InteractiveBenchmarks.cpp"],
     deps = [
-        "//Compiler/Backend/LLVM:llvm_backend",
-        "//Compiler/Core:core",
-        "//Compiler/Driver:pipeline",
+        "//Talac/Backend/LLVM:llvm_backend",
+        "//Talac/Core:core",
+        "//Talac/Driver:pipeline",
         "@google_benchmark//:benchmark_main",
     ],
 )

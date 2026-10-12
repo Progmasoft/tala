@@ -9,13 +9,13 @@
 #include <string_view>
 #include <utility>
 
-#include "Compiler/Cli/Commands/Frontend.hpp"
+#include "Progmasoft/Tala/Core/Scalar.hpp"
+#include "Progmasoft/Tala/Interactive/Session.hpp"
 #include "Source.hpp"
+#include "Talac/Cli/Commands/Frontend.hpp"
 #include "Value.hpp"
-#include "Visual/XSharp/Core/Scalar.hpp"
-#include "Visual/XSharp/Interactive/Session.hpp"
 
-namespace Visual::XSharp::Interactive
+namespace Progmasoft::Tala::Interactive
 {
     namespace
     {
@@ -26,10 +26,10 @@ namespace Visual::XSharp::Interactive
         }
 
         [[nodiscard]] auto
-        EvaluationFunction(const visual_xsharp::xmm::Module &module)
-            -> const visual_xsharp::xmm::Function *
+        EvaluationFunction(const tala::xmm::Module &module)
+            -> const tala::xmm::Function *
         {
-            const visual_xsharp::xmm::Function *found{};
+            const tala::xmm::Function *found{};
             for (const auto &function : module.functions)
             {
                 if (function.symbol.spelling != U"Evaluate")
@@ -86,9 +86,9 @@ namespace Visual::XSharp::Interactive
     {
         if (expression.empty())
             return Error(
-                "enter a Visual X# expression, or use :help for REPL commands");
+                "enter a Tala expression, or use :help for REPL commands");
         if (expression.size() > std::size_t{ 1024U } * 1024U)
-            return Error("one Visual X# expression cannot exceed 1 MiB");
+            return Error("one Tala expression cannot exceed 1 MiB");
 
         const auto source
             = Runtime::BuildCellSource(nextCell_, expression, previous_);
@@ -99,21 +99,21 @@ namespace Visual::XSharp::Interactive
         const auto sourceBytes
             = std::span<const std::uint8_t>(sourceBegin, source->size());
         const auto compiled
-            = Visual::XSharp::Cli::Frontend::CompileSource(sourceBytes);
+            = Progmasoft::Tala::Cli::Frontend::CompileSource(sourceBytes);
         if (!compiled.succeeded())
             return Error(
                 compiled.error.empty()
                     ? "frontend rejected this input without a diagnostic"
                     : compiled.error);
         if (compiled.kind
-            != Visual::XSharp::Cli::Frontend::OutputKind::CoreWire)
+            != Progmasoft::Tala::Cli::Frontend::OutputKind::CoreWire)
             return Error("frontend returned a non-Core result for a REPL cell");
 
-        visual_xsharp::PipelineOptions options;
+        tala::PipelineOptions options;
         if (!execute)
-            options.stop_after = visual_xsharp::PipelineStop::Xmm;
+            options.stop_after = tala::PipelineStop::Xmm;
         auto pipeline
-            = Visual::XSharp::Pipeline::ConsumeCore(compiled.bytes, options);
+            = Progmasoft::Tala::Pipeline::ConsumeCore(compiled.bytes, options);
         if (!pipeline)
         {
             if (pipeline.coreWireError)
@@ -207,8 +207,8 @@ namespace Visual::XSharp::Interactive
     }
 
     auto
-    FormatType(const visual_xsharp::core::Type &type) -> std::string
+    FormatType(const tala::core::Type &type) -> std::string
     {
         return Runtime::DisplayType(type);
     }
-} // namespace Visual::XSharp::Interactive
+} // namespace Progmasoft::Tala::Interactive

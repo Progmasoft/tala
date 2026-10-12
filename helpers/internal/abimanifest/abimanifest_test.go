@@ -13,26 +13,26 @@ import (
 // described are the sources the manifest is compared with.
 var described = []string{
 	Path,
-	"Compiler/Headers/Visual/XSharp/Frontend.h",
-	"Compiler/Haskell/Driver/ffi/vxs-frontend.def",
-	"Compiler/Haskell/Driver/src/Visual/XSharp/Driver/FFI.hs",
-	"Compiler/Cli/Commands/Frontend.cpp",
-	"Compiler/Headers/Visual/XSharp/Runtime/AARC.h",
-	"Compiler/Headers/Visual/XSharp/Runtime/Text.h",
-	"Compiler/Runtime/host.bzl",
-	"Compiler/Headers/Visual/XSharp/Core/Wire.hpp",
-	"Compiler/Haskell/Core/src/Visual/XSharp/Core/Wire.hs",
-	"Compiler/Headers/Visual/XSharp/Core/CorePrep/Wire/Format.hpp",
-	"Compiler/Haskell/Core/src/Visual/XSharp/Core/CorePrep/Wire/Format.hs",
-	"Compiler/Headers/Visual/XSharp/Xpp/Wire.hpp",
-	"Compiler/Codegen/Xpp/Wire.cpp",
-	"Compiler/Headers/Visual/XSharp/Xmm/Wire.hpp",
-	"Compiler/Codegen/Xmm/Wire.cpp",
-	"Compiler/Linker/NativeLinker.cpp",
+	"Talac/Headers/Progmasoft/Tala/Frontend.h",
+	"Talac/Haskell/Driver/ffi/tala-frontend.def",
+	"Talac/Haskell/Driver/src/Progmasoft/Tala/Driver/FFI.hs",
+	"Talac/Cli/Commands/Frontend.cpp",
+	"Talac/Headers/Progmasoft/Tala/Runtime/AARC.h",
+	"Talac/Headers/Progmasoft/Tala/Runtime/Text.h",
+	"Talac/Runtime/host.bzl",
+	"Talac/Headers/Progmasoft/Tala/Core/Wire.hpp",
+	"Talac/Haskell/Core/src/Progmasoft/Tala/Core/Wire.hs",
+	"Talac/Headers/Progmasoft/Tala/Core/CorePrep/Wire/Format.hpp",
+	"Talac/Haskell/Core/src/Progmasoft/Tala/Core/CorePrep/Wire/Format.hs",
+	"Talac/Headers/Progmasoft/Tala/Xpp/Wire.hpp",
+	"Talac/Codegen/Xpp/Wire.cpp",
+	"Talac/Headers/Progmasoft/Tala/Xmm/Wire.hpp",
+	"Talac/Codegen/Xmm/Wire.cpp",
+	"Talac/Linker/NativeLinker.cpp",
 }
 
 // generators are the sources that may hold the entry symbols; one exists.
-var generators = []string{"Compiler/Backend/LLVM/Generator.cpp", "Compiler/Backend/LLVM/Codegen.cpp"}
+var generators = []string{"Talac/Backend/LLVM/Generator.cpp", "Talac/Backend/LLVM/Codegen.cpp"}
 
 func realRepository(t *testing.T) string {
 	t.Helper()
@@ -106,32 +106,35 @@ func TestEveryStatementOfTheManifestIsChecked(t *testing.T) {
 	cases := []struct {
 		name, file, old, replacement, report string
 	}{
-		{"a frontend function the manifest lacks", Path, "      \"vxs_frontend_shutdown\"\n", "      \"vxs_frontend_shutdown_now\"\n", "frontend functions"},
-		{"a frontend function the header gains", "Compiler/Headers/Visual/XSharp/Frontend.h", "    vxs_frontend_shutdown(void);", "    vxs_frontend_shutdown(void);\n    int32_t\n    vxs_frontend_added(void);", "vxs_frontend_added"},
-		{"an export the definition file loses", "Compiler/Haskell/Driver/ffi/vxs-frontend.def", "    vxs_frontend_execute\n", "", "vxs-frontend.def"},
-		{"the frontend ABI version", Path, "\"abi_version\": 2,\n    \"header\": \"Compiler/Headers/Visual/XSharp/Frontend.h\"", "\"abi_version\": 3,\n    \"header\": \"Compiler/Headers/Visual/XSharp/Frontend.h\"", "frontend ABI version"},
-		{"an output kind's number", Path, "\"VXS_FRONTEND_WARNING_TEXT\": 5", "\"VXS_FRONTEND_WARNING_TEXT\": 6", "VXS_FRONTEND_WARNING_TEXT"},
-		{"a status the header gains", "Compiler/Headers/Visual/XSharp/Frontend.h", "VXS_FRONTEND_OUTPUT_REJECTED = 4", "VXS_FRONTEND_OUTPUT_REJECTED = 4,\n        VXS_FRONTEND_ADDED = 5", "VXS_FRONTEND_ADDED"},
-		{"the name of a frontend library", Path, "\"libvxs-frontend.so\"", "\"libvxs-front.so\"", "libvxs-front.so"},
-		{"the ownership ABI version", "Compiler/Headers/Visual/XSharp/Runtime/AARC.h", "#define VXS_AARC_ABI_VERSION UINT32_C(2)", "#define VXS_AARC_ABI_VERSION UINT32_C(3)", "ownership ABI version"},
-		{"an ownership function the manifest lacks", Path, "        \"vxs_aarc_string_literal\"\n", "        \"vxs_aarc_string\"\n", "ownership functions"},
-		{"the order of the metadata fields", Path, "        \"abiVersion\",\n        \"flags\",", "        \"flags\",\n        \"abiVersion\",", "VxsAarcTypeMetadata"},
-		{"a text function the header gains", "Compiler/Headers/Visual/XSharp/Runtime/Text.h", "    vxs_text_newline(void) VXS_TEXT_NOEXCEPT;", "    vxs_text_newline(void) VXS_TEXT_NOEXCEPT;\n    void *\n    vxs_text_added(void) VXS_TEXT_NOEXCEPT;", "vxs_text_added"},
-		{"a text constant's value", Path, "\"VXS_TEXT_FLAG_GROUP\": 32", "\"VXS_TEXT_FLAG_GROUP\": 33", "VXS_TEXT_FLAG_GROUP"},
-		{"an entry point the host list loses", "Compiler/Runtime/host.bzl", "    \"vxs_text_newline\",\n", "", "host.bzl"},
-		{"the native Core wire version", "Compiler/Headers/Visual/XSharp/Core/Wire.hpp", "kCurrentVersion = 10", "kCurrentVersion = 11", "Core wire format"},
-		{"the frontend Core wire version", "Compiler/Haskell/Core/src/Visual/XSharp/Core/Wire.hs", "currentCoreWireVersion = CoreWireVersion 10", "currentCoreWireVersion = CoreWireVersion 11", "Core wire format"},
-		{"the CorePrep wire version", Path, "\"magic\": \"VXCP\", \"version\": 8", "\"magic\": \"VXCP\", \"version\": 9", "CorePrep wire format"},
-		{"the Xpp magic", Path, "\"magic\": \"VXPP\"", "\"magic\": \"VXPQ\"", "magic of the Xpp"},
-		{"the Xmm wire version", "Compiler/Headers/Visual/XSharp/Xmm/Wire.hpp", "kCurrentVersion = 7U", "kCurrentVersion = 8U", "Xmm wire format"},
-		{"a wire format the manifest lacks", Path, "    { \"name\": \"Xpp\", \"magic\": \"VXPP\", \"version\": 7 },\n", "", "Xpp is not in the manifest"},
+		{"a frontend function the manifest lacks", Path, "      \"tala_frontend_shutdown\"\n", "      \"tala_frontend_shutdown_now\"\n", "frontend functions"},
+		{"a frontend function the header gains", "Talac/Headers/Progmasoft/Tala/Frontend.h", "    tala_frontend_shutdown(void);", "    tala_frontend_shutdown(void);\n    int32_t\n    tala_frontend_added(void);", "tala_frontend_added"},
+		{"an export the definition file loses", "Talac/Haskell/Driver/ffi/tala-frontend.def", "    tala_frontend_execute\n", "", "tala-frontend.def"},
+		{"the frontend ABI version", Path, "\"abi_version\": 2,\n    \"header\": \"Talac/Headers/Progmasoft/Tala/Frontend.h\"", "\"abi_version\": 3,\n    \"header\": \"Talac/Headers/Progmasoft/Tala/Frontend.h\"", "frontend ABI version"},
+		{"an output kind's number", Path, "\"TALA_FRONTEND_WARNING_TEXT\": 5", "\"TALA_FRONTEND_WARNING_TEXT\": 6", "TALA_FRONTEND_WARNING_TEXT"},
+		{"a status the header gains", "Talac/Headers/Progmasoft/Tala/Frontend.h", "TALA_FRONTEND_OUTPUT_REJECTED = 4", "TALA_FRONTEND_OUTPUT_REJECTED = 4,\n        TALA_FRONTEND_ADDED = 5", "TALA_FRONTEND_ADDED"},
+		{"the name of a frontend library", Path, "\"libtala-frontend.so\"", "\"libtala-front.so\"", "libtala-front.so"},
+		{"the ownership ABI version", "Talac/Headers/Progmasoft/Tala/Runtime/AARC.h", "#define TALA_AARC_ABI_VERSION UINT32_C(2)", "#define TALA_AARC_ABI_VERSION UINT32_C(3)", "ownership ABI version"},
+		{"an ownership function the manifest lacks", Path, "        \"tala_aarc_string_literal\"\n", "        \"tala_aarc_string\"\n", "ownership functions"},
+		{"the order of the metadata fields", Path, "        \"abiVersion\",\n        \"flags\",", "        \"flags\",\n        \"abiVersion\",", "TalaAarcTypeMetadata"},
+		{"a text function the header gains", "Talac/Headers/Progmasoft/Tala/Runtime/Text.h", "    tala_text_newline(void) TALA_TEXT_NOEXCEPT;", "    tala_text_newline(void) TALA_TEXT_NOEXCEPT;\n    void *\n    tala_text_added(void) TALA_TEXT_NOEXCEPT;", "tala_text_added"},
+		{"a text constant's value", Path, "\"TALA_TEXT_FLAG_GROUP\": 32", "\"TALA_TEXT_FLAG_GROUP\": 33", "TALA_TEXT_FLAG_GROUP"},
+		{"an entry point the host list loses", "Talac/Runtime/host.bzl", "    \"tala_text_newline\",\n", "", "host.bzl"},
+		{"the native Core wire version", "Talac/Headers/Progmasoft/Tala/Core/Wire.hpp", "kCurrentVersion = 10", "kCurrentVersion = 11", "Core wire format"},
+		{"the frontend Core wire version", "Talac/Haskell/Core/src/Progmasoft/Tala/Core/Wire.hs", "currentCoreWireVersion = CoreWireVersion 10", "currentCoreWireVersion = CoreWireVersion 11", "Core wire format"},
+		{"the CorePrep wire version", Path, "\"magic\": \"TACP\", \"version\": 8", "\"magic\": \"TACP\", \"version\": 9", "CorePrep wire format"},
+		{"the Xpp magic", Path, "\"magic\": \"TAPP\"", "\"magic\": \"TAPQ\"", "magic of the Xpp"},
+		{"the Xmm wire version", "Talac/Headers/Progmasoft/Tala/Xmm/Wire.hpp", "kCurrentVersion = 7U", "kCurrentVersion = 8U", "Xmm wire format"},
+		{"a wire format the manifest lacks", Path, "    { \"name\": \"Xpp\", \"magic\": \"TAPP\", \"version\": 7 },\n", "", "Xpp is not in the manifest"},
 		{"the entry symbol on Windows", Path, "\"windows\": \"mainCRTStartup\"", "\"windows\": \"WinMain\"", "entry symbol on windows"},
 		{"the entry symbol on Linux", Path, "\"linux\": \"main\"", "\"linux\": \"_start\"", "entry symbol on linux"},
 		{"the executable extension", Path, "\"extension\": \".vxse\"", "\"extension\": \".exe\"", "extension"},
 		{"the Windows linker", Path, "\"linker\": \"lld-link\"", "\"linker\": \"link\"", "Windows linker"},
-		{"the Windows runtime library", Path, "\"runtime_library\": \"vxs-runtime.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
+		{"the Windows runtime library", Path, "\"runtime_library\": \"tala-runtime.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
+		{"the linker on Linux", Path, "\"linux\": {\n        \"linker\": \"cc\"", "\"linux\": {\n        \"linker\": \"ld\"", "linker on linux"},
+		{"the runtime library on macOS", Path, "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libtala-runtime.a\"", "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libruntime.a\"", "runtime library on macos"},
+		{"the driver the linker starts", "Talac/Linker/NativeLinker.cpp", "kLinkerDriver = \"cc\"", "kLinkerDriver = \"clang\"", "linker on linux"},
 		{"a system import the manifest lacks", Path, "            \"WriteConsoleW\",\n", "", "imported from KERNEL32.dll"},
-		{"a system import the linker gains", "Compiler/Linker/NativeLinker.cpp", "\"    WriteFile\\n\"", "\"    WriteFile\\n\"\n\"    ExitProcess\\n\"", "ExitProcess"},
+		{"a system import the linker gains", "Talac/Linker/NativeLinker.cpp", "\"    WriteFile\\n\"", "\"    WriteFile\\n\"\n\"    ExitProcess\\n\"", "ExitProcess"},
 	}
 	for _, test := range cases {
 		repository := copyOf(t)
@@ -164,7 +167,7 @@ func TestAStatementNothingChecksIsRefused(t *testing.T) {
 
 func TestAMissingSourceIsADifference(t *testing.T) {
 	repository := copyOf(t)
-	if err := os.Remove(filepath.Join(repository, "Compiler", "Runtime", "host.bzl")); err != nil {
+	if err := os.Remove(filepath.Join(repository, "Talac", "Runtime", "host.bzl")); err != nil {
 		t.Fatal(err)
 	}
 	problems, err := Verify(repository)

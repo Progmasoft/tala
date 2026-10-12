@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 # Loop and CorePrep measurements
 
 These are local observations from one Windows development machine, not a compiler ranking or a CI threshold. The native
-loop comparison measures a narrow integer sum, not Visual X# code generation. `baseline` is a serial accumulation;
+loop comparison measures a narrow integer sum, not Tala code generation. `baseline` is a serial accumulation;
 `unrolled` processes four adjacent values through independent accumulators; `formula` checks the result with the
 arithmetic-series identity and is deliberately excluded from the loop timing comparison. All measured runs returned the
 same checksum, `20,000,000,100,000,000`, for `200,000,000` iterations.

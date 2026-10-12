@@ -16,13 +16,13 @@ or ABI is not a one-file first issue: it needs a design discussion and multiple 
 
 ## 2. Fork and get a clean checkout
 
-For an external contributor, fork `Progmasoft/visual-xsharp` on GitHub and clone your fork. Replace `<your-account>` below
+For an external contributor, fork `Progmasoft/tala` on GitHub and clone your fork. Replace `<your-account>` below
 with your own GitHub account:
 
 ```text
-git clone --recurse-submodules https://github.com/<your-account>/visual-xsharp.git
-cd visual-xsharp
-git remote add upstream https://github.com/Progmasoft/visual-xsharp.git
+git clone --recurse-submodules https://github.com/<your-account>/tala.git
+cd tala
+git remote add upstream https://github.com/Progmasoft/tala.git
 git fetch upstream
 git switch -c fix/short-description upstream/main
 git submodule status --recursive
@@ -33,7 +33,7 @@ If you cloned without `--recurse-submodules`, run `git submodule update --init -
 before editing makes it possible to distinguish your work from generated files. Do not run a broad clean or reset to make
 someone else's changes disappear. Create a new branch for each independent pull request.
 
-The pinned `third_party/catch3`, indicators, and tabulate checkouts are dependencies, not places for Visual X# changes.
+The pinned `third_party/catch3`, indicators, and tabulate checkouts are dependencies, not places for Tala changes.
 Contribute to their own repositories when their implementation needs to change. Never edit a submodule and assume the
 parent commit will include those edits automatically.
 
@@ -78,7 +78,7 @@ git diff --stat
 ```
 
 Review the changed-file list for caches, generated artifacts, private notes, and unrelated edits. Commit with a clear
-English message and push your feature branch to your fork. Open a pull request against `Progmasoft/visual-xsharp:main`.
+English message and push your feature branch to your fork. Open a pull request against `Progmasoft/tala:main`.
 The [PR guide](PULL-REQUESTS.md) explains the evidence reviewers need and how to handle CI or a missing local tool.
 
 The repository's `helpers/cmd/githelper/main.go update` command is a maintainer convenience: it stages, commits, and pushes the

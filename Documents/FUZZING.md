@@ -39,7 +39,7 @@ artifacts through ORC, and compares all three results. Agreement between the
 two optimizer settings is not accepted by itself: both consume the same
 Core-to-CorePrep adapter, so a defect there makes them agree on the same wrong
 or non-terminating program. This detects miscompiles within that generated
-subset; it is not an oracle for arbitrary Visual X#
+subset; it is not an oracle for arbitrary Tala
 programs. Invalid source is a normal rejection, whereas internal failures and
 verified-model inconsistencies fail the campaign.
 
@@ -59,7 +59,7 @@ depth first from the entry, true edge before false edge, and `$`-prefixed
 generated symbols are renamed in first-use order while keeping their kind.
 Source symbols, types, literals, operations, operand and instruction order,
 and edge roles are compared exactly; blocks unreachable from the entry are
-ignored. `Compiler/Fuzzing/Tests/coreprep_parity_tests` pins what the
+ignored. `Talac/Fuzzing/Tests/coreprep_parity_tests` pins what the
 comparison may and may not ignore. Reintroducing the for-loop update defect
 makes the smoke fail in this check before any generated code runs.
 
@@ -81,7 +81,7 @@ presented as coverage-guided exploration of the Haskell implementation.
 executable built with `--enable-coverage` in its own `dist-fuzz-coverage`
 build directory, so it never shares package state with the ordinary frontend
 build. It resets the HPC counters before each input, keeps an input when it
-reaches a tick of a `Visual.XSharp.*` module that no earlier input reached,
+reaches a tick of a `Tala.*` module that no earlier input reached,
 and refuses to run when the production modules carry no ticks. Mutations are
 deterministic for a recorded seed, inputs are limited to 8192 bytes and five
 seconds, and the runtime heap is limited to 512 MiB. A Haskell exception or a
@@ -103,7 +103,7 @@ Both commands use combined ASan/UBSan on owned native code and verify that the
 runtime can start a clean process and diagnose intentional use-after-free and
 signed-overflow violations. Merely linking a sanitizer is insufficient.
 Dependencies retain their own compile flags. `fuzz` defaults to 30 seconds per
-target; `fuzz-stress` defaults to 900. Set `VXS_FUZZ_SECONDS` to an integer from
+target; `fuzz-stress` defaults to 900. Set `TALA_FUZZ_SECONDS` to an integer from
 1 through 3600 to override either duration. CI uses 90 seconds per target for
 bounded campaigns and 900 for scheduled stress campaigns.
 
@@ -112,10 +112,10 @@ Each setting of a campaign is also a flag of `fuzz`, `fuzz-stress` and
 
 | Flag | Variable | Meaning |
 | --- | --- | --- |
-| `--seconds N` | `VXS_FUZZ_SECONDS` | time budget of each target, 1 to 3600 |
-| `--jobs N` | `VXS_FUZZ_JOBS` | targets to run at once, 1 to 64 |
-| `--corpus DIR` | `VXS_FUZZ_CORPUS` | directory that keeps the corpus between runs |
-| `--target NAME` | `VXS_FUZZ_TARGETS` | run this target only; repeat the flag, or separate names with commas in the variable |
+| `--seconds N` | `TALA_FUZZ_SECONDS` | time budget of each target, 1 to 3600 |
+| `--jobs N` | `TALA_FUZZ_JOBS` | targets to run at once, 1 to 64 |
+| `--corpus DIR` | `TALA_FUZZ_CORPUS` | directory that keeps the corpus between runs |
+| `--target NAME` | `TALA_FUZZ_TARGETS` | run this target only; repeat the flag, or separate names with commas in the variable |
 
 `go run ./helpers/cmd/develop fuzz-targets` lists the targets with the limits
 each runs under, and the names a selection may use: the corpus name of a
@@ -137,7 +137,7 @@ free evidence: a campaign is worth the inputs it executes inside its time
 budget, and on a two-core, four-thread host two concurrent targets executed
 40 to 90 percent fewer inputs each. The default is therefore one job per four
 logical processors, at most four, which is one target at a time on such a host
-and on four-vCPU CI runners. Set `VXS_FUZZ_JOBS` to an integer from 1 through
+and on four-vCPU CI runners. Set `TALA_FUZZ_JOBS` to an integer from 1 through
 64 on a host with spare cores. Two targets with a 4096 MiB RSS limit never
 overlap, the three HPC stages follow the same setting, and the ThreadSanitizer
 campaign always runs one target at a time because its targets start their own
@@ -148,9 +148,9 @@ Most local wall-clock time is compilation, not fuzzing. The plain, sanitizer
 and fuzz configurations share one Bazel output tree, and each switch would
 otherwise recompile every owned translation unit. Outside CI the helper adds a
 persistent content-addressed Bazel disk cache under the user cache directory
-(`visual-xsharp/bazel-disk-cache`, limited to 8 GiB). It is keyed by each
+(`tala/bazel-disk-cache`, limited to 8 GiB). It is keyed by each
 action's full command line and inputs, so no instrumentation or check changes.
-`VXS_BAZEL_DISK_CACHE` selects another absolute directory, or `off` for a cold
+`TALA_BAZEL_DISK_CACHE` selects another absolute directory, or `off` for a cold
 measurement.
 
 Each campaign has a 30-second per-input timeout and a finite input length:
@@ -177,13 +177,13 @@ normal quarantine settings.
 
 Wire seeds come from production writers, so format-version changes do not leave
 handwritten supposedly valid documents behind. Every other target has
-versioned seeds under `Compiler/Fuzzing/Corpus/<target>/`; a target without
-that directory fails the campaign instead of starting from nothing. Set `VXS_FUZZ_CORPUS` to retain mutation
+versioned seeds under `Talac/Fuzzing/Corpus/<target>/`; a target without
+that directory fails the campaign instead of starting from nothing. Set `TALA_FUZZ_CORPUS` to retain mutation
 corpora across local runs. Updated versioned seeds are added without overwriting
 older discovered inputs; conflicting contents under a stable hash fail closed.
 
 The targets that read source text, the lexer, the parser and the source
-target, are seeded with the repository's own Visual X# sources as well: the
+target, are seeded with the repository's own Tala sources as well: the
 examples, the samples of the specification and the fixtures of the driver and
 analyzer tests, more than two hundred programs. They are read where they are,
 so no second copy has to be kept in step, and a source that is added is a seed
@@ -214,7 +214,7 @@ Keep the exact failing input, compiler version, command and report. Replay a
 single input with the same instrumented executable, for example:
 
 ```powershell
-.\bazel-bin\Compiler\Fuzzing\wire_fuzzer.exe -runs=1000 PATH_TO_FAILURE
+.\bazel-bin\Talac\Fuzzing\wire_fuzzer.exe -runs=1000 PATH_TO_FAILURE
 ```
 
 Use the matching Clang runtime environment, as the developer helper does. A
@@ -277,10 +277,10 @@ fails the program that leaked on every platform, not only where a leak
 sanitizer runs.
 
 The branching and leaving tables are generated. Their cases are written in
-`Compiler/Fuzzing/Cases/Selection.cases` and `Leaving.cases`: a body, its
+`Talac/Fuzzing/Cases/Selection.cases` and `Leaving.cases`: a body, its
 runs and the value each run must return, written by hand from the language
 rules. `go -C helpers run ./cmd/execution-cases generate` writes the rows
-under `Compiler/Fuzzing/Generated` and the Haskell module
+under `Talac/Fuzzing/Generated` and the Haskell module
 `BranchingEvaluationCases.hs` from them, and `check` fails when a committed
 table differs; the helper tests and CI run that check. One source keeps the
 two tables equal. It does not make them independent: a wrong expectation in
@@ -340,7 +340,7 @@ removed. What an argument by need costs in generated code is a cost of the
 current lowering, listed in `EVALUATION.md`.
 
 The source fuzz targets and the source smoke programs run the compiler on the
-compiler stack, as `vxs` does, because an input nested up to the frontend's
+compiler stack, as `talac` does, because an input nested up to the frontend's
 limits does not fit on the default stack of a process. `Corpus/source` has
 permanent seeds for deep nesting, for nesting at and one level beyond each
 limit, for long `else if` and operator chains, which are not nesting, for
@@ -356,7 +356,7 @@ shape they are meant to reach. The `shape-NN` seeds cover every shape three
 times: with a leaf, and with an expression of full depth before a trip count
 of zero and of eleven. An expression of full depth is thirty-one selectors of
 which the fifteen inner ones are not multiples of four. Set
-`VXS_FUZZ_TRACE=1` to print each generated source with its reference and
+`TALA_FUZZ_TRACE=1` to print each generated source with its reference and
 optimized LLVM IR.
 
 Neither smoke program nor the HPC engine has libFuzzer's per-input timeout, and

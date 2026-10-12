@@ -3,7 +3,7 @@
 
 # First-class callable ABI
 
-This document defines the native boundary for invoking a Visual X# callable
+This document defines the native boundary for invoking a Tala callable
 value. It complements the lexical capture rules in
 [Closure pipeline](CLOSURE-PIPELINE.md) and the ownership rules in
 [AARC ABI](AARC-ABI.md). The contract begins after Haskell closure conversion:
@@ -105,8 +105,8 @@ Strong captures are borrowed while the closure is alive. Their environment
 slots already own the captured objects, so retaining every invocation would add
 unnecessary atomic traffic.
 
-Weak captures are upgraded with `vxs_aarc_lock_weak`. Unowned captures are loaded
-with `vxs_aarc_load_unowned`. Each successful operation returns a temporary
+Weak captures are upgraded with `tala_aarc_lock_weak`. Unowned captures are loaded
+with `tala_aarc_load_unowned`. Each successful operation returns a temporary
 strong reference, which the thunk releases after the lifted call. A nullable
 weak result remains nullable according to source semantics. Unowned failure
 behavior remains the responsibility of the runtime contract; the thunk must not

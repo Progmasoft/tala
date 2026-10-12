@@ -3,7 +3,7 @@
 
 # Artifact wire contracts
 
-Visual X# uses bounded binary documents at compiler stage boundaries. They are
+Tala uses bounded binary documents at compiler stage boundaries. They are
 compiler artifacts rather than source formats. Core, Xpp, and Xmm are public
 `-Emit`/`-Build` choices; CorePrep remains a private adapter contract.
 
@@ -11,10 +11,10 @@ compiler artifacts rather than source formats. Core, Xpp, and Xmm are public
 
 | Contract | Magic | Current version | Producer | Consumer |
 | --- | --- | ---: | --- | --- |
-| Core | `VXCR` | 10 | Haskell frontend | native Core reader |
-| CorePrep | `VXCP` | 8 | CorePrep adapter | native pipeline tools |
-| Xpp | `VXPP` | 7 | verified CorePrep-to-Xpp lowering | Xmm lowering or artifact tools |
-| Xmm | `VXMM` | 7 | verified Xpp-to-Xmm lowering | LLVM backend or artifact tools |
+| Core | `TACR` | 10 | Haskell frontend | native Core reader |
+| CorePrep | `TACP` | 8 | CorePrep adapter | native pipeline tools |
+| Xpp | `TAPP` | 7 | verified CorePrep-to-Xpp lowering | Xmm lowering or artifact tools |
+| Xmm | `TAMM` | 7 | verified Xpp-to-Xmm lowering | LLVM backend or artifact tools |
 
 The contracts have related scalar encodings but separate structural schemas.
 Their magic values must never be treated as aliases.
@@ -58,7 +58,7 @@ source set. A source with no declarations remains in the catalog so project
 object and assembly builds still produce an output for that compilation unit.
 
 Every source identity is a non-empty, slash-separated relative path ending in
-the exact lowercase `.vxs` extension. Empty segments, `.` and `..`, a leading
+the exact lowercase `.tala` extension. Empty segments, `.` and `..`, a leading
 separator, backslashes, colons, embedded NUL, and non-scalar Unicode values are
 rejected. Verifiers do not normalize malformed input: accepting an alias would
 let two different wire documents refer to the same source file.
@@ -463,7 +463,7 @@ when written; decoding never recreates a host-width alternative.
 
 An Xpp v7 document contains:
 
-1. `VXPP`, version, and zero reserved flags;
+1. `TAPP`, version, and zero reserved flags;
 2. qualified module name;
 3. ordered source catalog;
 4. ordered resolved functions with their source owner;
@@ -485,7 +485,7 @@ dedicated symbol field rather than an untyped extra operand.
 
 An Xmm v7 document contains:
 
-1. `VXMM`, version, and zero reserved flags;
+1. `TAMM`, version, and zero reserved flags;
 2. qualified module name;
 3. ordered source catalog;
 4. ordered functions, resolved function identity, and source owner;
@@ -507,10 +507,10 @@ instruction use.
 The CLI connects the public stage artifacts without exposing CorePrep:
 
 ```powershell
-vxs build -File Main.vxs -Emit xpp
-vxs build -Build xpp -File Main.xpp -Emit xmm
-vxs check -Build xmm -File Main.xmm
-vxs build -Build xmm -File Main.xmm -Emit llvmll
+talac build -File Main.tala -Emit xpp
+talac build -Build xpp -File Main.xpp -Emit xmm
+talac check -Build xmm -File Main.xmm
+talac build -Build xmm -File Main.xmm -Emit llvmll
 ```
 
 An artifact can move forward or be rewritten at its current stage. It cannot

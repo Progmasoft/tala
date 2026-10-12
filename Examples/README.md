@@ -3,26 +3,26 @@ SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 -->
 
-# Visual X# comparative programs
+# Tala comparative programs
 
 Each directory contains the same complete program in five languages:
 
-- Visual X#, written against the normative `Spec/` language and standard-library contracts;
+- Tala, written against the normative `Spec/` language and standard-library contracts;
 - C# 13;
 - C++20;
 - Java 21;
 - Rust.
 
-The examples are comparative source material, not a declaration that every forward-looking Visual X# feature is already
+The examples are comparative source material, not a declaration that every forward-looking Tala feature is already
 implemented by the current compiler. C#, Java, and Rust are comparison languages only. Rust examples and the comparative
-benchmark do not make Rust a Visual X# compiler implementation language or a mandatory compiler-development prerequisite.
+benchmark do not make Rust a Tala compiler implementation language or a mandatory compiler-development prerequisite.
 `optional_packages.go` can add `rustc` and `rust-std` components to an existing rustup toolchain; it never installs or
 selects a toolchain automatically.
 
 Every program is intentionally self-contained. The C++, C#, Java, and Rust variants use their own standard libraries rather
-than imitating Visual X# APIs mechanically.
+than imitating Tala APIs mechanically.
 
-| Program | Main Visual X# surface |
+| Program | Main Tala surface |
 | --- | --- |
 | `HelloWorld` | namespace, class entry point, `String`, console output |
 | `FizzBuzz` | closed ranges, `for (:)`, mandatory `if` parentheses |

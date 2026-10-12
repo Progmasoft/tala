@@ -3,7 +3,7 @@
 
 # Closure compilation pipeline
 
-Visual X# callable literals are first-class AARC reference values. A callable
+Tala callable literals are first-class AARC reference values. A callable
 literal combines executable behavior with an ordered captured environment. This
 document describes how the compiler preserves that model from source to the
 native backend boundary; the language specification remains authoritative for
@@ -13,7 +13,7 @@ source semantics.
 
 The Haskell lexer and parser accept typed, inferred, and zero-parameter forms:
 
-```vxs
+```tala
 \(int left, int right) -> left + right
 \left, right -> left + right
 \() -> 42
@@ -23,7 +23,7 @@ The Haskell lexer and parser accept typed, inferred, and zero-parameter forms:
 Expression and block bodies remain distinct AST forms. Capture lists retain
 source order and ownership:
 
-```vxs
+```tala
 [value] \ -> value
 [weak owner] \ -> owner
 [unowned owner] \ -> owner
@@ -88,10 +88,10 @@ Core wire version 10 serializes ownership, captures, parameters, return type,
 nested statements, and structured loop statements. Existing byte, count,
 type-depth, and expression-depth limits also apply to closures.
 
-The native VXCR v10 reader and writer carry the same closure expression tag and
+The native TACR v10 reader and writer carry the same closure expression tag and
 field order as the Haskell frontend. The C++ Core verifier validates capture
 ownership, callable shape, nested body returns, and capture mutation before
-CorePrep lifting. This keeps callable-containing `.vxs` input on the ordinary
+CorePrep lifting. This keeps callable-containing `.tala` input on the ordinary
 frontend-to-native path rather than relying on hand-built CorePrep fixtures.
 
 ## CorePrep closure conversion

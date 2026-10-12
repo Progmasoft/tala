@@ -19,11 +19,13 @@ import (
 	"strings"
 )
 
-const optionalPackagesUsage = `Optional Visual X# developer packages
+const optionalPackagesUsage = `Optional Tala developer packages
 
 Supported hosts are those of prebuild: Windows 10/11, macOS 15/26, Ubuntu
-26.04 LTS, and Fedora 43. Windows uses WinGet defaults, macOS uses Homebrew,
-Ubuntu uses apt and Fedora uses dnf. Package managers choose their recommended
+26.04 LTS, Fedora 43, and Debian 13. Windows uses WinGet defaults, macOS uses
+Homebrew, Ubuntu and Debian use apt and Fedora uses dnf. Debian's own
+repositories have no .NET SDK; it is reported there and not installed.
+Package managers choose their recommended
 installation scope. Rustup may manage components only for an
 already-installed toolchain; this command never installs a toolchain.`
 
@@ -35,9 +37,10 @@ const (
 	platformMacOS   = "darwin"
 	platformUbuntu  = "ubuntu"
 	platformFedora  = "fedora"
+	platformDebian  = "debian"
 )
 
-const supportedPlatformsText = "Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, and Fedora 43"
+const supportedPlatformsText = "Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, Fedora 43, and Debian 13"
 
 // optionalPlatform names the host the way the installers select by. Windows
 // and macOS are their operating system; a Linux host is its distribution,
@@ -65,6 +68,8 @@ func optionalPlatform(goos string, release func() (string, error)) (string, erro
 			return platformUbuntu, nil
 		case fields["ID"] == "fedora" && fields["VERSION_ID"] == "43":
 			return platformFedora, nil
+		case fields["ID"] == "debian" && fields["VERSION_ID"] == "13":
+			return platformDebian, nil
 		}
 		return "", fmt.Errorf("unsupported Linux release %q %q; supported hosts are %s",
 			fields["ID"], fields["VERSION_ID"], supportedPlatformsText)
@@ -84,7 +89,7 @@ func unsupportedPlatform(platform string) error {
 
 func supportedPlatform(platform string) bool {
 	switch platform {
-	case platformWindows, platformMacOS, platformUbuntu, platformFedora:
+	case platformWindows, platformMacOS, platformUbuntu, platformFedora, platformDebian:
 		return true
 	default:
 		return false
@@ -105,7 +110,20 @@ func linuxPackage(item optionalPackage, platform string) string {
 	if platform == platformFedora {
 		return item.dnfPackage
 	}
+	if platform == platformDebian && item.absentFromDebian {
+		return ""
+	}
 	return item.aptPackage
+}
+
+// usesApt reports whether a platform installs with apt.
+func usesApt(platform string) bool {
+	return platform == platformUbuntu || platform == platformDebian
+}
+
+// isLinux reports whether a platform is one of the Linux distributions.
+func isLinux(platform string) bool {
+	return usesApt(platform) || platform == platformFedora
 }
 
 // runLinuxManager runs the distribution's package manager, through sudo when
@@ -126,12 +144,15 @@ func runLinuxManager(runner packageRunner, platform string, arguments ...string)
 }
 
 type optionalPackage struct {
-	name                string
-	executable          string
-	wingetID            string
-	homebrewFormula     string
-	aptPackage          string
-	dnfPackage          string
+	name            string
+	executable      string
+	wingetID        string
+	homebrewFormula string
+	aptPackage      string
+	dnfPackage      string
+	// absentFromDebian marks an apt package Ubuntu has and Debian's own
+	// repositories do not.
+	absentFromDebian    bool
 	versionArgs         []string
 	versionPattern      *regexp.Regexp
 	versionNote         string
@@ -145,9 +166,10 @@ var optionalPackages = []optionalPackage{
 		name: "Microsoft .NET 10 SDK", executable: "dotnet",
 		wingetID: "Microsoft.DotNet.SDK.10", homebrewFormula: "dotnet@10",
 		aptPackage: "dotnet-sdk-10.0", dnfPackage: "dotnet-sdk-10.0",
-		versionArgs:    []string{"--list-sdks"},
-		versionPattern: regexp.MustCompile(`(?m)^10\.[0-9]+\.[0-9]+`),
-		versionNote:    "SDK major version 10",
+		absentFromDebian: true,
+		versionArgs:      []string{"--list-sdks"},
+		versionPattern:   regexp.MustCompile(`(?m)^10\.[0-9]+\.[0-9]+`),
+		versionNote:      "SDK major version 10",
 	},
 	{
 		name: "GNU Fortran", executable: "gfortran",
@@ -290,7 +312,7 @@ func main() {
 func newOptionalPackagesCommand(runner packageRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "optional-packages",
-		Short:         "Check or install the optional Visual X# developer packages.",
+		Short:         "Check or install the optional Tala developer packages.",
 		Long:          optionalPackagesUsage,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
@@ -414,7 +436,7 @@ func installOptionalPackagesForOS(runner packageRunner, goos string) error {
 
 	// apt installs from the package lists it has; they are refreshed once,
 	// before the first package that is actually installed.
-	listsRefreshed := goos != platformUbuntu
+	listsRefreshed := !usesApt(goos)
 	refreshLists := func() error {
 		if listsRefreshed {
 			return nil
@@ -478,7 +500,7 @@ func packageAlreadyInstalled(runner packageRunner, item optionalPackage, goos st
 		}
 		_, err := runner.output("brew", arguments...)
 		return err == nil
-	case platformUbuntu:
+	case platformUbuntu, platformDebian:
 		name := linuxPackage(item, goos)
 		if name == "" || len(runner.lookPaths("dpkg-query")) == 0 {
 			return false
@@ -544,7 +566,7 @@ func installRustComponentsForOS(runner packageRunner, item optionalPackage, goos
 			}
 		}
 		paths = runner.lookPaths("rustup")
-		if len(paths) == 0 && (goos == platformUbuntu || goos == platformFedora) {
+		if len(paths) == 0 && isLinux(goos) {
 			if home, err := os.UserHomeDir(); err == nil {
 				candidate := filepath.Join(home, ".cargo", "bin", "rustup")
 				if information, statErr := os.Stat(candidate); statErr == nil && !information.IsDir() {
@@ -604,8 +626,12 @@ func installOneForOS(runner packageRunner, item optionalPackage, goos string) er
 			"--accept-package-agreements",
 		}
 		return runner.run("winget", args...)
-	} else if goos == platformUbuntu || goos == platformFedora {
+	} else if isLinux(goos) {
 		name := linuxPackage(item, goos)
+		if name == "" && goos == platformDebian && item.absentFromDebian {
+			return fmt.Errorf("Debian's own repositories have no %s package; add the publisher's apt repository and install %s from it",
+				item.name, item.aptPackage)
+		}
 		if name == "" {
 			return fmt.Errorf("no %s package is defined for %s", item.name, goos)
 		}

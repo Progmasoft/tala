@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+package(default_visibility = ["//visibility:public"])
+
+# talac is the single public compiler command. Distribution bundles also place
+# the private Haskell tala-frontend companion beside it; native package seams do
+# not become separately installed frontend or backend commands.
+cc_binary(
+    name = "talac",
+    srcs = ["Main.cpp"],
+    deps = [
+        "//Talac/Cli/Commands:commands",
+        "//Talac/Support:compiler_stack",
+    ],
+)

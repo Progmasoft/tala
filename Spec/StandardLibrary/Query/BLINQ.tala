@@ -1,0 +1,898 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: BLINQ
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: Tala — BLINQ
+-- Demonstrates: INVALID model:
+
+using System.BLinq;
+
+-- ============================================================================
+-- Example 2: 1. Core model
+-- Demonstrates: BLINQ is lazy by default.
+
+auto query =
+        values
+            .Filter {
+                $0 > 10
+            }
+            .Select {
+                $0 * 2
+            };
+
+-- ============================================================================
+-- Example 3: 2. Default laziness
+-- Demonstrates: Example:
+
+auto query =
+        values.Filter {
+            $0.Active
+        };
+
+-- ============================================================================
+-- Example 4: 2. Default laziness
+-- Demonstrates: The predicate runs when the query is consumed:
+
+for (value() : query) {
+    Console.Println(value());
+}
+
+-- ============================================================================
+-- Example 5: 2. Default laziness
+-- Demonstrates: or when it is materialized:
+
+[int] result =
+        query.ToArray();
+
+-- ============================================================================
+-- Example 6: 3. .Strict
+-- Demonstrates: It makes only the BLINQ chain above it eager/materialized.
+
+auto query =
+        values
+            .Filter {
+                $0 > 10
+            }
+            .Select {
+                $0 * 2
+            }
+            .Strict
+            .Take(5);
+
+-- ============================================================================
+-- Example 7: 4. .AllStrict
+-- Demonstrates: It makes the entire BLINQ expression eager.
+
+auto query =
+        values
+            .Filter {
+                $0 > 10
+            }
+            .AllStrict
+            .Select {
+                $0 * 2
+            }
+            .Take(5);
+
+-- ============================================================================
+-- Example 8: 6. Re-enumeration and side effects
+-- Demonstrates: A normal lazy query may be evaluated again when enumerated again.
+
+auto query =
+        values.Select {
+            SideEffect($0);
+            return Transform($0);
+        };
+
+-- ============================================================================
+-- Example 9: 7. Filter
+-- Demonstrates: Relational pushdown is more restrictive: only backend-representable expressions may be
+--   pushed down.
+
+auto result =
+        values.Filter {
+            $0 > 20
+        };
+
+-- ============================================================================
+-- Example 10: 8. Select
+-- Demonstrates: Filter is streaming-lazy by default.
+
+auto names =
+        users.Select {
+            $0.Name
+        };
+
+-- ============================================================================
+-- Example 11: 9. SelectMany
+-- Demonstrates: Select is streaming-lazy.
+
+auto roles =
+        users.SelectMany {
+            $0.Roles
+        };
+
+-- ============================================================================
+-- Example 12: 9. SelectMany
+-- Demonstrates: Result projection form:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+auto result =
+        users.SelectMany(
+            collection: {
+                $0.Roles
+            },
+            result: {
+                user, role ->
+                    ...
+            }
+        );
+
+-- ============================================================================
+-- Example 13: 10. Cast<T>()
+-- Demonstrates: SelectMany is streaming-lazy.
+
+auto strings =
+        values.Cast<String>();
+
+-- ============================================================================
+-- Example 14: 11. OfType<T>()
+-- Demonstrates: null may be cast to a compatible reference target.
+
+auto strings =
+        values.OfType<String>();
+
+-- ============================================================================
+-- Example 15: 12. Ordering family
+-- Demonstrates: Ascending primary ordering:
+
+auto ordered =
+        users.OrderBy {
+            $0.Name
+        };
+
+-- ============================================================================
+-- Example 16: 12. Ordering family
+-- Demonstrates: Descending primary ordering:
+
+auto ordered =
+        users.OrderByDescending {
+            $0.Score
+        };
+
+-- ============================================================================
+-- Example 17: 12. Ordering family
+-- Demonstrates: Secondary ordering:
+
+auto ordered =
+        users
+            .OrderBy {
+                $0.Country
+            }
+            .ThenBy {
+                $0.Name
+            };
+
+-- ============================================================================
+-- Example 18: 12. Ordering family
+-- Demonstrates: Mixed direction:
+
+auto ordered =
+        users
+            .OrderByDescending {
+                $0.Score
+            }
+            .ThenBy {
+                $0.Name
+            };
+
+-- ============================================================================
+-- Example 19: 12. Ordering family
+-- Demonstrates: INVALID:
+
+values.ThenBy {
+    $0.Name
+};
+
+-- ============================================================================
+-- Example 20: 14. Replacing ordering
+-- Demonstrates: A second OrderBy or OrderByDescending replaces the previous primary ordering chain.
+
+values
+    .OrderBy {
+        $0.Name
+    }
+    .OrderBy {
+        $0.Age
+    };
+
+-- ============================================================================
+-- Example 21: 15. Reverse
+-- Demonstrates: To extend an existing ordering, use ThenBy or ThenByDescending.
+
+auto backwards =
+        values.Reverse();
+
+-- ============================================================================
+-- Example 22: 16. First and FirstOrDefault
+-- Demonstrates: It is buffering-lazy.
+
+auto first =
+        values.First();
+
+-- ============================================================================
+-- Example 23: 16. First and FirstOrDefault
+-- Demonstrates: Predicate form:
+
+auto first =
+        values.First {
+            $0.Active
+        };
+
+-- ============================================================================
+-- Example 24: 16. First and FirstOrDefault
+-- Demonstrates: FirstOrDefault:
+
+auto first =
+        values.FirstOrDefault {
+            $0.Active
+        };
+
+-- ============================================================================
+-- Example 25: 17. Last and LastOrDefault
+-- Demonstrates: → default(T)
+
+auto last =
+        values.Last();
+
+-- ============================================================================
+-- Example 26: 18. Single and SingleOrDefault
+-- Demonstrates: LastOrDefault returns default(T) when there is no result.
+
+auto value =
+        values.Single();
+
+-- ============================================================================
+-- Example 27: 18. Single and SingleOrDefault
+-- Demonstrates: Predicate form:
+
+auto value =
+        values.Single {
+            $0.Id == wantedId
+        };
+
+-- ============================================================================
+-- Example 28: 20. ElementAt and ElementAtOrDefault
+-- Demonstrates: Optional<T> is not introduced by BLINQ OrDefault operations.
+
+auto value =
+        values.ElementAt(5);
+
+-- ============================================================================
+-- Example 29: 20. ElementAt and ElementAtOrDefault
+-- Demonstrates: Negative index is an invalid argument.
+
+auto value =
+        values.ElementAtOrDefault(5);
+
+-- ============================================================================
+-- Example 30: 21. Any
+-- Demonstrates: Negative index remains invalid.
+
+bool any =
+        values.Any();
+
+-- ============================================================================
+-- Example 31: 21. Any
+-- Demonstrates: Predicate form:
+
+bool any =
+        values.Any {
+            $0 > 100
+        };
+
+-- ============================================================================
+-- Example 32: 22. All
+-- Demonstrates: Any short-circuits when success is known.
+
+bool all =
+        values.All {
+            $0 > 0
+        };
+
+-- ============================================================================
+-- Example 33: 23. Contains
+-- Demonstrates: All short-circuits on the first false predicate result.
+
+bool exists =
+        values.Contains(42);
+
+-- ============================================================================
+-- Example 34: 24. Count and LongCount
+-- Demonstrates: Contains uses the normal equality contract and short-circuits on the first match.
+
+int count =
+        values.Count();
+
+-- ============================================================================
+-- Example 35: 24. Count and LongCount
+-- Demonstrates: Predicate form:
+
+int count =
+        values.Count {
+            $0.Active
+        };
+
+-- ============================================================================
+-- Example 36: 24. Count and LongCount
+-- Demonstrates: LongCount():
+
+longint count =
+        values.LongCount();
+
+-- ============================================================================
+-- Example 37: 25. Sum
+-- Demonstrates: Tala longint is i128.
+
+auto total =
+        values.Sum();
+
+-- ============================================================================
+-- Example 38: 26. Average
+-- Demonstrates: Sum() → numeric zero
+
+auto average =
+        values.Average();
+
+-- ============================================================================
+-- Example 39: 27. Min, Max, MinBy, MaxBy
+-- Demonstrates: Floating input follows normal Tala floating numeric rules.
+
+auto minimum =
+        values.Min();
+
+auto maximum =
+        values.Max();
+
+-- ============================================================================
+-- Example 40: 27. Min, Max, MinBy, MaxBy
+-- Demonstrates: Key-based forms return the source element:
+
+User youngest =
+        users.MinBy {
+            $0.Age
+        };
+
+User highest =
+        users.MaxBy {
+            $0.Score
+        };
+
+-- ============================================================================
+-- Example 41: 28. Aggregate
+-- Demonstrates: Seedless:
+
+auto result =
+        values.Aggregate {
+            accumulator, value ->
+                Combine(
+                    accumulator,
+                    value
+                )
+        };
+
+-- ============================================================================
+-- Example 42: 28. Aggregate
+-- Demonstrates: Seeded:
+
+auto result =
+        values.Aggregate(
+            seed: 0
+        ) {
+            accumulator, value ->
+                accumulator + value
+        };
+
+-- ============================================================================
+-- Example 43: 29. GroupBy
+-- Demonstrates: Empty source returns the seed.
+
+auto groups =
+        users.GroupBy {
+            $0.Country
+        };
+
+-- ============================================================================
+-- Example 44: 29. GroupBy
+-- Demonstrates: Example:
+
+for (group() : groups) {
+    Console.Println(
+        group().Key()
+    );
+
+    for (user() : group()) {
+        Console.Println(
+            user().Name
+        );
+    }
+}
+
+-- ============================================================================
+-- Example 45: 30. GroupBy element projection
+-- Demonstrates: GroupBy is buffering-lazy.
+
+auto groups =
+        users.GroupBy(
+            key: {
+                $0.Country
+            },
+            element: {
+                $0.Name
+            }
+        );
+
+-- ============================================================================
+-- Example 46: 31. ToLookup
+-- Demonstrates: The group contains projected elements instead of original source values.
+
+auto lookup =
+        users.ToLookup {
+            $0.Country
+        };
+
+-- ============================================================================
+-- Example 47: 31. ToLookup
+-- Demonstrates: Existing key:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+for (user() : lookup["TR"]) {
+    ...
+}
+
+-- ============================================================================
+-- Example 48: 32. Join
+-- Demonstrates: Join is an inner join.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+auto result =
+        users.Join(
+            orders,
+            outerKey: {
+                $0.Id
+            },
+            innerKey: {
+                $0.UserId
+            },
+            result: {
+                user, order ->
+                    ...
+            }
+        );
+
+-- ============================================================================
+-- Example 49: 33. GroupJoin
+-- Demonstrates: For one outer element, matching inner elements follow inner source order.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+auto result =
+        users.GroupJoin(
+            orders,
+            outerKey: {
+                $0.Id
+            },
+            innerKey: {
+                $0.UserId
+            },
+            result: {
+                user, orders ->
+                    ...
+            }
+        );
+
+-- ============================================================================
+-- Example 50: 34. Zip
+-- Demonstrates: Pair form:
+
+auto pairs =
+        names.Zip(scores);
+
+-- ============================================================================
+-- Example 51: 34. Zip
+-- Demonstrates: Projection form:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+auto result =
+        names.Zip(scores) {
+            name, score ->
+                ...
+        };
+
+-- ============================================================================
+-- Example 52: 35. Distinct and DistinctBy
+-- Demonstrates: Zip is streaming-lazy.
+
+auto result =
+        values.Distinct();
+
+-- ============================================================================
+-- Example 53: 35. Distinct and DistinctBy
+-- Demonstrates: Key form:
+
+auto result =
+        users.DistinctBy {
+            $0.Id
+        };
+
+-- ============================================================================
+-- Example 54: 36. Union and UnionBy
+-- Demonstrates: For duplicate keys, the first source element wins.
+
+auto result =
+        a.Union(b);
+
+-- ============================================================================
+-- Example 55: 36. Union and UnionBy
+-- Demonstrates: Key form:
+
+auto result =
+        usersA.UnionBy(
+            usersB,
+            key: {
+                $0.Id
+            }
+        );
+
+-- ============================================================================
+-- Example 56: 37. Intersect and IntersectBy
+-- Demonstrates: If a key occurs in both sources, the first source wins.
+
+auto result =
+        a.Intersect(b);
+
+-- ============================================================================
+-- Example 57: 37. Intersect and IntersectBy
+-- Demonstrates: Key form:
+
+auto result =
+        usersA.IntersectBy(
+            usersB,
+            key: {
+                $0.Id
+            }
+        );
+
+-- ============================================================================
+-- Example 58: 38. Except and ExceptBy
+-- Demonstrates: Result elements come from the first source.
+
+auto result =
+        a.Except(b);
+
+-- ============================================================================
+-- Example 59: 38. Except and ExceptBy
+-- Demonstrates: Key form:
+
+auto result =
+        usersA.ExceptBy(
+            usersB,
+            key: {
+                $0.Id
+            }
+        );
+
+-- ============================================================================
+-- Example 60: 40. Take
+-- Demonstrates: Contains Distinct Union Intersect Except GroupBy Join GroupJoin ToDictionary ToLookup
+
+auto result =
+        values.Take(10);
+
+-- ============================================================================
+-- Example 61: 41. Skip
+-- Demonstrates: Take is streaming-lazy and may stop source consumption early.
+
+auto result =
+        values.Skip(10);
+
+-- ============================================================================
+-- Example 62: 42. TakeWhile
+-- Demonstrates: Skip is streaming-lazy.
+
+auto result =
+        values.TakeWhile {
+            $0 < 100
+        };
+
+-- ============================================================================
+-- Example 63: 43. SkipWhile
+-- Demonstrates: After the first false predicate result, the operator ends.
+
+auto result =
+        values.SkipWhile {
+            $0 < 100
+        };
+
+-- ============================================================================
+-- Example 64: 44. Chunk
+-- Demonstrates: 10, 20, 150, 40, 30 → 150, 40, 30
+
+auto chunks =
+        values.Chunk(3);
+
+-- ============================================================================
+-- Example 65: 45. Concat
+-- Demonstrates: The outer chunk sequence remains lazy.
+
+auto result =
+        first.Concat(second);
+
+-- ============================================================================
+-- Example 66: 46. BLINQ Append
+-- Demonstrates: Concat is streaming-lazy.
+
+auto result =
+        values.Append(100);
+
+-- ============================================================================
+-- Example 67: 47. Prepend
+-- Demonstrates: This is distinct from a collection's mutating Append API.
+
+auto result =
+        values.Prepend(0);
+
+-- ============================================================================
+-- Example 68: 48. DefaultIfEmpty
+-- Demonstrates: Explicit fallback:
+
+auto result =
+        values.DefaultIfEmpty(0);
+
+-- ============================================================================
+-- Example 69: 48. DefaultIfEmpty
+-- Demonstrates: Default fallback:
+
+values.DefaultIfEmpty();
+
+-- ============================================================================
+-- Example 70: 49. ToArray
+-- Demonstrates: DefaultIfEmpty is streaming-lazy.
+
+[T] array =
+        query.ToArray();
+
+-- ============================================================================
+-- Example 71: 50. ToDictionary
+-- Demonstrates: Key + value projection:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+[K to V] dictionary =
+        query.ToDictionary(
+            key: {
+                ...
+            },
+            value: {
+                ...
+            }
+        );
+
+-- ============================================================================
+-- Example 72: 50. ToDictionary
+-- Demonstrates: If value: is omitted, the source element is used as value:
+
+auto byId =
+        users.ToDictionary(
+            key: {
+                $0.Id
+            }
+        );
+
+-- ============================================================================
+-- Example 73: 51. ToSet
+-- Demonstrates: ToDictionary is eager.
+
+Set<T> set =
+        query.ToSet();
+
+-- ============================================================================
+-- Example 74: 52. SequenceEqual
+-- Demonstrates: Duplicate source values collapse naturally into unique set membership.
+
+bool same =
+        first.SequenceEqual(second);
+
+-- ============================================================================
+-- Example 75: 53. Empty<T>()
+-- Demonstrates: The operation short-circuits on the first mismatch.
+
+auto empty =
+        Empty<int>();
+
+-- ============================================================================
+-- Example 76: 54. Range
+-- Demonstrates: Empty<T>() is a BLINQ intrinsic, not a standard-library function.
+
+auto numbers =
+        Range(
+            10,
+            count: 5
+        );
+
+-- ============================================================================
+-- Example 77: 55. Repeat
+-- Demonstrates: Negative count is invalid.
+
+auto zeros =
+        Repeat(
+            0,
+            count: 4
+        );
+
+-- ============================================================================
+-- Example 78: 58. Relational pushdown
+-- Demonstrates: Example:
+
+auto query =
+        users
+            .Filter {
+                $0.Age >= 18
+            }
+            .OrderBy {
+                $0.Name
+            }
+            .Take(20);
+
+-- ============================================================================
+-- Example 79: 59. Pushdown boundary
+-- Demonstrates: Not every Tala expression can be represented by every relational backend.
+
+auto query =
+        users.Filter {
+            ComplexTalaFunction($0)
+        };
+
+-- ============================================================================
+-- Example 80: 61. .Strict with relational sources
+-- Demonstrates: If backend semantics cannot preserve the required result, the operation remains
+--   client-side.
+
+auto query =
+        users
+            .Filter {
+                $0.Age >= 18
+            }
+            .Strict
+            .Select {
+                ComplexTalaFunction($0)
+            };
+
+-- ============================================================================
+-- Example 81: 65. Complete lazy example
+-- Demonstrates: Execution modifiers .Strict .AllStrict
+
+auto query =
+        users
+            .Filter {
+                $0.Active
+            }
+            .Select {
+                $0.Name
+            }
+            .Take(20);
+
+-- ============================================================================
+-- Example 82: 66. Complete .Strict example
+-- Demonstrates: The query remains lazy until consumed.
+
+auto query =
+        users
+            .Filter {
+                $0.Active
+            }
+            .OrderBy {
+                $0.Name
+            }
+            .Strict
+            .Take(10)
+            .Select {
+                $0.Name
+            };
+
+-- ============================================================================
+-- Example 83: 67. Complete .AllStrict example
+-- Demonstrates: Select lazy
+
+auto result =
+        users
+            .Filter {
+                $0.Active
+            }
+            .AllStrict
+            .OrderBy {
+                $0.Name
+            }
+            .Take(10)
+            .Select {
+                $0.Name
+            };
+
+-- ============================================================================
+-- Example 84: 68. Complete grouping example
+-- Demonstrates: The whole BLINQ expression is evaluated eagerly.
+
+auto groups =
+        users.GroupBy {
+            $0.Country
+        };
+
+for (group() : groups) {
+    Console.Println(
+        group().Key()
+    );
+
+    for (user() : group()) {
+        Console.Println(
+            user().Name
+        );
+    }
+}
+
+-- ============================================================================
+-- Example 85: 69. Complete join example
+-- Demonstrates: Element order inside a group follows source order.
+
+auto result =
+        users.Join(
+            orders,
+            outerKey: {
+                $0.Id
+            },
+            innerKey: {
+                $0.UserId
+            },
+            result: {
+                user, order ->
+                    (
+                        user.Name,
+                        order.Total
+                    )
+            }
+        );
+
+-- ============================================================================
+-- Example 86: 70. Complete materialization example
+-- Demonstrates: Only matching pairs are emitted.
+
+[String to User] byName =
+        users
+            .Filter {
+                $0.Active
+            }
+            .ToDictionary(
+                key: {
+                    $0.Name
+                },
+                value: {
+                    $0
+                }
+            );
+
+-- ============================================================================
+-- Example 87: 71. Complete sequence-generation example
+-- Demonstrates: Duplicate generated dictionary keys are not silently overwritten.
+
+auto numbers =
+        Range(
+            1,
+            count: 100
+        )
+        .Filter {
+            $0.IsMultiple(of: 2)
+        }
+        .Take(10);

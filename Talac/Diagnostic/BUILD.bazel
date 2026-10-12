@@ -1,0 +1,21 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "protocol",
+    srcs = ["Protocol.cpp"],
+    deps = [
+        "//Talac/Artifact:wire_support",
+        "//Talac/Headers/Progmasoft/Tala/Diagnostic:protocol_api",
+    ],
+)
+
+cc_library(
+    name = "collection",
+    srcs = ["Collection.cpp"],
+    deps = [
+        ":protocol",
+        "//Talac/Headers/Progmasoft/Tala/Diagnostic:collection_api",
+    ],
+)

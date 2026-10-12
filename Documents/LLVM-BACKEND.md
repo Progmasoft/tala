@@ -17,14 +17,14 @@ missing semantic information. Xmm therefore retains every item required for dete
 
 CorePrep, Xpp, and Xmm verification happen before LLVM objects are constructed. Xmm owns the final native IR verifier; the
 LLVM `Verify` entry remains as a source-compatible adapter and `Lower` repeats the check for direct clients. A failed check
-produces structured `VXP` or `VXL` issues and no LLVM artifact.
+produces structured `TAP` or `TAL` issues and no LLVM artifact.
 
-The canonical C++ spelling is `Visual::XSharp`, with PascalCase namespace segments, classes, and functions. Renewed and
+The canonical C++ spelling is `Tala`, with PascalCase namespace segments, classes, and functions. Renewed and
 existing C++ subsystems migrate toward that spelling without recreating the removed Rust naming or implementation layer.
 
 ## Sources
 
-The lowering lives in `Compiler/Backend/LLVM`, one source for each thing it lowers:
+The lowering lives in `Talac/Backend/LLVM`, one source for each thing it lowers:
 
 | Source | Holds |
 | --- | --- |
@@ -38,7 +38,7 @@ The lowering lives in `Compiler/Backend/LLVM`, one source for each thing it lowe
 | `Emission.hpp`, `Emission.cpp` | optimization, the target machine and machine code |
 
 `Generator.hpp` and `Emission.hpp` are private to the backend. Its public interface is
-`Visual/XSharp/Backend/LLVM.hpp`.
+`Tala/Backend/LLVM.hpp`.
 
 ## Supported values
 
@@ -47,17 +47,17 @@ and explicit strong/weak/unowned operations. Function types serve checked call s
 AARC pointer representation. Unresolved type variables remain rejected. Nominal field layout stays in type metadata; the
 backend never guesses fields from a name.
 
-Source scalar names do not inherit C widths. The frontend/Core contract selects the Visual X# width, and LLVM lowering
+Source scalar names do not inherit C widths. The frontend/Core contract selects the Tala width, and LLVM lowering
 constructs the corresponding integer or floating type explicitly. Core wire
 v7 transports the complete scalar catalog and source ownership. The backend
 preserves each declared width, including 128-bit integer and floating types,
 rather than narrowing values to host or C widths.
 
-Source `void` is not a value. The frontend maps it once to the current resultless Core ABI marker. Visual X# has no source
+Source `void` is not a value. The frontend maps it once to the current resultless Core ABI marker. Tala has no source
 `unit` type; the legacy native enum's unit-like spelling is private implementation vocabulary.
 
 `String` is not a UTF-8 byte string. A constant uses an immutable LLVM array of 32-bit Unicode scalar values followed by a
-zero sentinel, then calls `vxs_aarc_string_literal` with the scalar count. The runtime creates an AARC `System.String` object;
+zero sentinel, then calls `tala_aarc_string_literal` with the scalar count. The runtime creates an AARC `System.String` object;
 the count excludes the sentinel. Invalid Unicode scalar values are rejected.
 
 ## Registers and control flow
@@ -74,7 +74,7 @@ Integer division uses signed LLVM division. Rounded division `//`, which the IR 
 rounds to the nearest integer with exact halves away from zero, as the specification requires: `7 // 2` is `4` and
 `-7 // 2` is `-4`. The backend adjusts the truncated quotient by one, away from zero, when twice the remainder's magnitude
 reaches the divisor's magnitude. It does not floor: `1 // 2` is `1`, not `0`.
-`Compiler/Backend/LLVM/Tests/ArithmeticExecutionTests.cpp` executes the specification examples and every sign
+`Talac/Backend/LLVM/Tests/ArithmeticExecutionTests.cpp` executes the specification examples and every sign
 combination of small operands through both native optimizer settings.
 
 Numeric boolean context is normalized before Xpp. A branch therefore receives a canonical boolean value rather than asking
@@ -106,7 +106,7 @@ Indirect invocation through that allocated value remains pending; it will use th
 
 The CLI optimization setting selects an LLVM new-pass-manager pipeline:
 
-| Visual X# value | LLVM pipeline |
+| Tala value | LLVM pipeline |
 | --- | --- |
 | `g` | `default<O0>` |
 | `1` | `default<O1>` |
@@ -130,13 +130,35 @@ Target-machine creation owns:
 
 - target lookup and diagnostic text;
 - data layout and target triple on the module;
-- relocation/code model defaults until public settings exist;
+- the relocation model: position-independent code for ELF and Mach-O, whose linkers make position-independent
+  executables by default and refuse an object that is not, and the default of the target for COFF;
 - assembly/object file selection;
-- Windows COFF emission for the supported host target; and
+- COFF, ELF and Mach-O emission for the host target; and
 - propagation of backend emission errors without leaving a plausible output.
 
 Windows SDK and MSVC CRT/C++ development libraries are link inputs/toolchain resources. They do not make the Visual Studio
 compiler or IDE part of the build architecture. ClangCL/LLD remain the native toolchain.
+
+## Linking an executable
+
+`talac build` and `talac run` link a `.vxse` executable on every host. The entry of a program is a bridge the backend
+adds for an executable and for nothing else: it calls the program's `Main` and returns zero.
+
+| Host | Entry symbol | Linked by | Runtime library | Takes from the system |
+| --- | --- | --- | --- | --- |
+| Windows | `mainCRTStartup` | `lld-link`, started directly | `tala-runtime.lib` | seven functions of kernel32, through an import library made for the link |
+| Linux | `main` | `cc`, the C compiler of the system, as the driver | `libtala-runtime.a` | the C library |
+| macOS | `main` | `cc`, the C compiler of the system, as the driver | `libtala-runtime.a` | the system library |
+
+On Windows an executable carries no C runtime. On Linux and macOS it is linked with the C library, which every such
+system has, and with nothing of C++: the runtime library defines the allocation functions it uses over `malloc` and
+`free`. The driver is used and not a linker started directly because it knows where the C library, its start-up
+objects and, on macOS, the system libraries are, which differs between distributions and releases. The runtime
+library stands beside the compiler under the name of the table; `develop build` puts it there.
+
+A program that needs a value that cannot be computed stops at an instruction the processor refuses. Windows reports
+the exception as the status of the process. Elsewhere the process is ended by a signal, and `talac run` reports it the
+way a shell does, 128 and the number of the signal.
 
 ## Artifacts
 
@@ -148,10 +170,10 @@ artifact APIs:
 - `WriteObject` accepts only a `.o` path; and
 - `WriteAssembly` accepts only a `.asm` path.
 
-`vxs build -Emit llvmll` writes the sibling `.ll` file and `vxs build -Emit llvmbc` writes the sibling `.bc` file for either
-`.vxs` or `VXCR` Core input. `vxs build -Emit object|assembly` writes target-machine output. Binary emission creates an
+`talac build -Emit llvmll` writes the sibling `.ll` file and `talac build -Emit llvmbc` writes the sibling `.bc` file for either
+`.tala` or `TACR` Core input. `talac build -Emit object|assembly` writes target-machine output. Binary emission creates an
 executable entry bridge, emits a temporary object, invokes LLD through a typed C++20 argument vector, verifies the `.vxse`,
-and removes the temporary object. `vxs check` never emits. Xpp and Xmm artifact codecs are separate C++20 stage-owned
+and removes the temporary object. `talac check` never emits. Xpp and Xmm artifact codecs are separate C++20 stage-owned
 readers/writers; they are not LLVM-backend operations.
 
 The Haskell frontend is the sole source owner. The backend remains responsible for target lowering and the driver remains

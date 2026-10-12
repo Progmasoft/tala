@@ -1,4 +1,4 @@
-visual-xsharp
+tala
 Copyright 2026 Progmasoft <support@progmasoft.com>
 
 The original source code in this repository is licensed under the Mozilla
@@ -10,12 +10,12 @@ LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt.
 Third-party notices
 -------------------
 
-The Gradle wrapper launcher files `ProjectSystem/gradlew` and
-`ProjectSystem/gradlew.bat` retain their original copyright notices and remain
+The Gradle wrapper launcher files `Tazel/gradlew` and
+`Tazel/gradlew.bat` retain their original copyright notices and remain
 licensed under the Apache License, version 2.0.
 
 The Kotlin/JVM DSL test suites use `kotlin.test` and are currently executed by
-Gradle on the JUnit Platform. JUnit is not part of the Visual X# compiler or a
+Gradle on the JUnit Platform. JUnit is not part of the Tala compiler or a
 shipped runtime dependency. JUnit Jupiter and the JUnit Platform are licensed
 under the Eclipse Public License, version 2.0.
 

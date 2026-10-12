@@ -10,7 +10,7 @@ CLI option.
 
 ## Emission model
 
-`vxs build` selects an output kind with the existing `-Emit` option. A project
+`talac build` selects an output kind with the existing `-Emit` option. A project
 binary build still produces exactly one `.vxse` executable. A project `object`
 or `assembly` build instead produces one native artifact for every physical
 source unit in the selected entry namespace's Core catalog:
@@ -27,13 +27,13 @@ Windows target contains COFF rather than ELF or Mach-O. The name does not
 promise that an arbitrary external linker can consume a mismatched target.
 
 Project build mode chooses the destination root. With the default debug output,
-`Sources/MyApp/Main.vxs` becomes `build/debug/Main.o`; release mode uses the
+`Sources/MyApp/Main.tala` becomes `build/debug/Main.o`; release mode uses the
 configured release output root. The source directory hierarchy is not copied
 under the output directory. This makes output placement independent of source
 root spelling and matches the project's existing flat artifact layout.
 
 An explicit single-file build is a separate route. It emits its selected
-artifact beside the explicit `.vxs` or intermediate input using the input's
+artifact beside the explicit `.tala` or intermediate input using the input's
 basename; it does not enumerate sibling files and does not enter the project
 batch transaction described below.
 
@@ -63,12 +63,12 @@ still meaningful and causes an output unit to be emitted.
 The versioned Core, CorePrep, Xpp, and Xmm models carry source provenance:
 
 ```text
-module source catalog: ordered, unique project-relative .vxs paths
+module source catalog: ordered, unique project-relative .tala paths
 function source owner: exactly one catalog path for project modules
 ```
 
 The path is slash-normalized, non-empty, relative, and ends in the exact
-lowercase `.vxs` extension. Verifiers reject, rather than repair, rooted
+lowercase `.tala` extension. Verifiers reject, rather than repair, rooted
 paths, drive syntax, backslashes, empty path segments, `.` and `..` segments,
 embedded NUL, malformed Unicode scalars, and duplicate catalog entries. The
 same utility validates these paths at each native IR boundary.
@@ -94,18 +94,18 @@ limits, and compatibility policy.
 ## Output name planning
 
 For every catalog entry, the planner extracts the final path segment, removes
-the `.vxs` suffix, encodes the remaining Unicode scalars as UTF-8, and appends
+the `.tala` suffix, encodes the remaining Unicode scalars as UTF-8, and appends
 the selected native extension. A few examples:
 
 | Source identity | Object output | Assembly output |
 | --- | --- | --- |
-| `Sources/MyApp/Main.vxs` | `Main.o` | `Main.asm` |
-| `Library/JsonReader.vxs` | `JsonReader.o` | `JsonReader.asm` |
-| `Generated/Empty.vxs` | `Empty.o` | `Empty.asm` |
-| `Türkçe/Örnek.vxs` | `Örnek.o` | `Örnek.asm` |
+| `Sources/MyApp/Main.tala` | `Main.o` | `Main.asm` |
+| `Library/JsonReader.tala` | `JsonReader.o` | `JsonReader.asm` |
+| `Generated/Empty.tala` | `Empty.o` | `Empty.asm` |
+| `Türkçe/Örnek.tala` | `Örnek.o` | `Örnek.asm` |
 
 Flattening deliberately makes equal stems ambiguous. For example,
-`Sources/Client/Main.vxs` and `Sources/Tests/Main.vxs` cannot both produce
+`Sources/Client/Main.tala` and `Sources/Tests/Main.tala` cannot both produce
 `Main.o` in the same output directory. The planner rejects the whole set and
 reports the colliding output basename before touching existing artifacts.
 
@@ -120,7 +120,7 @@ planning pass. A temporary probe on the destination filesystem catches
 additional case- or normalization-equivalent names whose comparison rules
 differ by filesystem.
 
-Source paths remain case-sensitive Visual X# identities. The filesystem probe
+Source paths remain case-sensitive Tala identities. The filesystem probe
 does not change that language rule; it only prevents two distinct source
 identities from mapping to one physical output name on a case-insensitive
 volume.
@@ -163,7 +163,7 @@ artifact writer to commit the batch:
 
 1. Validate every destination basename and reject duplicate names.
 2. Create the output directory if it does not exist.
-3. Reserve a unique `.vxs-artifacts-*` directory beside the destinations so
+3. Reserve a unique `.tala-artifacts-*` directory beside the destinations so
    staging and final renames stay on the same filesystem.
 4. For Unicode output names, probe the destination filesystem for equivalent
    names. ASCII batches rely on the earlier case-folded collision check.
@@ -231,29 +231,29 @@ provide.
 
 The relevant tests are kept with their owners:
 
-- `Compiler/Artifact/Tests/SourcePathTests.cpp` covers canonical source identity
+- `Talac/Artifact/Tests/SourcePathTests.cpp` covers canonical source identity
   and portable path rejection.
-- `Compiler/Core/Tests/CorePipelineTests.cpp` covers the non-empty Haskell v10
+- `Talac/Core/Tests/CorePipelineTests.cpp` covers the non-empty Haskell v10
   golden, metadata propagation through Xpp/Xmm, per-source object and assembly
   output, empty source units, and collision preservation.
-- `Compiler/Driver/Tests/ProjectArtifactTests.cpp` covers flattening,
+- `Talac/Driver/Tests/ProjectArtifactTests.cpp` covers flattening,
   collisions, existing-file replacement, destination validation, symlinks,
   and preservation of unrelated outputs.
-- `Compiler/Haskell/Driver/test/SourceSetTests.hs` covers project source
+- `Talac/Haskell/Driver/test/SourceSetTests.hs` covers project source
   discovery, namespace ownership, deterministic paths, empty source retention,
   and Core wire round trips.
 
 Run the focused native tests with:
 
 ```powershell
-bazelisk build //Compiler/Artifact/Tests:source_path_tests `
-  //Compiler/Core/Tests:core_pipeline_tests `
-  //Compiler/Driver/Tests:project_artifact_tests
-.\bazel-bin\Compiler\Artifact\Tests\source_path_tests.exe
-.\bazel-bin\Compiler\Core\Tests\core_pipeline_tests.exe
-.\bazel-bin\Compiler\Driver\Tests\project_artifact_tests.exe
+bazelisk build //Talac/Artifact/Tests:source_path_tests `
+  //Talac/Core/Tests:core_pipeline_tests `
+  //Talac/Driver/Tests:project_artifact_tests
+.\bazel-bin\Talac\Artifact\Tests\source_path_tests.exe
+.\bazel-bin\Talac\Core\Tests\core_pipeline_tests.exe
+.\bazel-bin\Talac\Driver\Tests\project_artifact_tests.exe
 ```
 
 The Haskell ownership and wire tests are part of `cabal test all` from the
-`Compiler/` directory. The repository-wide `go run ./helpers/cmd/develop test`
+`Talac/` directory. The repository-wide `go run ./helpers/cmd/develop test`
 also builds and runs the native owner suites on supported hosts.

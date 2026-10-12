@@ -16,8 +16,8 @@ this result are one change.
 Commands:
 
 ```text
-bazelisk run -c opt //Compiler/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s
-bazelisk run -c opt //Compiler/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s
+bazelisk run -c opt //Talac/Codegen/Xpp/Benches:xpp_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s
+bazelisk run -c opt //Talac/Codegen/Xmm/Benches:xmm_benches -- --benchmark_filter=Optimize --benchmark_min_time=0.05s
 ```
 
 ## Xpp optimizer

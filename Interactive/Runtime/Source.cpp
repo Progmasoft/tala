@@ -11,7 +11,7 @@
 #include "Source.hpp"
 #include "Value.hpp"
 
-namespace Visual::XSharp::Interactive::Runtime
+namespace Progmasoft::Tala::Interactive::Runtime
 {
     namespace
     {
@@ -48,7 +48,7 @@ namespace Visual::XSharp::Interactive::Runtime
         // symbols; source and Core scratch files are not part of the REPL ABI.
         std::string source;
         source.reserve(expression.size() + 160U);
-        source.append("namespace VisualXSharp.Interactive.Cell")
+        source.append("namespace Tala.Interactive.Cell")
             .append(std::to_string(cellNumber))
             .append(
                 ";\nclass Session {\n    public static auto Evaluate() {\n");
@@ -59,19 +59,19 @@ namespace Visual::XSharp::Interactive::Runtime
     }
 
     auto
-    EvaluationSymbol(const visual_xsharp::xmm::Module &module,
-                     std::uint64_t cellNumber) -> std::optional<std::string>
+    EvaluationSymbol(const tala::xmm::Module &module, std::uint64_t cellNumber)
+        -> std::optional<std::string>
     {
         auto expectedCell = std::u32string(U"Cell");
         for (const auto digit : std::to_string(cellNumber))
             expectedCell.push_back(static_cast<char32_t>(digit));
-        const std::vector<std::u32string> expectedName{ U"VisualXSharp",
+        const std::vector<std::u32string> expectedName{ U"Tala",
                                                         U"Interactive",
                                                         std::move(
                                                             expectedCell) };
         if (module.name != expectedName)
             return std::nullopt;
-        const visual_xsharp::xmm::Function *evaluation{};
+        const tala::xmm::Function *evaluation{};
         for (const auto &function : module.functions)
         {
             if (function.symbol.spelling != U"Evaluate")
@@ -101,4 +101,4 @@ namespace Visual::XSharp::Interactive::Runtime
         symbol.append(std::to_string(evaluation->symbol.id));
         return symbol;
     }
-} // namespace Visual::XSharp::Interactive::Runtime
+} // namespace Progmasoft::Tala::Interactive::Runtime

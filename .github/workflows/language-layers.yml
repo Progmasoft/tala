@@ -42,36 +42,36 @@ jobs:
 
       - name: Check Kotlin project runtime
         shell: pwsh
-        run: .\ProjectSystem\gradlew.bat -p ProjectSystem check
+        run: .\Tazel\gradlew.bat -p Tazel check
 
       - name: Update Hackage package index
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal update
 
       - name: Build Haskell compiler layers
         shell: pwsh
-        working-directory: Compiler
-        run: cabal build visual-xsharp-compiler
+        working-directory: Talac
+        run: cabal build tala-compiler
 
       - name: Test Haskell compiler layers
         shell: pwsh
-        working-directory: Compiler
-        run: cabal test visual-xsharp-compiler-tests
+        working-directory: Talac
+        run: cabal test tala-compiler-tests
 
       - name: Test frontend fuzz feedback and mutation policy
         shell: pwsh
-        working-directory: Compiler
+        working-directory: Talac
         run: cabal test fuzz-feedback-tests
 
       - name: Check Haskell package metadata
         shell: pwsh
         run: |
           $packageDirectories = @(
-            "Compiler/Haskell/Syntax",
-            "Compiler/Haskell/Frontend",
-            "Compiler/Haskell/Core",
-            "Compiler/Haskell/Driver"
+            "Talac/Haskell/Syntax",
+            "Talac/Haskell/Frontend",
+            "Talac/Haskell/Core",
+            "Talac/Haskell/Driver"
           )
           foreach ($directory in $packageDirectories) {
             Push-Location $directory

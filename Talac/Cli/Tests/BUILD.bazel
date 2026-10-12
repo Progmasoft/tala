@@ -1,0 +1,15 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+# The argument parser has no filesystem or process dependencies. Keeping this
+# test beside the CLI makes failures identify the command contract directly.
+cc_binary(
+    name = "cli_parser_tests",
+    srcs = ["CliParserTests.cpp"],
+    deps = [
+        "//Talac/Cli/Arguments:arguments",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+    ],
+)

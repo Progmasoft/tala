@@ -1,0 +1,759 @@
+-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+-- Tala language design examples: Inline Assembly
+--
+-- This file is a topic-oriented language design example suite.
+-- Each fragment states its intent explicitly; fragments marked INVALID are expected to be rejected.
+-- Examples record intended behavior; they do not claim complete compiler support.
+
+-- ============================================================================
+-- Example 1: 1. Core syntax
+-- Demonstrates: Basic form:
+
+asm (
+    "assembly instructions"
+);
+
+-- ============================================================================
+-- Example 2: 1. Core syntax
+-- Demonstrates: Extended form:
+
+asm (
+    "assembly instructions"
+    : output_operands
+    : input_operands
+    : clobbers
+);
+
+-- ============================================================================
+-- Example 3: 1. Core syntax
+-- Demonstrates: Volatile form:
+
+asm volatile (
+    "assembly instructions"
+    : output_operands
+    : input_operands
+    : clobbers
+);
+
+-- ============================================================================
+-- Example 4: 1. Core syntax
+-- Demonstrates: VALID:
+
+asm (
+    "nop"
+);
+
+-- ============================================================================
+-- Example 5: 1. Core syntax
+-- Demonstrates: INVALID:
+
+auto value = asm (
+    "nop"
+);
+
+-- ============================================================================
+-- Example 6: 2. LLVM model
+-- Demonstrates: Example:
+
+asm (
+    "addl $2, $0"
+    : "=r"(result)
+    : "0"(a), "r"(b)
+);
+
+-- ============================================================================
+-- Example 7: 2. LLVM model
+-- Demonstrates: Named operand forms such as:
+
+[out] "=r"(result)
+
+-- ============================================================================
+-- Example 8: 3. Assembly template
+-- Demonstrates: VALID:
+
+asm (
+    "nop"
+);
+
+-- ============================================================================
+-- Example 9: 3. Assembly template
+-- Demonstrates: VALID:
+
+asm volatile (
+    [[
+        mov $1, $0
+        add $2, $0
+    ]]
+    : "=r"(result)
+    : "r"(a), "r"(b)
+);
+
+-- ============================================================================
+-- Example 10: 3. Assembly template
+-- Demonstrates: INVALID:
+
+String code = GetAssembly();
+
+asm (
+    code
+);
+
+-- ============================================================================
+-- Example 11: 4. Operand sections
+-- Demonstrates: Example:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=r"(result)
+    : "r"(value)
+    : "cc"
+);
+
+-- ============================================================================
+-- Example 12: 4. Operand sections
+-- Demonstrates: Only inputs:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    :
+    : "r"(value)
+);
+
+-- ============================================================================
+-- Example 13: 4. Operand sections
+-- Demonstrates: Only clobber:
+
+asm volatile (
+    ""
+    :
+    :
+    : "memory"
+);
+
+-- ============================================================================
+-- Example 14: 6. Output operands
+-- Demonstrates: A write-only output uses =.
+
+asm (
+    "mov $1, $0"
+    : "=r"(result)
+    : "r"(value)
+);
+
+-- ============================================================================
+-- Example 15: 6. Output operands
+-- Demonstrates: VALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=r"(result)
+);
+
+-- ============================================================================
+-- Example 16: 6. Output operands
+-- Demonstrates: INVALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=r"(a + b)
+);
+
+-- ============================================================================
+-- Example 17: 7. Read-write operands
+-- Demonstrates: A read-write operand uses +.
+
+asm (
+    "add $1, $0"
+    : "+r"(value)
+    : "r"(increment)
+);
+
+-- ============================================================================
+-- Example 18: 7. Read-write operands
+-- Demonstrates: INVALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "+r"(a + b)
+);
+
+-- ============================================================================
+-- Example 19: 8. Early-clobber outputs
+-- Demonstrates: & marks an early-clobber output.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=&r"(result)
+    : "r"(input)
+);
+
+-- ============================================================================
+-- Example 20: 9. Matching constraints
+-- Demonstrates: Numeric matching constraints require an input to match an earlier output location.
+
+asm (
+    "addl $2, $0"
+    : "=r"(result)
+    : "0"(a), "r"(b)
+);
+
+-- ============================================================================
+-- Example 21: 10. Input expressions
+-- Demonstrates: Input operands may use compatible Tala expressions.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    :
+    : "r"(a + b)
+);
+
+-- ============================================================================
+-- Example 22: 11. Immediate operands
+-- Demonstrates: "i" requires a compile-time immediate compatible with the active target.
+
+asm (
+    "shl $1, $0"
+    : "+r"(value)
+    : "i"(3)
+);
+
+-- ============================================================================
+-- Example 23: 12. Memory operands
+-- Demonstrates: "m" denotes a memory operand.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=r"(result)
+    : "m"(value)
+);
+
+-- ============================================================================
+-- Example 24: 13. Clobbers
+-- Demonstrates: The clobber section declares state modified beyond the explicit operand effects.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile (
+    "..."
+    :
+    : "r"(value)
+    : "memory", "cc"
+);
+
+-- ============================================================================
+-- Example 25: 13. Clobbers
+-- Demonstrates: Target register clobbers are supported:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile (
+    "..."
+    :
+    :
+    : "rax", "rcx", "memory"
+);
+
+-- ============================================================================
+-- Example 26: 15. memory
+-- Demonstrates: Example:
+
+asm volatile (
+    ""
+    :
+    :
+    : "memory"
+);
+
+-- ============================================================================
+-- Example 27: 16. volatile
+-- Demonstrates: asm volatile is observable.
+
+asm volatile (
+    "nop"
+);
+
+-- ============================================================================
+-- Example 28: 17. Non-volatile asm
+-- Demonstrates: Normal asm may be optimized according to its operands, outputs, clobbers, and LLVM
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+);
+
+-- ============================================================================
+-- Example 29: 18. LLVM-oriented flags
+-- Demonstrates: Example:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile alignstack inteldialect unwind (
+    [[
+        ...
+    ]]
+    : outputs
+    : inputs
+    : clobbers
+);
+
+-- ============================================================================
+-- Example 30: 19. alignstack
+-- Demonstrates: alignstack requests LLVM inline-assembly stack-alignment behavior.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm alignstack (
+    "..."
+);
+
+-- ============================================================================
+-- Example 31: 20. inteldialect
+-- Demonstrates: inteldialect requests LLVM's Intel assembly dialect.
+
+asm inteldialect (
+    "mov $0, $1"
+    : "=r"(result)
+    : "r"(value)
+);
+
+-- ============================================================================
+-- Example 32: 21. unwind
+-- Demonstrates: unwind declares that the inline assembly may participate in stack unwinding according
+--   to the LLVM inline-assembly contract.
+
+asm unwind (
+    "call some_function"
+);
+
+-- ============================================================================
+-- Example 33: 22. Target dependence
+-- Demonstrates: Example:
+
+asm (
+    "addq $1, $0"
+    : "+r"(value)
+    : "r"(other)
+);
+
+-- ============================================================================
+-- Example 34: 24. goto
+-- Demonstrates: Tala provides a built-in goto.
+
+goto help;
+
+:help {
+}
+
+-- ============================================================================
+-- Example 35: 24. goto
+-- Demonstrates: Example:
+
+if (failed) {
+    goto error;
+}
+
+Process();
+
+goto done;
+
+:error {
+    HandleError();
+}
+
+:done {
+    Cleanup();
+}
+
+-- ============================================================================
+-- Example 36: 24. goto
+-- Demonstrates: Duplicate labels in the same relevant scope are invalid.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+:help {
+}
+
+:help { -- INVALID
+}
+
+-- ============================================================================
+-- Example 37: 25. Label blocks
+-- Demonstrates: A label introduces a lexical block.
+
+:retry {
+    int attempt = 1;
+}
+
+-- ============================================================================
+-- Example 38: 25. Label blocks
+-- Demonstrates: Bindings declared inside the label block do not escape it.
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+:help {
+    int value = 10;
+}
+
+Use(value); -- INVALID
+
+-- ============================================================================
+-- Example 39: 26. asm goto
+-- Demonstrates: General form:
+
+asm goto (
+    "assembly instructions"
+    : output_operands
+    : input_operands
+    : clobbers
+    : labels
+);
+
+-- ============================================================================
+-- Example 40: 26. asm goto
+-- Demonstrates: Example:
+
+asm goto (
+    [[
+        test $0, $0
+        jz ${1:l}
+    ]]
+    :
+    : "r"(value)
+    : "cc"
+    : zero
+);
+
+Continue();
+
+:zero {
+    HandleZero();
+}
+
+-- ============================================================================
+-- Example 41: 27. asm goto label references
+-- Demonstrates: Example:
+
+asm goto (
+    "jz ${1:l}"
+    :
+    : "r"(value)
+    : "cc"
+    : failed
+);
+
+-- ============================================================================
+-- Example 42: 28. Multiple asm goto labels
+-- Demonstrates: The Tala programmer does not write LLVM !i manually.
+
+asm goto (
+    [[
+        cmp $0, $1
+        je ${2:l}
+        jl ${3:l}
+    ]]
+    :
+    : "r"(left), "r"(right)
+    : "cc"
+    : equal, less
+);
+
+Continue();
+
+:equal {
+    HandleEqual();
+}
+
+:less {
+    HandleLess();
+}
+
+-- ============================================================================
+-- Example 43: 29. asm goto fallthrough
+-- Demonstrates: asm goto may fall through normally.
+
+asm goto (
+    "jz ${1:l}"
+    :
+    : "r"(value)
+    : "cc"
+    : failed
+);
+
+Continue();
+
+:failed {
+    Recover();
+}
+
+-- ============================================================================
+-- Example 44: 30. asm goto outputs
+-- Demonstrates: asm goto may have outputs.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm goto (
+    "..."
+    : "=r"(result)
+    : "r"(input)
+    : "cc"
+    : failed
+);
+
+-- ============================================================================
+-- Example 45: 34. op
+-- Demonstrates: INVALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+op int Calculate(_ int value) {
+    asm (
+        "..."
+    );
+
+    value
+}
+
+-- ============================================================================
+-- Example 46: 35. No unsafe requirement
+-- Demonstrates: VALID:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile (
+    "..."
+);
+
+-- ============================================================================
+-- Example 47: 36. Placement
+-- Demonstrates: Inline assembly may appear where runtime statements are permitted, subject to purity
+
+if (enabled) {
+    asm volatile (
+        "nop"
+    );
+}
+
+-- ============================================================================
+-- Example 48: 36. Placement
+-- Demonstrates: Inline assembly may appear where runtime statements are permitted, subject to purity
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+for (auto value : values) {
+    asm (
+        "..."
+        :
+        : "r"(value)
+    );
+}
+
+-- ============================================================================
+-- Example 49: 37. VALID examples
+-- Demonstrates: Simple:
+
+asm (
+    "nop"
+);
+
+-- ============================================================================
+-- Example 50: 37. VALID examples
+-- Demonstrates: Output/input:
+
+asm (
+    "mov $1, $0"
+    : "=r"(result)
+    : "r"(value)
+);
+
+-- ============================================================================
+-- Example 51: 37. VALID examples
+-- Demonstrates: Read-write:
+
+asm (
+    "add $1, $0"
+    : "+r"(value)
+    : "r"(increment)
+);
+
+-- ============================================================================
+-- Example 52: 37. VALID examples
+-- Demonstrates: Matching constraint:
+
+asm (
+    "addl $2, $0"
+    : "=r"(result)
+    : "0"(a), "r"(b)
+);
+
+-- ============================================================================
+-- Example 53: 37. VALID examples
+-- Demonstrates: Early clobber:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=&r"(result)
+    : "r"(input)
+);
+
+-- ============================================================================
+-- Example 54: 37. VALID examples
+-- Demonstrates: Immediate:
+
+asm (
+    "shl $1, $0"
+    : "+r"(value)
+    : "i"(3)
+);
+
+-- ============================================================================
+-- Example 55: 37. VALID examples
+-- Demonstrates: Clobbers:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile (
+    "..."
+    :
+    : "r"(value)
+    : "memory", "cc"
+);
+
+-- ============================================================================
+-- Example 56: 37. VALID examples
+-- Demonstrates: LLVM flags:
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm volatile alignstack inteldialect unwind (
+    "..."
+);
+
+-- ============================================================================
+-- Example 57: 37. VALID examples
+-- Demonstrates: Multiline raw template:
+
+asm volatile (
+    [[
+        mov $1, $0
+        add $2, $0
+    ]]
+    : "=r"(result)
+    : "r"(a), "r"(b)
+    : "cc"
+);
+
+-- ============================================================================
+-- Example 58: 37. VALID examples
+-- Demonstrates: Assembly goto:
+
+asm goto (
+    "jz ${1:l}"
+    :
+    : "r"(value)
+    : "cc"
+    : failed
+);
+
+Continue();
+
+:failed {
+    Recover();
+}
+
+-- ============================================================================
+-- Example 59: 38. INVALID examples
+-- Demonstrates: Inline assembly as expression:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+auto result = asm (
+    "nop"
+); -- INVALID
+
+-- ============================================================================
+-- Example 60: 38. INVALID examples
+-- Demonstrates: Runtime template:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+String code = GetAssembly();
+
+asm (
+    code
+); -- INVALID
+
+-- ============================================================================
+-- Example 61: 38. INVALID examples
+-- Demonstrates: Non-writable output:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "=r"(a + b)
+); -- INVALID
+
+-- ============================================================================
+-- Example 62: 38. INVALID examples
+-- Demonstrates: Non-writable read-write operand:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    : "+r"(a + b)
+); -- INVALID
+
+-- ============================================================================
+-- Example 63: 38. INVALID examples
+-- Demonstrates: GNU positional syntax:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+asm (
+    "mov %1, %0"
+    : "=r"(result)
+    : "r"(value)
+); -- INVALID model
+
+-- ============================================================================
+-- Example 64: 38. INVALID examples
+-- Demonstrates: GNU named syntax:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+asm (
+    "mov %[input], %[output]"
+    : [output] "=r"(result)
+    : [input] "r"(value)
+); -- INVALID model
+
+-- ============================================================================
+-- Example 65: 38. INVALID examples
+-- Demonstrates: Inline assembly inside op:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+
+op int Read(_ int value) {
+    asm (
+        "nop"
+    ); -- INVALID
+
+    value
+}
+
+-- ============================================================================
+-- Example 66: 38. INVALID examples
+-- Demonstrates: Target-invalid register clobber:
+-- Expected result: compile-time rejection; the INVALID marker is normative.
+-- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
+
+asm (
+    "..."
+    :
+    :
+    : "rax"
+); -- INVALID on targets without rax
+
+-- ============================================================================
+-- Example 67: 39. Summary
+-- Demonstrates: Tala labels use:
+
+goto help;
+
+:help {
+}

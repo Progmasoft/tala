@@ -8,7 +8,7 @@ exists, and prevent invalid or stale artifacts from appearing successful.
 
 ## Structured tooling channel
 
-Tools must consume the [VXDG structured diagnostic protocol](DIAGNOSTIC-PROTOCOL.md), not parse stderr. The versioned
+Tools must consume the [TADG structured diagnostic protocol](DIAGNOSTIC-PROTOCOL.md), not parse stderr. The versioned
 side channel carries stage, severity, stable code, source range, named message arguments, related locations, and fix
 descriptions. It remains private to trusted local compiler integrations and is not a user-selectable emit format.
 
@@ -18,7 +18,7 @@ bounded Kotlin decoder, so compatibility is tested across all three implementati
 
 ### Accumulation semantics
 
-Native compiler stages use `Visual::XSharp::Diagnostic::Collection` when more than one component contributes records.
+Native compiler stages use `Progmasoft::Tala::Diagnostic::Collection` when more than one component contributes records.
 The collection:
 
 - validates a record before accepting it;
@@ -36,11 +36,11 @@ match.
 
 ### Side-channel lifecycle
 
-The frontend writes a complete empty VXDG document after a successful check. On failure it writes the structured records
+The frontend writes a complete empty TADG document after a successful check. On failure it writes the structured records
 before printing the human-readable diagnostics and exiting. This makes the protocol independent of terminal wording and
 ensures that an old failure file cannot survive as the apparent result of a new success.
 
-If `VXS_DIAGNOSTICS_FILE` is absent, no protocol file is written. The variable is an implementation boundary passed by
+If `TALA_DIAGNOSTICS_FILE` is absent, no protocol file is written. The variable is an implementation boundary passed by
 the native driver or a trusted editor client; it is intentionally absent from public CLI help. A configured empty path,
 an invalid diagnostic model, an encoding failure, or an I/O failure makes the frontend fail rather than silently leaving
 the requesting tool without a trustworthy result.
@@ -51,7 +51,7 @@ Human stderr may be displayed as supplemental detail, but it must never be repar
 
 ### Document-version ownership
 
-VXDG version 1 describes the disk snapshot compiled by `vxs`; it does not carry an editor document version. Xide records
+TADG version 1 describes the disk snapshot compiled by `talac`; it does not carry an editor document version. Xide records
 the active version when it starts a check and publishes the resulting diagnostics only if that version remains current.
 Edits made while the compiler runs therefore invalidate the result. Fixes require the same version guard before their
 text edits can be applied.
@@ -62,12 +62,12 @@ highlighting after supplementary characters.
 
 ## Output channels
 
-`vxs` writes ordinary requested output to standard output and diagnostics to standard error. Help and version are parser
+`talac` writes ordinary requested output to standard output and diagnostics to standard error. Help and version are parser
 outcomes rendered by the driver; parsing itself does not print. This separation lets tests and embedding clients inspect a
 typed parse result without redirecting global streams.
 
 Compilation, project evaluation, tool discovery, malformed artifact, target-machine, and link failures return a nonzero
-status. `vxs run` returns a build failure without launching anything, and after a successful build it propagates the native
+status. `talac run` returns a build failure without launching anything, and after a successful build it propagates the native
 program's exit status.
 
 ## Diagnostic ownership
@@ -114,7 +114,7 @@ Option and value spelling is case-sensitive. The diagnostic should repeat the re
 accepted domain. It must not silently accept `--help`, lowercase a target-sensitive identifier, or reinterpret a misspelled
 command as a file.
 
-`-Help` is contextual. Global help lists commands and global syntax; `vxs build -Help` includes build-only `-Emit`; `vxs
+`-Help` is contextual. Global help lists commands and global syntax; `talac build -Help` includes build-only `-Emit`; `talac
 check -Help` does not. Help is a successful outcome and does not start project evaluation or compilation.
 
 ## Source positions
@@ -151,8 +151,8 @@ their capture-list context; their identifier tokens remain usable elsewhere.
 ### Comparison errors
 
 The equality and relational precedence groups are non-associative, following
-the examples in `Spec/Language/Operators.vxs`. `a < b < c` and `a == b == c`
-produce `VXP0014` at the second operator. Parentheses establish a separate
+the examples in `Spec/Language/Operators.tala`. `a < b < c` and `a == b == c`
+produce `TAP0014` at the second operator. Parentheses establish a separate
 expression level: `(a < b) == (b < c)` is syntactically valid and is subsequently
 checked for type compatibility.
 
@@ -169,23 +169,23 @@ equality never falls back to comparing truthiness.
 
 `condition ? first : second` and `left ?: fallback` are the weakest expression
 level and group to the right. A `?` that is not followed by a result and `:`
-produces `VXP0029`. `left ? : fallback` with a spaced empty middle is the same
+produces `TAP0029`. `left ? : fallback` with a spaced empty middle is the same
 omitted-middle form as `?:`.
 
 `??` and `??=` are recognized as tokens so that they are not read as two
 conditionals. They need nullable types, which are not implemented; the parser
-reports `VXP0030` and `VXP0031` instead of guessing a meaning.
+reports `TAP0030` and `TAP0031` instead of guessing a meaning.
 
 A simple assignment and a compound assignment (`+=`, `-=`, `*=`, `/=`, `//=`,
 `%=`, `**=`, `<<=`, `>>=`, `&=`, `^=`, `|=`) have a named target; another
-target expression produces `VXP0003`. Both are also expressions that yield the
+target expression produces `TAP0003`. Both are also expressions that yield the
 stored value. Assignment is the weakest expression level and groups to the
 right, so `a = b = 10` is `a = (b = 10)` and `a = b += 2` is `a = (b += 2)`.
 Elsewhere an assignment operand needs parentheses: `1 + (a = 2)`.
 
 `++target` and `target++` are expressions too. The prefix form yields the new
 value and the postfix form the previous one. The operand must be a named
-storage location: `++10`, `(a + b)++` and `Next()++` produce `VXP0028`.
+storage location: `++10`, `(a + b)++` and `Next()++` produce `TAP0028`.
 
 The language has no decrement operator. `--` starts a comment wherever it
 stands outside a string, also directly after a value, so `value--;` is the
@@ -195,7 +195,7 @@ before the closing brace of a block is that block's final expression. Write
 `value -= 1`.
 
 Because such text can keep compiling with a different meaning, the compiler
-reports the warning `VXL0009` at the `--` in two spellings:
+reports the warning `TAL0009` at the `--` in two spellings:
 
 - attached: `--` directly follows a name, `)` or `]`, as in `value--;`;
 - leading: the whole comment is a name directly after `--` and a `;`, as in
@@ -208,27 +208,27 @@ It follows `-Warnings none` and `-Werror true` like every other warning, and
 it is listed after the errors when the same source is also rejected.
 
 `_ = value;` is the discard statement, not an assignment to a binding named
-`_`, and is not an expression: `(_ = value)` produces `VXP0032`.
+`_`, and is not an expression: `(_ = value)` produces `TAP0032`.
 
 The type checker reports:
 
 | Code | Meaning |
 | --- | --- |
-| `VXT0035` | the operator result of a compound assignment does not have the target type, for example floating `//=` |
-| `VXT0036` | a conditional test is neither `bool` nor numeric |
-| `VXT0037` | the two results of a conditional have different types |
-| `VXT0038` | the two operands of truthy coalescing have different types |
-| `VXT0039` | the result of a conditional form is not `bool`, numeric, an enum or, for `? :`, a `String`; other result types are not lowered yet |
+| `TAT0035` | the operator result of a compound assignment does not have the target type, for example floating `//=` |
+| `TAT0036` | a conditional test is neither `bool` nor numeric |
+| `TAT0037` | the two results of a conditional have different types |
+| `TAT0038` | the two operands of truthy coalescing have different types |
+| `TAT0039` | the result of a conditional form is not `bool`, numeric, an enum or, for `? :`, a `String`; other result types are not lowered yet |
 
 A compound assignment otherwise reuses the assignment and operator
-diagnostics: `VXT0003` for an immutable target and `VXT0012` for operands the
+diagnostics: `TAT0003` for an immutable target and `TAT0012` for operands the
 operator does not accept. An untyped numeric literal operand of a conditional
 form takes the type of the other operand in either direction, and both take
 the expected type when there is one; a computed operand is never converted.
 
 An assignment or increment used as a value is checked exactly like its
-statement form and reports the same codes: `VXT0003` and `VXT0004` for
-assignment, `VXT0022` through `VXT0024` for increment. Its type
+statement form and reports the same codes: `TAT0003` and `TAT0004` for
+assignment, `TAT0022` through `TAT0024` for increment. Its type
 is the target type. The target type is context for the assigned value, as a
 declared type is for a binding initializer, so `wide = 5` types the literal
 from `wide`; the context that receives the assignment's value does not reach
@@ -239,7 +239,7 @@ the right operand. Parameters are immutable, so they cannot be targets.
 A `while` or classic `for` loop in operand position is an expression. Its value
 is the operand of the `break value;` that leaves it:
 
-```vxs
+```tala
 int found = while (true) {
     if (Ready()) {
         break 10;
@@ -252,30 +252,30 @@ reports:
 
 | Code | Meaning |
 | --- | --- |
-| `VXT0025` | `break` outside any loop |
-| `VXT0026` | `break value;` in a loop statement; only a loop used as an expression has a value |
-| `VXT0040` | a bare `break;` leaves a loop used as an expression |
-| `VXT0041` | the condition of a loop used as an expression is not the constant `true` (or, for `for`, absent), so the loop could end without a value |
-| `VXT0042` | a loop used as an expression has no `break` that carries a value |
-| `VXT0043` | the `break` values of one loop have different types |
-| `VXT0044` | the loop value is not `bool`, numeric, an enum or a `String`; other result types are not lowered yet |
+| `TAT0025` | `break` outside any loop |
+| `TAT0026` | `break value;` in a loop statement; only a loop used as an expression has a value |
+| `TAT0040` | a bare `break;` leaves a loop used as an expression |
+| `TAT0041` | the condition of a loop used as an expression is not the constant `true` (or, for `for`, absent), so the loop could end without a value |
+| `TAT0042` | a loop used as an expression has no `break` that carries a value |
+| `TAT0043` | the `break` values of one loop have different types |
+| `TAT0044` | the loop value is not `bool`, numeric, an enum or a `String`; other result types are not lowered yet |
 
 A `return` inside a loop used as an expression leaves the method. A loop that
 no `break` leaves and that returns never yields a value, which is valid; a
-loop that neither breaks nor returns is `VXT0042`.
+loop that neither breaks nor returns is `TAT0042`.
 
 A `break` always leaves the innermost loop, so a value-carrying `break` inside
-a loop statement nested in a loop expression is still `VXT0026`. The value of
+a loop statement nested in a loop expression is still `TAT0026`. The value of
 a `break` takes its context from the place that receives the loop's value.
 `do`/`while` has no expression form, and the enumerable `for (:)` form is not
-implemented. `VXD0002` is an internal error: it reports a value-carrying
+implemented. `TAD0002` is an internal error: it reports a value-carrying
 `break` that reached Core lowering without a loop expression to receive it.
 
 ### Match, if expressions and guard
 
 `match` selects the first arm whose patterns and guard accept its subjects:
 
-```vxs
+```tala
 int kind = match (code), (strict) {
     (0), (_) -> 10,
     (1), (true) -> 20,
@@ -293,25 +293,25 @@ The parser reports:
 
 | Code | Meaning |
 | --- | --- |
-| `VXP0033` | an `if` used as an expression has no `else` branch |
-| `VXP0034` | the `else` branch of an `if` used as an expression is another `if` instead of a block |
-| `VXP0035` | the condition of an `if`, `guard` or `while` is a binding such as `auto user = Find()`, which requires optional values |
-| `VXP0036` | a match arm does not start with a pattern: a literal, a `-` and a numeric literal, `_`, `null`, `.Case`, or a type followed by a name or `_`; or a `-` in a pattern is not followed by a numeric literal |
-| `VXP0037` | `guard (condition)` is not followed by `else` |
-| `VXP0038` | the pattern of a match arm was read as part of the expression body of the arm before it |
+| `TAP0033` | an `if` used as an expression has no `else` branch |
+| `TAP0034` | the `else` branch of an `if` used as an expression is another `if` instead of a block |
+| `TAP0035` | the condition of an `if`, `guard` or `while` is a binding such as `auto user = Find()`, which requires optional values |
+| `TAP0036` | a match arm does not start with a pattern: a literal, a `-` and a numeric literal, `_`, `null`, `.Case`, or a type followed by a name or `_`; or a `-` in a pattern is not followed by a numeric literal |
+| `TAP0037` | `guard (condition)` is not followed by `else` |
+| `TAP0038` | the pattern of a match arm was read as part of the expression body of the arm before it |
 
-A bare name is not a pattern, so `value -> ...` is `VXP0036`: a binding always
+A bare name is not a pattern, so `value -> ...` is `TAP0036`: a binding always
 states its type, as in `int value -> ...`. A numeric literal may be preceded
 by `-`, which makes the constant negative; no other expression is a pattern.
 The constant is checked against the type of its subject like every literal
-(`VXT0016`), so `-128` is a pattern for a `byte` and `-129`, `128` and any
+(`TAT0016`), so `-128` is a pattern for a `byte` and `-129`, `128` and any
 negative constant for an unsigned subject are not.
 The comma after an arm is optional. Without it, a parenthesized pattern after
 an expression body continues that expression as a call, and the `->` that
-follows cannot; `VXP0038` is reported at that arrow. An unterminated
-match reports `VXP0002`.
+follows cannot; `TAP0038` is reported at that arrow. An unterminated
+match reports `TAP0002`.
 
-The renamer reports `VXR0008` when a pattern binds a name that is already in
+The renamer reports `TAR0008` when a pattern binds a name that is already in
 scope, including a name bound by an earlier pattern of the same arm. Two arms
 may bind the same name: a binding is in scope only in the guard and the body
 of its own arm.
@@ -320,56 +320,56 @@ The type checker reports:
 
 | Code | Meaning |
 | --- | --- |
-| `VXT0046` | a block used as a value can complete normally and does not end with an expression that has no semicolon |
-| `VXT0048` | a match arm does not have exactly one pattern for each subject |
-| `VXT0049` | a match guard is neither `bool` nor numeric |
-| `VXT0050` | the arms of a match used as an expression have different types |
-| `VXT0051` | the result of a match is not `bool`, numeric, an enum or a `String`; other result types are not lowered yet |
-| `VXT0052` | a match used as an expression may accept no arm |
-| `VXT0053` | a match arm can never be selected because an earlier arm accepts everything it accepts |
-| `VXT0054` | a literal pattern cannot be compared with its subject |
-| `VXT0055` | a `null` pattern; reference subjects are not supported in `match` yet |
-| `VXT0056` | an enum case pattern such as `.Ready` for a subject that is not of an enum type |
-| `VXT0057` | a type pattern names another type than its subject's; class hierarchies are not implemented |
-| `VXT0058` | a match subject is not `bool`, numeric, an enum or a `String`; other subject types are not lowered yet |
-| `VXT0060` | a guard condition is neither `bool` nor numeric |
-| `VXT0061` | the `else` block of a guard can complete normally instead of leaving the enclosing scope |
-| `VXT0062` | the `return` statements of a method or callable whose result type is inferred carry values of different types |
-| `VXT0063` | the return type of a method declared with `auto` cannot be inferred: every result is a call that depends on the method itself |
-| `VXT0064` | an enum has no member of the given name, in `Enum.Member` or in a case pattern |
-| `VXT0065` | an operation on a value of an enum other than `==` or `\=` with a value of the same enum |
-| `VXT0066` | the underlying type of an enum is not an integer type |
-| `VXT0067` | an enum names a member twice |
-| `VXT0068` | the value of an enum member does not fit the underlying type of the enum |
-| `VXT0069` | a target-typed `.Member` stands where no enum type is expected: the type of the place is inferred, or is not an enum |
-| `VXT0070` | the value written for an enum member is not a constant integer expression, names something that is not an earlier member of the same enum, or has no value, as a division by zero has none |
+| `TAT0046` | a block used as a value can complete normally and does not end with an expression that has no semicolon |
+| `TAT0048` | a match arm does not have exactly one pattern for each subject |
+| `TAT0049` | a match guard is neither `bool` nor numeric |
+| `TAT0050` | the arms of a match used as an expression have different types |
+| `TAT0051` | the result of a match is not `bool`, numeric, an enum or a `String`; other result types are not lowered yet |
+| `TAT0052` | a match used as an expression may accept no arm |
+| `TAT0053` | a match arm can never be selected because an earlier arm accepts everything it accepts |
+| `TAT0054` | a literal pattern cannot be compared with its subject |
+| `TAT0055` | a `null` pattern; reference subjects are not supported in `match` yet |
+| `TAT0056` | an enum case pattern such as `.Ready` for a subject that is not of an enum type |
+| `TAT0057` | a type pattern names another type than its subject's; class hierarchies are not implemented |
+| `TAT0058` | a match subject is not `bool`, numeric, an enum or a `String`; other subject types are not lowered yet |
+| `TAT0060` | a guard condition is neither `bool` nor numeric |
+| `TAT0061` | the `else` block of a guard can complete normally instead of leaving the enclosing scope |
+| `TAT0062` | the `return` statements of a method or callable whose result type is inferred carry values of different types |
+| `TAT0063` | the return type of a method declared with `auto` cannot be inferred: every result is a call that depends on the method itself |
+| `TAT0064` | an enum has no member of the given name, in `Enum.Member` or in a case pattern |
+| `TAT0065` | an operation on a value of an enum other than `==` or `\=` with a value of the same enum |
+| `TAT0066` | the underlying type of an enum is not an integer type |
+| `TAT0067` | an enum names a member twice |
+| `TAT0068` | the value of an enum member does not fit the underlying type of the enum |
+| `TAT0069` | a target-typed `.Member` stands where no enum type is expected: the type of the place is inferred, or is not an enum |
+| `TAT0070` | the value written for an enum member is not a constant integer expression, names something that is not an earlier member of the same enum, or has no value, as a division by zero has none |
 
 A block used as a value may leave instead of yielding a value: `return`
 leaves the enclosing method and is checked against its return type
-(`VXT0005`), also from inside a loop used as an expression, and `break` and
+(`TAT0005`), also from inside a loop used as an expression, and `break` and
 `continue` target the nearest loop around the expression and need one
-(`VXT0025`, `VXT0027`). A `break` follows the rules of that loop: it carries
-a value to a loop used as an expression (`VXT0040` without one) and none to a
-loop statement (`VXT0026`). The condition and the update clause of a loop
+(`TAT0025`, `TAT0027`). A `break` follows the rules of that loop: it carries
+a value to a loop used as an expression (`TAT0040` without one) and none to a
+loop statement (`TAT0026`). The condition and the update clause of a loop
 belong to the loop: a `break` in a block used as a value there leaves that
 loop, a `continue` in the condition evaluates the condition again, and a
 `continue` in the update clause of a `for` ends the update. A callable is
 not inside the loops around the place that creates it, so a `break` or
-`continue` in its body is `VXT0025` or `VXT0027` unless a loop of its own
+`continue` in its body is `TAT0025` or `TAT0027` unless a loop of its own
 encloses it. The returns of a callable whose
 result type is inferred are collected through expressions as well and must
-agree (`VXT0062`); the returns of a nested callable are its own. A method
+agree (`TAT0062`); the returns of a nested callable are its own. A method
 declared with `auto` is inferred the same way before its callers are
 checked, wherever it is declared; calls of methods that are not inferred yet
 take no part, so a recursive method is inferred from its base case, and a
-method all of whose results depend on itself is `VXT0063`. A block that cannot complete normally
+method all of whose results depend on itself is `TAT0063`. A block that cannot complete normally
 needs no final expression and gives its expression no type; the blocks that
 complete do. When no block completes, the expression never yields a value.
 That is valid: the place that would have received the value is not held to a
 type, because it is never reached, and nothing is stored for it. The
 statements after it are still checked.
 
-Whether a block can complete normally, for `VXT0046` and `VXT0061`, is decided
+Whether a block can complete normally, for `TAT0046` and `TAT0061`, is decided
 from its control flow. A statement cannot complete when it is a `return`, a
 `break` or a `continue`; an `if` with an `else` whose two blocks both cannot;
 a nested block that cannot; a loop whose condition is the literal `true`, or
@@ -380,11 +380,11 @@ always evaluated and never yields a value. A block cannot complete when any
 of its statements cannot. A call is assumed to return: calls whose result is `never`
 are not recognized yet.
 
-A match used as an expression is complete, so that `VXT0052` is not reported,
+A match used as an expression is complete, so that `TAT0052` is not reported,
 when an arm without a guard has only `_` and type patterns, or when every
 subject is a `bool` and the arms without guards accept each combination of
 `true` and `false` between them. No other set of literals is recognized as
-complete. `VXT0053` compares an arm with every earlier arm that has no guard,
+complete. `TAT0053` compares an arm with every earlier arm that has no guard,
 pattern by pattern: the earlier pattern accepts every value or is the same
 literal.
 
@@ -393,10 +393,10 @@ that receives the match, and without one from the first arm that has a type.
 A literal pattern is typed as the other operand of a comparison with its
 subject. A pattern binding is an ordinary local and may be assigned. An
 expression body in a statement match must have an effect, like any expression
-statement; a pure one is `VXT0013`.
+statement; a pure one is `TAT0013`.
 
 An `if` used as an expression is the conditional expression with block
-operands, so it reports `VXT0036`, `VXT0037` and `VXT0039` for its test and
+operands, so it reports `TAT0036`, `TAT0037` and `TAT0039` for its test and
 its results. The `else` block of a guard leaves when its last statement is
 `return`, `break` or `continue`, or an `if` whose two branches both leave.
 The arms of a statement match are statements of the enclosing body: they may
@@ -404,8 +404,8 @@ The arms of a statement match are statements of the enclosing body: they may
 expression a `break value;` in an arm supplies the loop's value.
 
 A `{` at the start of a statement opens a nested block. It has no diagnostics
-of its own: an unterminated block is `VXP0002`, a name it declares is unknown
-after it, and declaring a name that is already in scope is `VXR0003`, as for
+of its own: an unterminated block is `TAP0002`, a name it declares is unknown
+after it, and declaring a name that is already in scope is `TAR0003`, as for
 any local. Two blocks side by side may declare the same name.
 
 ### Nesting limits
@@ -424,12 +424,12 @@ at most 5.5 MiB in a sanitizer build; the measurements are in
 
 | Code | Meaning |
 | --- | --- |
-| `VXP0039` | a statement is nested more than 256 levels deep in other statements |
-| `VXP0040` | an expression is nested more than 1024 levels deep in other expressions |
+| `TAP0039` | a statement is nested more than 256 levels deep in other statements |
+| `TAP0040` | an expression is nested more than 1024 levels deep in other expressions |
 
-`VXP0041` is no longer reported. It refused a value of an enum member that
+`TAP0041` is no longer reported. It refused a value of an enum member that
 was not an integer literal; a member value is now any constant integer
-expression, and `VXT0070` reports one that is not.
+expression, and `TAT0070` reports one that is not.
 
 The statements of a function body are at level 1, and an expression that is
 not an operand is at level 1. A block, a branch, a loop body, a `guard`
@@ -455,7 +455,7 @@ operator are one level below the expression that holds them, so
 Embedding clients may supply a token list through `ParserInput`. An empty list
 is an empty module, and a complete token list may omit the final EOF marker.
 If a marker is present, it must be the final token. A suffix after EOF produces
-`VXP0015`; it cannot be silently discarded as unparsed input.
+`TAP0015`; it cannot be silently discarded as unparsed input.
 
 When physical exhaustion occurs after a token, the parser retains a zero-width
 span at that token's end. This preserves the source filename even for truncated
@@ -487,7 +487,7 @@ Source diagnostics should retain:
 - related declaration locations when ambiguity or duplication involves more than one site; and
 - the stage/rule identity needed by Analyzer and Linter clients.
 
-Byte offsets are an implementation detail and must not be presented as Unicode character indexes. Visual X# source is
+Byte offsets are an implementation detail and must not be presented as Unicode character indexes. Tala source is
 decoded as UTF-8, while runtime `String` semantics use Unicode scalar values. Diagnostics must not confuse UTF-8 byte count,
 UTF-16 code units, and scalar positions.
 
@@ -510,7 +510,7 @@ Compiler warning policy is controlled by the resolved CLI/project settings:
 unrelated error category. Experimental, shadowing, and undefined-name controls are explicit settings and follow the same
 CLI-over-project precedence as other compiler settings.
 
-Visual Linter has its own rule severity model. Compiler diagnostics and linter diagnostics can appear in one Analyzer
+talalint has its own rule severity model. Compiler diagnostics and linter diagnostics can appear in one Analyzer
 session, but their configuration and version lines remain independent.
 
 ## Artifact diagnostics
@@ -538,11 +538,11 @@ have the operand's type:
 
 | Code | Stage |
 | --- | --- |
-| `VXC1073` | Core, in the Haskell and the native verifier |
-| `VXC0025` | CorePrep, in the Haskell verifier |
-| `VXC1074` | CorePrep, in the native verifier |
-| `VXP1047` | Xpp |
-| `VXL1053` | Xmm |
+| `TAC1073` | Core, in the Haskell and the native verifier |
+| `TAC0025` | CorePrep, in the Haskell verifier |
+| `TAC1074` | CorePrep, in the native verifier |
+| `TAP1047` | Xpp |
+| `TAL1053` | Xmm |
 
 None of them can be reached from source: the frontend produces the operation only in a form that passes. They report a
 malformed artifact or a defect of a stage.
@@ -553,18 +553,22 @@ function takes, and that the call has the type the function returns.
 
 | Code | Stage |
 | --- | --- |
-| `VXC1075` | Core, in the Haskell and the native verifier |
-| `VXC0026` | CorePrep, in the Haskell verifier |
-| `VXC1076` | CorePrep, in the native verifier |
-| `VXP1048` | Xpp |
-| `VXL1054` | Xmm |
+| `TAC1075` | Core, in the Haskell and the native verifier |
+| `TAC0026` | CorePrep, in the Haskell verifier |
+| `TAC1076` | CorePrep, in the native verifier |
+| `TAP1048` | Xpp |
+| `TAL1054` | Xmm |
 
 These cannot be reached from source either. What a program can get wrong about the console and about strings is reported
-by the type checker, with `VXT0071` to `VXT0079`; [Console output and strings](CONSOLE-IO.md) lists them.
+by the type checker, with `TAT0071` to `TAT0079`; [Console output and strings](CONSOLE-IO.md) lists them.
 
-A method reference `Type::Method` reports `VXT0080` when the method has several overloads and the place does not expect
-the type of exactly one of them, and `VXT0081` when its receiver is a value and not a type;
+A method reference `Type::Method` reports `TAT0080` when the method has several overloads and the place does not expect
+the type of exactly one of them, and `TAT0081` when its receiver is a value and not a type;
 [Static member resolution](STATIC-MEMBER-RESOLUTION.md) lists the forms.
+
+A callable parameter written without a type, as in `\x -> x + 1`, is to take its type from the place that expects the
+callable. That inference is not implemented, so `TAT0082` reports every such parameter and asks for the type to be
+written: `\(int x) -> x + 1`.
 
 ## Safe output behavior
 
@@ -577,7 +581,7 @@ Failure must not make an old file look newly built.
 - Project-wide object and assembly requests are rejected before writing while Core lacks source ownership. Once that route is
   connected, flattened source-stem collisions must be rejected before either input overwrites the other.
 - Project evaluation aborted by `panic` emits no partial plan and does not begin compilation.
-- VXDC refuses to overwrite the binary lock database with a text dump.
+- TADC refuses to overwrite the binary lock database with a text dump.
 
 When atomic replacement is available, writers should create a sibling temporary file, flush/close it, and replace the
 destination only after validation. A failure message should mention both the requested destination and the underlying error,
@@ -585,7 +589,7 @@ without exposing credentials or unrelated environment contents.
 
 ## Tool discovery failures
 
-Project `format` and `lint` commands require separately installed `vfmt` and `vlint`. If the executable is unavailable, the
+Project `format` and `lint` commands require separately installed `talafmt` and `talalint`. If the executable is unavailable, the
 message names the missing binary and the ViGet package used to install it. The compiler does not fall back to an embedded
 formatter/linter or silently skip the command.
 
@@ -598,8 +602,8 @@ set `LLVM_ROOT` or expose `llvm-config`; they must not recommend committing an a
 
 ## Analyzer and machine-readable use
 
-The compiler pipeline keeps semantic rule decisions separate from final message construction. That lets Visual Analyzer and
-Visual Linter reuse symbol, type, range, and control-flow facts without parsing human prose.
+The compiler pipeline keeps semantic rule decisions separate from final message construction. That lets tala-analyzer and
+talalint reuse symbol, type, range, and control-flow facts without parsing human prose.
 
 A stable machine-facing diagnostic needs:
 
@@ -611,7 +615,7 @@ A stable machine-facing diagnostic needs:
 - optional related locations and safe fixes.
 
 The current CLI is text-oriented. A future structured protocol must be versioned rather than inferred from terminal output.
-Until then, external tools should use the compiler libraries/frontends they own instead of scraping `vxs` wording.
+Until then, external tools should use the compiler libraries/frontends they own instead of scraping `talac` wording.
 
 ## Security and privacy
 

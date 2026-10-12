@@ -18,7 +18,7 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) analyzes five supported s
 | GitHub Actions | Workflow source, without a build |
 | C/C++ | Project-owned source, without a build for every pull request and from a traced Bazel build for the default branch |
 | Go | Manual builds of every command and internal package in helpers/ |
-| Java/Kotlin | Manual Gradle compilation of ProjectSystem, Analyzer, Formatter, and Linter |
+| Java/Kotlin | Manual Gradle compilation of Tazel, tala-analyzer, talafmt, and talalint |
 | JavaScript/TypeScript | Editor integration source, without a build |
 
 The configuration excludes `third_party/` and generated build output. Haskell is not a CodeQL-supported language; its
@@ -42,7 +42,7 @@ build recorded 1 009. The job fails when fewer than 95 percent of the includes a
 of the compilations are free of errors.
 
 Both jobs run [the same measurement](../.github/codeql/Measure-CppAnalysis.ps1). It compares the native sources the
-repository owns under `Compiler/` and `Interactive/` with the sources the CodeQL database holds and fails below
+repository owns under `Talac/` and `Interactive/` with the sources the CodeQL database holds and fails below
 95 percent. It also writes the share of resolved includes and of compilations without errors, with the extractor's
 own summary and telemetry, to the job summary and to the log.
 
@@ -80,7 +80,7 @@ Coverage uploads carry separate flags so one component's result cannot be mistak
 | --- | --- | --- |
 | `haskell-frontend` | Instrumented Cabal compiler tests | HPC converted to LCOV |
 | `native-cpp` | The native C++/Interactive suites on macOS | Clang source-based LCOV |
-| `kotlin-project-system` | ProjectSystem Gradle tests | JaCoCo XML |
+| `kotlin-project-system` | Tazel Gradle tests | JaCoCo XML |
 | `kotlin-analyzer` | Analyzer Gradle tests | JaCoCo XML |
 | `kotlin-formatter` | Formatter Gradle tests | JaCoCo XML |
 | `kotlin-linter` | Linter Gradle tests | JaCoCo XML |
@@ -98,7 +98,7 @@ Codecov's GitHub OIDC path without a repository token. The native report is gene
 `develop test`; it does not count a binary merely because it built. JaCoCo XML is generated after running the owning
 tests, and Go profiles cover every package in the helper module.
 
-To reproduce a Kotlin report locally, run `gradle -p ProjectSystem test jacocoTestReport` (or replace the directory with
+To reproduce a Kotlin report locally, run `gradle -p Tazel test jacocoTestReport` (or replace the directory with
 Analyzer, Formatter, or Linter). For native macOS coverage, run
 `go run ./helpers/cmd/develop test -- --copt=-fprofile-instr-generate --copt=-fcoverage-mapping
 --linkopt=-fprofile-instr-generate` with `LLVM_PROFILE_FILE` set to a writable path containing

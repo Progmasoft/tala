@@ -7,8 +7,47 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Visual X# is now Tala
+
+The language and its tools have new names. The entries below and those of
+earlier releases keep the names they were written with.
+
+- The language is **Tala** and its sources end in `.tala` (was `.vxs`).
+- The compiler is `talac` (was `vxs`), the REPL is `tali` (was `vxsi`) and
+  takes `--eval` (was `-Eval`), the formatter is `talafmt`, the linter is
+  `talalint`, the language server is `tala-analyzer`, and the build system
+  and package manager is Tazel, whose project file is `BUILD.kts`, whose
+  lockfile is `LOCK.sqlite3` and whose plugin cache is `.tazel/plugins`.
+- Directories: `Compiler/` is `Talac/`, `ProjectSystem/` is `Tazel/`, and
+  `Analyzer/`, `Formatter/`, `Linter/` are `Ecosystem/tala-analyzer/`,
+  `Ecosystem/talafmt/`, `Ecosystem/talalint/`.
+- C++ headers are included as `Progmasoft/Tala/...` and the namespace is
+  `Progmasoft::Tala`; the Haskell modules are `Progmasoft.Tala.*`,
+  `Progmasoft.Talafmt.*`, `Progmasoft.Talalint.*` and
+  `Progmasoft.TalaAnalyzer.*`; the Cabal packages are `tala-syntax`,
+  `tala-frontend`, `tala-core`, `tala-compiler`, `tala-analyzer`, `talafmt`
+  and `talalint`; the Kotlin packages are `com.progmasoft.tazel.*`,
+  `com.progmasoft.talafmt`, `com.progmasoft.talalint` and
+  `com.progmasoft.tala.analyzer`; the Go module is
+  `github.com/Progmasoft/tala/helpers`.
+- Binary names: the frontend library is `tala-frontend`, the runtime library
+  is `tala-runtime.lib` or `libtala-runtime.a`, exported C symbols begin with
+  `tala_`, and environment variables and macros begin with `TALA_`.
+- Diagnostic codes begin with `TA` (`TAT0080` was `VXT0080`), and the magic
+  numbers of the wire formats are `TACR`, `TACP`, `TAPP`, `TAMM` and `TADC`.
+  Artifacts written by an earlier compiler are not read.
+- The C interface is TCI, the Tala C Interface (was VXCI).
+- Not yet changed: the options of `talac` still have the `-Option` form and a
+  native executable still ends in `.vxse`.
+
 ### Compiler
 
+- A callable parameter written without a type, as in `\x -> x + 1`, is
+  reported as `TAT0082`. Its type was left unknown, since taking it from the
+  place that expects the callable is not implemented, and the program was
+  refused only by the LLVM lowering, with an error about the backend and no
+  place in the source. Coverage-guided fuzzing found it; the program is kept
+  as a seed.
 - A local whose value is computed by need no longer makes a long chain of
   operators slow to compile. The lowering looked through the whole operand
   tree again at every operator while such a local was in scope, so the time
@@ -16,6 +55,15 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   held one division did not finish in five minutes and now takes about a
   second. The lowered program is the same. Coverage-guided fuzzing found it
   as a timeout; a shorter program of the same shape is kept as a seed.
+
+### Native executables
+
+- `vxs build` and `vxs run` produce a native executable on Linux and macOS,
+  as they did on Windows. The program is linked by the C compiler of the
+  system with `libvxs-runtime.a`, which stands beside the compiler, and with
+  the C library; objects for ELF and Mach-O are position independent. A
+  program that stops is reported by `vxs run` as 128 and the number of the
+  signal that ended it.
 
 ### Command line
 
@@ -32,6 +80,17 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   executable is entered and linked. `verify-abi` reads every entry back from
   the header or source that defines it and fails on a difference in either
   direction; the compiler workflows run it.
+- `prebuild` and `optional-packages` support Debian 13, with apt as on
+  Ubuntu. Debian's own repositories have no .NET SDK; `optional-packages`
+  says so there and installs the rest.
+- `cross-platform-test` checks a branch on the platforms a developer is not
+  sitting at, before a pull request exists. `ci` starts the compiler
+  workflows for the current branch, on real Windows, macOS and Linux
+  machines, and can follow them to their end; the workflows can now be
+  started by hand for that. `run` uses Podman containers on the developer's
+  machine instead, for Ubuntu 26.04 and Fedora 43: macOS and Windows do not
+  run in a container and are listed with the reason. `prebuild` now checks
+  for and installs Podman.
 - The fuzz corpora are larger. The lexer, parser and source targets are seeded
   with the Visual X# sources the repository already holds, more than two
   hundred programs, read where they are. The command-line, project, REPL,

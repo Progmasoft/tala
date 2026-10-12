@@ -4,7 +4,7 @@
 // Package executioncases writes the test tables that the Haskell frontend
 // tests and the native smoke program share from the case files that own them.
 //
-// The case files under Compiler/Fuzzing/Cases are the only place a case is
+// The case files under Talac/Fuzzing/Cases are the only place a case is
 // written. The Haskell module runs each case in a reference Core evaluator and
 // the C++ tables run it through LLVM; both must return the expected value the
 // case file states. Generating the two tables from one file keeps them equal.

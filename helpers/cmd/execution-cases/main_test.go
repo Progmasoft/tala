@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Progmasoft/visual-xsharp/helpers/internal/executioncases"
+	"github.com/Progmasoft/tala/helpers/internal/executioncases"
 )
 
 // repository creates a root that holds case files and nothing generated.
@@ -18,7 +18,7 @@ func repository(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	for _, name := range []string{"Selection.cases", "Leaving.cases"} {
-		path := filepath.Join(root, "Compiler", "Fuzzing", "Cases", name)
+		path := filepath.Join(root, "Talac", "Fuzzing", "Cases", name)
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func TestCheckReportsAnEditedTableAndABrokenCaseFile(t *testing.T) {
 	if _, _, err := run(t, "generate", "--root", root); err != nil {
 		t.Fatal(err)
 	}
-	include := filepath.Join(root, "Compiler", "Fuzzing", "Generated", "LeavingCases.inc")
+	include := filepath.Join(root, "Talac", "Fuzzing", "Generated", "LeavingCases.inc")
 	if err := os.WriteFile(include, []byte("// edited by hand\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestCheckReportsAnEditedTableAndABrokenCaseFile(t *testing.T) {
 		t.Fatalf("the edited table alone must be reported: %q, %v", problems, err)
 	}
 
-	cases := filepath.Join(root, "Compiler", "Fuzzing", "Cases", "Leaving.cases")
+	cases := filepath.Join(root, "Talac", "Fuzzing", "Cases", "Leaving.cases")
 	if err := os.WriteFile(cases, []byte("body: return left;\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}

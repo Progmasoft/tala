@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-// prebuild installs system tools used to develop Visual X#. Bazel, Cabal, and
+// prebuild installs system tools used to develop Tala. Bazel, Cabal, and
 // Gradle remain the owners of their build graphs after host bootstrap.
 package main
 
@@ -23,12 +23,12 @@ import (
 	"time"
 )
 
-const prebuildUsage = `Visual X# development-host bootstrap
+const prebuildUsage = `Tala development-host bootstrap
 
-Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, and
-Fedora 43 (N-1 as of September 2026). The installed
+Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
+Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
 toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Temurin JDK 25, Git, and the
-platform link resources. Visual X# uses ClangCL/LLD on Windows, not MSVC.`
+platform link resources. Tala uses ClangCL/LLD on Windows, not MSVC.`
 
 type bootstrapHost int
 
@@ -38,6 +38,7 @@ const (
 	bootstrapMacOS
 	bootstrapUbuntu
 	bootstrapFedora
+	bootstrapDebian
 )
 
 type bootstrapRunner interface {
@@ -185,6 +186,7 @@ var bootstrapTools = []toolRequirement{
 	{name: "Bazelisk", executables: []string{"bazelisk"}, wingetPackageID: "Bazel.Bazelisk", homebrewFormula: "bazelisk"},
 	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "llvm-dev", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "llvm-devel", "llvm-static", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
 	{name: "GHCup", executables: []string{"ghcup"}, homebrewFormula: "ghcup"},
+	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}},
 	{name: "Temurin JDK 25", executables: []string{"java"}, wingetPackageID: "EclipseAdoptium.Temurin.25.JDK", homebrewFormula: "temurin@25", aptPackages: []string{"temurin-25-jdk"}, dnfPackages: []string{"temurin-25-jdk"}},
 }
 
@@ -201,7 +203,7 @@ func main() {
 func newPrebuildCommand(runner bootstrapRunner, output, errorOutput io.Writer) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "prebuild",
-		Short:         "Check or install the tools a Visual X# development host needs.",
+		Short:         "Check or install the tools a Tala development host needs.",
 		Long:          prebuildUsage,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
@@ -262,7 +264,7 @@ func detectBootstrapHost(goos string) (bootstrapHost, error) {
 		}
 		return classifyBootstrapLinux(string(contents))
 	default:
-		return bootstrapUnsupported, fmt.Errorf("%s is not a supported Visual X# development host", goos)
+		return bootstrapUnsupported, fmt.Errorf("%s is not a supported Tala development host", goos)
 	}
 }
 
@@ -279,8 +281,10 @@ func classifyBootstrapLinux(release string) (bootstrapHost, error) {
 		return bootstrapUbuntu, nil
 	case fields["ID"] == "fedora" && fields["VERSION_ID"] == "43":
 		return bootstrapFedora, nil
+	case fields["ID"] == "debian" && fields["VERSION_ID"] == "13":
+		return bootstrapDebian, nil
 	default:
-		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS or Fedora 43 (N-1)", fields["ID"], fields["VERSION_ID"])
+		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS, Fedora 43 (N-1) or Debian 13", fields["ID"], fields["VERSION_ID"])
 	}
 }
 
@@ -470,7 +474,8 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 	if _, err := runner.LookPath(manager); err != nil {
 		return fmt.Errorf("%s is required on %s", manager, bootstrapHostName(host))
 	}
-	if host == bootstrapUbuntu {
+	// apt installs from the package lists it has, on Ubuntu and on Debian.
+	if host == bootstrapUbuntu || host == bootstrapDebian {
 		if err := runLinuxPackageManager(runner, manager, []string{"update"}); err != nil {
 			return err
 		}
@@ -575,7 +580,7 @@ func installGHCupWindowsWithLoader(runner bootstrapRunner, load func() ([]byte, 
 		return fmt.Errorf("cannot verify the pinned GHCup bootstrap: %w", err)
 	}
 	fmt.Println("Installing GHCup with the pinned Haskell bootstrap...")
-	err = withTemporaryBootstrapScript(script, "visual-xsharp-ghcup-*.ps1", func(path string) error {
+	err = withTemporaryBootstrapScript(script, "tala-ghcup-*.ps1", func(path string) error {
 		return runner.Run("powershell.exe", "-NoProfile", "-NonInteractive", "-File", path,
 			"-Minimal", "-InBash", "-InstallDir", `C:\`)
 	})
@@ -604,7 +609,7 @@ func installGHCupUnixWithLoaderAs(runner bootstrapRunner, load func() ([]byte, e
 		return fmt.Errorf("cannot verify the pinned GHCup bootstrap: %w", err)
 	}
 	fmt.Println("Installing GHCup with the pinned Haskell bootstrap...")
-	err = withTemporaryBootstrapScript(script, "visual-xsharp-ghcup-*.sh", func(path string) error {
+	err = withTemporaryBootstrapScript(script, "tala-ghcup-*.sh", func(path string) error {
 		return runner.Run("env", "BOOTSTRAP_HASKELL_NONINTERACTIVE=1", "BOOTSTRAP_HASKELL_MINIMAL=1", "sh", path)
 	})
 	if err != nil {
@@ -719,6 +724,10 @@ func bootstrapHostName(host bootstrapHost) string {
 		return "Ubuntu 26.04 LTS (Tier 2)"
 	case bootstrapFedora:
 		return "Fedora 43 (Tier 3, N-1)"
+	case bootstrapDebian:
+		// The workflows build on Ubuntu and Fedora; Debian shares Ubuntu's
+		// packages and is prepared the same way, without a tier of its own.
+		return "Debian 13"
 	default:
 		return "unsupported"
 	}
