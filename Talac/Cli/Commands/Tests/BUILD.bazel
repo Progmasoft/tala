@@ -4,16 +4,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 package(default_visibility = ["//visibility:private"])
 
 cc_binary(
-    name = "execution_status_tests",
-    srcs = ["ExecutionStatusTests.cpp"],
-    deps = [
-        "//Talac/Cli/Commands:execution_status",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
-    ],
-)
-
-cc_binary(
     name = "cli_command_tests",
     srcs = ["CliCommandTests.cpp", "FrontendHeaderC11Tests.cpp"],
     deps = [

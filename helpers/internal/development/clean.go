@@ -21,7 +21,8 @@ var generatedBuildPaths = []string{
 	"Ecosystem/talafmt/build",
 	"Ecosystem/talalint/.gradle",
 	"Ecosystem/talalint/build",
-	"Talac/Driver/Tests/Fixtures/Source/haskell_frontend/Main.vxse",
+	"Talac/Driver/Tests/Fixtures/Source/haskell_frontend/Main.exe",
+	"Talac/Driver/Tests/Fixtures/Source/haskell_frontend/Main",
 }
 
 func cleanGeneratedBuildPaths(repository string) error {

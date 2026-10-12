@@ -121,7 +121,7 @@ func TestOnlyLargeRSSTargetsAreHeavy(t *testing.T) {
 			t.Fatalf("%s has a 4096 MiB limit but may overlap another heavy target", binary)
 		}
 	}
-	for _, binary := range []string{"wire_fuzzer", "lexer_fuzzer", "parser_fuzzer", "cli_fuzzer", "project_fuzzer", "ownership_fuzzer"} {
+	for _, binary := range []string{"wire_fuzzer", "lexer_fuzzer", "parser_fuzzer", "cli_fuzzer", "ownership_fuzzer"} {
 		if heavy[binary] {
 			t.Fatalf("%s is needlessly serialized", binary)
 		}

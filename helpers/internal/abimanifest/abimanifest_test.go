@@ -29,6 +29,7 @@ var described = []string{
 	"Talac/Headers/Progmasoft/Tala/Xmm/Wire.hpp",
 	"Talac/Codegen/Xmm/Wire.cpp",
 	"Talac/Linker/NativeLinker.cpp",
+	"Talac/Cli/Arguments/Options.cpp",
 }
 
 // generators are the sources that may hold the entry symbols; one exists.
@@ -127,7 +128,8 @@ func TestEveryStatementOfTheManifestIsChecked(t *testing.T) {
 		{"a wire format the manifest lacks", Path, "    { \"name\": \"Xpp\", \"magic\": \"TAPP\", \"version\": 7 },\n", "", "Xpp is not in the manifest"},
 		{"the entry symbol on Windows", Path, "\"windows\": \"mainCRTStartup\"", "\"windows\": \"WinMain\"", "entry symbol on windows"},
 		{"the entry symbol on Linux", Path, "\"linux\": \"main\"", "\"linux\": \"_start\"", "entry symbol on linux"},
-		{"the executable extension", Path, "\"extension\": \".vxse\"", "\"extension\": \".exe\"", "extension"},
+		{"the executable extension on Windows", Path, "\"windows\": \".exe\"", "\"windows\": \".com\"", "executable extension on windows"},
+		{"the executable extension on Linux", "Talac/Cli/Arguments/Options.cpp", "#else\n    constexpr const char *kExecutable = \"\";", "#else\n    constexpr const char *kExecutable = \".out\";", "executable extension on linux"},
 		{"the Windows linker", Path, "\"linker\": \"lld-link\"", "\"linker\": \"link\"", "Windows linker"},
 		{"the Windows runtime library", Path, "\"runtime_library\": \"tala-runtime.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
 		{"the linker on Linux", Path, "\"linux\": {\n        \"linker\": \"cc\"", "\"linux\": {\n        \"linker\": \"ld\"", "linker on linux"},

@@ -769,12 +769,12 @@ TEST_CASE("Core artifact driver validates and emits LLVM and native artifacts")
     }
     const auto settings = DefaultCompilerSettings();
     REQUIRE(ProcessCoreArtifact(corePath.string().c_str(),
-                                CliCommand::kCheck,
-                                BuildOutput::kBinary,
+                                PipelineAction::kCheck,
+                                BuildOutput::kExecutable,
                                 &settings,
                                 nullptr));
     REQUIRE(ProcessCoreArtifact(corePath.string().c_str(),
-                                CliCommand::kBuild,
+                                PipelineAction::kBuild,
                                 BuildOutput::kLlvmIr,
                                 &settings,
                                 nullptr));
@@ -782,20 +782,22 @@ TEST_CASE("Core artifact driver validates and emits LLVM and native artifacts")
 #ifdef _WIN32
     const auto objectPath = directory / "Golden.o";
     const auto assemblyPath = directory / "Golden.asm";
-    const auto executablePath = directory / "Golden.vxse";
+    const auto executablePath
+        = directory
+          / (std::string("Golden") + OutputExtension(BuildOutput::kExecutable));
     REQUIRE(ProcessCoreArtifact(corePath.string().c_str(),
-                                CliCommand::kBuild,
+                                PipelineAction::kBuild,
                                 BuildOutput::kObject,
                                 &settings,
                                 nullptr));
     REQUIRE(ProcessCoreArtifact(corePath.string().c_str(),
-                                CliCommand::kBuild,
+                                PipelineAction::kBuild,
                                 BuildOutput::kAssembly,
                                 &settings,
                                 nullptr));
     REQUIRE(ProcessCoreArtifact(corePath.string().c_str(),
-                                CliCommand::kBuild,
-                                BuildOutput::kBinary,
+                                PipelineAction::kBuild,
+                                BuildOutput::kExecutable,
                                 &settings,
                                 nullptr));
     REQUIRE(std::filesystem::file_size(objectPath) > 0U);

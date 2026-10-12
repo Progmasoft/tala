@@ -46,9 +46,18 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
             "CLI parsing is nondeterministic or mutated argv");
     if (first.result == CliParseResult::kError && first.diagnostic.empty())
         llvm::report_fatal_error("CLI rejected input without a diagnostic");
-    if (first.result == CliParseResult::kReady
-        && first.options.command == CliCommand::kNone)
-        llvm::report_fatal_error(
-            "CLI accepted input without selecting a command");
+    if (first.result == CliParseResult::kReady && first.options.inputs.empty())
+        llvm::report_fatal_error("CLI accepted a command line without input");
+    // An executable made from Tala sources needs an entry and nothing else
+    // may carry one; the parser is the only place that rule is enforced.
+    if (first.result == CliParseResult::kReady)
+    {
+        const bool needsEntry
+            = first.options.viPkgType == ViPkgType::kExecutable
+              && first.options.input == BuildInput::kTala;
+        if (needsEntry != first.options.entry.has_value())
+            llvm::report_fatal_error(
+                "CLI accepted an entry that does not fit the inputs");
+    }
     return 0;
 }

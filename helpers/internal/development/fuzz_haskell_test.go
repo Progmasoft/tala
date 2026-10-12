@@ -44,7 +44,7 @@ func TestNativeFuzzInventoryIsComponentOwnedAndBounded(t *testing.T) {
 			t.Fatalf("unbounded or disconnected target: %+v", target)
 		}
 	}
-	for _, label := range []string{"//Talac/Cli/Fuzzing:cli_fuzzer", "//Talac/Tazel/Bridge/Fuzzing:project_fuzzer", "//Interactive/Fuzzing:repl_fuzzer", "//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
+	for _, label := range []string{"//Talac/Cli/Fuzzing:cli_fuzzer", "//Interactive/Fuzzing:repl_fuzzer", "//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer"} {
 		if !labels[label] {
 			t.Fatalf("missing component-local target %s", label)
 		}

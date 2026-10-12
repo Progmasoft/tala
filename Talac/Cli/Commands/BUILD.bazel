@@ -3,12 +3,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "execution_status",
-    srcs = ["ExecutionStatus.cpp"],
-    hdrs = ["ExecutionStatus.hpp"],
-)
-
-cc_library(
     name = "frontend",
     srcs = ["Frontend.cpp"],
     hdrs = ["Frontend.hpp"],
@@ -20,13 +14,11 @@ cc_library(
     srcs = ["Commands.cpp"],
     hdrs = ["Commands.hpp"],
     deps = [
-        ":execution_status",
         "//Talac/Cli/Arguments:arguments",
         "//Talac/Cli/Presentation:presentation",
         "//Talac/Driver:core_pipeline",
         ":frontend",
         "//Talac/Linker:native_linker",
-        "//Talac/Tazel/Bridge:project_driver",
         "@fmt//:fmt",
     ],
 )

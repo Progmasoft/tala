@@ -41,12 +41,20 @@ namespace Progmasoft::Tala::Driver
             // Validate the complete typed request before touching an older
             // output. A bad invocation must never destroy the last successfully
             // linked executable.
-            if (request.outputPath.empty()
-                || request.outputPath.extension() != ".vxse")
-                return "native executable output must use the .vxse extension";
+            if (request.outputPath.empty())
+                return "native executable link requires an output path";
             if (request.objectPaths.empty())
                 return "native executable link requires at least one object "
                        "file";
+            // The executable of a host without an extension for programs
+            // takes the bare name of its input. An object with that name
+            // would be overwritten by its own link.
+            for (const auto &object : request.objectPaths)
+            {
+                if (object == request.outputPath)
+                    return "native executable output would overwrite one of "
+                           "its object files";
+            }
 #if defined(_WIN32)
             if (request.objectFormat != Backend::LLVM::ObjectFormat::Coff)
                 return "the Windows native linker requires COFF object input";
@@ -302,7 +310,7 @@ namespace Progmasoft::Tala::Driver
 #ifdef _WIN32
         std::error_code removeError;
         // Replacement starts only after all inputs pass validation. If LLD
-        // fails, no stale `.vxse` remains that could be mistaken for the
+        // fails, no stale executable remains that could be mistaken for the
         // current build.
         std::filesystem::remove(request.outputPath, removeError);
         if (removeError)
@@ -370,13 +378,12 @@ namespace Progmasoft::Tala::Driver
         const auto size
             = std::filesystem::file_size(request.outputPath, sizeError);
         if (sizeError || size == 0U)
-            return { -1,
-                     "lld-link did not produce a non-empty .vxse executable" };
+            return { -1, "lld-link did not produce a non-empty executable" };
         return { 0, {} };
 #else
         std::error_code removeError;
         // Replacement starts only after all inputs pass validation. If the
-        // link fails, no stale `.vxse` remains that could be mistaken for
+        // link fails, no stale executable remains that could be mistaken for
         // the current build.
         std::filesystem::remove(request.outputPath, removeError);
         if (removeError)
@@ -427,7 +434,7 @@ namespace Progmasoft::Tala::Driver
             = std::filesystem::file_size(request.outputPath, sizeError);
         if (sizeError || size == 0U)
             return { -1,
-                     "the linker driver did not produce a non-empty .vxse "
+                     "the linker driver did not produce a non-empty "
                      "executable" };
         return { 0, {} };
 #endif

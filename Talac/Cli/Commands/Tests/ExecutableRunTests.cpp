@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 
+#include "Talac/Cli/Arguments/Options.hpp"
 #include "Talac/Cli/Commands/Commands.hpp"
 
 #ifdef _WIN32
@@ -73,10 +74,17 @@ namespace
         return std::filesystem::temp_directory_path() / "tala-executable-run";
     }
 
-    /// Writes the program, and gives the status of `talac <command> -File` on
-    /// it.
+    /// Name of the executable talac writes for a program of this file.
     [[nodiscard]] auto
-    Drive(std::string_view command,
+    ExecutableName(std::string_view name) -> std::string
+    {
+        return std::string(name) + OutputExtension(BuildOutput::kExecutable);
+    }
+
+    /// Writes the program, and gives the status of `talac` asked to emit the
+    /// given kind of output from it.
+    [[nodiscard]] auto
+    Drive(std::string_view emit,
           std::string_view name,
           std::string_view members) -> int
     {
@@ -88,9 +96,9 @@ namespace
             REQUIRE(stream.good());
         }
         std::vector<std::string> storage{ "talac",
-                                          std::string(command),
-                                          "-File",
-                                          source.string() };
+                                          source.string(),
+                                          "--entry=Demo.Program",
+                                          "--emit=" + std::string(emit) };
         std::vector<char *> arguments;
         arguments.reserve(storage.size() + 1U);
         for (auto &argument : storage)
@@ -134,12 +142,6 @@ namespace
 #endif
     }
 
-    [[nodiscard]] auto
-    Run(std::string_view name, std::string_view members) -> int
-    {
-        return Drive("run", name, members);
-    }
-
     /// What a process did: how it ended and what it wrote.
     struct Outcome final
     {
@@ -178,8 +180,8 @@ namespace
     [[nodiscard]] auto
     RunCapturing(std::string_view name, std::string_view members) -> Outcome
     {
-        REQUIRE(Drive("build", name, members) == 0);
-        const auto executable = Directory() / (std::string(name) + ".vxse");
+        REQUIRE(Drive("executable", name, members) == 0);
+        const auto executable = Directory() / ExecutableName(name);
         const auto outputPath = Directory() / (std::string(name) + ".out");
         const auto errorPath = Directory() / (std::string(name) + ".err");
         REQUIRE(std::filesystem::is_regular_file(executable));
@@ -226,8 +228,8 @@ namespace
     [[nodiscard]] auto
     RunCapturing(std::string_view name, std::string_view members) -> Outcome
     {
-        REQUIRE(Drive("build", name, members) == 0);
-        const auto executable = Directory() / (std::string(name) + ".vxse");
+        REQUIRE(Drive("executable", name, members) == 0);
+        const auto executable = Directory() / ExecutableName(name);
         const auto outputPath = Directory() / (std::string(name) + ".out");
         const auto errorPath = Directory() / (std::string(name) + ".err");
         REQUIRE(std::filesystem::is_regular_file(executable));
@@ -267,12 +269,21 @@ namespace
         return { reported, ReadAll(outputPath), ReadAll(errorPath) };
     }
 #endif
+
+    /// Builds the program, runs it, and gives the status it ended with.
+    [[nodiscard]] auto
+    Run(std::string_view name, std::string_view members) -> int
+    {
+        return RunCapturing(name, members).status;
+    }
 } // namespace
 
 TEST_CASE("every program of this file passes the checks before code "
           "generation")
 {
-    CHECK(Drive("check",
+    // Xmm is the last stage before code generation; it is written only
+    // after every verifier before it has accepted the program.
+    CHECK(Drive("xmm",
                 "Checked",
                 "    public static void Main() { Check(Pick(0, 1), 7); }\n")
           == 0);
@@ -730,7 +741,7 @@ TEST_CASE("a link leaves only the executable beside the source")
 {
     // The import library and the list of names it is made from are made
     // for one link and removed after it.
-    REQUIRE(Drive("build",
+    REQUIRE(Drive("executable",
                   "Tidy",
                   "    public static void Main() {"
                   " Console.Println(\"x\"); }\n")
@@ -743,7 +754,7 @@ TEST_CASE("a link leaves only the executable beside the source")
         CHECK(extension != ".lib");
         CHECK(extension != ".obj");
         CHECK(extension != ".o");
-        if (extension == ".vxse")
+        if (entry.path().filename().string() == ExecutableName("Tidy"))
             ++executables;
     }
     CHECK(executables == 1U);

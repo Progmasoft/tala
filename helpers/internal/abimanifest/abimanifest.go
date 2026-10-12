@@ -52,7 +52,7 @@ type Manifest struct {
 	} `json:"runtime"`
 	WireFormats []WireFormat `json:"wire_formats"`
 	Executable  struct {
-		Extension     string                   `json:"extension"`
+		Extensions    map[string]string        `json:"extensions"`
 		SourceEntry   string                   `json:"source_entry"`
 		EntrySymbols  map[string]string        `json:"entry_symbols"`
 		ObjectFormats map[string]string        `json:"object_formats"`
@@ -385,8 +385,23 @@ func Verify(repository string) ([]string, error) {
 		}
 	}
 	linker := source.read("Talac/Linker/NativeLinker.cpp")
-	if !strings.Contains(linker, `"`+executable.Extension+`"`) {
-		source.problems = append(source.problems, "the executable extension "+executable.Extension+" is not what the native linker requires")
+	// An executable takes the extension the host gives its programs: the one
+	// the command line names for Windows, and none elsewhere.
+	options := source.read("Talac/Cli/Arguments/Options.cpp")
+	extension := regexp.MustCompile(`(?s)#if defined\(_WIN32\)\s+constexpr const char \*kExecutable = "([^"]*)";\s+#else\s+constexpr const char \*kExecutable = "([^"]*)";`).FindStringSubmatch(options)
+	if extension == nil {
+		source.problems = append(source.problems, "the executable extensions were not found in the command line")
+	} else {
+		for _, platform := range []string{"windows", "linux", "macos"} {
+			want := extension[2]
+			if platform == "windows" {
+				want = extension[1]
+			}
+			written, present := executable.Extensions[platform]
+			if !present || written != want {
+				source.differ("executable extension on "+platform, written, want)
+			}
+		}
 	}
 	for _, platform := range []string{"windows", "linux", "macos"} {
 		if executable.EntrySymbols[platform] == "" || executable.ObjectFormats[platform] == "" {

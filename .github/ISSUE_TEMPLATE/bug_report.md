@@ -29,7 +29,7 @@ Provide the smallest `.tala` source or `BUILD.kts` fragment that reproduces the 
 
 ### Environment
 
-- Tala version or commit (`talac version`):
+- Tala version or commit (`talac --version`):
 - OS (Windows 10/11, macOS Sequoia/Tahoe, or other) and architecture:
 - Relevant toolchain versions (Bazelisk, GHC, Clang/LLVM, JDK) if building from source:
 - Clean checkout and recursive submodules? Yes/No:

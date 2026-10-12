@@ -7,47 +7,29 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
-// Raw argv spellings are consumed by the C++20 parser and become this typed
-// driver model. Strings remain only for values that are intrinsically textual.
-enum class CliCommand : std::uint8_t
-{
-    kNone,
-    kBuild,
-    kCheck,
-    kFormat,
-    kInstall,
-    kLint,
-    kResolve,
-    kRun,
-    kTest,
-    kUpdate,
-    kVersion,
-    kViGet,
-    kViPkg,
-    kInteractive,
-};
+// talac is a compiler and nothing else: it reads the inputs named on its
+// command line and writes one kind of output. Projects, dependencies and
+// packages belong to Tazel, which starts talac as a separate process.
+//
+// Raw argv spellings are consumed by the parser and become this typed model.
+// Strings remain only for values that are intrinsically textual.
 
-enum class ViPkgAction : std::uint8_t
+/// What the pipeline does with a verified program.
+enum class PipelineAction : std::uint8_t
 {
-    kNone,
-    kCreate,
+    kBuild, ///< Lower the program and write the requested output.
+    kCheck, ///< Run every verifier and write nothing.
 };
 
 enum class ViPkgType : std::uint8_t
 {
     kExecutable,
-    kTalaLibrary,
     kStaticLibrary,
     kDynamicLibrary,
-};
-
-enum class ViGetAction : std::uint8_t
-{
-    kNone,
-    kPush,
-    kUpdate,
+    kTalaLibrary,
 };
 
 enum class WarningLevel : std::uint8_t
@@ -58,9 +40,10 @@ enum class WarningLevel : std::uint8_t
     kNone,
 };
 
+/// The output named by `--emit`.
 enum class BuildOutput : std::uint8_t
 {
-    kBinary,
+    kExecutable,
     kObject,
     kCore,
     kXpp,
@@ -70,6 +53,7 @@ enum class BuildOutput : std::uint8_t
     kLlvmBitcode,
 };
 
+/// The kind of the inputs, named by `--build`.
 enum class BuildInput : std::uint8_t
 {
     kTala,
@@ -107,10 +91,6 @@ struct CompilerSettings
 {
     WarningLevel warningLevel;
     bool warningsAsErrors;
-    bool experimentalWarnings;
-    bool shadowWarnings;
-    bool undefinedWarnings;
-    bool typeSafeFormat;
     bool xppOptimizationPasses;
     bool xmmOptimizationPasses;
     LlvmOptLevel llvmOptLevel;
@@ -123,56 +103,23 @@ struct CompilerSettings
 
 struct CliOptions
 {
-    CliCommand command;
-    ViGetAction vigetAction;
-    ViPkgAction viPkgAction;
-    ViPkgType viPkgType;
-    std::optional<std::filesystem::path> filePath;
-    std::optional<std::string> packageCoordinate;
+    /// The inputs in the order they were written; all of one kind.
+    std::vector<std::filesystem::path> inputs;
+    /// Namespace-qualified class whose `Main` starts the program.
+    std::optional<std::string> entry;
+    /// LLVM target triple; the host when absent.
     std::optional<std::string> target;
-    std::vector<std::string> programArguments;
-    std::vector<std::string> interactiveArguments;
-    std::vector<std::string> selectedViPkgs;
-    std::vector<std::string> selectedExecutables;
-    std::vector<std::string> selectedLibraries;
-    std::string compilerVersion;
+    /// Arguments handed to LLVM as they were written.
+    std::vector<std::string> llvmArguments;
     std::string standard;
     BuildOutput output;
     BuildInput input;
+    ViPkgType viPkgType;
     CompilerSettings compiler;
-    bool globalInstall;
-    bool formatterDryRun;
     bool emitHeader;
-    bool compilerVersionOverride;
-    bool standardOverride;
-    bool targetOverride;
-    bool outputOverride;
-    bool warningOverride;
-    bool werrorOverride;
-    bool experimentalOverride;
-    bool shadowOverride;
-    bool undefOverride;
-    bool typeSafeFormatOverride;
-    bool xppOptimizationOverride;
-    bool xmmOptimizationOverride;
-    bool llvmOptOverride;
-    bool llvmCompilerOverride;
-    bool llvmLtoOverride;
 
     bool
     operator==(const CliOptions &) const = default;
-};
-
-// Fully resolved values for one compiler invocation. A project evaluation can
-// provide the base layer; only CLI fields that were actually present replace
-// it.
-struct EffectiveCompilerOptions
-{
-    std::string compilerVersion;
-    std::string standard;
-    std::optional<std::string> target;
-    BuildOutput output;
-    CompilerSettings compiler;
 };
 
 enum class CliParseResult : std::uint8_t
@@ -187,7 +134,6 @@ struct CliParseOutcome
 {
     CliParseResult result;
     CliOptions options;
-    std::optional<CliCommand> helpCommand;
     std::string diagnostic;
 
     bool
@@ -196,21 +142,20 @@ struct CliParseOutcome
 
 [[nodiscard]] CompilerSettings
 DefaultCompilerSettings() noexcept;
-void
-ApplyCompilerOverrides(const CliOptions &options,
-                       CompilerSettings &settings) noexcept;
 [[nodiscard]] const char *
 WarningLevelName(WarningLevel level) noexcept;
+/// @brief File extension of an output kind.
+/// @return The usual extension of the kind; for an executable, the one the
+/// host gives its programs, which is empty where programs have none.
 [[nodiscard]] const char *
 OutputExtension(BuildOutput output) noexcept;
+/// @brief File extension a compiler input of this kind must have.
+[[nodiscard]] std::string_view
+InputExtension(BuildInput input) noexcept;
 
 [[nodiscard]] CliParseOutcome
 ParseCommandLine(int argc, char **argv);
-[[nodiscard]] EffectiveCompilerOptions
-ResolveCompilerOptions(const CliOptions &options,
-                       const EffectiveCompilerOptions *projectDefaults
-                       = nullptr);
 void
-PrintCliHelp(std::optional<CliCommand> command);
+PrintCliHelp();
 void
 PrintCliVersion();

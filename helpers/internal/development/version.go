@@ -45,7 +45,7 @@ func checkReleaseMetadata(repository string, currentHost host, requested string,
 
 	compiler := filepath.Join(repository, "bazel-bin", "Talac", "Cli", "talac"+currentHost.executable)
 	if information, statErr := os.Stat(compiler); statErr == nil && !information.IsDir() {
-		output, outputErr := runner.OutputIn(repository, compiler, "version")
+		output, outputErr := runner.OutputIn(repository, compiler, "--version")
 		want := "talac " + requested
 		checks = append(checks, releaseCheck{
 			name:   "talac version",

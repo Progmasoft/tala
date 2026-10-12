@@ -104,7 +104,11 @@
     { "name": "Xmm", "magic": "TAMM", "version": 7 }
   ],
   "executable": {
-    "extension": ".vxse",
+    "extensions": {
+      "windows": ".exe",
+      "linux": "",
+      "macos": ""
+    },
     "source_entry": "a parameterless `public static void Main()`",
     "entry_symbols": {
       "windows": "mainCRTStartup",

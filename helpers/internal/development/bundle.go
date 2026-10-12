@@ -224,14 +224,8 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	compiler := filepath.Join(bundleDirectory, "talac"+currentHost.executable)
 	interactive := filepath.Join(bundleDirectory, "tali"+currentHost.executable)
 	pathEnvironment := []string{"PATH=" + bundleDirectory}
-	// A same-named program in the working directory is deliberately wrong. The
-	// public launcher must use PATH only, so this decoy can never shadow tali.
-	decoy := filepath.Join(temporary, "tali"+currentHost.executable)
-	if err := copyFile(compiler, decoy, 0o755); err != nil {
-		return fmt.Errorf("cannot prepare the current-directory PATH decoy: %w", err)
-	}
-	fmt.Println("Smoke-testing the staged compiler version command...")
-	output, err := runner.OutputIn(temporary, compiler, "version")
+	fmt.Println("Smoke-testing the staged compiler version...")
+	output, err := runner.OutputIn(temporary, compiler, "--version")
 	if err != nil {
 		return fmt.Errorf("staged compiler version smoke test failed: %w", err)
 	}
@@ -239,26 +233,14 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	if output != wantVersion {
 		return fmt.Errorf("staged compiler reported %q; expected %q", output, wantVersion)
 	}
-	fmt.Println("Smoke-testing one-shot evaluation through talac interactive and standalone tali...")
-	output, err = runner.RunWithInput(temporary, pathEnvironment, "", compiler, "interactive", "--eval", "5 + 5")
-	if err != nil || !strings.HasPrefix(strings.TrimSpace(output), "10 : ") {
-		return fmt.Errorf("talac interactive --eval failed or selected the current-directory decoy: %q (%v)", output, err)
-	}
+	fmt.Println("Smoke-testing one-shot evaluation through tali...")
 	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "--eval", "5 + 5")
 	if err != nil || !strings.HasPrefix(strings.TrimSpace(output), "10 : ") {
-		return fmt.Errorf("standalone tali --eval smoke test failed: %q (%v)", output, err)
-	}
-	output, err = runner.RunWithInput(temporary, pathEnvironment, "", compiler, "interactive", "-Help")
-	if err != nil || !strings.Contains(output, "Tala Interactive") || !strings.Contains(output, "Usage:") {
-		return fmt.Errorf("talac interactive -Help did not reach tali: %q (%v)", output, err)
+		return fmt.Errorf("tali --eval smoke test failed: %q (%v)", output, err)
 	}
 	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "-Help")
 	if err != nil || !strings.Contains(output, "Tala Interactive") || !strings.Contains(output, "Usage:") {
-		return fmt.Errorf("standalone tali -Help smoke test failed: %q (%v)", output, err)
-	}
-	output, err = runner.RunWithInput(temporary, []string{"PATH="}, "", compiler, "interactive", "--eval", "5 + 5")
-	if err == nil || !strings.Contains(output, "tali") || !strings.Contains(output, "PATH") {
-		return fmt.Errorf("talac interactive should fail clearly when tali is absent from PATH: %q (%v)", output, err)
+		return fmt.Errorf("tali -Help smoke test failed: %q (%v)", output, err)
 	}
 	fmt.Println("Smoke-testing the persistent REPL session, history, reset, and error recovery...")
 	replInput := strings.Repeat("x", 1024*1024+1) + "\n" +
@@ -275,10 +257,10 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 		}
 	}
 	fmt.Println("Smoke-testing source-to-native compilation through the staged frontend...")
-	if err := runner.Run(temporary, nil, compiler, "build", "-File", source); err != nil {
+	if err := runner.Run(temporary, nil, compiler, source, "--entry=Example.Program"); err != nil {
 		return fmt.Errorf("staged source-to-native compilation failed: %w", err)
 	}
-	executable := filepath.Join(temporary, "Main.vxse")
+	executable := filepath.Join(temporary, "Main"+currentHost.executable)
 	information, err := os.Stat(executable)
 	if err != nil || information.IsDir() {
 		return fmt.Errorf("staged compiler did not produce the expected native executable %s", executable)
