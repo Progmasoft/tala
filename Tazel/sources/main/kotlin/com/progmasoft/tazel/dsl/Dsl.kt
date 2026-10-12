@@ -3,26 +3,22 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.project
+package com.progmasoft.tazel.dsl
 
-@DslMarker annotation class TalaKts
+import com.progmasoft.tazel.dsl.plugin.PluginRuntime
 
-@TalaKts
+@DslMarker annotation class TazelDsl
+
+@TazelDsl
 class CompilerScope internal constructor(private val settings: CompilerSettings) {
-  var version: String
+  /** The version of the compiler that will build the project; a project reads it, never sets it. */
+  val version: String
     get() = settings.version
-    set(value) {
-      settings.version = requireText(value, "compiler version")
-    }
 
-  var standard: String
+  var standard: TalaStandard
     get() = settings.standard
     set(value) {
-      val normalized = requireText(value, "language standard")
-      if (normalized != "latest" && normalized != "26") {
-        throw ProjectConfigurationException("language standard must be 26 or latest")
-      }
-      settings.standard = normalized
+      settings.standard = value
     }
 
   var backend: Backend
@@ -44,15 +40,9 @@ class CompilerScope internal constructor(private val settings: CompilerSettings)
     }
 
   var warnings: Warnings
-    get() = com.progmasoft.tazel.project.Warnings.valueOf(settings.warningLevel.name)
+    get() = settings.warnings
     set(value) {
-      settings.warningLevel = WarningLevel.valueOf(value.name)
-    }
-
-  var wexperimental: Boolean
-    get() = settings.experimentalWarnings
-    set(value) {
-      settings.experimentalWarnings = value
+      settings.warnings = value
     }
 
   var wshadow: Boolean
@@ -61,23 +51,6 @@ class CompilerScope internal constructor(private val settings: CompilerSettings)
       settings.shadowWarnings = value
     }
 
-  var wundef: Boolean
-    get() = settings.undefinedWarnings
-    set(value) {
-      settings.undefinedWarnings = value
-    }
-
-  fun unsafe(block: UnsafeCompilerScope.() -> Unit) {
-    UnsafeCompilerScope(settings).apply(block)
-  }
-
-  fun llvm(block: LlvmCompilerScope.() -> Unit) {
-    LlvmCompilerScope(settings).apply(block)
-  }
-}
-
-@TalaKts
-class UnsafeCompilerScope internal constructor(private val settings: CompilerSettings) {
   var xppOptimizationPasses: Boolean
     get() = settings.xppOptimizationPasses
     set(value) {
@@ -90,23 +63,19 @@ class UnsafeCompilerScope internal constructor(private val settings: CompilerSet
       settings.xmmOptimizationPasses = value
     }
 
-  var typeSafeFormat: Boolean
-    get() = settings.typeSafeFormat
+  var optLevel: OptLevel
+    get() = settings.effectiveOptLevel
     set(value) {
-      settings.typeSafeFormat = value
+      settings.optLevel = value
     }
+
+  fun llvm(block: LlvmCompilerScope.() -> Unit) {
+    LlvmCompilerScope(settings).apply(block)
+  }
 }
 
-@TalaKts
+@TazelDsl
 class LlvmCompilerScope internal constructor(private val settings: CompilerSettings) {
-  var optLevel: LlvmOptLevel
-    get() =
-      settings.llvmOptLevel
-        ?: if (settings.buildMode == BuildMode.DEBUG) LlvmOptLevel.O0 else LlvmOptLevel.O3
-    set(value) {
-      settings.llvmOptLevel = value
-    }
-
   var compiler: LlvmCompiler
     get() = settings.llvmCompiler
     set(value) {
@@ -118,48 +87,59 @@ class LlvmCompilerScope internal constructor(private val settings: CompilerSetti
     set(value) {
       settings.llvmLto = value
     }
+
+  /** Arguments that go to LLVM as they are written. */
+  fun args(vararg values: String) {
+    settings.llvmArguments += values.map(::requireLlvmArgument)
+  }
+}
+
+// The compiler receives these as one comma-separated value, so an argument can hold neither a
+// comma nor whitespace without changing what the compiler reads.
+private fun requireLlvmArgument(value: String): String {
+  val argument = requireText(value, "LLVM argument")
+  if (argument.any { it == ',' || it.isWhitespace() }) {
+    throw ProjectConfigurationException(
+      "an LLVM argument cannot hold a comma or whitespace: $argument"
+    )
+  }
+  return argument
 }
 
 class ProjectContext internal constructor(val host: Host = detectHost()) {
   private var identity: ProjectIdentity? = null
   private val authors = mutableListOf<String>()
   private val defaultFeatures = mutableListOf<String>()
-  private val dependencies = mutableListOf<PackageDependency>()
-  private val optionalDependencies = mutableListOf<OptionalPackageDependency>()
-  private val dependencyFeatures = mutableListOf<PackageFeatureSelection>()
-  private val localDependencies = mutableListOf<LocalPackageDependency>()
+  private var dependencies = DependencyManifest(emptyList())
   private var releaseOutputDirectory = "build/release"
   private var debugOutputDirectory = "build/debug"
   private val targets = mutableListOf<String>()
-  private val workspaces = mutableListOf<Workspace>()
+  private var workspace: Workspace? = null
   private var pmlEnabled = true
   private var pushSources = false
   private var pushExcludes: List<String>? = null
   private val executables = mutableListOf<ExecutableSourceTarget>()
   private val libraries = mutableListOf<LibrarySourceTarget>()
   private val testSuites = mutableListOf<TestSuite>()
-  private val compilerSettings = CompilerSettings()
+  internal val compilerSettings = CompilerSettings()
 
   val projectName: String?
     get() = identity?.name
 
   internal fun configureIdentity(
-    name: String?,
-    stability: String?,
-    version: String?,
-    description: String?,
+    configured: ProjectIdentity,
     configuredAuthors: List<String>,
     configuredDefaultFeatures: List<String>,
   ) {
     if (identity != null) throw ProjectConfigurationException("project may be configured only once")
     identity =
       ProjectIdentity(
-        name?.let { requireText(it, "project name") },
-        stability?.let { requireText(it, "project stability") },
-        version?.let { requireText(it, "project version") },
-        description?.let { requireText(it, "project description") },
+        configured.name?.let { requireModuleSegment(it, "project name") },
+        configured.stability,
+        configured.version?.let(::requirePackageVersion),
+        configured.description?.let { requireText(it, "project description") },
       )
-    authors += configuredAuthors.map { requireModuleSegment(it, "project author") }.distinct()
+    authors += configuredAuthors.map { requireText(it, "project author") }.distinct()
     defaultFeatures += configuredDefaultFeatures.map(::requireFeatureName).distinct()
   }
 
@@ -167,8 +147,8 @@ class ProjectContext internal constructor(val host: Host = detectHost()) {
     release: String,
     debug: String,
   ) {
-    releaseOutputDirectory = requireText(release, "release output directory")
-    debugOutputDirectory = requireText(debug, "debug output directory")
+    releaseOutputDirectory = requireProjectDirectory(release, "outdirs.release")
+    debugOutputDirectory = requireProjectDirectory(debug, "outdirs.debug")
   }
 
   internal fun configureTargets(values: List<String>) {
@@ -176,9 +156,11 @@ class ProjectContext internal constructor(val host: Host = detectHost()) {
     targets += values.distinct()
   }
 
-  internal fun configureWorkspaces(values: List<Workspace>) {
-    workspaces.clear()
-    workspaces += values.distinctBy(Workspace::name)
+  internal fun configureWorkspace(value: Workspace) {
+    if (workspace != null) {
+      throw ProjectConfigurationException("workspace may be configured only once")
+    }
+    workspace = value
   }
 
   internal fun configurePml(enabled: Boolean) {
@@ -203,34 +185,20 @@ class ProjectContext internal constructor(val host: Host = detectHost()) {
     libraries += libraryTargets
   }
 
-  fun dependencies(block: DependenciesScope.() -> Unit) {
-    val scope = DependenciesScope().apply(block)
-    val validated =
-      validateDependencies(
-        dependencies + scope.required,
-        optionalDependencies + scope.optional,
-        dependencyFeatures + scope.selections,
-        localDependencies + scope.local,
-      )
-    dependencies.clear()
-    dependencies += validated.required
-    optionalDependencies.clear()
-    optionalDependencies += validated.optional
-    dependencyFeatures.clear()
-    dependencyFeatures += validated.features
-    localDependencies.clear()
-    localDependencies += validated.local
-  }
-
   internal fun configureTestSuites(suites: List<TestSuite>) {
-    val duplicates = suites.groupingBy(TestSuite::name).eachCount().filterValues { it > 1 }.keys
-    if (duplicates.isNotEmpty()) {
-      throw ProjectConfigurationException(
-        "test suite names must be unique: ${duplicates.sorted().joinToString()}"
-      )
-    }
     testSuites.clear()
     testSuites += suites
+  }
+
+  fun dependencies(block: DependenciesScope.() -> Unit) {
+    val scope = DependenciesScope().apply(block)
+    dependencies =
+      validateDependencies(
+        DependencyManifest(
+          dependencies.declarations + scope.declarations,
+          dependencies.local + scope.local,
+        )
+      )
   }
 
   fun compiler(block: CompilerScope.() -> Unit) {
@@ -238,7 +206,8 @@ class ProjectContext internal constructor(val host: Host = detectHost()) {
   }
 
   fun build(): ProjectPlan {
-    if (executables.isEmpty() && libraries.isEmpty()) {
+    // A project that only gathers the members of a workspace has no sources of its own.
+    if (executables.isEmpty() && libraries.isEmpty() && workspace == null) {
       throw ProjectConfigurationException(
         "sources requires at least one executable or library target"
       )
@@ -258,33 +227,28 @@ class ProjectContext internal constructor(val host: Host = detectHost()) {
         )
       }
     }
-    val dependencyManifest =
-      validateDependencies(
-        dependencies,
-        optionalDependencies,
-        dependencyFeatures,
-        localDependencies,
+    if (compilerSettings.shadowWarnings && compilerSettings.warnings == Warnings.NONE) {
+      throw ProjectConfigurationException(
+        "compiler.wshadow asks for a warning and Warnings.NONE silences every warning; choose one"
       )
+    }
     val plan =
       ProjectPlan(
         project,
         authors.toList(),
         defaultFeatures.toList(),
-        dependencyManifest.required,
-        dependencyManifest.optional,
-        dependencyManifest.features,
-        dependencyManifest.local,
+        dependencies,
         releaseOutputDirectory,
         debugOutputDirectory,
         targets.toList(),
-        workspaces.toList(),
+        workspace,
         pmlEnabled,
         pushSources,
         pushExcludes,
         executables.toList(),
         libraries.toList(),
         testSuites.toList(),
-        compilerSettings,
+        compilerSettings.copy(),
         emptyList(),
       )
     return PluginRuntime.finish(plan)
@@ -305,27 +269,47 @@ internal fun requireModuleSegment(
 ): String {
   val name = requireText(value, field)
   if (!name.matches(Regex("[A-Za-z_][A-Za-z0-9_]*"))) {
-    throw ProjectConfigurationException("$field must be one case-sensitive X# identifier: $name")
+    throw ProjectConfigurationException("$field must be one case-sensitive Tala identifier: $name")
   }
   return name
 }
 
+/** A directory of the project, written relative to the project file and staying inside it. */
+internal fun requireProjectDirectory(
+  value: String,
+  field: String,
+): String {
+  val directory = requireText(value, field).replace('\\', '/')
+  val absolute = directory.startsWith('/') || Regex("^[A-Za-z]:").containsMatchIn(directory)
+  if (absolute || directory.split('/').any { it == ".." }) {
+    throw ProjectConfigurationException("$field must stay inside the project root: $value")
+  }
+  if (directory.any { it in "*?" }) {
+    throw ProjectConfigurationException("$field must name a directory, not a glob: $value")
+  }
+  return directory.trimEnd('/').ifEmpty { "." }
+}
+
+/**
+ * The project one evaluation of a project file is building. A project file is a script of top-level
+ * calls, so the model they fill has to be reachable without a receiver; the evaluator resets it
+ * before every script and reads it once the script returns.
+ */
 internal object ProjectRuntime {
   private var context = ProjectContext()
 
-  fun reset() {
+  fun reset(compilerVersion: String = "unknown") {
     PluginRuntime.reset()
+    forgetProjectView()
     context = ProjectContext()
+    context.compilerSettings.version = compilerVersion
   }
 
   fun configureIdentity(
-    name: String?,
-    stability: String?,
-    version: String?,
-    description: String?,
+    identity: ProjectIdentity,
     authors: List<String>,
     defaultFeatures: List<String>,
-  ) = context.configureIdentity(name, stability, version, description, authors, defaultFeatures)
+  ) = context.configureIdentity(identity, authors, defaultFeatures)
 
   fun configureOutputDirectories(
     release: String,
@@ -334,7 +318,7 @@ internal object ProjectRuntime {
 
   fun configureTargets(values: List<String>) = context.configureTargets(values)
 
-  fun configureWorkspaces(values: List<Workspace>) = context.configureWorkspaces(values)
+  fun configureWorkspace(value: Workspace) = context.configureWorkspace(value)
 
   fun configurePml(enabled: Boolean) = context.configurePml(enabled)
 
@@ -356,6 +340,9 @@ internal object ProjectRuntime {
 
   fun build() = context.build()
 
+  val compilerScope
+    get() = CompilerScope(context.compilerSettings)
+
   val projectName
     get() = context.projectName
 
@@ -363,45 +350,27 @@ internal object ProjectRuntime {
     get() = context.host
 }
 
+/** The operating system Tazel runs on. */
 val OS
   get() = ProjectRuntime.host.os
-val FAMILY
-  get() = ProjectRuntime.host.family
+
+/** The processor architecture Tazel runs on. */
 val ARCH
   get() = ProjectRuntime.host.architecture
-val LINUX
-  get() = OperatingSystem.LINUX
-val MACOS
-  get() = OperatingSystem.MACOS
-val WINDOWS: Any
-  get() = OperatingSystem.WINDOWS
-val FREEBSD
-  get() = OperatingSystem.FREEBSD
-val OPENBSD
-  get() = OperatingSystem.OPENBSD
-val NETBSD
-  get() = OperatingSystem.NETBSD
-val UNIX
-  get() = OperatingSystemFamily.UNIX
-val BSD
-  get() = OperatingSystemFamily.BSD
-val X86_64
-  get() = Architecture.X86_64
-val AARCH64
-  get() = Architecture.AARCH64
-val ARMV7H
-  get() = Architecture.ARMV7H
-val RISCV64
-  get() = Architecture.RISCV64
 
-fun cfg(condition: Boolean) = condition
-
+/** Stops the evaluation of the project file with [message]. */
 fun panic(message: String): Nothing = throw ProjectAbort(message)
 
+/** Writes [message] to the standard error stream, without a line ending. */
 fun eprint(message: Any?) = System.err.print(message)
-
-fun eprintln(message: Any?) = System.err.println(message)
 
 fun dependencies(block: DependenciesScope.() -> Unit) = ProjectRuntime.dependencies(block)
 
 fun compiler(block: CompilerScope.() -> Unit) = ProjectRuntime.compiler(block)
+
+/**
+ * The compiler settings as they stand, so a project file can read them after its `compiler` block:
+ * `println(compiler.standard)`.
+ */
+val compiler: CompilerScope
+  get() = ProjectRuntime.compilerScope

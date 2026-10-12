@@ -3,8 +3,18 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.project
+package com.progmasoft.tazel.dsl.plugin
 
+import com.progmasoft.api.tazel.dsl.plugin.PROJECT_PLUGIN_API_VERSION
+import com.progmasoft.api.tazel.dsl.plugin.ProjectPlugin
+import com.progmasoft.api.tazel.dsl.plugin.ProjectPluginContext
+import com.progmasoft.tazel.dsl.DependencyManifest
+import com.progmasoft.tazel.dsl.ProjectConfigurationException
+import com.progmasoft.tazel.dsl.ProjectRuntime
+import com.progmasoft.tazel.dsl.sources
+import com.progmasoft.tazel.lock.LockedPlugin
+import com.progmasoft.tazel.lock.LockedProject
+import com.progmasoft.tazel.lock.ProjectLockFile
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -28,10 +38,7 @@ class PluginInfrastructureTest {
   }
 
   @AfterTest
-  fun cleanupProperties() {
-    System.clearProperty("talac.project.root")
-    System.clearProperty("talac.project.output")
-    System.clearProperty("talac.project.pluginManifest")
+  fun cleanup() {
     ProjectRuntime.reset()
   }
 
@@ -44,7 +51,7 @@ class PluginInfrastructureTest {
         val raw = ${"\"\"\""}plugins { plugin("Ignored") { name = "RawString" } }${"\"\"\""}
         val character = '}'
         plugins {
-          plugin("Progmasoft") {
+          plugin("Publisher") {
             name = "CMake"
             version = "1.2.3"
           }
@@ -55,7 +62,7 @@ class PluginInfrastructureTest {
       )
 
     assertEquals(
-      PluginRequest("Progmasoft", "CMake", "1.2.3"),
+      PluginRequest("Publisher", "CMake", "1.2.3"),
       requests.single(),
     )
   }
@@ -82,21 +89,15 @@ class PluginInfrastructureTest {
     val root = Files.createTempDirectory("tala-local-plugin-")
     try {
       val artifact = createPluginJar(root)
-      val request = PluginRequest("local", null, null, artifact.fileName.toString())
+      val request = localPluginRequest(artifact.fileName.toString())
       val resolved = PluginResolver.resolve(root, listOf(request)).single()
 
-      assertEquals("Progmasoft.Fixture", resolved.coordinate)
+      assertEquals("Publisher.Fixture", resolved.coordinate)
       assertEquals("local:${artifact.fileName}", resolved.requestCoordinate)
       assertEquals(
         request,
-        PluginPreamble.parse("plugins { plugin(\"local\") { path = \"${artifact.fileName}\" } }")
+        PluginPreamble.parse("plugins { localPlugin { path = \"${artifact.fileName}\" } }")
           .single(),
-      )
-      val manifest = root.resolve("plugins.manifest")
-      PluginManifest.write(manifest, listOf(resolved))
-      assertEquals(
-        resolved.requestCoordinate,
-        PluginManifest.read(manifest).single().requestCoordinate,
       )
     } finally {
       root.toFile().deleteRecursively()
@@ -106,10 +107,10 @@ class PluginInfrastructureTest {
   @Test
   fun rejectsUnsafeOrMismatchedLocalPluginPaths() {
     assertFailsWith<ProjectConfigurationException> {
-      PluginPreamble.parse("plugins { plugin(\"local\") { path = \"../plugin.jar\" } }")
+      PluginPreamble.parse("plugins { localPlugin { path = \"../plugin.jar\" } }")
     }
     assertFailsWith<ProjectConfigurationException> {
-      PluginPreamble.parse("plugins { plugin(\"local\") { path = \"plugin.vipkg\" } }")
+      PluginPreamble.parse("plugins { localPlugin { path = \"plugin.vipkg\" } }")
     }
     assertFailsWith<ProjectConfigurationException> {
       PluginPreamble.parse(
@@ -129,17 +130,17 @@ class PluginInfrastructureTest {
       val resolved =
         PluginResolver.resolve(
           root,
-          listOf(PluginRequest("Progmasoft", "Fixture", "1.2.3")),
+          listOf(PluginRequest("Publisher", "Fixture", "1.2.3")),
         )
 
-      assertEquals("Progmasoft.Fixture", resolved.single().coordinate)
-      assertEquals(listOf("com.progmasoft.tazel.project.*"), resolved.single().imports)
+      assertEquals("Publisher.Fixture", resolved.single().coordinate)
+      assertEquals(listOf("com.progmasoft.tazel.dsl.*"), resolved.single().imports)
       assertEquals(64, resolved.single().sha256.length)
       assertSame(
         resolved.single(),
         PluginResolver.resolve(
             root,
-            listOf(PluginRequest("Progmasoft", "Fixture", "1.2.3")),
+            listOf(PluginRequest("Publisher", "Fixture", "1.2.3")),
           )
           .single(),
       )
@@ -156,14 +157,14 @@ class PluginInfrastructureTest {
       val artifact = createPluginJar(directory)
       Files.writeString(artifact.resolveSibling("${artifact.fileName}.sha256"), "0".repeat(64))
       assertFailsWith<ProjectConfigurationException> {
-        PluginResolver.resolve(root, listOf(PluginRequest("Progmasoft", "Fixture", null)))
+        PluginResolver.resolve(root, listOf(PluginRequest("Publisher", "Fixture", null)))
       }
       Files.delete(artifact.resolveSibling("${artifact.fileName}.sha256"))
       Files.delete(artifact)
       createPluginJar(directory, apiVersion = 99)
       PluginResolver.clearCache()
       assertFailsWith<ProjectConfigurationException> {
-        PluginResolver.resolve(root, listOf(PluginRequest("Progmasoft", "Fixture", null)))
+        PluginResolver.resolve(root, listOf(PluginRequest("Publisher", "Fixture", null)))
       }
     } finally {
       root.toFile().deleteRecursively()
@@ -189,8 +190,13 @@ class PluginInfrastructureTest {
 
       ProjectRuntime.reset()
       PluginRuntime.activate(listOf(first), listOf(firstPlugin), root)
-      PluginRuntime.declare(PluginRequest("Progmasoft", "First", "1.0.0"))
-      sources { executable { entry = "Demo.Main" } }
+      PluginRuntime.declare(PluginRequest("Publisher", "First", "1.0.0"))
+      sources {
+        executable {
+          name = "Demo"
+          entry = "Demo.Main"
+        }
+      }
       val plan = ProjectRuntime.build()
       assertEquals(listOf("native"), plan.plugins.single().extensions)
       assertEquals("true", plan.plugins.single().contributions["enabled"])
@@ -204,23 +210,10 @@ class PluginInfrastructureTest {
     val root = Files.createTempDirectory("tala-plugin-lock-")
     try {
       val plugin =
-        PluginPlanEntry(
-          "Progmasoft",
-          "CMake",
-          "1.0.0",
-          PROJECT_PLUGIN_API_VERSION,
-          "a".repeat(64),
-          listOf("cmake"),
-          mapOf("generator" to "Ninja"),
-        )
-      ProjectLockFile.write(
-        root,
-        DependencyManifest(emptyList(), emptyList(), emptyList()),
-        listOf(plugin),
-      )
-      val restored = ProjectLockFile.readPlugins(root.resolve(ProjectLockFile.FILE_NAME)).single()
-      assertEquals(plugin.coordinate, restored.coordinate)
-      assertEquals(plugin.sha256, restored.sha256)
+        LockedPlugin("Publisher", "CMake", "1.0.0", PROJECT_PLUGIN_API_VERSION, "a".repeat(64))
+      ProjectLockFile.write(root, LockedProject(DependencyManifest(emptyList()), listOf(plugin)))
+      val restored = ProjectLockFile.read(root.resolve(ProjectLockFile.FILE_NAME))
+      assertEquals(listOf(plugin), restored.plugins)
       DriverManager.getConnection("jdbc:sqlite:${root.resolve(ProjectLockFile.FILE_NAME)}").use {
         connection ->
         connection.createStatement().use { statement ->
@@ -237,27 +230,6 @@ class PluginInfrastructureTest {
     }
   }
 
-  @Test
-  fun manifestRejectsArtifactChangedAfterResolution() {
-    val root = Files.createTempDirectory("tala-plugin-manifest-")
-    try {
-      val directory = Files.createDirectories(root.resolve(".tazel/plugins"))
-      val artifact = createPluginJar(directory)
-      val resolved =
-        PluginResolver.resolve(
-          root,
-          listOf(PluginRequest("Progmasoft", "Fixture", null)),
-        )
-      val manifest = root.resolve("plugins.manifest")
-      PluginManifest.write(manifest, resolved)
-      Files.writeString(artifact, "replaced")
-
-      assertFailsWith<ProjectConfigurationException> { PluginManifest.read(manifest) }
-    } finally {
-      root.toFile().deleteRecursively()
-    }
-  }
-
   private fun createPluginJar(
     directory: Path,
     version: String = "1.0.0",
@@ -265,14 +237,14 @@ class PluginInfrastructureTest {
   ): Path {
     val path = directory.resolve("fixture-$version.jar")
     JarOutputStream(path.outputStream()).use { jar ->
-      jar.putNextEntry(JarEntry("META-INF/tala-plugin.properties"))
+      jar.putNextEntry(JarEntry("META-INF/tazel-plugin.properties"))
       jar.write(
         """
-        publisher=Progmasoft
+        publisher=Publisher
         name=Fixture
         version=$version
         apiVersion=$apiVersion
-        imports=com.progmasoft.tazel.project.*
+        imports=com.progmasoft.tazel.dsl.*
         """
           .trimIndent()
           .toByteArray()
@@ -287,7 +259,7 @@ class PluginInfrastructureTest {
     name: String,
   ) =
     ResolvedPlugin(
-      "Progmasoft",
+      "Publisher",
       name,
       "1.0.0",
       PROJECT_PLUGIN_API_VERSION,
@@ -301,7 +273,7 @@ class PluginInfrastructureTest {
     action: (ProjectPluginContext) -> Unit,
   ) =
     object : ProjectPlugin {
-      override val publisher = "Progmasoft"
+      override val publisher = "Publisher"
       override val name = name
       override val version = "1.0.0"
 

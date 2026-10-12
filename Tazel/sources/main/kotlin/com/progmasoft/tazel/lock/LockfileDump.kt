@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.dc
+package com.progmasoft.tazel.lock
 
-import com.progmasoft.tazel.project.ProjectConfigurationException
-import com.progmasoft.tazel.project.ProjectLockFile
+import com.progmasoft.tazel.dsl.ProjectConfigurationException
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files

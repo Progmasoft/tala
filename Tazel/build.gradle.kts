@@ -8,7 +8,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   kotlin("jvm") version "2.4.0"
-  kotlin("plugin.serialization") version "2.4.0"
   id("com.diffplug.spotless") version "8.9.0"
   application
   jacoco
@@ -22,7 +21,10 @@ repositories {
 }
 
 dependencies {
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+  implementation("com.github.ajalt.mordant:mordant:3.0.1")
+  implementation("org.jetbrains.kotlin:kotlin-scripting-common:2.4.0")
+  implementation("org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.0")
+  implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host:2.4.0")
   implementation("org.xerial:sqlite-jdbc:3.53.1.0")
   testImplementation(kotlin("test"))
 }
@@ -41,11 +43,12 @@ java {
 }
 
 application {
-  // TADC is the only standalone JVM command. The native talac driver invokes the
-  // project evaluator main class directly from this distribution's libraries.
-  mainClass = "com.progmasoft.tazel.dc.TadcKt"
-  applicationName = "tadc"
-  applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+  mainClass = "com.progmasoft.tazel.cli.MainKt"
+  applicationName = "tazel"
+  // The embedded Kotlin compiler still reaches for sun.misc.Unsafe; without the second flag the
+  // JVM prints a warning into the output of every command.
+  applicationDefaultJvmArgs =
+    listOf("--enable-native-access=ALL-UNNAMED", "--sun-misc-unsafe-memory-access=allow")
 }
 
 sourceSets {
@@ -68,10 +71,16 @@ spotless {
   }
 }
 
+tasks.jar {
+  manifest {
+    attributes("Implementation-Title" to "Tazel", "Implementation-Version" to project.version)
+  }
+}
+
 tasks.test {
   useJUnitPlatform()
   maxHeapSize = "512m"
-  jvmArgs("--enable-native-access=ALL-UNNAMED")
+  jvmArgs("--enable-native-access=ALL-UNNAMED", "--sun-misc-unsafe-memory-access=allow")
 }
 
 jacoco {

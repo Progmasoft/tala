@@ -3,101 +3,15 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.project
+package com.progmasoft.tazel.dsl.plugin
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import com.progmasoft.api.tazel.dsl.plugin.ProjectPlugin
+import com.progmasoft.api.tazel.dsl.plugin.ProjectPluginContext
+import com.progmasoft.tazel.dsl.ProjectConfigurationException
+import com.progmasoft.tazel.dsl.ProjectPlan
+import com.progmasoft.tazel.dsl.requireModuleSegment
+import com.progmasoft.tazel.dsl.requireText
 import java.nio.file.Path
-import java.util.Base64
-import java.util.ServiceLoader
-
-object PluginManifest {
-  fun write(
-    path: Path,
-    plugins: List<ResolvedPlugin>,
-  ) {
-    Files.writeString(
-      path,
-      plugins.joinToString("\n") { plugin ->
-        listOf(
-            plugin.publisher,
-            plugin.name,
-            plugin.version,
-            plugin.apiVersion.toString(),
-            plugin.sha256,
-            plugin.imports.joinToString(","),
-            plugin.artifact.toString(),
-            plugin.requestCoordinate,
-          )
-          .joinToString("\t", transform = ::encode)
-      },
-    )
-  }
-
-  fun read(path: Path): List<ResolvedPlugin> =
-    try {
-      Files.readAllLines(path).filter(String::isNotBlank).mapIndexed(::readRecord)
-    } catch (error: ProjectConfigurationException) {
-      throw error
-    } catch (error: Exception) {
-      throw ProjectConfigurationException(
-        "plugin manifest could not be read: ${error.message ?: error.javaClass.name}"
-      )
-    }
-
-  private fun readRecord(index: Int, line: String): ResolvedPlugin {
-    val fields = line.split('\t').map(::decode)
-    if (fields.size != 8) {
-      throw ProjectConfigurationException("invalid plugin manifest record ${index + 1}")
-    }
-    val publisher = requireModuleSegment(fields[0], "plugin publisher")
-    val name = requireModuleSegment(fields[1], "plugin name")
-    val version = requirePackageVersion(fields[2])
-    val apiVersion = fields[3].toIntOrNull()
-    if (apiVersion != PROJECT_PLUGIN_API_VERSION) {
-      throw ProjectConfigurationException(
-        "plugin '$publisher.$name' requires API ${fields[3]}; runtime provides $PROJECT_PLUGIN_API_VERSION"
-      )
-    }
-    val expectedDigest = fields[4].lowercase()
-    if (!expectedDigest.matches(Regex("[0-9a-f]{64}"))) {
-      throw ProjectConfigurationException("plugin '$publisher.$name' has an invalid SHA-256 digest")
-    }
-    val imports = fields[5].split(',').filter(String::isNotEmpty)
-    imports.forEach(::requireManifestImport)
-    val artifact = Path.of(fields[6]).toAbsolutePath().normalize()
-    if (!Files.isRegularFile(artifact) || Files.isSymbolicLink(artifact)) {
-      throw ProjectConfigurationException("plugin artifact is not a regular file: $artifact")
-    }
-    if (PluginResolver.sha256(artifact) != expectedDigest) {
-      throw ProjectConfigurationException("plugin '$publisher.$name' changed after it was resolved")
-    }
-    return ResolvedPlugin(
-      publisher,
-      name,
-      version,
-      apiVersion,
-      expectedDigest,
-      imports.distinct(),
-      artifact,
-      fields[7],
-    )
-  }
-
-  private fun requireManifestImport(value: String) {
-    if (!value.matches(Regex("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*(?:\\.\\*)?"))) {
-      throw ProjectConfigurationException("plugin manifest contains invalid import '$value'")
-    }
-  }
-
-  private fun encode(value: String): String =
-    Base64.getUrlEncoder()
-      .withoutPadding()
-      .encodeToString(value.toByteArray(StandardCharsets.UTF_8))
-
-  private fun decode(value: String): String =
-    String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8)
-}
 
 object PluginRuntime {
   private enum class Phase {
@@ -115,19 +29,10 @@ object PluginRuntime {
   private val contributions = linkedMapOf<String, LinkedHashMap<String, String>>()
   private val finalizers = mutableListOf<Pair<String, (ProjectPlan) -> Unit>>()
 
-  fun activate() {
-    val manifest =
-      System.getProperty("talac.project.pluginManifest")?.takeIf(String::isNotBlank) ?: return
-    activate(
-      PluginManifest.read(Path.of(manifest)),
-      ServiceLoader.load(ProjectPlugin::class.java).toList(),
-    )
-  }
-
   internal fun activate(
     plugins: List<ResolvedPlugin>,
     implementations: List<ProjectPlugin>,
-    projectRoot: Path = configuredProjectRoot(),
+    projectRoot: Path,
   ) {
     checkPhase(Phase.EMPTY, "plugin runtime is already active")
     phase = Phase.ACTIVATING
@@ -245,15 +150,6 @@ object PluginRuntime {
     message: String,
   ) {
     if (phase != expected) throw ProjectConfigurationException(message)
-  }
-
-  private fun configuredProjectRoot(): Path {
-    val root =
-      System.getProperty("talac.project.root")?.takeIf(String::isNotBlank)
-        ?: throw ProjectConfigurationException(
-          "project root is not configured for plugin activation"
-        )
-    return Path.of(root).toAbsolutePath().normalize()
   }
 
   private class Context(

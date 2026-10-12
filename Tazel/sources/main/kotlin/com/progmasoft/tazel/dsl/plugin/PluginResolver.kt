@@ -3,8 +3,12 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.project
+package com.progmasoft.tazel.dsl.plugin
 
+import com.progmasoft.api.tazel.dsl.plugin.PROJECT_PLUGIN_API_VERSION
+import com.progmasoft.tazel.dsl.ProjectConfigurationException
+import com.progmasoft.tazel.dsl.requireModuleSegment
+import com.progmasoft.tazel.dsl.requirePackageVersion
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
@@ -16,7 +20,7 @@ import kotlin.io.path.extension
 import kotlin.streams.toList
 
 object PluginResolver {
-  private const val DESCRIPTOR = "META-INF/tala-plugin.properties"
+  private const val DESCRIPTOR = "META-INF/tazel-plugin.properties"
   private val indexCache = ConcurrentHashMap<String, CachedIndex>()
 
   fun resolve(

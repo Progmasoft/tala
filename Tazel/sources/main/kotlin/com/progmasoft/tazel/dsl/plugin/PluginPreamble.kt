@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
  */
 
-package com.progmasoft.tazel.project
+package com.progmasoft.tazel.dsl.plugin
+
+import com.progmasoft.tazel.dsl.ProjectConfigurationException
 
 /** A small, non-executing parser for the declarative plugins block. */
 object PluginPreamble {
@@ -135,28 +137,40 @@ object PluginPreamble {
       expect("{")
       val requests = mutableListOf<PluginRequest>()
       while (!accept("}")) {
-        expect("plugin")
-        expect("(")
-        val publisher = string()
-        expect(")")
-        expect("{")
-        var name: String? = null
-        var version: String? = null
-        var path: String? = null
-        while (!accept("}")) {
-          val field = next().text
-          expect("=")
-          when (field) {
-            "name" -> name = string()
-            "version" -> version = string()
-            "path" -> path = string()
-            else -> throw ProjectConfigurationException("unknown plugin declaration field '$field'")
+        when (val declaration = next().text) {
+          "plugin" -> {
+            expect("(")
+            val publisher = string()
+            expect(")")
+            val fields = fields("name", "version")
+            requests += hostedPluginRequest(publisher, fields["name"], fields["version"])
           }
-          accept(";")
+          "localPlugin" -> requests += localPluginRequest(fields("path")["path"])
+          else ->
+            throw ProjectConfigurationException(
+              "expected 'plugin' or 'localPlugin' in plugin preamble, found '$declaration'"
+            )
         }
-        requests += validateRequest(publisher, name, version, path)
       }
       return requests.also(::rejectDuplicates)
+    }
+
+    /** The `name = "value"` lines of one declaration block. */
+    private fun fields(vararg allowed: String): Map<String, String> {
+      expect("{")
+      val values = linkedMapOf<String, String>()
+      while (!accept("}")) {
+        val field = next().text
+        if (field !in allowed) {
+          throw ProjectConfigurationException("unknown plugin declaration field '$field'")
+        }
+        expect("=")
+        if (values.put(field, string()) != null) {
+          throw ProjectConfigurationException("plugin declaration field '$field' is written twice")
+        }
+        accept(";")
+      }
+      return values
     }
 
     private fun string(): String {
@@ -178,37 +192,6 @@ object PluginPreamble {
     private fun next(): Token =
       tokens.getOrNull(index++)
         ?: throw ProjectConfigurationException("unexpected end of plugin preamble")
-  }
-
-  private fun validateRequest(
-    publisher: String,
-    name: String?,
-    version: String?,
-    path: String?,
-  ): PluginRequest {
-    if (publisher == "local") {
-      if (name != null || version != null) {
-        throw ProjectConfigurationException(
-          "local plugin accepts only path; name and version come from its JAR descriptor"
-        )
-      }
-      return PluginRequest(
-        publisher = "local",
-        name = null,
-        version = null,
-        path = requireLocalArtifactPath(path, "jar", "local plugin path"),
-      )
-    }
-    if (path != null)
-      throw ProjectConfigurationException("hosted plugin does not accept a local path")
-    val validPublisher = requireModuleSegment(publisher, "plugin publisher")
-    val validName =
-      requireModuleSegment(
-        name ?: throw ProjectConfigurationException("plugin name is required"),
-        "plugin name",
-      )
-    val validVersion = version?.let(::requirePackageVersion)
-    return PluginRequest(validPublisher, validName, validVersion)
   }
 
   private fun rejectDuplicates(requests: List<PluginRequest>) {
