@@ -7,6 +7,8 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+## 0.5.2 - 2026-10-12
+
 ### Visual X# is now Tala
 
 The language and its tools have new names. The entries below and those of
