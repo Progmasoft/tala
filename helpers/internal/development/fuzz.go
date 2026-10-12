@@ -325,28 +325,42 @@ func (campaign *fuzzCampaign) run(runner commandRunner, index int, target fuzzTa
 	if err := os.MkdirAll(campaignArtifacts, 0o700); err != nil {
 		return fmt.Errorf("could not create %s artifact directory: %w", target.binary, err)
 	}
-	arguments := []string{
-		filepath.Join(campaign.corpusRoot, target.corpus),
-		"-max_total_time=" + strconv.Itoa(campaign.duration),
-		"-max_len=" + target.maxLength,
-		"-timeout=30",
-		"-rss_limit_mb=" + target.rssLimit,
-		"-use_value_profile=1",
-		"-verbosity=0",
-		"-print_final_stats=1",
-		"-artifact_prefix=" + campaignArtifacts + string(os.PathSeparator),
+	var output strings.Builder
+	var statistics *fuzzStatistics
+	var runErr error
+	for _, seconds := range fuzzSegments(target, campaign.duration) {
+		arguments := []string{
+			filepath.Join(campaign.corpusRoot, target.corpus),
+			"-max_total_time=" + strconv.Itoa(seconds),
+			"-max_len=" + target.maxLength,
+			"-timeout=30",
+			"-rss_limit_mb=" + target.rssLimit,
+			"-use_value_profile=1",
+			"-verbosity=0",
+			"-print_final_stats=1",
+			"-artifact_prefix=" + campaignArtifacts + string(os.PathSeparator),
+		}
+		segment, segmentErr := runner.RunWithInput(campaign.repository, campaign.environment, "", fuzzer, arguments...)
+		output.WriteString(segment)
+		measured, statisticsErr := parseFuzzStatistics(segment)
+		if segmentErr == nil {
+			segmentErr = statisticsErr
+		}
+		if segmentErr != nil {
+			runErr = segmentErr
+			break
+		}
+		statistics = statistics.plus(measured)
 	}
-	output, runErr := runner.RunWithInput(campaign.repository, campaign.environment, "", fuzzer, arguments...)
-	if err := os.WriteFile(filepath.Join(campaign.artifacts, target.binary+".log"), []byte(output), 0o600); err != nil {
+	if statistics != nil {
+		statistics.AverageExecPerSec = statistics.ExecutedUnits / uint64(campaign.duration)
+	}
+	if err := os.WriteFile(filepath.Join(campaign.artifacts, target.binary+".log"), []byte(output.String()), 0o600); err != nil {
 		return fmt.Errorf("could not preserve campaign log: %w", err)
-	}
-	statistics, statisticsErr := parseFuzzStatistics(output)
-	if runErr == nil && statisticsErr != nil {
-		runErr = statisticsErr
 	}
 	campaign.guard.Lock()
 	defer campaign.guard.Unlock()
-	fmt.Print(output)
+	fmt.Print(output.String())
 	campaign.records[index] = map[string]any{"target": target.binary, "seconds": campaign.duration, "rss_limit_mb": target.rssLimit, "sanitizer": campaign.sanitizer, "native_coverage": true, "haskell_native_coverage": false, "statistics": statistics, "success": runErr == nil}
 	finished := make([]map[string]any, 0, len(campaign.records))
 	for _, record := range campaign.records {
@@ -366,6 +380,42 @@ func (campaign *fuzzCampaign) run(runner commandRunner, index int, target fuzzTa
 	}
 	fmt.Printf("%s campaign completed (%d seconds; RSS <= %s MiB; %s).\n", target.binary, campaign.duration, target.rssLimit, campaign.sanitizer)
 	return nil
+}
+
+// fuzzSegmentSeconds is how long one process of a light target runs. A
+// campaign of 900 seconds failed on Linux and macOS with libFuzzer's
+// out-of-memory report while AddressSanitizer counted 24 to 30 MiB of live
+// heap, all of it libFuzzer's own. The resident size had grown with the number
+// of executions instead: about 180 bytes for every call into the Haskell
+// frontend (312 MiB after 0.4 million executions, 984 MiB after 4.1 million)
+// and about 430 bytes for every execution of the threaded ownership target.
+// The frontend itself holds 22 MiB flat over 400,000 calls outside the
+// sanitizer, and the ownership target stays at 288 MiB on Windows after as
+// many executions as reach 769 MiB on Linux. What grows is the bookkeeping of
+// the sanitized process, so the process is replaced before it can pass for a
+// leak: every segment starts from the corpus the earlier ones extended, and
+// its RSS limit bounds one process as it does in a campaign of 90 seconds,
+// which every platform completes.
+const fuzzSegmentSeconds = 90
+
+// fuzzSegments splits a campaign into the durations of its processes. A heavy
+// target runs whole: it executes few inputs, so its bookkeeping stays small,
+// and reading its seed corpus again would cost minutes of every segment.
+func fuzzSegments(target fuzzTarget, duration int) []int {
+	if isHeavyFuzzTarget(target) || duration <= fuzzSegmentSeconds {
+		return []int{duration}
+	}
+	segments := make([]int, 0, duration/fuzzSegmentSeconds+1)
+	for remaining := duration; remaining > 0; remaining -= fuzzSegmentSeconds {
+		segments = append(segments, min(remaining, fuzzSegmentSeconds))
+	}
+	// A last segment of a few seconds would mostly read the corpus; give its
+	// time to the one before it.
+	if count := len(segments); count > 1 && segments[count-1] < fuzzSegmentSeconds/3 {
+		segments[count-2] += segments[count-1]
+		segments = segments[:count-1]
+	}
+	return segments
 }
 
 func fuzzDuration(stress bool, configured string) (int, error) {
