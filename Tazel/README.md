@@ -10,7 +10,7 @@ command and shares the same libraries.
 
 Production Kotlin DSL plugin JARs use
 `https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/`. ViGet is the only remote source. The current host skeleton
-loads installed JARs from the project-local `.tala/plugins` cache; this cache is not a second repository. It reads
+loads installed JARs from the project-local `.tazel/plugins` cache; this cache is not a second repository. It reads
 the `plugins` preamble before evaluating the script, verifies descriptor compatibility and artifact identity, then loads
 `ProjectPlugin` services. Plugins are trusted project code and run with full JVM access; the runtime does not impose a
 sandbox or permission model.
@@ -22,7 +22,7 @@ Tala package separately from ViGet coordinates.
 Split project scripts and separate module scripts are not supported. Project discovery walks from the requested path toward
 the filesystem root until it finds `BUILD.kts`.
 
-Dependency resolution writes `Progmasoft.Tala.Lockfile.sqlite3` as binary SQLite data. Human-readable dumps belong to the
+Dependency resolution writes `LOCK.sqlite3` as binary SQLite data. Human-readable dumps belong to the
 separate `tadc` tool and are not emitted during ordinary project evaluation.
 
 Run the component tests with:

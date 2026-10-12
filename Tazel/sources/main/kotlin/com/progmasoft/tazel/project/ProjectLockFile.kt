@@ -14,7 +14,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 object ProjectLockFile {
-  const val FILE_NAME = "Progmasoft.Tala.Lockfile.sqlite3"
+  const val FILE_NAME = "LOCK.sqlite3"
   private const val FORMAT_VERSION = 3
 
   fun write(
@@ -286,9 +286,7 @@ object ProjectLockFile {
         }
       }
     if (version != FORMAT_VERSION) {
-      throw ProjectConfigurationException(
-        "unsupported Progmasoft.Tala.Lockfile.sqlite3 format version '$version'"
-      )
+      throw ProjectConfigurationException("unsupported LOCK.sqlite3 format version '$version'")
     }
   }
 }

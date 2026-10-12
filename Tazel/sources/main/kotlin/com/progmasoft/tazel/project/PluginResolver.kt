@@ -24,7 +24,7 @@ object PluginResolver {
     requests: List<PluginRequest>,
   ): List<ResolvedPlugin> {
     if (requests.isEmpty()) return emptyList()
-    val cache = root.resolve(".tala/plugins").toAbsolutePath().normalize()
+    val cache = root.resolve(".tazel/plugins").toAbsolutePath().normalize()
     val candidates =
       if (Files.isDirectory(cache)) index(cache).groupBy(ResolvedPlugin::coordinate) else emptyMap()
     return requests.map { request ->

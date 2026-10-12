@@ -162,7 +162,7 @@ plugins {
 Production Kotlin DSL plugin JARs use
 `https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/`. The catalog's version-index and JAR filename layout are not
 yet connected to this runtime. ViGet is the only remote source; there is no configurable repository list. The host currently
-loads installed artifacts from the project-local `.tala/plugins` cache, which is not another repository. A plugin
+loads installed artifacts from the project-local `.tazel/plugins` cache, which is not another repository. A plugin
 JAR contains
 `META-INF/tala-plugin.properties` and exactly one matching `ProjectPlugin` service. The runtime validates the
 coordinate, exact requested version, plugin API version, safe Kotlin imports, and SHA-256 identity before
@@ -241,7 +241,7 @@ does not accept arbitrary remote repository URLs. Publisher identity is the case
 
 ## Lock file
 
-Project evaluation writes `Progmasoft.Tala.Lockfile.sqlite3`. It is a binary SQLite database, not a text or JSON lock file.
+Project evaluation writes `LOCK.sqlite3`. It is a binary SQLite database, not a text or JSON lock file.
 Ordinary evaluation never emits a textual copy. Use the separate Tala Dumpfile Creator when a reviewable or
 replayable SQL representation is needed:
 

@@ -16,7 +16,8 @@ earlier releases keep the names they were written with.
 - The compiler is `talac` (was `vxs`), the REPL is `tali` (was `vxsi`) and
   takes `--eval` (was `-Eval`), the formatter is `talafmt`, the linter is
   `talalint`, the language server is `tala-analyzer`, and the build system
-  and package manager is Tazel, whose project file is `BUILD.kts`.
+  and package manager is Tazel, whose project file is `BUILD.kts`, whose
+  lockfile is `LOCK.sqlite3` and whose plugin cache is `.tazel/plugins`.
 - Directories: `Compiler/` is `Talac/`, `ProjectSystem/` is `Tazel/`, and
   `Analyzer/`, `Formatter/`, `Linter/` are `Ecosystem/tala-analyzer/`,
   `Ecosystem/talafmt/`, `Ecosystem/talalint/`.

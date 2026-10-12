@@ -122,7 +122,7 @@ class PluginInfrastructureTest {
   fun resolvesDescriptorAndVerifiesOptionalChecksum() {
     val root = Files.createTempDirectory("tala-plugin-resolver-")
     try {
-      val directory = Files.createDirectories(root.resolve(".tala/plugins"))
+      val directory = Files.createDirectories(root.resolve(".tazel/plugins"))
       val artifact = createPluginJar(directory, version = "1.2.3")
       Files.writeString(artifact.resolveSibling("${artifact.fileName}.sha256"), sha256(artifact))
 
@@ -152,7 +152,7 @@ class PluginInfrastructureTest {
   fun rejectsChecksumMismatchAndApiMismatch() {
     val root = Files.createTempDirectory("tala-plugin-integrity-")
     try {
-      val directory = Files.createDirectories(root.resolve(".tala/plugins"))
+      val directory = Files.createDirectories(root.resolve(".tazel/plugins"))
       val artifact = createPluginJar(directory)
       Files.writeString(artifact.resolveSibling("${artifact.fileName}.sha256"), "0".repeat(64))
       assertFailsWith<ProjectConfigurationException> {
@@ -241,7 +241,7 @@ class PluginInfrastructureTest {
   fun manifestRejectsArtifactChangedAfterResolution() {
     val root = Files.createTempDirectory("tala-plugin-manifest-")
     try {
-      val directory = Files.createDirectories(root.resolve(".tala/plugins"))
+      val directory = Files.createDirectories(root.resolve(".tazel/plugins"))
       val artifact = createPluginJar(directory)
       val resolved =
         PluginResolver.resolve(

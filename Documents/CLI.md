@@ -289,7 +289,7 @@ The CLI reserves the renewed artifact vocabulary before all routes are implement
 - `-Llvm-Compiler orc` is recognized and stored in settings, but does not create an ORC LLJIT or change execution today;
   `run` remains the AOT build/link/run path. It is not a usable JIT switch yet.
 
-`resolve` and `update` evaluate the project configuration and refresh `Progmasoft.Tala.Lockfile.sqlite3`.
+`resolve` and `update` evaluate the project configuration and refresh `LOCK.sqlite3`.
 
 Lockfile text export is deliberately not a `talac` command. The separately installed `tadc` tool evaluates an exact
 `BUILD.kts` and creates a deterministic SQL dump:

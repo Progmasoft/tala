@@ -638,7 +638,7 @@ namespace Progmasoft::Tala::Driver
             return false;
         fmt::print(stderr,
                    "talac: refreshed binary lock file "
-                   "'Progmasoft.Tala.Lockfile.sqlite3'\n");
+                   "'LOCK.sqlite3'\n");
         return true;
     }
 } // namespace Progmasoft::Tala::Driver

@@ -210,7 +210,7 @@ class DependencyDslTest {
       val lock = root.resolve(ProjectLockFile.FILE_NAME)
 
       assertTrue(Files.isRegularFile(lock))
-      assertFalse(Files.exists(root.resolve("Progmasoft.Tala.Lockfile.sqlite3.dump")))
+      assertFalse(Files.exists(root.resolve("LOCK.dump")))
       DriverManager.getConnection("jdbc:sqlite:$lock").use { connection ->
         connection.createStatement().use { statement ->
           statement.executeQuery("SELECT name, version FROM packages").use { rows ->
