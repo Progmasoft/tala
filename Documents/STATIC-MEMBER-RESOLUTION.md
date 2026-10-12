@@ -11,7 +11,7 @@ it does not redefine Tala syntax or claim that every declaration feature in the 
 
 The current executable subset accepts a call written as a type name followed by one member name and an argument list:
 
-```talac
+```tala
 class Counter {
     public static int Current() {
         42
@@ -27,7 +27,7 @@ class Program {
 
 Methods with one source spelling may form an overload set when their ordered parameter-type lists differ:
 
-```talac
+```tala
 class Formatter {
     public static String Format(int value) {
         "integer"
@@ -172,7 +172,7 @@ Overload selection intentionally uses the Type Checker's existing exact compatib
 ranking algorithm. For example, if a caller has a `long` parameter, an `int` overload is not selected just because the
 values might fit:
 
-```talac
+```tala
 class Numbers {
     public static int Read(int value) {
         value

@@ -17,7 +17,7 @@ listed in [Diagnostics](DIAGNOSTICS.md); the lowering is described in
 
 ## Match
 
-```talac
+```tala
 int kind = match (code), (strict) {
     (0), (_) -> 10,
     (1), (true) -> 20,
@@ -87,7 +87,7 @@ without a guard accepts everything it accepts.
 
 ## If as an expression
 
-```talac
+```tala
 int larger = if (first > second) { first } else { second };
 ```
 
@@ -99,7 +99,7 @@ start of a statement is the `if` statement, as before, with one exception: as
 the last item of a block used as a value, an `if` whose two blocks both end
 with a value is the value of that block.
 
-```talac
+```tala
 int sign = if (value < 0) { 0 - 1 } else { if (value > 0) { 1 } else { 0 } };
 ```
 
@@ -111,7 +111,7 @@ run in order, and names declared in the block end with it.
 
 A block may leave instead of yielding a value:
 
-```talac
+```tala
 int size = if (count > 0) { count * 2 } else { return 0; };
 
 while (index < limit) {
@@ -140,7 +140,7 @@ continues is an endless loop. A `continue` in the update clause ends the
 update, and the condition is tested next. A callable is not inside the loops
 around the place that creates it.
 
-```talac
+```tala
 while (if (index >= limit) { break; } else { true }) { index += 1; }
 
 for (int i = 0; i < 6; i += if (skip) { skip = false; continue; } else { 1 }) { }
@@ -149,7 +149,7 @@ for (int i = 0; i < 6; i += if (skip) { skip = false; continue; } else { 1 }) { 
 An expression none of whose blocks completes is valid and never yields a
 value:
 
-```talac
+```tala
 int result = if (known) { return code; } else { return 0; };
 ```
 
@@ -165,7 +165,7 @@ evaluated before it keep their effects, and nothing after it is evaluated.
 
 ## Guard
 
-```talac
+```tala
 guard (count > 0) else {
     return 0;
 }

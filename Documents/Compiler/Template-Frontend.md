@@ -90,7 +90,7 @@ All template parameter names enter the template environment before member
 bodies are renamed. This is necessary because a default may refer to a later
 parameter, as in:
 
-```talac
+```tala
 template<typename T = U, typename U = int>
 class Pair {
 }

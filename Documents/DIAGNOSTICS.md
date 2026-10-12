@@ -239,7 +239,7 @@ the right operand. Parameters are immutable, so they cannot be targets.
 A `while` or classic `for` loop in operand position is an expression. Its value
 is the operand of the `break value;` that leaves it:
 
-```talac
+```tala
 int found = while (true) {
     if (Ready()) {
         break 10;
@@ -275,7 +275,7 @@ implemented. `TAD0002` is an internal error: it reports a value-carrying
 
 `match` selects the first arm whose patterns and guard accept its subjects:
 
-```talac
+```tala
 int kind = match (code), (strict) {
     (0), (_) -> 10,
     (1), (true) -> 20,

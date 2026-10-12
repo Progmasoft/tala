@@ -3,7 +3,7 @@
   "name": "Tala",
   "scopeName": "source.tala",
   "fileTypes": [
-    "talac"
+    "tala"
   ],
   "patterns": [
     { "include": "#comments" },

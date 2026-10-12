@@ -13,7 +13,7 @@ source semantics.
 
 The Haskell lexer and parser accept typed, inferred, and zero-parameter forms:
 
-```talac
+```tala
 \(int left, int right) -> left + right
 \left, right -> left + right
 \() -> 42
@@ -23,7 +23,7 @@ The Haskell lexer and parser accept typed, inferred, and zero-parameter forms:
 Expression and block bodies remain distinct AST forms. Capture lists retain
 source order and ownership:
 
-```talac
+```tala
 [value] \ -> value
 [weak owner] \ -> owner
 [unowned owner] \ -> owner

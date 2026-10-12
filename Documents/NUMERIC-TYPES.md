@@ -36,7 +36,7 @@ Decimal, hexadecimal, and binary spellings are accepted. Octal spellings do
 not exist. An apostrophe may separate digits only when both adjacent
 characters are valid digits for the selected radix.
 
-```talac
+```tala
 26
 1'000'000
 0xFF'EE
@@ -46,7 +46,7 @@ characters are valid digits for the selected radix.
 Malformed spellings are rejected as one token, producing one diagnostic at
 the literal rather than misleading follow-up name tokens.
 
-```talac
+```tala
 0o377
 0x'FF
 0b1010'
@@ -58,7 +58,7 @@ An integer literal without a target has type `int`. The compiler does not
 silently widen it when the value exceeds `int`. A declared integer target
 selects the literal representation directly when the value fits.
 
-```talac
+```tala
 byte small = 100;
 long normal = 2'000'000'000;
 longint large = 9'223'372'036'854'775'808;
@@ -74,7 +74,7 @@ An untargeted floating-point literal has type `float`. A floating target
 selects `sfloat`, `lfloat`, `float`, or `double`; suffixes are neither needed
 nor supported.
 
-```talac
+```tala
 sfloat compact = 1.5;
 lfloat single = 1.5;
 float normal = 1.5;
@@ -84,7 +84,7 @@ double extended = 1.5;
 Scientific notation accepts `e` or `E` and an optional exponent sign.
 Apostrophes may separate mantissa digits, but never exponent digits.
 
-```talac
+```tala
 1e3
 2E-4
 1'000.250'000
@@ -99,7 +99,7 @@ native lowering boundary.
 `char` stores a `u32`. A literal can contain several values; they are packed
 left to right, and the packed result must fit in 32 bits.
 
-```talac
+```tala
 char first = 'A';
 char pair = 'AB';
 char four = 'ABCD';
@@ -124,7 +124,7 @@ packed values wider than `u32` are compile-time errors.
 Boolean targets and conditions accept numeric values. Zero means `false`;
 every nonzero value means `true`.
 
-```talac
+```tala
 bool disabled = 0;
 bool enabled = 1;
 
@@ -165,7 +165,7 @@ representation is selected. It is therefore independent of the Haskell host
 word size and catches both a literal that does not fit and a constant
 expression whose folded result does not fit.
 
-```talac
+```tala
 byte valid = 100 + 27;
 byte overflow = 100 + 28; -- compile-time error
 ```
@@ -229,7 +229,7 @@ Two computed operands must already have the same scalar type. A target may
 select the type of a literal, but it does not silently convert an existing
 binding of another width or signedness.
 
-```talac
+```tala
 long left = 1;
 long right = 2;
 long sum = left + right; // valid

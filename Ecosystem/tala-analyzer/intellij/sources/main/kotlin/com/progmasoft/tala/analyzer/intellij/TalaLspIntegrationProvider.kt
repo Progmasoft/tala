@@ -24,7 +24,7 @@ internal class TalaLspIntegrationProvider : LspIntegrationProvider {
         file: VirtualFile,
         clientStarter: LspIntegrationProvider.LspClientStarter,
     ) {
-        if (file.extension == "talac") {
+        if (file.extension == "tala") {
             clientStarter.ensureClientStarted(TalaLspClientDescriptor(project))
         }
     }
@@ -40,7 +40,7 @@ internal class TalaLspIntegrationProvider : LspIntegrationProvider {
  */
 private class TalaLspClientDescriptor(project: Project) :
     ProjectWideLspClientDescriptor(project, "Tala Analyzer") {
-    override fun isSupportedFile(file: VirtualFile): Boolean = file.extension == "talac"
+    override fun isSupportedFile(file: VirtualFile): Boolean = file.extension == "tala"
 
     override fun createCommandLine(): GeneralCommandLine {
         val configured = System.getenv("TALA_ANALYZER_PATH")?.trim().orEmpty()
