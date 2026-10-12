@@ -238,9 +238,9 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	if err != nil || !strings.HasPrefix(strings.TrimSpace(output), "10 : ") {
 		return fmt.Errorf("tali --eval smoke test failed: %q (%v)", output, err)
 	}
-	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "-Help")
+	output, err = runner.RunWithInput(temporary, pathEnvironment, "", interactive, "--help")
 	if err != nil || !strings.Contains(output, "Tala Interactive") || !strings.Contains(output, "Usage:") {
-		return fmt.Errorf("tali -Help smoke test failed: %q (%v)", output, err)
+		return fmt.Errorf("tali --help smoke test failed: %q (%v)", output, err)
 	}
 	fmt.Println("Smoke-testing the persistent REPL session, history, reset, and error recovery...")
 	replInput := strings.Repeat("x", 1024*1024+1) + "\n" +
