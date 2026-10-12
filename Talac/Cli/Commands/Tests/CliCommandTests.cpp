@@ -58,6 +58,10 @@ TEST_CASE("what is accepted but not implemented is refused by name")
             { "Main.tala", "--entry=Demo.Program", "--llvm-args=-time-passes" })
         == 2);
     CHECK(Status({ "Main.ll", "--build=llvm-ir" }) == 2);
+    // The command line reads the request for shadow warnings; the warning
+    // itself is not written yet.
+    CHECK(Status({ "Main.tala", "--entry=Demo.Program", "--warnings=shadow" })
+          == 2);
 }
 
 TEST_CASE("the kind of the inputs decides which files and outputs fit")

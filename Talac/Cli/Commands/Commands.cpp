@@ -196,6 +196,8 @@ namespace
             return "--vipkg-type other than executable";
         if (options.emitHeader)
             return "--header";
+        if (options.compiler.shadowWarnings)
+            return "--warnings=shadow";
         if (options.compiler.llvmCompiler != LlvmCompiler::kAot)
             return "--llvm-compiler=orc";
         if (options.compiler.llvmLto != LlvmLto::kNone)

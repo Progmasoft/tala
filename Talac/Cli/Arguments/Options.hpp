@@ -91,6 +91,9 @@ struct CompilerSettings
 {
     WarningLevel warningLevel;
     bool warningsAsErrors;
+    /// Report a local that hides an outer one. No level turns this on:
+    /// it is asked for by name, `--warnings=shadow`.
+    bool shadowWarnings;
     bool xppOptimizationPasses;
     bool xmmOptimizationPasses;
     LlvmOptLevel llvmOptLevel;

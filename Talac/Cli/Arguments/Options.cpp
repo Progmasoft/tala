@@ -93,8 +93,9 @@ namespace
         { Option::Warnings,
           "warnings",
           '\0',
-          "none|low|medium|all",
-          "which warnings are reported",
+          "none|low|medium|all[,shadow]",
+          "which warnings are reported; shadow is asked for by name and "
+          "may be given in a list or by writing the option again",
           "medium" },
         { Option::CodegenBackend,
           "codegen-backend",
@@ -220,6 +221,7 @@ namespace
     constexpr CompilerSettings kCompilerDefaults{
         .warningLevel = WarningLevel::kMedium,
         .warningsAsErrors = false,
+        .shadowWarnings = false,
         .xppOptimizationPasses = true,
         .xmmOptimizationPasses = true,
         .llvmOptLevel = LlvmOptLevel::kO2,
@@ -411,11 +413,8 @@ namespace
                 }
                 return false;
             case Option::Warnings:
-                if (const auto parsed = Find(value, kWarningValues))
-                {
-                    options.compiler.warningLevel = *parsed;
-                    return true;
-                }
+                // Read by ApplyWarnings, which keeps what earlier
+                // occurrences of the option said.
                 return false;
             case Option::CodegenBackend:
                 return value == "llvm";
@@ -498,12 +497,65 @@ namespace
         return false;
     }
 
+    /// What the occurrences of `--warnings` said so far. The option is the
+    /// one that may be written again, because a level and `shadow` are two
+    /// separate things to ask for.
+    struct WarningsSeen
+    {
+        bool level{};
+        bool shadow{};
+    };
+
+    /// Read one `--warnings` value: a list of a level and `shadow`, each at
+    /// most once over the whole command line. The result is the reason the
+    /// value is refused, or nothing.
+    [[nodiscard]] std::optional<std::string>
+    ApplyWarnings(std::string_view value,
+                  CliOptions &options,
+                  WarningsSeen &seen)
+    {
+        while (true)
+        {
+            const auto comma = value.find(',');
+            const auto word = value.substr(0U, comma);
+            if (word == "shadow")
+            {
+                if (seen.shadow)
+                    return "--warnings names shadow twice";
+                seen.shadow = true;
+                options.compiler.shadowWarnings = true;
+            }
+            else if (const auto level = Find(word, kWarningValues))
+            {
+                if (seen.level)
+                    return fmt::format("--warnings names a second level, "
+                                       "'{}'; a level is one of "
+                                       "none|low|medium|all",
+                                       word);
+                seen.level = true;
+                options.compiler.warningLevel = *level;
+            }
+            else
+                return fmt::format("invalid value '{}' for --warnings; "
+                                   "expected none|low|medium|all and, beside "
+                                   "a level or alone, shadow",
+                                   word);
+            if (comma == std::string_view::npos)
+                return std::nullopt;
+            value.remove_prefix(comma + 1U);
+        }
+    }
+
     /// What the options say together, after each of them was accepted alone.
     [[nodiscard]] std::optional<std::string>
     ValidateCombination(const CliOptions &options)
     {
         if (options.inputs.empty())
             return "an input file is required; use --help for usage";
+        if (options.compiler.shadowWarnings
+            && options.compiler.warningLevel == WarningLevel::kNone)
+            return "--warnings=none reports nothing; it cannot be combined "
+                   "with shadow";
         if (options.viPkgType == ViPkgType::kExecutable)
         {
             if (options.emitHeader)
@@ -622,6 +674,7 @@ ParseCommandLine(int argc, char **argv)
     options.compiler = kCompilerDefaults;
 
     std::array<bool, kOptionCount> seen{};
+    WarningsSeen warnings;
     bool onlyInputs = false;
     for (int index = 1; index < argc; ++index)
     {
@@ -664,6 +717,14 @@ ParseCommandLine(int argc, char **argv)
             return { CliParseResult::kHelp, std::move(options), {} };
         if (spec.option == Option::Version)
             return { CliParseResult::kVersion, std::move(options), {} };
+        if (spec.option == Option::Warnings)
+        {
+            if (auto problem = ApplyWarnings(argument->value.value_or(""sv),
+                                             options,
+                                             warnings))
+                return Failure(std::move(options), std::move(*problem));
+            continue;
+        }
         auto &alreadySeen = seen[static_cast<std::size_t>(spec.option)];
         if (alreadySeen)
             return Failure(

@@ -46,6 +46,10 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
             "CLI parsing is nondeterministic or mutated argv");
     if (first.result == CliParseResult::kError && first.diagnostic.empty())
         llvm::report_fatal_error("CLI rejected input without a diagnostic");
+    if (first.result == CliParseResult::kReady
+        && first.options.compiler.shadowWarnings
+        && first.options.compiler.warningLevel == WarningLevel::kNone)
+        llvm::report_fatal_error("CLI accepted shadow warnings with none");
     if (first.result == CliParseResult::kReady && first.options.inputs.empty())
         llvm::report_fatal_error("CLI accepted a command line without input");
     // An executable made from Tala sources needs an entry and nothing else

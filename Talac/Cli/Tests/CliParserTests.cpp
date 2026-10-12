@@ -75,6 +75,7 @@ TEST_CASE("the defaults are the documented ones")
     const auto defaults = DefaultCompilerSettings();
     CHECK(defaults.warningLevel == WarningLevel::kMedium);
     CHECK_FALSE(defaults.warningsAsErrors);
+    CHECK_FALSE(defaults.shadowWarnings);
     CHECK(defaults.xppOptimizationPasses);
     CHECK(defaults.xmmOptimizationPasses);
     CHECK(defaults.llvmOptLevel == LlvmOptLevel::kO2);
@@ -230,6 +231,56 @@ TEST_CASE("values outside the documented choices are rejected by name")
                    "--emit"));
     // The form the compiler had before is no longer an option.
     CHECK(Mentions(Rejected({ "build", "-File", "P.tala" }), "unknown option"));
+}
+
+TEST_CASE("shadow warnings are asked for by name, beside any level")
+{
+    // No level turns them on, the highest included.
+    CHECK_FALSE(Ready({ "P.tala", "--entry=A.B", "--warnings=all" })
+                    .compiler.shadowWarnings);
+
+    const auto listed
+        = Ready({ "P.tala", "--entry=A.B", "--warnings=all,shadow" });
+    CHECK(listed.compiler.shadowWarnings);
+    CHECK(listed.compiler.warningLevel == WarningLevel::kAll);
+
+    const auto repeated = Ready(
+        { "P.tala", "--entry=A.B", "--warnings=all", "--warnings=shadow" });
+    CHECK(repeated.compiler == listed.compiler);
+    const auto reversed = Ready(
+        { "P.tala", "--entry=A.B", "--warnings=shadow", "--warnings=low" });
+    CHECK(reversed.compiler.shadowWarnings);
+    CHECK(reversed.compiler.warningLevel == WarningLevel::kLow);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "--warnings=shadow,low" }).compiler
+          == reversed.compiler);
+
+    // Alone, shadow keeps the default level.
+    const auto alone = Ready({ "P.tala", "--entry=A.B", "--warnings=shadow" });
+    CHECK(alone.compiler.shadowWarnings);
+    CHECK(alone.compiler.warningLevel == WarningLevel::kMedium);
+
+    CHECK(
+        Mentions(Rejected({ "P.tala", "--entry=A.B", "--warnings=all,medium" }),
+                 "second level, 'medium'"));
+    CHECK(Mentions(
+        Rejected(
+            { "P.tala", "--entry=A.B", "--warnings=all", "--warnings=low" }),
+        "second level, 'low'"));
+    CHECK(Mentions(
+        Rejected({ "P.tala", "--entry=A.B", "--warnings=shadow,shadow" }),
+        "shadow twice"));
+    CHECK(Mentions(Rejected({ "P.tala",
+                              "--entry=A.B",
+                              "--warnings=shadow",
+                              "--warnings=all,shadow" }),
+                   "shadow twice"));
+    CHECK(Mentions(
+        Rejected({ "P.tala", "--entry=A.B", "--warnings=none,shadow" }),
+        "cannot be combined"));
+    CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--warnings=all," }),
+                   "invalid value ''"));
+    CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--warnings=Shadow" }),
+                   "invalid value 'Shadow'"));
 }
 
 TEST_CASE("an option may be written only once")
