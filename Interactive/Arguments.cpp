@@ -12,7 +12,9 @@ namespace Progmasoft::Tala::Interactive
     {
         if (argc == 1)
             return {};
-        if (argc == 2 && std::string_view(argv[1]) == "-Help")
+        if (argc == 2
+            && (std::string_view(argv[1]) == "--help"
+                || std::string_view(argv[1]) == "-h"))
             return Request{ RequestKind::Help, {}, {} };
         if (argc == 3 && std::string_view(argv[1]) == "--eval")
         {
@@ -30,7 +32,7 @@ namespace Progmasoft::Tala::Interactive
             RequestKind::Error,
             {},
             fmt::format(
-                "unknown or misplaced argument '{}'; use -Help for usage",
+                "unknown or misplaced argument '{}'; use --help for usage",
                 argc > 1 ? argv[1] : "")
         };
     }

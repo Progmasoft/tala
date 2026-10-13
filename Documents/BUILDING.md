@@ -27,8 +27,7 @@ Required tools:
 - Clang and LLD from an LLVM installation appropriate to the host;
 - an LLVM development package containing LLVM headers, libraries, and `llvm-config`;
 - GHC 9.10 or newer and Cabal; every maintained Haskell component uses the `GHC2024` edition;
-- JDK 25; and
-- the Kotlin command used by project-evaluator tests.
+- JDK 25. Tazel evaluates project files with the Kotlin scripting host it embeds, so no Kotlin installation is needed.
 
 Windows additionally needs Windows SDK headers/import libraries and MSVC CRT/STL development files. These provide platform
 headers and libraries only; ClangCL, LLD, and Bazelisk remain independent tools. macOS needs the Xcode Command Line Tools,
@@ -206,12 +205,12 @@ compiler version, host platform, and architecture so separately built bundles do
 `dist/` is ignored generated output and is not committed.
 
 The bundle contains two executables and one shared library. Users invoke `talac`; the driver calls the adjacent
-`tala-frontend` library in-process through the versioned C ABI, and `tali` is the REPL executable that `talac interactive`
-locates on `PATH`. Do not move `talac` without its matching library or place an unrelated library beside it.
+`tala-frontend` library in-process through the versioned C ABI, and `tali` is the REPL executable.
+Do not move `talac` without its matching library or place an unrelated library beside it.
 
 Staging is not considered successful merely because both build systems returned zero. The bundle command invokes the
-staged tools, checks the compiler version, compiles a real `.tala` fixture to a `.vxse`, and executes that native program.
-It also invokes `talac interactive --eval "5 + 5"` with only the staged bundle directory added to `PATH`, checks the result,
+staged tools, checks the compiler version, compiles a real `.tala` fixture to an executable, and executes that native program.
+It also invokes `tali --eval "5 + 5"` with only the staged bundle directory added to `PATH`, checks the result,
 and opens/exits the no-argument REPL. It fails if either companion cannot be discovered, compilation does not produce the
 expected executable, or a smoke program exits incorrectly. Finally it writes `SHA256SUMS` for all staged executables and
 legal payloads. Consumers can use that manifest to

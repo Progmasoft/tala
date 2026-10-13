@@ -25,11 +25,11 @@ What happened? What should happen according to the relevant `Spec/` page or docu
 
 ### Minimal reproduction
 
-Provide the smallest `.tala` source or `BUILD.kts` fragment that reproduces the issue, the exact `talac` command, and the resulting output. If an artifact is involved, name its format (`.core`, `.xpp`, `.xmm`, object, or `.vxse`) without attaching private binaries. State whether it reproduces without a project file.
+Provide the smallest `.tala` source or `BUILD.kts` fragment that reproduces the issue, the exact `talac` command, and the resulting output. If an artifact is involved, name its format (`.core`, `.xpp`, `.xmm`, object, or the executable) without attaching private binaries. State whether it reproduces without a project file.
 
 ### Environment
 
-- Tala version or commit (`talac version`):
+- Tala version or commit (`talac --version`):
 - OS (Windows 10/11, macOS Sequoia/Tahoe, or other) and architecture:
 - Relevant toolchain versions (Bazelisk, GHC, Clang/LLVM, JDK) if building from source:
 - Clean checkout and recursive submodules? Yes/No:

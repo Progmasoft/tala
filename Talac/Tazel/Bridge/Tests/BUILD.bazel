@@ -1,7 +1,0 @@
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-
-cc_binary(
-    name = "project_registry_tests",
-    srcs = ["RegistryTests.cpp"],
-    deps = ["//Talac/Tazel/Bridge:project_driver", "@catch3//:catch2_main", "@catch3//src/Progmasoft:catch3"],
-)

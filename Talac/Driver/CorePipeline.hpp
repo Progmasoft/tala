@@ -13,14 +13,14 @@
 // never reparses CLI spellings or exposes the retired C driver naming.
 [[nodiscard]] bool
 ProcessCoreArtifact(const char *path,
-                    CliCommand command,
+                    PipelineAction action,
                     BuildOutput output,
                     const CompilerSettings *settings,
                     const char *targetTriple);
 [[nodiscard]] bool
 ProcessCoreArtifactAs(const char *path,
                       const char *artifactBasePath,
-                      CliCommand command,
+                      PipelineAction action,
                       BuildOutput output,
                       const CompilerSettings *settings,
                       const char *targetTriple);
@@ -28,7 +28,7 @@ ProcessCoreArtifactAs(const char *path,
 ProcessCoreBytesAs(std::span<const std::uint8_t> bytes,
                    const char *sourceName,
                    const char *artifactBasePath,
-                   CliCommand command,
+                   PipelineAction action,
                    BuildOutput output,
                    const CompilerSettings *settings,
                    const char *targetTriple);
@@ -48,14 +48,14 @@ ProcessProjectCoreBytes(std::span<const std::uint8_t> bytes,
 [[nodiscard]] bool
 ProcessXppArtifactAs(const char *path,
                      const char *artifactBasePath,
-                     CliCommand command,
+                     PipelineAction action,
                      BuildOutput output,
                      const CompilerSettings *settings,
                      const char *targetTriple);
 [[nodiscard]] bool
 ProcessXmmArtifactAs(const char *path,
                      const char *artifactBasePath,
-                     CliCommand command,
+                     PipelineAction action,
                      BuildOutput output,
                      const CompilerSettings *settings,
                      const char *targetTriple);

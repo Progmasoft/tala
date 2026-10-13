@@ -164,7 +164,7 @@ before body decoding; no older tag is reinterpreted under the current schema.
 ## CorePrep adaptation
 
 CorePrep is an internal adapter between functional Core and the native codegen
-IRs. It is not a user-selectable `-Emit` format. CorePrep preserves the full
+IRs. It is not a user-selectable `--emit` format. CorePrep preserves the full
 scalar type and literal payload while making evaluation order, basic blocks,
 and branch conditions explicit.
 

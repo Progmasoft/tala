@@ -44,7 +44,7 @@ intersection described below.
 
 CorePrep converts nested expressions to atoms and ordered instructions. It is
 an internal compiler adapter. It is not a user-selectable output format and
-does not have an `-Emit` mode.
+does not have an `--emit` mode.
 
 Ordinary expressions append instructions to an open block. Logical `&&` and
 `||` are different: atomizing either operation closes the current block,

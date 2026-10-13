@@ -141,7 +141,7 @@ compiler or IDE part of the build architecture. ClangCL/LLD remain the native to
 
 ## Linking an executable
 
-`talac build` and `talac run` link a `.vxse` executable on every host. The entry of a program is a bridge the backend
+`talac` links a native executable on every host. The entry of a program is a bridge the backend
 adds for an executable and for nothing else: it calls the program's `Main` and returns zero.
 
 | Host | Entry symbol | Linked by | Runtime library | Takes from the system |
@@ -157,7 +157,7 @@ objects and, on macOS, the system libraries are, which differs between distribut
 library stands beside the compiler under the name of the table; `develop build` puts it there.
 
 A program that needs a value that cannot be computed stops at an instruction the processor refuses. Windows reports
-the exception as the status of the process. Elsewhere the process is ended by a signal, and `talac run` reports it the
+the exception as the status of the process. Elsewhere the process is ended by a signal, and `tazel run` reports it the
 way a shell does, 128 and the number of the signal.
 
 ## Artifacts
@@ -170,10 +170,10 @@ artifact APIs:
 - `WriteObject` accepts only a `.o` path; and
 - `WriteAssembly` accepts only a `.asm` path.
 
-`talac build -Emit llvmll` writes the sibling `.ll` file and `talac build -Emit llvmbc` writes the sibling `.bc` file for either
-`.tala` or `TACR` Core input. `talac build -Emit object|assembly` writes target-machine output. Binary emission creates an
-executable entry bridge, emits a temporary object, invokes LLD through a typed C++20 argument vector, verifies the `.vxse`,
-and removes the temporary object. `talac check` never emits. Xpp and Xmm artifact codecs are separate C++20 stage-owned
+`talac --emit=llvm-ir` writes the sibling `.ll` file and `talac --emit=llvm-bitcode` writes the sibling `.bc` file for either
+`.tala` or `TACR` Core input. `talac --emit=object|assembly` writes target-machine output. Binary emission creates an
+executable entry bridge, emits a temporary object, invokes LLD through a typed C++20 argument vector, verifies the executable,
+and removes the temporary object. `--emit=metadata` generates no code. Xpp and Xmm artifact codecs are separate C++20 stage-owned
 readers/writers; they are not LLVM-backend operations.
 
 The Haskell frontend is the sole source owner. The backend remains responsible for target lowering and the driver remains

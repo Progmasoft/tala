@@ -47,11 +47,12 @@ data FrontendOutcome
 
 data FrontendCommand
     = CompileFile FilePath
+    | CompileFiles QualifiedName [FilePath]
     | CompileProject FilePath QualifiedName [FilePath] [FilePath]
     | ListProjectSources FilePath [FilePath] [FilePath]
 
 data CommandOptions = CommandOptions
-    { optionSourceFile :: Maybe FilePath
+    { optionSourceFiles :: [FilePath]
     , optionProjectRoot :: Maybe FilePath
     , optionEntry :: Maybe String
     , optionSourceRoots :: [FilePath]
@@ -60,7 +61,7 @@ data CommandOptions = CommandOptions
     }
 
 emptyOptions :: CommandOptions
-emptyOptions = CommandOptions Nothing Nothing Nothing [] [] False
+emptyOptions = CommandOptions [] Nothing Nothing [] [] False
 
 {- | Parse the deliberately narrow private argument vocabulary. Values remain
 separate from option names so file names and glob patterns cannot be
@@ -77,7 +78,7 @@ parseCommand arguments = parseOptions emptyOptions arguments >>= finishCommand
 parseOptions :: CommandOptions -> [String] -> Either String CommandOptions
 parseOptions options [] = Right options
 parseOptions options (name : remaining) = case name of
-    "--source-file" -> uniqueValue name optionSourceFile setSourceFile options remaining
+    "--source-file" -> repeatedValue name addSourceFile options remaining
     "--project-root" -> uniqueValue name optionProjectRoot setProjectRoot options remaining
     "--entry" -> uniqueValue name optionEntry setEntry options remaining
     "--source-root" -> repeatedValue name addSourceRoot options remaining
@@ -113,35 +114,52 @@ repeatedValue name setter options remaining = case remaining of
         | null value -> Left (name ++ " value is empty")
         | otherwise -> parseOptions (setter value options) rest
 
-setSourceFile, setProjectRoot, setEntry :: String -> CommandOptions -> CommandOptions
-setSourceFile value options = options {optionSourceFile = Just value}
+setProjectRoot, setEntry :: String -> CommandOptions -> CommandOptions
 setProjectRoot value options = options {optionProjectRoot = Just value}
 setEntry value options = options {optionEntry = Just value}
 
-addSourceRoot, addExclude :: String -> CommandOptions -> CommandOptions
+addSourceFile, addSourceRoot, addExclude :: String -> CommandOptions -> CommandOptions
+addSourceFile value options = options {optionSourceFiles = optionSourceFiles options ++ [value]}
 addSourceRoot value options = options {optionSourceRoots = optionSourceRoots options ++ [value]}
 addExclude value options = options {optionExcludes = optionExcludes options ++ [value]}
 
 finishCommand :: CommandOptions -> Either String FrontendCommand
-finishCommand options = case ( optionSourceFile options
+finishCommand options = case ( optionSourceFiles options
                              , optionProjectRoot options
                              , optionEntry options
                              , optionListSources options
                              ) of
-    (Just source, Nothing, Nothing, False)
-        | null (optionSourceRoots options) && null (optionExcludes options) ->
-            Right (CompileFile source)
-        | otherwise -> Left "file compilation cannot declare project roots or exclusions"
-    (Nothing, Just root, Just entryText, False) -> do
+    (sources@(_ : _), Nothing, entryText, False)
+        | not (null (optionSourceRoots options) && null (optionExcludes options)) ->
+            Left "file compilation cannot declare project roots or exclusions"
+        | otherwise -> case (entryText, sources) of
+            (Just written, _) -> fmap (`CompileFiles` sources) (parseQualifiedName written)
+            (Nothing, [source]) -> Right (CompileFile source)
+            (Nothing, _) -> Left "several source files require --entry"
+    ([], Just root, Just entryText, False) -> do
         entry <- parseQualifiedName entryText
         if null (optionSourceRoots options)
             then Left "project compilation requires at least one --source-root"
             else Right (CompileProject root entry (optionSourceRoots options) (optionExcludes options))
-    (Nothing, Just root, Nothing, True)
+    ([], Just root, Nothing, True)
         | not (null (optionSourceRoots options)) ->
             Right (ListProjectSources root (optionSourceRoots options) (optionExcludes options))
         | otherwise -> Left "project source listing requires at least one --source-root"
     _ -> Left "arguments must describe exactly one file compile, project compile, or project source listing"
+
+{- | Load every explicitly named source. A file named twice is one source;
+the first failure of any file rejects the whole set, as project loading does.
+-}
+loadSourceFiles :: [FilePath] -> IO (Either [Diagnostic] [LoadedSource])
+loadSourceFiles paths = do
+    loaded <- mapM loadSourceFile paths
+    let problems = concat [issues | Left issues <- loaded]
+        sources = [source | Right source <- loaded]
+    pure $ if null problems then Right (uniqueSources sources) else Left problems
+    where
+        uniqueSources = foldr keepFirst []
+        keepFirst source rest =
+            source : filter ((/= loadedSourcePath source) . loadedSourcePath) rest
 
 parseQualifiedName :: String -> Either String QualifiedName
 parseQualifiedName text =
@@ -176,6 +194,21 @@ executeCommand command = case command of
                  in case compileToCorePrep (CompilerInput (loadedSourceRelativePath document) (loadedSourceText document)) of
                         Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
                         Right artifacts -> encodeCoreOutcome warnings (artifactOptimizedCore artifacts)
+    CompileFiles entry sources -> do
+        loaded <- loadSourceFiles sources
+        case loaded of
+            Left diagnostics -> pure (FrontendDiagnostics diagnostics)
+            Right documents ->
+                let warnings = concatMap loadedSourceWarnings documents
+                    inputs = map toProjectCompilerInput documents
+                    -- One source keeps the single-file pipeline, whose Core
+                    -- carries no source catalog; several are one program.
+                    compiled = case inputs of
+                        [input] -> fmap artifactOptimizedCore (compileEntryToCorePrep entry input)
+                        _ -> fmap projectEntryCore (compileProjectToCorePrep entry inputs)
+                 in case compiled of
+                        Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
+                        Right core -> encodeCoreOutcome warnings core
     CompileProject root entry roots excludes -> do
         loaded <- loadSourceSet (SourceSetRequest root roots excludes)
         case loaded of

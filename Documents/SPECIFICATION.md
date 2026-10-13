@@ -85,7 +85,7 @@ artifact name does not prove a codec exists.
 Current cross-cutting rules include:
 
 - source files use `.tala`;
-- project executables use `.vxse`;
+- an executable takes the usual extension of the host (`.exe` on Windows, none elsewhere);
 - runtime `String` is a sequence of Unicode code points rather than a UTF-8 byte container;
 - project entry is a namespace-qualified class with `public static void Main()`;
 - top-level runtime functions are not permitted;

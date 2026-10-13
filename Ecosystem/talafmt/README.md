@@ -13,16 +13,18 @@ Tala 0.5.0, so a source may use method references (`Type::Method`), names writte
 conditionals over strings, `match`, enums and console formats; none of them changes how a line is laid out.
 
 ```text
-talafmt Program.tala
-talafmt -In-Place Program.tala Library.tala
-talafmt -Dry-Run Program.tala Library.tala
-talafmt -Help
+talafmt Program.tala Library.tala
+talafmt --check Program.tala Library.tala
+talafmt --emit=stdout Program.tala
+talafmt --help
+talafmt --version
 ```
 
-Standard mode writes one formatted source to standard output. `-In-Place` overwrites every requested file, while
-`-Dry-Run` produces no output and returns a failing exit status when any requested source would change. Standard mode
-accepts one source because concatenating independent programs on standard output would be ambiguous; the other modes
-accept one or more sources and evaluate project configuration only once.
+Without options `talafmt` formats every requested file in place and prints nothing. `--check` changes nothing and returns
+a failing exit status when any requested source would change. `--emit=stdout`, `coverage`, `checkstyle` and `json` write
+the formatted source or a report to standard output and leave the files alone; `--emit=files` is the default. `-h` and
+`-v` are the short forms of `--help` and `--version`. The command line is read by a typed parser written by hand; a line
+it cannot read exits with status 2. Project configuration is evaluated once for all requested sources.
 
 The default engine uses four spaces per block level. Its public Haskell options also support tabs, an independent tab width,
 explicit LF or CRLF output, disabling reindentation, and preserving a missing final newline. Lines crossed by a multi-line
@@ -32,5 +34,5 @@ ending changes when an explicit output ending is requested.
 The Kotlin module under `sources/main/kotlin` owns the typed `talafmt.kts` configuration surface, canonical
 defaults, validation, immutable snapshots, and real scripting evaluator. `talafmt` invokes the installed `talafmt-config` helper
 once, then applies the selected input encoding, output encoding, and BOM policy to every requested source. Encoding is not
-a formatter CLI option: both direct `talafmt` use and project-wide `talac format` obey `talafmt.kts`. UTF-16 and UTF-32
+a formatter CLI option: both direct `talafmt` use and project-wide `tazel fmt` obey `talafmt.kts`. UTF-16 and UTF-32
 output uses deterministic little-endian payloads, with BOM emission controlled independently.

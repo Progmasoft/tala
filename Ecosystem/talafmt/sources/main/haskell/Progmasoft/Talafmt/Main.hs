@@ -7,71 +7,95 @@ import Control.Exception (IOException, try)
 import Data.ByteString qualified as ByteString
 import Data.ByteString.Char8 qualified as ByteString.Char8
 import Data.List (intercalate)
+import Data.List.NonEmpty qualified as NonEmpty
+import Data.Version (showVersion)
+import Paths_talafmt (version)
 import System.Directory (doesFileExist, findExecutable, getCurrentDirectory, getTemporaryDirectory, removeFile)
 import System.Environment (getArgs)
-import System.Exit (ExitCode (..), exitFailure)
+import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hClose, hPutStrLn, openBinaryTempFile, stderr, stdout)
 import System.Info (os)
 import System.Process (readProcessWithExitCode)
 import Progmasoft.Talafmt
+import Progmasoft.Talafmt.CommandLine
 import Progmasoft.Talafmt.Encoding
+import Progmasoft.Talafmt.Report
 import Progmasoft.Tala.Diagnostic
 import Progmasoft.Tala.Frontend
-
-data Mode = Standard | InPlace | DryRun
-    deriving (Eq, Show)
-
-data Command = Help | Format Mode [FilePath]
 
 main :: IO ()
 main = do
     arguments <- getArgs
-    case parseCommand arguments of
-        Nothing -> usage >> exitFailure
-        Just command -> runCommand command
+    case parseCommandLine arguments of
+        Left problem -> do
+            hPutStrLn stderr ("talafmt: " ++ renderCommandLineError problem)
+            exitWith (ExitFailure usageError)
+        Right ShowHelp -> putStr usageText
+        Right ShowVersion -> putStrLn ("talafmt " ++ showVersion version)
+        Right (Format action paths) -> runFormat action (NonEmpty.toList paths)
 
-parseCommand :: [String] -> Maybe Command
-parseCommand ["-Help"] = Just Help
-parseCommand arguments = finish =<< parseArguments Nothing [] arguments
+-- | Exit status of a command line that could not be read.
+usageError :: Int
+usageError = 2
 
-parseArguments :: Maybe Mode -> [FilePath] -> [String] -> Maybe (Maybe Mode, [FilePath])
-parseArguments mode paths arguments = case arguments of
-    [] -> Just (mode, reverse paths)
-    "-In-Place" : rest | mode == Nothing -> parseArguments (Just InPlace) paths rest
-    "-Dry-Run" : rest | mode == Nothing -> parseArguments (Just DryRun) paths rest
-    value@(first : _) : rest
-        | first /= '-' -> parseArguments mode (value : paths) rest
-    _ -> Nothing
+-- | A file read, decoded and formatted, with the bytes it holds now.
+data Formatted = Formatted
+    { formattedPath :: FilePath
+    , formattedInput :: ByteString.ByteString
+    , formattedOriginal :: String
+    , formattedText :: String
+    , formattedOutput :: ByteString.ByteString
+    }
 
-finish :: (Maybe Mode, [FilePath]) -> Maybe Command
-finish (Nothing, [path]) = Just (Format Standard [path])
-finish (Just mode, paths@(_ : _)) = Just (Format mode paths)
-finish _ = Nothing
-
-runCommand :: Command -> IO ()
-runCommand Help = usage
-runCommand (Format mode paths) = do
+runFormat :: Action -> [FilePath] -> IO ()
+runFormat action paths = do
     configured <- loadEncodingOptions
     case configured of
         Left problem -> hPutStrLn stderr ("TAF0003: " ++ problem) >> exitFailure
         Right encoding -> do
-            results <- mapM (formatPath mode encoding) paths
-            if and results then pure () else exitFailure
+            formatted <- mapM (formatPath encoding) paths
+            let results = [result | Just result <- formatted]
+                complete = length results == length paths
+            succeeded <- deliver action results
+            if complete && succeeded then pure () else exitFailure
 
-formatPath :: Mode -> EncodingOptions -> FilePath -> IO Bool
-formatPath mode encoding path = do
-    input <- ByteString.readFile path
-    decoded <- decodeSourceBytes (inputEncoding encoding) input
-    case decoded of
-        Left problem -> hPutStrLn stderr ("TAF0002: cannot decode " ++ path ++ ": " ++ problem) >> pure False
-        Right source -> case formatSource defaultFormatOptions (CompilerInput path source) of
-            Left problems -> mapM_ printCompilerDiagnostic problems >> pure False
-            Right result -> do
-                let output = encodeSourceText (outputEncoding encoding) (emitByteOrderMark encoding) (formattedSource result)
-                case mode of
-                    Standard -> ByteString.hPut stdout output >> pure True
-                    InPlace -> ByteString.writeFile path output >> pure True
-                    DryRun -> pure (output == input)
+{- | Send the formatted files where the action says. The result is False when
+the action found something the caller must know through the exit status: a
+check that found a file to format.
+-}
+deliver :: Action -> [Formatted] -> IO Bool
+deliver action results = case action of
+    Emit EmitFiles -> do
+        -- A file that is already formatted is not written again, so that its
+        -- modification time tells when it last changed.
+        mapM_ (\result -> ByteString.writeFile (formattedPath result) (formattedOutput result)) (filter changed results)
+        pure True
+    Emit EmitStdout -> mapM_ (ByteString.hPut stdout . formattedOutput) results >> pure True
+    Emit EmitCoverage -> putStr (renderCoverage reports) >> pure True
+    Emit EmitCheckstyle -> putStr (renderCheckstyle reports) >> pure True
+    Emit EmitJson -> putStr (renderJson reports) >> pure True
+    Check -> do
+        mapM_ (\result -> putStrLn (formattedPath result ++ " needs formatting")) (filter changed results)
+        pure (not (any changed results))
+    where
+        changed result = formattedOutput result /= formattedInput result
+        reports = [fileReport (formattedPath result) (formattedOriginal result) (formattedText result) | result <- results]
+
+formatPath :: EncodingOptions -> FilePath -> IO (Maybe Formatted)
+formatPath encoding path = do
+    opened <- try (ByteString.readFile path) :: IO (Either IOException ByteString.ByteString)
+    case opened of
+        Left problem -> hPutStrLn stderr ("TAF0001: cannot read " ++ path ++ ": " ++ show problem) >> pure Nothing
+        Right input -> do
+            decoded <- decodeSourceBytes (inputEncoding encoding) input
+            case decoded of
+                Left problem -> hPutStrLn stderr ("TAF0002: cannot decode " ++ path ++ ": " ++ problem) >> pure Nothing
+                Right source -> case formatSource defaultFormatOptions (CompilerInput path source) of
+                    Left problems -> mapM_ printCompilerDiagnostic problems >> pure Nothing
+                    Right result ->
+                        let text' = formattedSource result
+                            output = encodeSourceText (outputEncoding encoding) (emitByteOrderMark encoding) text'
+                         in pure (Just (Formatted path input source text' output))
 
 -- talafmt.kts remains executable Kotlin rather than a second static
 -- manifest. The JVM helper evaluates it once per formatter process and returns
@@ -133,8 +157,3 @@ trimDiagnostic message = case lines message of
 printCompilerDiagnostic :: Diagnostic -> IO ()
 printCompilerDiagnostic problem =
     hPutStrLn stderr (diagnosticCode problem ++ ": " ++ diagnosticMessage problem)
-
-usage :: IO ()
-usage =
-    putStrLn
-        "usage: talafmt <file.tala> | talafmt -In-Place <file.tala>... | talafmt -Dry-Run <file.tala>... | talafmt -Help"

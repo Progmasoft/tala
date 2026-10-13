@@ -25,7 +25,6 @@ func nativeFuzzTargets() []fuzzTarget {
 		// that semantic input instead of evolving unused tails.
 		{"//Talac/Fuzzing:differential_fuzzer", "differential_fuzzer", "differential", "64", "4096", true, false},
 		{"//Talac/Cli/Fuzzing:cli_fuzzer", "cli_fuzzer", "cli", "16384", "768", false, false},
-		{"//Talac/Tazel/Bridge/Fuzzing:project_fuzzer", "project_fuzzer", "project", "65536", "768", false, false},
 		{"//Interactive/Fuzzing:repl_fuzzer", "repl_fuzzer", "repl", "64", "4096", true, false},
 		{"//Talac/Runtime/AARC/Fuzzing:ownership_fuzzer", "ownership_fuzzer", "ownership", "64", "768", false, true},
 	}

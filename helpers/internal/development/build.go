@@ -19,7 +19,6 @@ var nativeTargets = []string{
 	"//Talac/Analysis/Tests:definite_initialization_tests",
 	"//Talac/Backend/LLVM/Tests:llvm_backend_tests",
 	"//Talac/Cli/Tests:cli_parser_tests",
-	"//Talac/Cli/Commands/Tests:execution_status_tests",
 	"//Talac/Cli/Commands/Tests:cli_command_tests",
 	"//Talac/Cli/Commands/Tests:executable_run_tests",
 	"//Talac/Core/Tests:callable_contract_tests",
@@ -40,7 +39,6 @@ var nativeTargets = []string{
 	"//Talac/Fuzzing:source_feature_smoke",
 	"//Talac/Fuzzing:source_console_smoke",
 	"//Talac/Fuzzing/Tests:coreprep_parity_tests",
-	"//Talac/Tazel/Bridge/Tests:project_registry_tests",
 	"//Interactive/Tests:interactive_tests",
 }
 

@@ -709,7 +709,7 @@ CorePrep converts nested expression evaluation to atoms and operations. It:
 - materializes closure creation operations; and
 - verifies targets, definitions, operation types, and terminators.
 
-CorePrep is internal and has no public file extension or `-Emit` option. It
+CorePrep is internal and has no public file extension or `--emit` option. It
 exists to adapt tree-shaped Core to Xpp without forcing the Core optimizer or
 native Xpp lowering to reconstruct evaluation order.
 

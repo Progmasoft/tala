@@ -10,10 +10,10 @@ limits and [Architecture](ARCHITECTURE.md) for component boundaries.
 ## Route overview
 
 ```text
-BUILD.kts or -File
+inputs on the command line
         |
         v
-project evaluation / explicit-input validation
+explicit-input validation
         |
         v
 source-set discovery and strict UTF-8 decoding
@@ -44,7 +44,7 @@ LLVM IR -> LLVM verifier -> optimization -> target machine
         |
         +--> .ll / .bc / .o / .asm
         |
-        `--> LLD -> .vxse
+        `--> LLD -> executable
 ```
 
 The user-facing compiler command remains `talac`. The native driver calls the adjacent Haskell `tala-frontend` shared library
@@ -57,22 +57,20 @@ The CLI selects exactly one input mode.
 
 ### Explicit source
 
-`-File path.tala` selects one source file. The extension and requested `-Build` kind must agree. The driver does not search
-for a project merely to reinterpret that file, although project-independent CLI defaults still apply.
+`talac path.tala --entry=Namespace.Program` compiles one source file. The extension and requested `--build` kind must
+agree. The compiler never searches for a project.
 
 ### Project source set
 
-Without `-File`, source commands discover `BUILD.kts` by walking from the requested working directory toward the
-filesystem root. The Kotlin evaluator returns a typed project plan containing source roots, exclusions, entry identity,
-compiler settings, targets, test suites, output directories, and package metadata.
-
-The evaluator does not expand source roots into a list of `.tala` files. That distinction keeps filesystem and language
-ownership in the frontend, prevents Kotlin and Haskell glob semantics from drifting, and lets Analyzer, Formatter, Linter,
-and the compiler share one source policy.
+Several source files on one command line are one program: `talac Main.tala Helper.tala --entry=Demo.Program`. This is
+how a project is compiled. Tazel evaluates the project file, collects the `.tala` files below the source directory of a
+target, applies the exclusions of the project, and starts the compiler with those files and the compiler options of the
+project. Source discovery and exclusion patterns are Tazel's; namespaces, entry resolution and every language rule are
+the frontend's.
 
 ### Explicit artifact
 
-`-Build core -File module.core`, `-Build xpp -File module.xpp`, and `-Build xmm -File module.xmm` select their versioned
+`module.core --build=core`, `module.xpp --build=xpp`, and `module.xmm --build=xmm` select their versioned
 readers. Each decoded artifact is checked by its owning verifier before the pipeline continues. Object input is meaningful
 only for a build operation and does not pass through frontend analysis.
 
@@ -223,7 +221,7 @@ unrelated executable on `PATH`.
 Temporary files have one cleanup owner and are removed on success and failure. The native reader validates framing before
 allocating nested structures. A malformed document never reaches Xpp or LLVM merely because it has a `.core` extension.
 
-An internal `TACP` CorePrep codec exists for contract and embedding tests. It is not accepted by `-Build core`, has no public
+An internal `TACP` CorePrep codec exists for contract and embedding tests. It is not accepted by `--build=core`, has no public
 extension, and is not an emit choice.
 
 ## 9. Core-to-CorePrep adaptation
@@ -306,7 +304,7 @@ Artifact ownership is explicit:
 | `llvmbc` | LLVM backend | binary `.bc` |
 | `object` | LLVM target machine | `.o` |
 | `assembly` | LLVM target machine | `.asm` |
-| `binary` | target machine plus LLD | `.vxse` |
+| `executable` | target machine plus LLD | a program of the host |
 
 `check` writes no artifact. Binary emission creates the required entry bridge, writes a temporary object, invokes LLD with a
 typed argument vector rather than a shell string, validates the resulting executable, and removes its temporary object.

@@ -16,7 +16,9 @@ build-type: Simple
 library
     exposed-modules:
         Progmasoft.Talafmt
+        Progmasoft.Talafmt.CommandLine
         Progmasoft.Talafmt.Encoding
+        Progmasoft.Talafmt.Report
     other-modules:
         Progmasoft.Talafmt.Layout
         Progmasoft.Talafmt.Options
@@ -31,10 +33,15 @@ library
 executable talafmt
     main-is: Progmasoft/Talafmt/Main.hs
     other-modules:
+        Paths_talafmt
         Progmasoft.Talafmt
+        Progmasoft.Talafmt.CommandLine
         Progmasoft.Talafmt.Encoding
         Progmasoft.Talafmt.Layout
         Progmasoft.Talafmt.Options
+        Progmasoft.Talafmt.Report
+    autogen-modules:
+        Paths_talafmt
     hs-source-dirs: sources/main/haskell
     build-depends:
         base >=4.20 && <4.23,
@@ -49,6 +56,8 @@ executable talafmt
 test-suite talafmt-tests
     type: exitcode-stdio-1.0
     main-is: Main.hs
+    other-modules:
+        CommandLineTests
     hs-source-dirs: sources/test/haskell
     build-depends:
         base >=4.20 && <4.23,

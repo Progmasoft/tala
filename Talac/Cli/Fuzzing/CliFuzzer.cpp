@@ -47,8 +47,28 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
     if (first.result == CliParseResult::kError && first.diagnostic.empty())
         llvm::report_fatal_error("CLI rejected input without a diagnostic");
     if (first.result == CliParseResult::kReady
-        && first.options.command == CliCommand::kNone)
-        llvm::report_fatal_error(
-            "CLI accepted input without selecting a command");
+        && first.options.compiler.shadowWarnings
+        && first.options.compiler.warningLevel == WarningLevel::kNone)
+        llvm::report_fatal_error("CLI accepted shadow warnings with none");
+    if (first.result == CliParseResult::kReady && first.options.inputs.empty())
+        llvm::report_fatal_error("CLI accepted a command line without input");
+    // An executable made from Tala sources needs an entry and nothing else
+    // may carry one; the parser is the only place that rule is enforced. A
+    // check of one source is the exception: it may name an entry or not.
+    if (first.result == CliParseResult::kReady)
+    {
+        const bool takesEntry
+            = first.options.viPkgType == ViPkgType::kExecutable
+              && first.options.input == BuildInput::kTala;
+        const bool entryOptional
+            = takesEntry && first.options.output == BuildOutput::kMetadata
+              && first.options.inputs.size() == 1U;
+        if (!entryOptional && takesEntry != first.options.entry.has_value())
+            llvm::report_fatal_error(
+                "CLI accepted an entry that does not fit the inputs");
+        if (first.options.entry.has_value() && !takesEntry)
+            llvm::report_fatal_error(
+                "CLI accepted an entry for inputs that carry their own");
+    }
     return 0;
 }

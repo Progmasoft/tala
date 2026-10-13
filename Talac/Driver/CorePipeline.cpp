@@ -310,7 +310,9 @@ namespace
     WriteExecutable(const char *inputPath, const Llvm::Artifact &artifact)
         -> bool
     {
-        const auto output = ArtifactPath(inputPath, ".vxse");
+        const auto output
+            = ArtifactPath(inputPath,
+                           OutputExtension(BuildOutput::kExecutable));
         TemporaryObject temporary(inputPath);
         // Binary is one user-visible artifact. The object exists only long
         // enough for LLD and is never confused with an explicit `-Emit object`
@@ -353,7 +355,7 @@ namespace
                     std::span<const std::uint8_t> bytes,
                     const char *sourceName,
                     const char *artifactBasePath,
-                    CliCommand command,
+                    PipelineAction action,
                     BuildOutput output,
                     const CompilerSettings *settings,
                     const char *targetTriple) -> bool
@@ -382,14 +384,18 @@ namespace
             options.stop_after = tala::PipelineStop::Xpp;
         else if (output == BuildOutput::kXmm)
             options.stop_after = tala::PipelineStop::Xmm;
-        if (command != CliCommand::kCheck)
+        if (action != PipelineAction::kCheck)
         {
-            if (output == BuildOutput::kBinary
+            if (output == BuildOutput::kExecutable
                 || output == BuildOutput::kObject)
                 options.llvm.machineCode = Llvm::MachineCodeEmission::Object;
             else if (output == BuildOutput::kAssembly)
                 options.llvm.machineCode = Llvm::MachineCodeEmission::Assembly;
-            options.llvm.executableEntry = output == BuildOutput::kBinary;
+            // An object written for its own sake is the object of a program
+            // too: `--build=object` links it, and a program without the
+            // entry of its process cannot be linked.
+            options.llvm.executableEntry = output == BuildOutput::kExecutable
+                                           || output == BuildOutput::kObject;
         }
 
         auto result
@@ -403,7 +409,7 @@ namespace
             PrintFailure(result);
             return false;
         }
-        if (command == CliCommand::kCheck)
+        if (action == PipelineAction::kCheck)
         {
             fmt::print(stderr,
                        "talac: compiler artifact '{}' is valid through its "
@@ -413,7 +419,7 @@ namespace
         }
         if (output == BuildOutput::kXpp || output == BuildOutput::kXmm)
             return WriteIntermediate(artifactBasePath, output, result);
-        const auto needsLlvm = output == BuildOutput::kBinary
+        const auto needsLlvm = output == BuildOutput::kExecutable
                                || output == BuildOutput::kObject
                                || output == BuildOutput::kAssembly
                                || output == BuildOutput::kLlvmIr
@@ -431,7 +437,7 @@ namespace
                            sourceName);
                 return false;
             }
-            if (output == BuildOutput::kBinary)
+            if (output == BuildOutput::kExecutable)
                 return WriteExecutable(artifactBasePath, *result.llvm);
             return WriteArtifact(artifactBasePath, output, *result.llvm);
         }
@@ -445,7 +451,7 @@ namespace
 bool
 ProcessCoreArtifactAs(const char *path,
                       const char *artifactBasePath,
-                      CliCommand command,
+                      PipelineAction action,
                       BuildOutput output,
                       const CompilerSettings *settings,
                       const char *targetTriple)
@@ -475,7 +481,7 @@ ProcessCoreArtifactAs(const char *path,
     return ProcessCoreBytesAs(*bytes,
                               path,
                               artifactBasePath,
-                              command,
+                              action,
                               output,
                               settings,
                               targetTriple);
@@ -485,7 +491,7 @@ bool
 ProcessCoreBytesAs(std::span<const std::uint8_t> bytes,
                    const char *sourceName,
                    const char *artifactBasePath,
-                   CliCommand command,
+                   PipelineAction action,
                    BuildOutput output,
                    const CompilerSettings *settings,
                    const char *targetTriple)
@@ -494,7 +500,7 @@ ProcessCoreBytesAs(std::span<const std::uint8_t> bytes,
                            bytes,
                            sourceName,
                            artifactBasePath,
-                           command,
+                           action,
                            output,
                            settings,
                            targetTriple);
@@ -502,14 +508,14 @@ ProcessCoreBytesAs(std::span<const std::uint8_t> bytes,
 
 bool
 ProcessCoreArtifact(const char *path,
-                    CliCommand command,
+                    PipelineAction action,
                     BuildOutput output,
                     const CompilerSettings *settings,
                     const char *targetTriple)
 {
     return ProcessCoreArtifactAs(path,
                                  path,
-                                 command,
+                                 action,
                                  output,
                                  settings,
                                  targetTriple);
@@ -657,7 +663,7 @@ ProcessProjectCoreBytes(std::span<const std::uint8_t> bytes,
 bool
 ProcessXppArtifactAs(const char *path,
                      const char *artifactBasePath,
-                     CliCommand command,
+                     PipelineAction action,
                      BuildOutput output,
                      const CompilerSettings *settings,
                      const char *targetTriple)
@@ -676,7 +682,7 @@ ProcessXppArtifactAs(const char *path,
                            *bytes,
                            path,
                            artifactBasePath,
-                           command,
+                           action,
                            output,
                            settings,
                            targetTriple);
@@ -685,7 +691,7 @@ ProcessXppArtifactAs(const char *path,
 bool
 ProcessXmmArtifactAs(const char *path,
                      const char *artifactBasePath,
-                     CliCommand command,
+                     PipelineAction action,
                      BuildOutput output,
                      const CompilerSettings *settings,
                      const char *targetTriple)
@@ -704,7 +710,7 @@ ProcessXmmArtifactAs(const char *path,
                            *bytes,
                            path,
                            artifactBasePath,
-                           command,
+                           action,
                            output,
                            settings,
                            targetTriple);

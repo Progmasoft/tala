@@ -5,12 +5,14 @@ module Main (main) where
 
 import Data.List (sort)
 import System.Exit (exitFailure)
+import CommandLineTests
 import Progmasoft.Talafmt
 import Progmasoft.Talalint
 import Progmasoft.Tala.Frontend
 
 main :: IO ()
 main = do
+    mapM_ (uncurry check) commandLineTests
     check "linter reports compiler and physical source diagnostics" reportsDiagnostics
     check "safe fixes remove all implemented source hygiene findings" safeFixes
     check "safe fixes reach an idempotent result" safeFixesAreIdempotent

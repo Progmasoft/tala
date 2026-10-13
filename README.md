@@ -44,7 +44,7 @@ with.
 → C++20 Xmm
 → Xmm optimizations
 → LLVM bitcode
-→ native object and .vxse executable
+→ native object and executable
 ```
 
 Core, CorePrep, Xpp, and Xmm are target-independent. Their public artifact extensions are `.core`, `.xpp`, and `.xmm`;
@@ -57,7 +57,7 @@ The official native development hosts are Windows 10/11, macOS 15 Sequoia, macOS
 - Bazelisk for the production C++20 graph;
 - an LLVM development package containing headers, libraries, and `llvm-config`;
 - GHC 9.10 or newer and Cabal for the GHC2024 Haskell frontend;
-- JDK 25 and the Kotlin runner for the project DSL.
+- JDK 25 for Tazel, the build system.
 
 Windows uses standalone ClangCL/LLD plus Windows SDK and MSVC CRT/STL development files. macOS uses Clang/LLD plus the
 Apple SDK supplied by the Xcode Command Line Tools. Ubuntu and Fedora use Clang/LLD with their LLVM development and
@@ -105,7 +105,7 @@ configuration automatically; ordinary builds never need `--config`. The Bazel gr
 `bundle` is the reproducible local path from a checkout to a usable compiler layout. It builds the C++20 `talac` driver with
 Bazel, builds its private Haskell `tala-frontend` shared library with Cabal, stages the driver, REPL, and library under
 `dist/tala-<version>-<platform>-<arch>/`, and verifies that the staged pair can compile and run a real `.tala`
-program as a `.vxse`. The ignored `dist/` tree also contains `LICENSE.txt`, `PATENTS`, the current Progmasoft exception and
+program. The ignored `dist/` tree also contains `LICENSE.txt`, `PATENTS`, the current Progmasoft exception and
 patent-grant texts, and `SHA256SUMS`. See [Building](Documents/BUILDING.md#local-compiler-bundle) for the layout and
 verification contract.
 
@@ -113,52 +113,43 @@ verification contract.
 matching Criterion suite over the Haskell Core representations and wire codecs. Benchmark sources live beside the component
 they measure; methodology and recorded baselines live under [Benchmarks](Benchmarks/README.md).
 
-## Command-line status
+## Command line
 
-The compiler executable is `talac`. Its C++20 command parser uses one typed schema for command scope, option arity, duplicate
-rejection, defaults, and value conversion; it has no third-party CLI dependency. For `.tala`, `check` runs the Haskell
-frontend and the complete in-memory Core/CorePrep/Xpp/Xmm/LLVM validation route. `build` produces a native `.vxse` by
-default; `-Emit core|object|assembly|llvmll|llvmbc` selects another supported artifact. `run` builds and executes the
-native binary. Public bounded Xpp/Xmm v3 readers and writers support verified forward pipeline resumption.
-CorePrep wire bytes are never accepted under the public `.core` extension.
+Each program does one job. `talac` is the compiler: sources in, one artifact out. `tazel` is the build system and package
+manager: it reads the project file and starts the compiler. `tali` is the REPL; `talafmt` and `talalint` format and lint.
 
-`tala-frontend` is an implementation library, not a second user-facing compiler command. The C++20 driver loads it beside
-`talac` and calls through a versioned C11 ABI; no frontend child process or temporary Core handoff is involved.
-
-The reliable single-file validation form is:
+Compile one file and run it:
 
 ```powershell
-.\bazel-bin\Talac\Cli\talac.exe check -File .\path\to\Main.tala
+talac Program.tala --entry=Example.Program
+.\Program.exe
 ```
 
-From a directory containing `BUILD.kts`, project validation uses the configured source roots and namespace-qualified
-entry directly:
+`--entry` names the class whose parameterless `public static void Main()` starts the program. The executable is written
+beside the source and takes the usual extension of the host. `--emit=core|xpp|xmm|object|assembly|llvm-ir|llvm-bitcode`
+selects another artifact, and `--emit=metadata` checks a program without building it.
+
+In a project, Tazel finds the sources and passes the compiler options of the project file:
 
 ```powershell
-.\path\to\talac.exe check
-.\path\to\talac.exe build -Emit core
-.\path\to\talac.exe format
-.\path\to\talac.exe lint
+tazel check
+tazel build
+tazel run
+tazel fmt -- --check
+tazel lint -- --fix
 ```
 
-The compiler recursively discovers case-sensitive `.tala` files, applies project-relative exclusions, merges files by
-declared namespace, validates every namespace, and selects the configured entry class. It does not require namespace and
-directory layouts to match.
+Every command line is read by a parser written by hand that turns an accepted line into a typed value; no program uses a
+command-line library. See [command-line interfaces](Documents/CLI.md) for every option and for what is not implemented
+yet.
 
-Project-wide `format` and `lint` reuse that compiler-owned source discovery. They require the separately installed Visual
-Formatter and talalint packages, respectively; the compiler does not embed either tool.
-
-See [CLI](Documents/CLI.md) for the exact accepted surface and implementation status.
+`tala-frontend` is an implementation library, not a second compiler command. `talac` loads it beside itself and calls
+through a versioned C11 ABI; no frontend child process or temporary Core handoff is involved.
 
 ## Project files
 
-A Tala project uses one `BUILD.kts` file. `sources.executable.entry` names a namespace-qualified class; its final
-segment is a class name and need not be `Main` or `Program`. The selected class must provide a parameterless
-`public static void Main()` method; a top-level runtime function is not an entry point.
-The entry is resolved from namespace and type identity. It does not name a source file, and source file names or directory
-layout do not have to mirror the namespace. The Kotlin runtime passes source roots and exclusions to the compiler without
-walking the project for `.tala` files. The Haskell frontend now owns that discovery, strict UTF-8 decoding, deterministic
-ordering, exclusion matching, namespace merge, and entry validation.
+A Tala project has one project file, a Kotlin script named `BUILD.kts` (or `BUILD.tzl`, `BUILD.tazel`, `BUILD`,
+`Tazel.build`; the first that exists is used).
 
 ```kotlin
 project {
@@ -169,18 +160,21 @@ project {
 
 sources {
   executable {
-    name = "Example"
     srcDir = "Sources"
-    entry = "Example.Main"
+    entry = "Example.Program"
   }
 }
 ```
 
-See [Project files](Documents/PROJECT_FILES.md) for the current Kotlin DSL.
+`sources.executable.entry` names a namespace-qualified class; its last segment is a class name and need not be `Main` or
+`Program`. The class provides the parameterless `public static void Main()`; a top-level function is not an entry point.
+The entry is found by namespace and class: it does not name a source file, and neither file names nor directories have to
+mirror namespaces. Tazel collects every `.tala` file below `srcDir`, applies the exclusions of the project and hands the
+files to the compiler as one program.
 
-The binary project lockfile can be inspected without changing the normal project-evaluation output. The separate `tadc`
-tool evaluates `BUILD.kts` and writes deterministic, replayable SQL to the requested output path. TADC does not
-require a particular output filename extension.
+`LOCK.sqlite3` records the dependencies the project declares; `tazel lock create-dump` writes it as SQL text, `LOCK.dump`.
+
+See [project files](Documents/PROJECT_FILES.md) for the whole DSL.
 
 ## Language specification examples
 

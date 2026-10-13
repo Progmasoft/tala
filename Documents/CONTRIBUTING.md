@@ -17,7 +17,7 @@ cross-component rules that apply to every change.
 
 ## Language and API changes
 
-- Use the `.tala` source extension and `.vxse` executable extension.
+- Use the `.tala` source extension; an executable takes the usual extension of the host.
 - Do not introduce top-level runtime functions as entry points.
 - Do not change public API names incidentally during implementation work.
 - Fix spelling errors wherever they occur, including API spellings.

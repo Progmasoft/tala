@@ -322,7 +322,7 @@ more boundary verification, not an exemption.
 
 ## Kotlin project system
 
-Run the project evaluator and DSL tests with the repository wrapper:
+Run the Tazel tests with the repository wrapper:
 
 ```powershell
 .\Tazel\gradlew.bat -p Tazel test
@@ -453,14 +453,14 @@ transient external failure is established.
 For a connected source subset, a useful end-to-end matrix is:
 
 ```powershell
-talac check -File .\Sources\Main.tala
-talac build -File .\Sources\Main.tala -Emit core
-talac build -File .\Sources\Main.tala -Emit llvmll
-talac build -File .\Sources\Main.tala -Emit llvmbc
-talac build -File .\Sources\Main.tala -Emit object
-talac build -File .\Sources\Main.tala -Emit assembly
-talac build -File .\Sources\Main.tala
-talac run -File .\Sources\Main.tala
+talac .\Sources\Main.tala --entry=Example.Program --emit=metadata
+talac .\Sources\Main.tala --entry=Example.Program --emit=core
+talac .\Sources\Main.tala --entry=Example.Program --emit=llvm-ir
+talac .\Sources\Main.tala --entry=Example.Program --emit=llvm-bitcode
+talac .\Sources\Main.tala --entry=Example.Program --emit=object
+talac .\Sources\Main.tala --entry=Example.Program --emit=assembly
+talac .\Sources\Main.tala --entry=Example.Program
+.\Sources\Main.exe
 ```
 
 Assertions should include file extension, nonempty artifact, replacement of an older artifact, no output from `check`, no
@@ -477,7 +477,7 @@ go run ./helpers/cmd/develop bundle
 ```
 
 This is more than an archive or copy test. A passing run proves that the staged `talac` reports the checkout's compiler
-version, loads the adjacent private `tala-frontend` shared library in-process, compiles a real `.tala` source into a `.vxse`, and executes the result
+version, loads the adjacent private `tala-frontend` shared library in-process, compiles a real `.tala` source into an executable, and executes the result
 successfully. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
 texts, and a `SHA256SUMS` manifest covering the other staged files.
 
@@ -486,10 +486,9 @@ test input, copy a frontend from another checkout into it, or commit the generat
 should start from a freshly staged bundle so version, wire contract, native driver, and legal materials are evaluated as one
 unit.
 
-The bundle smoke path also invokes `talac interactive` with the staged directory prepended to `PATH`. `--eval` must return the
-expected result, `-Help` must reach `tali`, and a piped no-argument REPL transcript must type-check, evaluate, display
-history, reset the ORC resource trackers, and evaluate the same symbol again. This verifies that the singular `talac` command
-finds its sibling REPL by `PATH` rather than a private absolute path or the current directory.
+The bundle smoke path also invokes `tali` with the staged directory prepended to `PATH`. `--eval` must return the
+expected result, `--help` must reach `tali`, and a piped no-argument REPL transcript must type-check, evaluate, display
+history, reset the ORC resource trackers, and evaluate the same symbol again.
 
 For focused local feedback, the REPL's owning tests can be built and run directly:
 

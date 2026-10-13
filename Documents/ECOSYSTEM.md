@@ -24,14 +24,15 @@ integration work. A checked-in DSL type alone must not be described as proof of 
 
 ## Shared project source policy
 
-`talac format` and `talac lint` operate on the complete project. They evaluate `BUILD.kts`, obtain the same main source
-roots and exclusions used by the compiler, and ask the Haskell source-discovery layer for the deterministic `.tala` list.
-They do not independently search for files in Kotlin.
+`tazel fmt` and `tazel lint` operate on the project. Tazel evaluates the project file, collects the same sources and
+exclusions it hands to the compiler, and starts the tool once per ViPkg with those files. Everything after `--` goes to
+the tool unread.
 
 ```text
-talac format
-talac format -Dry-Run
-talac lint
+tazel fmt
+tazel fmt -- --check
+tazel lint
+tazel lint -- --fix
 ```
 
 `format` requires `talafmt`; a project containing `talafmt.kts` also requires the installed `talafmt-config` evaluator.
@@ -91,21 +92,21 @@ talafmt provides `talafmt`.
 
 ```text
 talafmt File.tala
-talafmt -In-Place File.tala
-talafmt -Dry-Run File.tala
-talafmt -Help
+talafmt --check File.tala
+talafmt --emit=stdout File.tala
+talafmt --help
 ```
 
-Default mode writes formatted source to standard output. `-In-Place` replaces the selected source. `-Dry-Run` reports
-whether formatting would change the file without writing formatted output or modifying the source. `-Help` describes the
-standalone tool, not `talac` compiler options.
+Without options `talafmt` formats each file in place and prints nothing. `--check` reports whether formatting would change
+a file without modifying it. `--emit=stdout|coverage|checkstyle|json` writes the formatted source or a report to standard
+output and leaves the files alone; `--emit=files` is the default. See the [command-line reference](CLI.md#talafmt).
 
 Formatter configuration includes version selection, column and indentation widths, tab behavior, brace style, parenthesis
 and punctuation spacing, line endings, final newline policy, sorting, input/output encoding, and byte-order-mark emission.
-The current configuration model defaults to UTF-8 input/output and no BOM. During `talac format`, source discovery examines
+The current configuration model defaults to UTF-8 input/output and no BOM. During `tazel fmt`, source discovery examines
 paths without decoding source contents. The formatter then decodes each file with `encoding.input` and writes it with
 `encoding.output` and `emitByteOrderMark`; compiler builds continue to require strict UTF-8 independently. Project format
-is in-place by default, while `talac format -Dry-Run` performs byte-accurate checks without writing.
+is in place by default, while `tazel fmt -- --check` performs byte-accurate checks without writing.
 
 Formatting must be parser-gated and idempotent. The formatter may normalize physical source layout, but it must not invent
 language forms, change name identity, turn an invalid source into a different valid program, or apply C-family `switch/case`
@@ -120,7 +121,7 @@ surface until their corresponding layout passes exist; they are not silently tre
 Install the package globally through ViGet:
 
 ```text
-talac install -Global Progmasoft.Talafmt
+tazel install --global Progmasoft.Talafmt
 ```
 
 ## talalint
@@ -129,12 +130,11 @@ talalint provides `talalint`. Its standalone control surface includes:
 
 ```text
 talalint File.tala
-talalint -Fix File.tala
-talalint -List-Checks
-talalint -Help
+talalint --fix File.tala
+talalint --help
 ```
 
-`-List-Checks` lists the installed linter's checks without compiling a project. `-Fix` applies fixes classified as applicable
+`--fix` applies fixes classified as applicable
 by the configured safety policy; a diagnostic suggestion is not automatically a safe rewrite.
 
 The linter configuration begins with global diagnostic behavior:
@@ -163,7 +163,7 @@ classification.
 Install the package globally through ViGet:
 
 ```text
-talac install -Global Progmasoft.Talalint
+tazel install --global Progmasoft.Talalint
 ```
 
 ## Configuration independence

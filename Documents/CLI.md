@@ -1,393 +1,258 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-# `talac` command-line interface
+# Command-line interfaces
 
-## Commands
+Tala ships several programs, and each does one job:
 
-The parser recognizes:
-
-```text
-check
-build
-format
-lint
-run
-test
-resolve
-update
-install
-viget
-version
-interactive
-```
-
-The general invocation shape is:
-
-```text
-talac <command> [command options] [command positional values]
-talac -Help
-talac <command> -Help
-```
-
-Command, option, and enumerated-value spelling is case-sensitive. Compiler options use one leading hyphen and Pascal-style
-segments. Version reporting is available only through the explicit `talac version` command.
-
-| Command | Purpose | Current connection |
+| Program | Job | Written in |
 | --- | --- | --- |
-| `check` | validate source or a supported explicit artifact | connected for project/source/Core |
-| `build` | emit the selected artifact | connected for project/source/Core within documented output limits |
-| `run` | build a fresh binary and execute it | connected for the implemented source subset |
-| `test` | execute a named project test suite | registered; framework runner not linked |
-| `format` | format the complete project source set | connected dispatch; requires installed `talafmt` |
-| `lint` | lint the complete project source set | connected dispatch; requires installed `talalint` |
-| `resolve` | evaluate the project and refresh the lockfile | connected project operation |
-| `update` | reevaluate dependencies and refresh the lockfile | connected project operation |
-| `install` | install a ViGet package | registered; ViGet client not linked |
-| `viget` | perform registry publication/update action | registered; ViGet client not linked |
-| `version` | report compiler version through command form | recognized version outcome |
-| `interactive` | launch the Tala Interactive REPL | connected process dispatch; requires `tali` on `PATH` |
+| `talac` | the compiler: sources or artifacts in, one artifact out | C++20 |
+| `tazel` | the build system and package manager: reads the project file and starts the others | Kotlin |
+| `tali` | Tala Interactive, the REPL | C++20 |
+| `talafmt` | the formatter | Haskell |
+| `talalint` | the linter | Haskell |
 
-Registered commands fail explicitly. They never print success while skipping the requested package or test operation.
+`talac` knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
+`talac`, `talafmt` and `talalint` as separate programs and passes them arguments.
 
-`talac interactive` looks up the `tali` companion in the process `PATH` and forwards every subsequent argument unchanged.
-This keeps the public entry point singular while allowing the REPL binary to be installed or staged independently:
+Every command line is read by a parser written by hand for that program. A line that is accepted becomes a typed value,
+and no later stage looks at the argument text again. No program uses a command-line library.
 
-```text
-talac interactive
-talac interactive --eval "5 + 5"
-talac interactive -Help
-```
+Exit codes are shared: `0` success, `1` the work failed (a rejected program, a project that is wrong), `2` the command line
+itself was wrong. `tazel run` hands through the exit code of the program it ran.
 
-The no-argument form opens the persistent REPL. One-shot `--eval` runs a Tala expression and exits; `-Help` is handled
-by `tali`, not consumed by the outer compiler parser. The native bundle places `tali` beside `talac`, so add that install
-directory to `PATH` before invoking the command. Direct `tali` invocation remains available for development and IDEs.
-
-`check`, `build`, `run`, and `test` accept either a discovered `BUILD.kts` project or a `.tala` file selected with
-`-File`.
-
-`format` and `lint` are project-only commands. They evaluate the project source policy, apply its roots and exclusions,
-and invoke the separately installed ecosystem tool for every discovered `.tala` source:
+## `talac`
 
 ```text
-talac format           # formats in place; requires Progmasoft.Talafmt
-talac format -Dry-Run  # checks every source without writing
-talac lint    # requires Progmasoft.Talalint
+talac <input>... [options]
 ```
 
-talafmt evaluates `talafmt.kts` from the project root when present and otherwise uses its defaults.
-`talac format` does not expose `-In-Place`: project formatting is in-place by definition, and `-Dry-Run` is its only format
-mode flag. The formatter, rather than the compiler source loader, decodes and re-encodes source bytes according to the
-configured `encoding.input`, `encoding.output`, and `emitByteOrderMark` values. talalint applies the equivalent
-configuration-file ownership rule for `talalint.kts`.
+```powershell
+talac Program.tala --entry=Namespace.Program
+.\Program.exe
+```
 
-Package commands use typed positional forms:
+The output is written beside the first input, under that input's name. An executable takes the usual extension of the
+host: `.exe` on Windows, none elsewhere.
+
+Several inputs are one program: `talac Main.tala Helper.tala --entry=Demo.Program`. All inputs are of the same kind.
+
+A long option takes its value after `=`: `--emit=core`. A short option takes it joined or after `=`: `-O2`, `-O=2`,
+`-tx86_64-pc-windows-msvc`. Not every long option has a short one. `--` ends the options; everything after it is an input.
+Names and values are case-sensitive.
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `--version`, `-v` | prints the version of the compiler | |
+| `--help`, `-h` | prints the help | |
+| `--entry=` | a namespace-qualified class, `Namespace.Program` | none |
+| `--standard=` | `26` | `26` |
+| `--target=`, `-t` | an LLVM target triple | the target of the host |
+| `--warnings-as-errors=` | `true`, `false` | `false` |
+| `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
+| `--codegen-backend=` | `llvm` | `llvm` |
+| `--opt-level=`, `-O` | `0`, `1`, `2`, `3`, `g` | `2` |
+| `--llvm-compiler=` | `aot`, `orc` | `aot` |
+| `--llvm-lto=` | `fat`, `thin`, `none` | `none` |
+| `--llvm-args=` | arguments for LLVM, separated by commas | none |
+| `--xpp-optimization-passes=` | `true`, `false` | `true` |
+| `--xmm-optimization-passes=` | `true`, `false` | `true` |
+| `--emit=` | `executable`, `object`, `core`, `xpp`, `xmm`, `assembly`, `llvm-ir`, `llvm-bitcode`, `metadata` | `executable` |
+| `--build=` | `tala`, `object`, `core`, `xpp`, `xmm`, `llvm-ir`, `llvm-bitcode` | `tala` |
+| `--vipkg-type=` | `executable`, `staticlib`, `cdylib`, `talalib` | `executable` |
+| `--header` | with `--vipkg-type=staticlib` or `cdylib`: also write a C header | off |
+
+### Entry
+
+`--entry` names the class whose parameterless `public static void Main()` starts the program. It is required when
+anything is built from Tala sources, and it cannot be written for a library type. An artifact input (`.core`, `.xpp`,
+`.xmm`, `.o`) already carries its entry, so `--entry` is rejected there.
+
+A check is the exception. `--emit=metadata` builds nothing, so one source is checked as it stands, with or without a
+class that has `Main`:
 
 ```text
-talac install [-Global] Publisher.Name
-talac viget push|update
+talac Helper.tala --emit=metadata
 ```
 
-Hosted coordinates contain exactly two case-sensitive ASCII identifier segments. Each segment starts with an ASCII letter
-and continues only with ASCII letters, digits, or `_`; paths, query strings, whitespace, Unicode spellings, and additional
-dot-separated segments are rejected before registry dispatch.
+Several sources are one program, and a program is lowered from its entry, so a check of several sources still needs
+`--entry`.
 
-## Canonical options
+### Warnings
+
+`--warnings` is the one option that may be written more than once, because it sets two independent things: a level and the
+`shadow` warning. `shadow` reports a local that hides a name of an outer scope. No level turns it on, `all` included; it is
+asked for by name:
 
 ```text
--File PATH
--Standard 26|latest
--Compiler-Version VERSION|latest
--Target TARGET-TRIPLE
--Warnings all|medium|low|none
--Werror true|false
--Wexperimental true|false
--Wshadow true|false
--Wundef true|false
--Type-Safe-Format true|false
--Backend llvm
--Llvm-OptLevel 1|2|3|g
--Llvm-Compiler aot|orc
--Llvm-Lto fat|thin|none
--Xpp-Optimization-Passes true|false
--Xmm-Optimization-Passes true|false
+talac Program.tala --entry=Demo.Program --warnings=all,shadow
+talac Program.tala --entry=Demo.Program --warnings=all --warnings=shadow
 ```
 
-Tool commands add only their own scoped controls: `format` accepts `-Dry-Run`, while project formatting without it writes
-in place. `-In-Place` belongs to standalone `talafmt` and is intentionally rejected by `talac format`.
+A command line holds at most one level and at most one `shadow`. `none` and `shadow` cannot be written together. `shadow`
+alone keeps the level at `medium`.
 
-`build` additionally parses `-Emit`. `build` and `check` parse `-Build` for an explicit input artifact:
+### Inputs and outputs
+
+`--build` says what the inputs are and `--emit` says what to write. The output cannot be an earlier stage than the input.
+
+| `--emit` | Written |
+| --- | --- |
+| `executable` | a program of the host |
+| `object` | `<name>.o` |
+| `core`, `xpp`, `xmm` | the verified intermediate artifact of that stage |
+| `assembly` | the assembly LLVM generates |
+| `llvm-ir`, `llvm-bitcode` | `<name>.ll`, `<name>.bc` |
+| `metadata` | `<name>.talameta` |
+
+CorePrep is an internal stage. It has no `--emit` value and no file extension.
+
+`--emit=metadata` checks a program without building it: every verifier runs and no code is generated. A program that is
+rejected leaves no file, and an object input cannot be checked. The record is UTF-8 text with one field per line:
 
 ```text
--Emit binary|object|core|xpp|xmm|assembly|llvmll|llvmbc
--Build object|talac|core|xpp|xmm|llvmll|llvmbc
+talameta 1
+compiler 0.5.2
+entry Demo.Program
+input Sources/Main.tala
+input Sources/Helper.tala
 ```
 
-Canonical compiler settings use one leading hyphen and the displayed capitalization. `-Help` is the canonical help
-control. Legacy GNU-style controls, including `--help` and `--version`, are rejected.
+`entry` is absent when the input carries its own and when a check of one source named none. `input` appears once per
+input, as written on the command line, with `/`.
 
-`-Type-Safe-Format true` is the strict and default mode. Calls to formatted Console APIs must use a format grammar whose
-conversions agree with the corresponding argument types; a mismatch is a compile-time error. Setting the option to
-`false` requests the intentionally looser C-compatible format-checking policy. It does not disable parsing the format
-string or make malformed conversions valid. The distinction matters most for `Console.Printf`, `Console.Printfn`,
-`Console.Errorf`, `Console.Errorfn`, `Console.Format`, and formatted Console input.
+### Not implemented yet
 
-## Parser model
+An option the compiler reads but cannot carry out is refused by name with exit code `2`. Nothing is silently ignored.
 
-The parser converts raw process arguments into typed command, input, output, warning, Boolean, LLVM, and ViGet-action
-values before dispatch. Its owning C++20 result separates ready, help, version, and error outcomes; parsing itself does not
-write process output. The driver renders the selected outcome. Later compiler stages do not compare command strings or
-reinterpret option values.
+- `--vipkg-type=staticlib`, `cdylib` and `talalib`, and `--header`
+- `--llvm-compiler=orc`
+- `--llvm-lto=fat` and `thin`
+- `--llvm-args`
+- `--build=llvm-ir` and `llvm-bitcode`
+- `--warnings=shadow`: the option is read, the warning itself is not in the frontend yet
 
-One declarative schema owns canonical spelling, value domain, arity, command scope, defaults, and help descriptions.
-Consequently, `talac check -Help` shows `check` options but not build-only `-Emit`, while `talac build -Help` includes it.
-Option and value spelling is case-sensitive.
+### The frontend library
 
-## Configuration precedence
+`talac` loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
+`libtala-frontend.dylib` or `libtala-frontend.so`. It is an implementation library, not a second command.
 
-For every scalar compiler setting, the driver resolves values in this order, from strongest to weakest:
-
-1. an option explicitly supplied in the current `talac` command;
-2. the value produced by the project's `BUILD.kts` evaluation;
-3. the Kotlin DSL's built-in default for that value;
-4. the CLI fallback used when no project is being evaluated.
-
-The evaluator deliberately materializes both user-written values and Kotlin DSL defaults. The native driver therefore
-uses the evaluated project as one authoritative layer and never lets an omitted CLI option overwrite it. This applies to
-warning policy, optimization settings, compiler/standard selection, and other transported compiler settings. Artifact
-selection is CLI-owned: the project DSL does not persist an `emit` value.
-
-`-Target` accepts a case-sensitive LLVM target triple such as `x86_64-pc-windows-msvc`. In project mode, an explicitly
-selected target must occur in the DSL's `targets { target(...) }` catalog when that catalog is non-empty. Without an
-explicit target, LLVM selects its host-dependent default; the first catalog entry is not chosen implicitly.
-
-An explicit non-source `-Build` always requires `-File`. For example, `talac check -Build core` is rejected rather than
-silently discovering a project; use `talac check -Build core -File Module.core`.
-
-## Defaults
+## `tazel`
 
 ```text
-standard: latest
-compiler version: latest
-warnings: medium
-warnings as errors: false
-experimental warnings: false
-shadow warnings: false
-undefined warnings: true
-type-safe format checking: true
-backend: llvm
-LLVM optimization: 2
-LLVM compiler: aot
-LLVM LTO: none
-target: host-dependent
-Xpp optimization passes: true
-Xmm optimization passes: true
+tazel <command> [arguments]
 ```
 
-### Option scope
+`tazel` works on the project the current directory belongs to: the nearest directory, upward, that holds a
+[project file](PROJECT_FILES.md).
 
-| Option | `check` | `build` | `run` | `test` |
-| --- | :---: | :---: | :---: | :---: |
-| `-File` | yes | yes | yes | yes |
-| `-Standard` | yes | yes | yes | yes |
-| `-Compiler-Version` | yes | yes | yes | yes |
-| `-Target` | yes | yes | yes | yes |
-| warning and backend settings | yes | yes | yes | yes |
-| LLVM and Xpp/Xmm settings | yes | yes | yes | yes |
-| `-Build` | yes | yes | no | no |
-| `-Emit` | no | yes | no | no |
+| Command | What it does |
+| --- | --- |
+| `tazel check` | checks the sources without writing an executable |
+| `tazel build` | builds the targets |
+| `tazel run [-- arguments]` | builds the executables and runs them |
+| `tazel test` | builds and runs the test suites |
+| `tazel lock resolve` | resolves the dependencies and renews `LOCK.sqlite3` |
+| `tazel lock create-dump` | writes `LOCK.dump`, the lockfile as text |
+| `tazel update` | updates the dependencies of the system and of the project |
+| `tazel install [--global \| -g] Publisher.Name` | downloads a package from ViGet into the project, or into the system |
+| `tazel vipkg create` | writes a local `.vipkg` for every target, without testing or publishing |
+| `tazel viget push` | builds, tests and publishes the package to ViGet for the first time |
+| `tazel viget update` | builds, tests and publishes a new version of the package |
+| `tazel fmt [-- options]` | formats the sources with `talafmt` |
+| `tazel lint [--workspace] [-- options]` | lints the sources with `talalint` |
+| `tazel version` | prints the version of Tazel |
+| `tazel help [command]` | prints the help, or the help of one command |
 
-The declarative schema is the authority for scope. A value accepted for one command is not ignored on another command; it is
-reported as out of scope.
+`tazel check` starts `talac` with `--emit=metadata` and the compiler options of the project file. `tazel build` starts it
+with `--emit=executable` and moves the result into the output directory of the build mode, under the name of the target.
 
-### Help behavior
+### Selecting targets
 
-```powershell
-talac -Help
-talac check -Help
-talac build -Help
+`check`, `build`, `run`, `test` and `lint` take a selection. Without one they work on everything.
+
+```text
+tazel build --vipkg Name          tazel build -p Name
+tazel build --executable Name     tazel build -e Name
+tazel build --library Name        tazel build -l Name
 ```
 
-Help is resolved before project evaluation and compilation. `build` help includes `-Emit`; `check` help does not. Unknown
-options still fail even if their spelling resembles a common convention such as `--help`.
+An option of `tazel` takes its value from the next argument. Each flag may be written several times, and the kinds may be
+combined. `--vipkg` keeps the named ViPkgs; once `--executable` or `--library` is written, only named targets remain. A name
+that selects nothing is an error.
 
-## Current reliable operation
+### Passing arguments on
 
-Single-file validation:
+Everything after `--` goes, unread, to the program the command starts:
 
-```powershell
-talac check -File .\Sources\Main.tala
+```text
+tazel run -- --port 8080           # to the program that was built
+tazel fmt -- --check               # to talafmt
+tazel lint -- --fix                # to talalint
+tazel lint --workspace -- --fix
 ```
 
-The Haskell frontend can emit verified Core, LLVM forms, target-machine output, or a native executable:
+### Workspaces
 
-```powershell
-talac build -File .\Sources\Main.tala -Emit core
-talac build -File .\Sources\Main.tala -Emit xpp
-talac build -File .\Sources\Main.tala -Emit xmm
-talac build -File .\Sources\Main.tala -Emit llvmll
-talac build -File .\Sources\Main.tala -Emit llvmbc
-talac build -File .\Sources\Main.tala -Emit object
-talac build -File .\Sources\Main.tala -Emit assembly
-talac build -File .\Sources\Main.tala
-talac run -File .\Sources\Main.tala
+At the root of a workspace, `build`, `check`, `run` and `test` work on every member. `fmt` and `lint` work on the default
+members when the workspace names some and on the root otherwise; `tazel lint --workspace` lints every member. Inside the
+directory of a member, that member is the project.
+
+### Finding the tools
+
+A tool is looked for in three places, in this order: the path named by `TAZEL_TALAC`, `TAZEL_TALAFMT` or `TAZEL_TALALINT`;
+the installation `tazel` runs from; the directories of `PATH`.
+
+### Not implemented yet
+
+These are refused by name with exit code `1`:
+
+- library targets: the compiler cannot write a library yet. A library that sits beside an executable is skipped with a
+  warning; a library selected by name is an error.
+- projects with dependencies: nothing fetches a dependency or hands it to the compiler yet. `tazel lock resolve` still
+  records what the project declares.
+- `tazel test` when the selection declares a test suite: Tala has no test framework yet.
+- `tazel vipkg create`, `tazel update`, `tazel install`, `tazel viget push` and `tazel viget update`.
+
+`check`, `build` and `run` compile for the host. The `targets` of the project file are recorded and not built.
+
+## `tali`
+
+```text
+tali                          # opens the REPL
+tali --eval "<expression>"    # evaluates one expression and exits
+tali --help | -h
 ```
 
-The accepted source subset is the subset implemented by the Haskell frontend. Native binary, object, assembly, and `run`
-routes use the renewed C++20 backend and never fall back to the removed compatibility frontend. Named test-suite execution
-remains pending.
+See [Tala Interactive](INTERACTIVE.md).
 
-For an explicit `-File` source or artifact, the emitted file is a sibling with the selected extension. Project binary builds
-use the Kotlin DSL output directory (`build/debug` or `build/release` by default) and produce one `.vxse`. Project-wide
-object and assembly requests produce one `.o` or `.asm` for every source owned by the selected entry namespace. Output paths
-flatten to stems (for example, `Sources/MyApp/Main.tala` to `build/debug/Main.o`); duplicate stems are rejected before output
-replacement. The driver lowers the whole batch first, stages all bytes beside the destination files, and restores prior
-outputs if a later rename fails. It preserves unrelated and stale sibling files; pruning is a separate explicit clean
-operation. See [Project native artifacts](PROJECT-ARTIFACTS.md) for the exact boundary and recovery limits.
+## `talafmt`
 
-## Core input status
-
-The CLI reserves the real Core artifact commands:
-
-```powershell
-talac check -Build core -File module.core
-talac build -Build core -Emit llvmll -File module.core
-talac build -Build core -Emit llvmbc -File module.core
+```text
+talafmt [options] <file>...
 ```
 
-The native C++20 route reads the Haskell `TACR` v10 contract with byte, collection, text, type-depth, and expression-depth
-limits. It verifies Core semantics before adapting nested expressions and source control flow to CorePrep, then runs the
-existing verified CorePrep → Xpp → Xmm → LLVM pipeline entirely in memory. `check` writes nothing. The two `build` examples
-write a sibling `.ll` or `.bc` file. A Core build can also write a sibling `.o` or `.asm`, or link a `.vxse`; binary is the
-default emit kind. The older `TACP` transport remains internal and is rejected when supplied as `.core`.
+Without options `talafmt` formats each file in place and prints nothing.
 
-### Xpp and Xmm artifact routes
+| Option | Effect |
+| --- | --- |
+| `--check` | reports whether a file needs formatting; changes nothing |
+| `--emit=files` | writes the formatted source over the file; the default |
+| `--emit=stdout` | prints the formatted source; changes nothing |
+| `--emit=coverage` | reports how much of the source was formatted; changes nothing |
+| `--emit=checkstyle` | prints a Checkstyle report; changes nothing |
+| `--emit=json` | prints the differences as JSON; changes nothing |
+| `--help`, `-h` | prints the help |
+| `--version`, `-v` | prints the version |
 
-```powershell
-talac check -Build xpp -File module.xpp
-talac build -Build xpp -File module.xpp -Emit xmm
-talac check -Build xmm -File module.xmm
-talac build -Build xmm -File module.xmm -Emit llvmll
+## `talalint`
+
+```text
+talalint [options] <file>...
 ```
 
-`TAPP` and `TAMM` are bounded, versioned binary contracts. Both readers reject
-invalid magic/version/flags, malformed tags, invalid Unicode, non-canonical
-numeric payloads, excessive counts, truncated fields, and trailing bytes.
-Decoded models pass their stage verifier before optimization or lowering.
+`talalint` reports what it finds. `--fix` also applies the fixes that are safe to apply. `--help`, `-h`, `--version` and
+`-v` work as they do for `talafmt`.
 
-Conversions move forward through the pipeline. Xmm cannot be converted back
-to Xpp or Core, and Xpp cannot be converted back to Core. Rewriting the same
-stage is permitted and replaces the artifact after successful verification.
-
-## Registered but not connected
-
-The CLI reserves the renewed artifact vocabulary before all routes are implemented:
-
-- `install` and `viget` report that the ViGet client is not linked into the compiler build.
-- `-Header` is recognized as a reserved build option but fails explicitly: TCI export/ABI semantics and a header writer are
-  not implemented. It creates no output and does not begin project evaluation.
-- `-Llvm-Compiler orc` is recognized and stored in settings, but does not create an ORC LLJIT or change execution today;
-  `run` remains the AOT build/link/run path. It is not a usable JIT switch yet.
-
-`resolve` and `update` evaluate the project configuration and refresh `LOCK.sqlite3`.
-
-Lockfile text export is deliberately not a `talac` command. The separately installed `tadc` tool evaluates an exact
-`BUILD.kts` and creates a deterministic SQL dump:
-
-```powershell
-tadc -Projectfile .\BUILD.kts -Output .\Project.sqlite3.dump
-```
-
-## Exit behavior
-
-Command parsing errors return a nonzero status. Compilation diagnostics are printed to standard error. `run` propagates
-build failures and, after a successful link, returns the native process exit status unchanged. This applies equally to an
-explicit `.tala` source, a resumed Core/Xpp/Xmm artifact, and a project executable target; a program result such as `37` is
-not collapsed into the compiler's generic failure status `1`.
-
-Parse diagnostics retain context. Unknown commands/options name the rejected spelling; invalid typed values name the
-option and its accepted domain; duplicate, missing-value, wrong-command-scope, positional, and invalid process-vector
-errors are reported independently.
-
-## Bundled executable layout
-
-The public command is `talac`. A current local distribution also contains the private Haskell `tala-frontend` shared library,
-which runs the lexer-through-Core stages in-process over a C11 ABI. It has no independent public CLI contract and is not a
-substitute for `talac`.
-
-Keep the driver, shared library, and REPL executable in the layout produced by `go run ./helpers/cmd/develop bundle`. The
-driver resolves the library relative to its own location rather than searching the current project or accepting an
-arbitrary same-named program from `PATH`. This pairing prevents a frontend with a different Core wire contract from being
-selected accidentally.
-
-The frontend runtime is initialized once and stopped at normal process teardown.
-After shutdown, its successfully loaded shared-library image remains mapped
-until the operating system releases the process. It is not a reloadable plugin:
-GHC/base retain process-lifetime allocator caches in dependent shared images.
-Unloading those images before LeakSanitizer's exit check removes the cache roots
-and prevents useful allocator symbolization. Initialization failures still
-release handles that never started a runtime. Leak detection is not disabled or
-suppressed by this lifetime policy.
-
-The bundle command validates this installed-path behavior by invoking the staged driver, compiling a real `.tala` input to
-a `.vxse`, and running that output. `SHA256SUMS` and the staged legal files describe the complete local payload; they do not
-add another user-facing command.
-
-## Filesystem and overwrite behavior
-
-Paths are interpreted by the owning command. Project discovery begins at the current/requested location and walks upward for
-`BUILD.kts`; `-File` names one explicit input. The project evaluator and Haskell source loader canonicalize contained
-roots rather than trusting textual prefixes.
-
-`talac build` replaces the artifact selected for the current invocation when that build succeeds. It does not preserve an old
-artifact merely because it already exists, and it does not execute that old artifact after a failed `run` build. Temporary
-Core/object files are implementation details and are cleaned on every owned exit path.
-
-## Examples by intent
-
-Validate a project with its evaluated defaults:
-
-```powershell
-talac check
-```
-
-Override only the current target and warning policy:
-
-```powershell
-talac check -Target x86_64-pc-windows-msvc -Warnings all -Werror true
-```
-
-Build a project executable using the project output directory:
-
-```powershell
-talac build
-```
-
-Build one explicit source into LLVM IR without requiring its path to match a namespace:
-
-```powershell
-talac build -File .\Scratch\Bootstrap.tala -Emit llvmll
-```
-
-Validate a public Core artifact without writing output:
-
-```powershell
-talac check -Build core -File .\Artifacts\Bootstrap.core
-```
-
-Convert that Core artifact to a native executable:
-
-```powershell
-talac build -Build core -File .\Artifacts\Bootstrap.core -Emit binary
-```
-
-Refresh a project's binary lockfile:
-
-```powershell
-talac resolve
-talac update
-```
-
-The two package-resolution commands currently share project evaluation and lock refresh behavior. A future transitive solver
-or registry client must preserve their typed command identity instead of collapsing the public command surface into a string
-switch.
+Both tools take several files, read `--` as the end of the options, and exit with `2` for a command line they cannot read.

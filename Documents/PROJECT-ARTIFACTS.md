@@ -10,8 +10,10 @@ CLI option.
 
 ## Emission model
 
-`talac build` selects an output kind with the existing `-Emit` option. A project
-binary build still produces exactly one `.vxse` executable. A project `object`
+The compiler selects an output kind with `--emit` when several sources are
+compiled as one program. Tazel itself asks only for an executable or for a
+check; the other kinds are reached by starting `talac` directly. An
+executable build still produces exactly one native executable. A project `object`
 or `assembly` build instead produces one native artifact for every physical
 source unit in the selected entry namespace's Core catalog:
 
@@ -19,7 +21,7 @@ source unit in the selected entry namespace's Core catalog:
 | --- | --- | --- |
 | `object` | `.o` | one target object per source unit |
 | `assembly` | `.asm` | one target assembly file per source unit |
-| `binary` | `.vxse` | one executable for the selected entry |
+| `executable` | the executable | one executable for the selected entry |
 
 The emitted `.o` suffix is intentionally stable across supported host systems.
 The file contents are still target objects: for example, an object built for a
