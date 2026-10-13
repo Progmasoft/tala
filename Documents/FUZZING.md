@@ -173,6 +173,31 @@ use-after-free detection window remains active. These settings do not disable
 the RSS limit or make an OOM successful. Ordinary sanitizer suites keep their
 normal quarantine settings.
 
+A target with a limit below 4096 MiB runs a campaign longer than 90 seconds as
+consecutive processes of 90 seconds. Each process starts from the corpus the
+earlier ones extended and has the whole limit to itself, and the report holds
+one record for the campaign: executions and new units summed, the slowest unit
+and the peak RSS of the worst process. The reason is measured. Campaigns of 900
+seconds ended on Linux and macOS with libFuzzer's out-of-memory report while
+ASan counted 24 to 30 MiB of live heap, all of it libFuzzer's own; the resident
+size had grown with the number of executions, by about 180 bytes for every call
+into the Haskell frontend and about 430 bytes for every execution of the
+threaded ownership target. Outside the sanitizer the frontend holds 22 MiB flat
+over 400,000 calls, and on Windows the ownership target stays at 288 MiB after
+as many executions as reach 769 MiB on Linux. The growth is bookkeeping of the
+sanitized process, not memory the product keeps, so the process is replaced
+before the limit mistakes it for a leak. The limit still bounds every process,
+and a single input that allocates past it still fails. The targets with a
+4096 MiB limit run whole: they execute few inputs, and reading their seed
+corpus again would cost minutes of every segment.
+
+The process watchdog of a fuzzer is its time budget, 90 seconds, and half a
+second for every file of its corpus. libFuzzer executes the whole corpus before
+it looks at its time budget, and the corpus is a cache every campaign extends:
+with 1,059 files the source target needed 178 seconds for a campaign of 90 on a
+hosted Windows runner, and the next run of the same sources was terminated at
+the former fixed bound of 180 with no failing input.
+
 ## Corpus synchronization and reports
 
 Wire seeds come from production writers, so format-version changes do not leave

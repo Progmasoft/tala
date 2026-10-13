@@ -19,6 +19,22 @@ type fuzzStatistics struct {
 	PeakRSSMiB         uint64 `json:"peak_rss_mib"`
 }
 
+// plus folds the statistics of a later process of the same campaign into
+// these: executions and new units add up, the slowest unit and the peak RSS
+// are those of the worst process. The caller derives the average rate from the
+// total, because the rates of processes of different length do not average.
+func (statistics *fuzzStatistics) plus(later *fuzzStatistics) *fuzzStatistics {
+	if statistics == nil {
+		return later
+	}
+	return &fuzzStatistics{
+		ExecutedUnits:      statistics.ExecutedUnits + later.ExecutedUnits,
+		NewUnitsAdded:      statistics.NewUnitsAdded + later.NewUnitsAdded,
+		SlowestUnitSeconds: max(statistics.SlowestUnitSeconds, later.SlowestUnitSeconds),
+		PeakRSSMiB:         max(statistics.PeakRSSMiB, later.PeakRSSMiB),
+	}
+}
+
 func parseFuzzStatistics(output string) (*fuzzStatistics, error) {
 	statistics := &fuzzStatistics{}
 	fields := map[string]*uint64{
