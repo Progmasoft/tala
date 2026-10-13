@@ -116,12 +116,31 @@ func fuzzProcessSeconds(name string, arguments []string) int {
 		for _, argument := range arguments {
 			if value, ok := strings.CutPrefix(argument, "-max_total_time="); ok {
 				if seconds, err := strconv.Atoi(value); err == nil && seconds >= 1 && seconds <= 3600 {
-					return seconds + 90
+					return seconds + 90 + corpusWarmupSeconds(arguments)
 				}
 			}
 		}
 	}
 	return 0
+}
+
+// corpusWarmupSeconds is the part of a fuzzer's bound that grows with its
+// corpus. libFuzzer executes every file of the corpus before it looks at
+// -max_total_time, and the corpus is a cache that every campaign extends. With
+// 1,059 files, source_llvm_fuzzer needed 178 seconds for a campaign of 90 on a
+// hosted Windows runner, two seconds inside the former fixed bound, and the
+// next run of the same sources was terminated at 180 with no failing input.
+// Half a second for each file is three times what that run needed, so the
+// bound still ends a process that never finishes.
+func corpusWarmupSeconds(arguments []string) int {
+	if len(arguments) == 0 || strings.HasPrefix(arguments[0], "-") {
+		return 0
+	}
+	entries, err := os.ReadDir(arguments[0])
+	if err != nil {
+		return 0
+	}
+	return len(entries) / 2
 }
 
 // mergedEnvironment replaces inherited keys rather than appending duplicate
