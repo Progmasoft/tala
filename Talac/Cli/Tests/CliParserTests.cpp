@@ -333,6 +333,27 @@ TEST_CASE("the entry belongs to an executable made from Tala sources")
     CHECK_FALSE(Ready({ "P.tala", "--vipkg-type=cdylib" }).entry.has_value());
 }
 
+TEST_CASE("a check of one source needs no entry")
+{
+    const auto check = Ready({ "P.tala", "--emit=metadata" });
+    CHECK(check.output == BuildOutput::kMetadata);
+    CHECK_FALSE(check.entry.has_value());
+    CHECK(Ready({ "P.tala", "--emit=metadata", "--entry=A.B" }).entry
+          == std::optional<std::string>("A.B"));
+    // Several sources are one program, and a program is lowered from its
+    // entry even when nothing is built.
+    CHECK(Mentions(Rejected({ "P.tala", "Q.tala", "--emit=metadata" }),
+                   "--entry is required to check several sources"));
+    CHECK(Ready({ "P.tala", "Q.tala", "--emit=metadata", "--entry=A.B" })
+              .inputs.size()
+          == 2U);
+    // An artifact still carries its own entry.
+    CHECK(Mentions(
+        Rejected(
+            { "P.core", "--build=core", "--emit=metadata", "--entry=A.B" }),
+        "already carries its entry"));
+}
+
 TEST_CASE("a header is written only for a C library")
 {
     CHECK(Ready({ "P.tala", "--vipkg-type=staticlib", "--header" }).emitHeader);

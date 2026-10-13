@@ -564,9 +564,19 @@ namespace
             if (options.emitHeader)
                 return "--header requires --vipkg-type=staticlib or "
                        "--vipkg-type=cdylib";
+            // A check builds nothing, so it needs no place to start from:
+            // one source is checked as it stands. Several sources are one
+            // program, and the entry selects the namespace that is lowered.
+            const bool check = options.output == BuildOutput::kMetadata;
             if (options.input == BuildInput::kTala && !options.entry)
-                return "--entry is required for an executable; write "
-                       "--entry=Namespace.Class";
+            {
+                if (!check)
+                    return "--entry is required for an executable; write "
+                           "--entry=Namespace.Class";
+                if (options.inputs.size() > 1U)
+                    return "--entry is required to check several sources "
+                           "as one program; write --entry=Namespace.Class";
+            }
             if (options.input != BuildInput::kTala && options.entry)
                 return "--entry belongs to Tala sources; this input already "
                        "carries its entry";

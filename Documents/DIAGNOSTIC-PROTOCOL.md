@@ -41,7 +41,8 @@ accept a file that predates the child process. The recommended sequence is:
 
 1. Create a unique temporary filename using an operating-system facility.
 2. Remove the placeholder file while retaining the unpredictable filename.
-3. Start `talac <absolute-source-path> --entry=<entry> --emit=metadata` with `TALA_DIAGNOSTICS_FILE` set.
+3. Start `talac --emit=metadata -- <absolute-source-path>` with `TALA_DIAGNOSTICS_FILE` set. A check of one source
+   needs no `--entry`.
 4. Wait for the compiler process and drain stdout and stderr concurrently.
 5. Read and validate the complete TADG document.
 6. Delete the temporary file in a guaranteed cleanup path.

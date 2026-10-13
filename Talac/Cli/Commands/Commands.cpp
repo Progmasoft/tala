@@ -222,7 +222,8 @@ namespace
     ///     entry Demo.Program
     ///     input Main.tala
     ///
-    /// `entry` is absent when the input carries its own. An input is written
+    /// `entry` is absent when the input carries its own and when a check of
+    /// one source named none. An input is written
     /// as it was named on the command line, with forward slashes.
     [[nodiscard]] auto
     WriteMetadata(const CliOptions &options) -> bool

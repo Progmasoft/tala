@@ -23,7 +23,7 @@ every command line follows the GNU form.
   inputs on the command line, `--emit`, `--build`, `--help` and `--warnings`.
   Several inputs are one program.
 - `--emit=metadata` checks a program without building it and writes
-  `<name>.talameta`.
+  `<name>.talameta`. A check of one source needs no `--entry`.
 - `--warnings=none|low|medium|all` sets the level and `--warnings=shadow` asks
   for the shadowing warning, which no level turns on. The option is read; the
   warning itself is not in the frontend yet.

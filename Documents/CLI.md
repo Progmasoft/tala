@@ -65,9 +65,19 @@ Names and values are case-sensitive.
 
 ### Entry
 
-`--entry` names the class whose parameterless `public static void Main()` starts the program. It is required when an
-executable is built from Tala sources, and it cannot be written for a library type. An artifact input (`.core`, `.xpp`,
+`--entry` names the class whose parameterless `public static void Main()` starts the program. It is required when
+anything is built from Tala sources, and it cannot be written for a library type. An artifact input (`.core`, `.xpp`,
 `.xmm`, `.o`) already carries its entry, so `--entry` is rejected there.
+
+A check is the exception. `--emit=metadata` builds nothing, so one source is checked as it stands, with or without a
+class that has `Main`:
+
+```text
+talac Helper.tala --emit=metadata
+```
+
+Several sources are one program, and a program is lowered from its entry, so a check of several sources still needs
+`--entry`.
 
 ### Warnings
 
@@ -109,7 +119,8 @@ input Sources/Main.tala
 input Sources/Helper.tala
 ```
 
-`entry` is absent when the input carries its own. `input` appears once per input, as written on the command line, with `/`.
+`entry` is absent when the input carries its own and when a check of one source named none. `input` appears once per
+input, as written on the command line, with `/`.
 
 ### Not implemented yet
 

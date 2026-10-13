@@ -86,7 +86,8 @@ namespace
     [[nodiscard]] auto
     Drive(std::string_view emit,
           std::string_view name,
-          std::string_view members) -> int
+          std::string_view members,
+          bool withEntry = true) -> int
     {
         std::filesystem::create_directories(Directory());
         const auto source = Directory() / (std::string(name) + ".tala");
@@ -97,8 +98,9 @@ namespace
         }
         std::vector<std::string> storage{ "talac",
                                           source.string(),
-                                          "--entry=Demo.Program",
                                           "--emit=" + std::string(emit) };
+        if (withEntry)
+            storage.emplace_back("--entry=Demo.Program");
         std::vector<char *> arguments;
         arguments.reserve(storage.size() + 1U);
         for (auto &argument : storage)
@@ -308,6 +310,34 @@ TEST_CASE("a check writes its record and no executable")
     CHECK(record.find("\nentry Demo.Program\n") != std::string::npos);
     CHECK(record.ends_with("Quiet.tala\n"));
     CHECK(record.find('\\') == std::string::npos);
+    std::filesystem::remove_all(Directory());
+}
+
+TEST_CASE("a check of one source needs no entry and records none")
+{
+    REQUIRE(Drive("metadata",
+                  "Loose",
+                  "    public static void Main() {"
+                  " Console.Println(\"x\"); }\n",
+                  false)
+            == 0);
+    const auto record = ReadAll(Directory() / "Loose.talameta");
+    CHECK(record.starts_with("talameta 1\ncompiler "));
+    CHECK(record.find("\nentry ") == std::string::npos);
+    CHECK(record.ends_with("Loose.tala\n"));
+    // The same source is still refused when it is wrong.
+    CHECK(Drive("metadata",
+                "LooseWrong",
+                "    public static void Main() { int value = true; }\n",
+                false)
+          != 0);
+    CHECK_FALSE(std::filesystem::exists(Directory() / "LooseWrong.talameta"));
+    // Building needs the entry as before.
+    CHECK(Drive("executable",
+                "LooseBuild",
+                "    public static void Main() { }\n",
+                false)
+          == 2);
     std::filesystem::remove_all(Directory());
 }
 
