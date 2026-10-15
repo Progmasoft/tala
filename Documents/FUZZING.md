@@ -17,7 +17,6 @@ memory safety or complete language coverage.
 | `source_llvm_fuzzer` | Arbitrary source through Core/CorePrep, Xpp/Xmm verification and LLVM lowering | First-party C++ pipeline |
 | `differential_fuzzer` | Generated arithmetic and control flow compiled with native optimizers disabled/enabled and compared with an independent evaluator | First-party C++ pipeline and JIT bridge |
 | `cli_fuzzer` | NUL-separated arguments through the typed command-line parser; two parses must produce equal typed models, leave `argv` unchanged, attach a diagnostic to every rejection and select a command on every acceptance | First-party C++ CLI parser |
-| `project_fuzzer` | Evaluator registry records, both raw and as one mutated field of a valid document; decoding must be deterministic and a source-requiring decode may only accept what the permissive decode accepts | First-party C++ registry decoder; no evaluator process or filesystem access |
 | `repl_fuzzer` | Up to eight operations on one persistent session: arithmetic cells checked against an independent accumulator, type queries that must not change history, failed-cell rollback and reset | First-party C++ session and JIT bridge |
 | `ownership_fuzzer` | One to four threads racing weak locks, unowned loads and weak copies against the final strong release; the payload must be destroyed exactly once, never resurrected and never read after destruction | AARC runtime |
 | `frontend-fuzz` | Lexer, parser and source-to-CorePrep stages mutated in-process with GHC HPC tick feedback | GHC-compiled frontend modules; no native sanitizer |
@@ -163,7 +162,6 @@ Each campaign has a 30-second per-input timeout and a finite input length:
 | Source/LLVM | 65536 | 4096 |
 | Differential | 64 | 4096 |
 | CLI | 16384 | 768 |
-| Project registry | 65536 | 768 |
 | REPL | 64 | 4096 |
 | Ownership | 64 | 768 |
 
@@ -219,8 +217,6 @@ a target is left out.
 The other corpora hold bytes in the form their harness reads, and their
 directories are marked as binary so that no line ending is converted. A seed
 of `Corpus/cli` is a list of arguments separated by NUL. A seed of
-`Corpus/project` is a project record of NUL-terminated fields, or a selector
-byte followed by the text that replaces the selected field. A seed of
 `Corpus/repl` is up to eight selector bytes, and one of `Corpus/ownership` is a
 worker count and an iteration count.
 
@@ -421,9 +417,9 @@ protection must require these actual checks.
 
 The harnesses above are evidence about the inputs they ran, not proofs:
 
-- the CLI, project and REPL oracles check determinism, rollback and a small
-  arithmetic model. They do not model every option interaction, lockfile
-  refresh, project evaluation or REPL declaration form;
+- the CLI and REPL oracles check determinism, rollback and a small
+  arithmetic model. They do not model every option interaction or REPL
+  declaration form;
 - the differential generator covers integer arithmetic, three loop forms,
   one conditional statement, guarded recursion through short-circuit operators
   and through conditional expressions, truthy coalescing, five compound
