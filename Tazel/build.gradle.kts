@@ -29,6 +29,10 @@ dependencies {
   testImplementation(kotlin("test"))
 }
 
+// Every resolved configuration is recorded in gradle.lockfile, so each build resolves the same
+// versions and OSV-Scanner can check them. Refresh with `gradlew dependencies --write-locks`.
+dependencyLocking { lockAllConfigurations() }
+
 kotlin {
   jvmToolchain(25)
   compilerOptions {
