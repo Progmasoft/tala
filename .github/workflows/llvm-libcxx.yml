@@ -1,0 +1,182 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+name: LLVM with libc++
+
+# Builds the LLVM libraries the Linux compiler links, with libc++ instead of
+# libstdc++, and publishes them as assets of a toolchain release. The LLVM
+# packages of the distributions are built with libstdc++, and the backend
+# passes std::string, std::vector and std::unique_ptr through LLVM's C++ API,
+# so code built with libc++ has to link an LLVM built with libc++ as well.
+#
+# Each distribution gets its own build against its own libc++ and C library.
+# Only what the backend needs is installed: llvm-config, the headers, the
+# static libraries for the host target and the CMake exports. A pull request
+# that changes this file builds both archives without publishing them; a run
+# started by hand on main publishes them under a new, immutable tag, and the
+# Linux jobs check the SHA-256 digests recorded in the repository.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/llvm-libcxx.yml
+
+permissions: {}
+
+concurrency:
+  group: llvm-libcxx-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LLVM_VERSION: 22.1.6
+  # Digest of llvm-project-22.1.6.src.tar.xz as the LLVM release lists it.
+  LLVM_SOURCE_SHA256: 6e0b376a1f6d9873e7dfb09ae6e04b9c7024400f01733fa4c29be69d5c138bc2
+  # Raised when the same LLVM version is built again with other settings;
+  # a published tag is never replaced.
+  TOOLCHAIN_REVISION: 1
+
+jobs:
+  build:
+    name: Build on ${{ matrix.platform }}
+    runs-on: ubuntu-26.04
+    container: ${{ matrix.image }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-26.04
+            image: ubuntu:26.04
+          - platform: fedora-43
+            image: fedora:43
+    steps:
+      - name: Install the compiler, libc++ and build tools
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          if [ "$PLATFORM" = fedora-43 ]; then
+            dnf install -y clang lld libcxx-devel libcxxabi-devel cmake \
+              ninja-build python3 curl tar xz zstd zlib-devel libzstd-devel binutils
+          else
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends clang lld libc++-dev \
+              libc++abi-dev cmake ninja-build python3 curl ca-certificates \
+              tar xz-utils zstd zlib1g-dev libzstd-dev binutils
+          fi
+          clang++ --version
+
+      - name: Download and verify the LLVM sources
+        shell: bash
+        run: |
+          archive="llvm-project-${LLVM_VERSION}.src.tar.xz"
+          curl --fail --location --silent --show-error --output "$archive" \
+            "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${archive}"
+          echo "${LLVM_SOURCE_SHA256}  ${archive}" | sha256sum --check -
+          tar -xJf "$archive"
+
+      - name: Build and install LLVM
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          name="llvm-${LLVM_VERSION}-libcxx-${PLATFORM}-x86_64"
+          echo "TOOLCHAIN_NAME=$name" >> "$GITHUB_ENV"
+          cmake -G Ninja -S "llvm-project-${LLVM_VERSION}.src/llvm" -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PWD/$name" \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DLLVM_USE_LINKER=lld \
+            -DLLVM_ENABLE_LIBCXX=ON \
+            -DLLVM_TARGETS_TO_BUILD=host \
+            -DLLVM_ENABLE_PROJECTS= \
+            -DLLVM_ENABLE_RUNTIMES= \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_ENABLE_ASSERTIONS=OFF \
+            -DLLVM_ENABLE_BINDINGS=OFF \
+            -DLLVM_ENABLE_LIBXML2=OFF \
+            -DLLVM_ENABLE_ZLIB=FORCE_ON \
+            -DLLVM_ENABLE_ZSTD=FORCE_ON \
+            -DLLVM_INCLUDE_TESTS=OFF \
+            -DLLVM_INCLUDE_BENCHMARKS=OFF \
+            -DLLVM_INCLUDE_EXAMPLES=OFF \
+            -DLLVM_INCLUDE_DOCS=OFF \
+            -DLLVM_DISTRIBUTION_COMPONENTS="llvm-config;llvm-headers;llvm-libraries;cmake-exports"
+          cmake --build build --target install-distribution
+
+      - name: Check that the libraries use libc++
+        shell: bash
+        run: |
+          # A library built with libstdc++ names std::__cxx11 types; one
+          # built with libc++ names std::__1 types instead.
+          config="$TOOLCHAIN_NAME/bin/llvm-config"
+          "$config" --version
+          support="$("$config" --libdir)/libLLVMSupport.a"
+          # Written to a file: with pipefail, grep -q ending the pipe early
+          # would fail the step through nm's broken pipe.
+          nm -C "$support" > symbols.txt
+          grep -q 'std::__1::' symbols.txt
+          if grep -q 'std::__cxx11::' symbols.txt; then
+            echo "::error::libLLVMSupport.a references libstdc++ types"
+            exit 1
+          fi
+
+      - name: Package the toolchain
+        shell: bash
+        run: |
+          tar --zstd -cf "$TOOLCHAIN_NAME.tar.zst" "$TOOLCHAIN_NAME"
+          sha256sum "$TOOLCHAIN_NAME.tar.zst" | tee "$TOOLCHAIN_NAME.tar.zst.sha256"
+          ls -l "$TOOLCHAIN_NAME.tar.zst"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: llvm-libcxx-${{ matrix.platform }}
+          path: |
+            llvm-*.tar.zst
+            llvm-*.tar.zst.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish the toolchain release
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: llvm-libcxx-*
+          merge-multiple: true
+
+      - name: Create the release and upload the archives
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          tag="toolchain-llvm-${LLVM_VERSION}-libcxx-${TOOLCHAIN_REVISION}"
+          if gh release view "$tag" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::$tag exists; raise TOOLCHAIN_REVISION to publish a new build"
+            exit 1
+          fi
+          {
+            echo "LLVM ${LLVM_VERSION} built with libc++ for the Linux hosts of Tala's compiler."
+            echo
+            echo "Only llvm-config, the headers, the static libraries for x86-64 and the CMake exports are included."
+            echo "These archives are build inputs for contributors, not a Tala release."
+            echo
+            echo '```'
+            cat ./*.sha256
+            echo '```'
+          } > notes.md
+          gh release create "$tag" --repo "$REPOSITORY" --target "$COMMIT" \
+            --title "LLVM ${LLVM_VERSION} with libc++ (revision ${TOOLCHAIN_REVISION})" \
+            --notes-file notes.md --prerelease --latest=false \
+            ./*.tar.zst ./*.tar.zst.sha256

@@ -413,7 +413,7 @@ Treat any result as a decomposition task, not an invitation to minify the file.
 
 ## GitHub workflows
 
-The repository currently separates twelve workflow ownership areas:
+The repository currently separates these workflow ownership areas:
 
 | Workflow | Responsibility |
 | --- | --- |
@@ -429,6 +429,7 @@ The repository currently separates twelve workflow ownership areas:
 | `formatter.yml` | talafmt layers |
 | `linter.yml` | talalint layers |
 | `benchmarks.yml` | Native and Haskell benchmark build and smoke coverage |
+| `llvm-libcxx.yml` | LLVM built with libc++ for the Linux hosts, published as immutable toolchain release assets when started by hand on main |
 
 See [Code scanning and coverage](COVERAGE-AND-SECURITY.md) for language boundaries, report formats, Codecov flags, and
 the limits of each signal.
