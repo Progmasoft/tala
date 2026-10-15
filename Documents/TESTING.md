@@ -420,7 +420,7 @@ The repository currently separates twelve workflow ownership areas:
 | `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 15/26 native suites, sanitizers, and fuzzing |
 | `compiler-tier2.yml` | Ubuntu 26.04 LTS native suites and AddressSanitizer |
 | `compiler-tier3.yml` | Fedora 43 container native suites and wire-mutation smoke |
-| `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on all four host families |
+| `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on all four host families, and an AFL++ campaign on Ubuntu |
 | `language-layers.yml` | Kotlin project system plus Haskell compiler layers |
 | `haskell-coverage.yml` | Haskell coverage reporting |
 | `coverage.yml` | Native C++, Kotlin, and Go coverage reports uploaded to Codecov |

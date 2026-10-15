@@ -86,6 +86,13 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 			return err
 		}
 		return runThreadFuzzCampaign(repository, currentHost, runner)
+	case "fuzz-afl":
+		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
+			return errors.New("fuzz-afl does not accept arguments")
+		}
+		// Its targets load no frontend, so GHC and Cabal are not required;
+		// the campaign checks Bazel and AFL++ itself.
+		return runAFLCampaign(repository, currentHost, runner)
 	case "fuzz-stress":
 		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
 			return errors.New("fuzz-stress does not accept arguments")
