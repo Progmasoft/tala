@@ -188,6 +188,11 @@ jobs:
           llvm_root="$(brew --prefix llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
+          # Homebrew clang links against the Command Line Tools SDK unless
+          # told otherwise, and that SDK can be newer than the linker of the
+          # selected Xcode (SDK 27.0 lists arm64e.x1, which ld of Xcode 26
+          # rejects). Pin the SDK that belongs to the selected Xcode.
+          echo "SDKROOT=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
 
       - name: Install GHC and Cabal
         uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
