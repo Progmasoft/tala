@@ -57,7 +57,7 @@ serverDefinition =
                             Nothing
                         )
                 , optServerInfo =
-                    Just (Lsp.ServerInfo (Text.pack "tala-analyzer") (Just (Text.pack "0.3.2")))
+                    Just (Lsp.ServerInfo (Text.pack "tala-analyzer") (Just (Text.pack "0.3.3")))
                 }
         }
 
