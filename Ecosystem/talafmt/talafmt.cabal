@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 name: talafmt
-version: 0.1.1
+version: 0.2.0
 synopsis: Syntax-aware source formatter for Tala
 description:
     Provides safe source layout normalization and the talafmt command-line tool
@@ -27,7 +27,7 @@ library
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.13,
         text >=2.1 && <2.3,
-        tala-compiler >=0.5.0 && <0.6
+        tala-compiler >=0.6.0 && <0.7
     default-language: GHC2024
 
 executable talafmt

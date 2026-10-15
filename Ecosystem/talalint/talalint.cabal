@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 name: talalint
-version: 0.1.1
+version: 0.2.0
 synopsis: Compiler-backed static analysis for Tala
 description:
     Provides compiler diagnostics, source hygiene checks, safe fixes, and the
@@ -20,8 +20,8 @@ library
     hs-source-dirs: sources/main/haskell
     build-depends:
         base >=4.20 && <4.23,
-        talafmt >=0.1 && <0.2,
-        tala-compiler >=0.5.0 && <0.6
+        talafmt >=0.2 && <0.3,
+        tala-compiler >=0.6.0 && <0.7
     default-language: GHC2024
 
 executable talalint

@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 name: tala-analyzer
-version: 0.3.2
+version: 0.3.3
 synopsis: Compiler-backed analysis model for Tala editor integrations
 description:
     Provides compiler-backed analysis and a stdio JSON-RPC 2.0 language server
@@ -29,8 +29,8 @@ library
         lsp-types >=2.4 && <2.5,
         text >=2.0 && <2.2,
         transformers >=0.6 && <0.7,
-        tala-compiler >=0.5.0 && <0.6,
-        tala-syntax >=0.5.0 && <0.6
+        tala-compiler >=0.6.0 && <0.7,
+        tala-syntax >=0.6.0 && <0.7
     default-language: GHC2024
 
 executable tala-analyzer

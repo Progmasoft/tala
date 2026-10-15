@@ -7,6 +7,8 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+## 0.6.0 - 2026-10-15
+
 ### Every program does one job
 
 The compiler compiled, evaluated projects, formatted and linted, all behind
@@ -63,6 +65,9 @@ every command line follows the GNU form.
   `-In-Place`, `-Dry-Run`, `-Fix` and `-List-Checks` are removed. Both take
   several files, `--help`/`-h` and `--version`/`-v`.
 - `tali` takes `--help` and `-h` (was `-Help`).
+- talafmt and talalint are 0.2.0, for their new command lines; the
+  language server tala-analyzer is 0.3.3. All three are built with the
+  compiler of this release.
 
 ## 0.5.2 - 2026-10-12
 

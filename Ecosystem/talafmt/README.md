@@ -8,8 +8,8 @@ changing it. It normalizes line endings, trailing horizontal whitespace, the fin
 indentation. The compiler's lossless source-fragment model distinguishes code from comments, character literals, normal
 strings, and raw strings, so structural characters inside protected text never affect indentation.
 
-The formatter accepts what the compiler it is built with accepts. Version 0.1.1 is built with the compiler of
-Tala 0.5.0, so a source may use method references (`Type::Method`), names written through their namespace,
+The formatter accepts what the compiler it is built with accepts. Version 0.2.0 is built with the compiler of
+Tala 0.6.0, so a source may use method references (`Type::Method`), names written through their namespace,
 conditionals over strings, `match`, enums and console formats; none of them changes how a line is laid out.
 
 ```text
