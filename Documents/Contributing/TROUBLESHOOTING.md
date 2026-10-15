@@ -35,8 +35,10 @@ repository. The native script selects the supported host configuration automatic
 `--config` to a public build recipe.
 
 If linking fails with `tapi error: malformed file` and `unknown architecture` in a `.tbd` file, Homebrew's clang found
-a Command Line Tools SDK that is newer than the selected linker. Point it at the SDK of the selected developer
-directory with `export SDKROOT="$(xcrun --show-sdk-path)"`; the macOS CI jobs do the same.
+a Command Line Tools SDK that is newer than the selected linker. Homebrew's clang configuration files
+(`$(brew --prefix)/etc/clang/*.cfg`) and a GHC installation can name that SDK by path, which overrides `SDKROOT`. Point
+those references at `$(xcrun --show-sdk-path)`, the SDK of the selected developer directory, and run
+`ghc-pkg recache --global` after changing GHC's package files; the macOS CI jobs do the same.
 
 ## Haskell or Kotlin uses the wrong toolchain
 
