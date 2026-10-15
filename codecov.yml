@@ -79,15 +79,15 @@ flags:
     carryforward: true
   kotlin-analyzer:
     paths:
-      - Ecosystem/tala-analyzer/
+      - tala-analyzer/
     carryforward: true
   kotlin-formatter:
     paths:
-      - Ecosystem/talafmt/
+      - talafmt/
     carryforward: true
   kotlin-linter:
     paths:
-      - Ecosystem/talalint/
+      - talalint/
     carryforward: true
   go-tools:
     paths:

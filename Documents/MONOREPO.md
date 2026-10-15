@@ -6,15 +6,19 @@
 ## Buildable components
 
 ```text
-Interactive/     Tala Interactive (tali) source, owned public headers, tests, and LLJIT benchmarks
-Talac/     Native talac driver, public headers, modular C++20 implementation, Haskell packages, and build support
-Tazel/ Kotlin build system and package manager (tazel) and the project DSL
-Spec/         Public language-design example suites
-third_party/  Pinned source dependencies
+Interactive/    Tala Interactive (tali) source, owned public headers, tests, and LLJIT benchmarks
+Talac/          Native talac driver, public headers, modular C++20 implementation, Haskell packages, and build support
+Tazel/          Kotlin build system and package manager (tazel) and the project DSL
+tala-analyzer/  Haskell language server, editor hosts, and Kotlin configuration DSL
+talafmt/        Haskell formatter and Kotlin configuration DSL
+talalint/       Haskell linter and Kotlin configuration DSL
+helpers/        Go developer commands
+Spec/           Public language-design example suites
+third_party/    Pinned source dependencies
 ```
 
 Compiler-owned public headers live physically under `Talac/Headers/Progmasoft/Tala/`. Bazel removes the physical
-`Talac/Headers` prefix from consumers, so the stable include spelling remains `Tala/...`.
+`Talac/Headers` prefix from consumers, so the stable include spelling remains `Progmasoft/Tala/...`.
 Tests and fixtures live below their owning component rather than in a root bucket. The superseded C23/LIL implementation
 has been removed; current compiler code has no legacy include boundary.
 
@@ -65,9 +69,9 @@ not reverse this direction.
 The ecosystem tools have independent ownership and build systems:
 
 ```text
-Ecosystem/tala-analyzer/         Haskell LSP and Kotlin configuration DSL
-Ecosystem/talafmt/        Haskell talafmt executable and Kotlin configuration DSL
-Ecosystem/talalint/           Haskell talalint executable and Kotlin configuration DSL
+tala-analyzer/  Haskell LSP and Kotlin configuration DSL
+talafmt/        Haskell talafmt executable and Kotlin configuration DSL
+talalint/       Haskell talalint executable and Kotlin configuration DSL
 ```
 
 These canonical projects replace the retired `xs-analyzer`, `xsfmt`, and `xstidy` prototypes. Their Haskell components use

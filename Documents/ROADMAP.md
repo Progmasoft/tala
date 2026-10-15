@@ -67,7 +67,7 @@ runtime features must not displace completion of that pipeline.
 - connect the ViGet client to registered install/publication commands;
 - complete transitive dependency solving and deterministic lock updates;
 - connect named test suites to their framework runner;
-- complete Ecosystem/tala-analyzer/Ecosystem/talafmt/Linter Kotlin evaluator layers independently;
+- complete the Kotlin evaluator layers of tala-analyzer, talafmt and talalint independently;
 - preserve one source discovery policy across compiler and project-wide tools; and
 - keep talafmt, talalint, tala-analyzer, and compiler release versions independent.
 

@@ -22,7 +22,7 @@ Run these before expensive language-layer checks:
 
 ```powershell
 git diff --check
-rg -n "d[o]cs/" README.md Documents Spec Talac Tazel Ecosystem
+rg -n "d[o]cs/" README.md Documents Spec Talac Tazel talafmt talalint tala-analyzer
 ```
 
 The second command is a migration/stale-link example rather than a permanent assertion that the text `docs` can never
@@ -404,7 +404,7 @@ or below 1500 lines. A simple review aid is:
 
 ```powershell
 $extensions = '*.hs','*.cpp','*.hpp','*.hh','*.kt','*.kts','*.go','*.java'
-Get-ChildItem Talac,Interactive,Tazel,Ecosystem,helpers -Recurse -File -Include $extensions |
+Get-ChildItem Talac,Interactive,Tazel,talafmt,talalint,tala-analyzer,helpers -Recurse -File -Include $extensions |
   Where-Object { (Get-Content -LiteralPath $_.FullName).Count -gt 1500 } |
   Select-Object FullName
 ```

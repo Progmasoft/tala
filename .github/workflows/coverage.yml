@@ -144,7 +144,7 @@ jobs:
       - name: Test Kotlin owners with JaCoCo
         shell: pwsh
         run: |
-          foreach ($component in @('Tazel', 'Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
+          foreach ($component in @('Tazel', 'tala-analyzer', 'talafmt', 'talalint')) {
             gradle -p $component test jacocoTestReport
             if ($LASTEXITCODE -ne 0) {
               throw "JaCoCo test/report failed for $component"
@@ -161,9 +161,9 @@ jobs:
           name: kotlin-components-coverage
           path: |
             Tazel/build/reports/jacoco/test/jacocoTestReport.xml
-            Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
-            Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
-            Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
+            tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
+            talafmt/build/reports/jacoco/test/jacocoTestReport.xml
+            talalint/build/reports/jacoco/test/jacocoTestReport.xml
           if-no-files-found: error
           retention-days: 1
 
@@ -253,7 +253,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-analyzer
           name: kotlin-analyzer
       - name: Upload Formatter coverage
@@ -263,7 +263,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-formatter
           name: kotlin-formatter
       - name: Upload Linter coverage
@@ -273,7 +273,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/talalint/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-linter
           name: kotlin-linter
 

@@ -42,7 +42,7 @@ jobs:
 
       - name: Check formatter configuration DSL
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/talafmt spotlessCheck test
+        run: .\Tazel\gradlew.bat -p talafmt spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
@@ -61,7 +61,7 @@ jobs:
 
       - name: Check package metadata
         shell: pwsh
-        working-directory: Ecosystem/talafmt
+        working-directory: talafmt
         run: cabal check
 
       - name: Check patch hygiene

@@ -3,12 +3,12 @@
 
 packages:
     tala-analyzer.cabal
-    ../../Talac/Haskell/Syntax/tala-syntax.cabal
-    ../../Talac/Haskell/Frontend/tala-frontend.cabal
-    ../../Talac/Haskell/Core/tala-core.cabal
-    ../../Talac/Haskell/Driver/tala-compiler.cabal
+    ../Talac/Haskell/Syntax/tala-syntax.cabal
+    ../Talac/Haskell/Frontend/tala-frontend.cabal
+    ../Talac/Haskell/Core/tala-core.cabal
+    ../Talac/Haskell/Driver/tala-compiler.cabal
 
 tests: True
-import: ../../Talac/Build/Warnings.project
+import: ../Talac/Build/Warnings.project
 documentation: False
 write-ghc-environment-files: never

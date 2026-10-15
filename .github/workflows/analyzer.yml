@@ -42,7 +42,7 @@ jobs:
 
       - name: Check analyzer configuration DSL
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer spotlessCheck test
+        run: .\Tazel\gradlew.bat -p tala-analyzer spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
@@ -60,7 +60,7 @@ jobs:
 
       - name: Check package metadata
         shell: pwsh
-        working-directory: Ecosystem/tala-analyzer
+        working-directory: tala-analyzer
         run: cabal check
 
       - name: Check patch hygiene
@@ -81,11 +81,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: Ecosystem/tala-analyzer/vscode/package-lock.json
+          cache-dependency-path: tala-analyzer/vscode/package-lock.json
 
       - name: Check extension types
         shell: pwsh
-        working-directory: Ecosystem/tala-analyzer/vscode
+        working-directory: tala-analyzer/vscode
         run: |
           npm ci
           npm run check
@@ -112,7 +112,7 @@ jobs:
 
       - name: Compile IntelliJ plugin
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
+        run: .\Tazel\gradlew.bat -p tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
 
   kotlin-config:
     name: Kotlin configuration model
@@ -136,4 +136,4 @@ jobs:
 
       - name: Test, format, and generate Kotlin API documentation
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer check jacocoTestReport spotlessCheck
+        run: .\Tazel\gradlew.bat -p tala-analyzer check jacocoTestReport spotlessCheck

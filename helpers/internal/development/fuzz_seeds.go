@@ -24,7 +24,7 @@ func repositorySourceRoots() []string {
 		"Spec",
 		filepath.Join("Talac", "Driver", "Tests", "Fixtures", "Source"),
 		filepath.Join("Talac", "Core"),
-		filepath.Join("Ecosystem", "tala-analyzer", "Tests"),
+		filepath.Join("tala-analyzer", "Tests"),
 	}
 }
 

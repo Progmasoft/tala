@@ -221,9 +221,9 @@ alternative DSL-plugin repository coordinate.
 Each ecosystem root is a small multi-language project:
 
 ```text
-Ecosystem/tala-analyzer/    Cabal + Gradle + editor-host build metadata
-Ecosystem/talafmt/   Cabal + Gradle
-Ecosystem/talalint/      Cabal + Gradle
+tala-analyzer/  Cabal + Gradle + editor-host build metadata
+talafmt/        Cabal + Gradle
+talalint/       Cabal + Gradle
 ```
 
 Cabal owns Haskell implementation/tests. Gradle owns Kotlin DSL models/tests. Editor host package systems own only their host
@@ -234,7 +234,7 @@ without coupling all releases to the compiler workflow.
 
 - Do not move language parsing or type checking into editor code.
 - Do not make `talac` silently format or lint during ordinary compilation.
-- Do not make Ecosystem/talafmt/Linter installation a compiler build dependency.
+- Do not make the installation of talafmt or talalint a compiler build dependency.
 - Do not use filesystem layout as namespace identity.
 - Do not call an unevaluated Kotlin model an active configuration evaluator.
 - Do not treat `tala-analyzer` as a compiler driver: it is an editor-facing stdio LSP process.

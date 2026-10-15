@@ -53,7 +53,7 @@ a public CorePrep output or resurrect retired C/Rust compiler routes.
 
 ## Ecosystem and other repositories
 
-`Ecosystem/tala-analyzer/`, `Ecosystem/talafmt/`, and `Ecosystem/talalint/` own independent Haskell and Kotlin components with their own validation gates.
+`tala-analyzer/`, `talafmt/`, and `talalint/` own independent Haskell and Kotlin components with their own validation gates.
 They consume compiler semantics but do not redefine the language. Their package-local tests and CI workflows should be
 updated when their behavior changes. [Ecosystem tools](../ECOSYSTEM.md) records their connected and planned boundaries.
 
