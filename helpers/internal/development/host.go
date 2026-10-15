@@ -129,7 +129,13 @@ func selectSanitizer(currentHost host, requested string) (sanitizer, error) {
 			config: "asan-macos",
 			// Apple's AddressSanitizer runtime aborts when detect_leaks is set;
 			// address, bounds, and use-after-free diagnostics remain enabled.
-			environment: []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1"},
+			// The LLVM libraries come from Homebrew without instrumentation.
+			// libc++ annotates a vector only where instrumented code grows it,
+			// so a vector LLVM fills and reads, such as the subtarget features
+			// of the X86 target, reports a container overflow inside its own
+			// allocation. The sanitizer documentation names such a mix as the
+			// case for turning the check off; the other checks stay on.
+			environment: []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_container_overflow=0"},
 		}, nil
 	case "undefined", "ubsan":
 		if currentHost.kind == hostWindows {
