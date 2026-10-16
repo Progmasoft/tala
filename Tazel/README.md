@@ -6,7 +6,7 @@
 Tazel is the build system and package manager of Tala. The name joins Tala and Bazel.
 
 Tazel is a Kotlin program for the JVM (25 or newer). It reads the project file, finds the sources and starts the compiler,
-the formatter or the linter as separate programs: `talac`, `talafmt` and `talalint`. It compiles nothing itself and shares
+the formatter or the linter as separate programs: Talac, `talafmt` and `talalint`. It compiles nothing itself and shares
 no code with them.
 
 ```powershell

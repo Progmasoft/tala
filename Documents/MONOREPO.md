@@ -44,7 +44,7 @@ Talac/
 └── Linker/                typed LLD execution
 ```
 
-The directory names are architectural seams even though `talac` is the only public compiler command. The current distribution
+The directory names are architectural seams even though Talac is the only public compiler command. The current distribution
 also stages the private Haskell `tala-frontend` shared library beside it; splitting native components does not create additional
 publicly installed frontend/backend tools.
 

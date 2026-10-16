@@ -121,7 +121,7 @@ go run ./helpers/cmd/develop build
 go run ./helpers/cmd/develop test
 ```
 
-`build` compiles `talac`, `tali`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
+`build` compiles Talac, `tali`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
 `test` performs the same build and then executes each native program directly. This
 avoids introducing Git Bash/MSYS solely for Bazel's POSIX-oriented `cc_test` launcher on Windows while retaining the same
 suite set on macOS.
@@ -133,7 +133,7 @@ go run ./helpers/cmd/develop version 0.6.0
 ```
 
 The check compares `MODULE.bazel`, the changelog heading, the Haskell package, and the Kotlin project runtime using exact
-release lines. If a Bazel-built `talac` is available, its `version` output must agree as well. This Go command replaces the
+release lines. If a Bazel-built Talac is available, its `version` output must agree as well. This Go command replaces the
 retired root `release.java`; repository automation does not require a Java script runtime.
 
 Useful component targets for incremental work are:
@@ -172,11 +172,11 @@ Kotlin:
 
 The repository wrapper pins the Gradle distribution used by the project. Use it instead of a machine-global Gradle command.
 JDK 25 must be visible to the wrapper process. Kotlin Script Runner remains an external runtime requirement; it is not
-embedded into `talac`.
+embedded into Talac.
 
 ## Building the private frontend
 
-The Haskell driver package produces the private frontend consumed by `talac`. Build all compiler packages together so Cabal
+The Haskell driver package produces the private frontend consumed by Talac. Build all compiler packages together so Cabal
 selects one coherent local package set:
 
 ```powershell
@@ -201,7 +201,7 @@ Build and validate an install-shaped compiler directory with one command:
 go run ./helpers/cmd/develop bundle
 ```
 
-The command performs both build-system steps deliberately: Bazel produces the C++20 `talac` driver and Cabal produces the
+The command performs both build-system steps deliberately: Bazel produces the C++20 Talac driver and Cabal produces the
 Haskell frontend shared library. It then stages a fresh directory with this shape:
 
 ```text
@@ -222,9 +222,9 @@ The brackets above describe the host suffix; they are not literal filename chara
 compiler version, host platform, and architecture so separately built bundles do not silently overwrite one another.
 `dist/` is ignored generated output and is not committed.
 
-The bundle contains two executables and one shared library. Users invoke `talac`; the driver calls the adjacent
+The bundle contains two executables and one shared library. Users invoke Talac; the driver calls the adjacent
 `tala-frontend` library in-process through the versioned C ABI, and `tali` is the REPL executable.
-Do not move `talac` without its matching library or place an unrelated library beside it.
+Do not move Talac without its matching library or place an unrelated library beside it.
 
 Staging is not considered successful merely because both build systems returned zero. The bundle command invokes the
 staged tools, checks the compiler version, compiles a real `.tala` fixture to an executable, and executes that native program.
@@ -382,7 +382,7 @@ depend on a temporary directory.
 
 ### Private frontend is missing
 
-Build the Haskell workspace and confirm the frontend is placed in the layout expected by `talac`. Installing a same-named
+Build the Haskell workspace and confirm the frontend is placed in the layout expected by Talac. Installing a same-named
 command globally is not a supported fix because it could mismatch the Core wire contract.
 
 For an install-shaped local layout, prefer `go run ./helpers/cmd/develop bundle`; it stages the matching Bazel and Cabal

@@ -484,7 +484,7 @@ that boundary with:
 go run ./helpers/cmd/develop bundle
 ```
 
-This is more than an archive or copy test. A passing run proves that the staged `talac` reports the checkout's compiler
+This is more than an archive or copy test. A passing run proves that the staged Talac reports the checkout's compiler
 version, loads the adjacent private `tala-frontend` shared library in-process, compiles `Examples/HelloWorld` into an executable, and runs it until it prints
 `Hello from Tala!`. The tier workflows run it on every official host after the native suites. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
 texts, and a `SHA256SUMS` manifest covering the other staged files.

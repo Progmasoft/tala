@@ -30,7 +30,7 @@ language/runtime boundary around LLVM.
 
 ## Why a C11 ABI between them?
 
-The Haskell frontend is built as a shared library and loaded into `talac`; it is
+The Haskell frontend is built as a shared library and loaded into Talac; it is
 not a second frontend executable. The boundary is a small, versioned C ABI
 declared in `Talac/Headers/Progmasoft/Tala/Frontend.h`. C is used only for
 that ABI contract. The implementation on each side remains Haskell or C++20.
@@ -44,7 +44,7 @@ pairs, payload kind, and size limits before consuming a result.
 
 This removes the extra frontend process and temporary Core hand-off file while
 keeping the language frontend independently testable. When a user explicitly
-requests a `.core` artifact, `talac` writes that artifact as normal output; the
+requests a `.core` artifact, Talac writes that artifact as normal output; the
 compiler does not create one merely to pass data between its own stages.
 
 ## Why not Rust?
