@@ -33,7 +33,10 @@ enum class CommandName(val words: String, val summary: String) {
   RUN("run", "build the executables of the project and run them"),
   TEST("test", "build and run the test suites of the project"),
   LOCK_RESOLVE("lock resolve", "resolve the dependencies and renew LOCK.sqlite3"),
-  LOCK_CREATE_DUMP("lock create-dump", "write LOCK.dump, the lockfile as text"),
+  LOCK_CREATE_DUMP(
+    "lock create-dump",
+    "write the lockfile as text, to LOCK.dump unless --path names a file",
+  ),
   UPDATE("update", "update the dependencies of the system and of the project"),
   INSTALL("install", "download a package from ViGet into the project"),
   VIPKG_CREATE("vipkg create", "write a local .vipkg for every target"),
@@ -73,7 +76,11 @@ sealed interface Command {
     override val name = CommandName.LOCK_RESOLVE
   }
 
-  data object LockCreateDump : Command {
+  /**
+   * [path] is the file to write, as written after `--path`; LOCK.dump beside the project file when
+   * absent. Its folder has to exist already.
+   */
+  data class LockCreateDump(val path: String? = null) : Command {
     override val name = CommandName.LOCK_CREATE_DUMP
   }
 
@@ -132,7 +139,11 @@ sealed interface Command {
 sealed interface ParseResult {
   data class Parsed(val command: Command) : ParseResult
 
-  data class Rejected(val message: String) : ParseResult
+  /** [hint] suggests what was probably meant, when a word looks like a typo of a real one. */
+  data class Rejected(
+    val message: String,
+    val hint: String? = null,
+  ) : ParseResult
 }
 
 /**
@@ -148,13 +159,31 @@ fun parseCommandLine(arguments: List<String>): ParseResult {
   return try {
     ParseResult.Parsed(reader.command())
   } catch (problem: CommandLineProblem) {
-    ParseResult.Rejected(problem.message ?: "the command line could not be read")
+    ParseResult.Rejected(problem.message ?: "the command line could not be read", problem.hint)
   }
 }
 
-private class CommandLineProblem(message: String) : Exception(message)
+private class CommandLineProblem(
+  message: String,
+  val hint: String?,
+) : Exception(message)
 
-private fun reject(message: String): Nothing = throw CommandLineProblem(message)
+private fun reject(
+  message: String,
+  hint: String? = null,
+): Nothing = throw CommandLineProblem(message, hint)
+
+/** The hint for [word] among [candidates], written as [spell] spells the match. */
+private fun hint(
+  word: String,
+  candidates: Iterable<String>,
+  spell: (String) -> String = { it },
+): String? = closestTo(word, candidates)?.let { didYouMean(word, spell(it)) }
+
+/** The first word of every command, in the order of the help. */
+private val commandWords = CommandName.entries.map { it.words.substringBefore(' ') }.distinct()
+
+private val selectionFlags = listOf("--vipkg", "-p", "--executable", "-e", "--library", "-l")
 
 /** The flags that select targets, shared by every command that takes them. */
 private class SelectionBuilder {
@@ -221,7 +250,12 @@ private class ArgumentReader(private val arguments: List<String>) {
     val choices = actions.joinToString(" or ") { "tazel $first $it" }
     if (!hasNext()) reject("tazel $first needs an action: $choices")
     val action = next()
-    if (action !in actions) reject("'$action' is not an action of tazel $first; write $choices")
+    if (action !in actions) {
+      reject(
+        "'$action' is not an action of tazel $first; write $choices",
+        hint(action, actions.asList()) { "tazel $first $it" },
+      )
+    }
     return action
   }
 
@@ -234,7 +268,7 @@ private class ArgumentReader(private val arguments: List<String>) {
       "lock" ->
         when (action("lock", "resolve", "create-dump")) {
           "resolve" -> Command.LockResolve.also { finish(CommandName.LOCK_RESOLVE) }
-          else -> Command.LockCreateDump.also { finish(CommandName.LOCK_CREATE_DUMP) }
+          else -> lockCreateDump()
         }
       "update" -> Command.Update.also { finish(CommandName.UPDATE) }
       "install" -> install()
@@ -251,8 +285,32 @@ private class ArgumentReader(private val arguments: List<String>) {
       "help" -> help()
       "fmt" -> fmt()
       "lint" -> lint()
-      else -> reject("'$word' is not a command of tazel; write tazel help for the commands")
+      else ->
+        reject(
+          "'$word' is not a command of tazel; write tazel help for the commands",
+          if (word == "--help" || word == "-h") didYouMean(word, "tazel help")
+          else hint(word, commandWords) { "tazel $it" },
+        )
     }
+
+  private fun lockCreateDump(): Command {
+    var path: String? = null
+    while (hasNext()) {
+      when (val argument = next()) {
+        "--path" -> {
+          if (path != null) reject("--path is written twice")
+          path = value("--path")
+          if (path.isBlank()) reject("--path takes the name of a file, and it is empty")
+        }
+        else ->
+          reject(
+            "'$argument' is not an argument of tazel lock create-dump",
+            hint(argument, listOf("--path")),
+          )
+      }
+    }
+    return Command.LockCreateDump(path)
+  }
 
   /** A command whose only arguments select targets. */
   private fun selection(command: CommandName): TargetSelection {
@@ -260,7 +318,7 @@ private class ArgumentReader(private val arguments: List<String>) {
     while (hasNext()) {
       val flag = next()
       if (!selection.take(flag, this)) {
-        reject("'$flag' is not an argument of tazel ${command.words}")
+        reject("'$flag' is not an argument of tazel ${command.words}", hint(flag, selectionFlags))
       }
     }
     return selection.build()
@@ -272,7 +330,10 @@ private class ArgumentReader(private val arguments: List<String>) {
       val flag = next()
       if (flag == "--") return Command.Run(selection.build(), passThrough())
       if (!selection.take(flag, this)) {
-        reject("'$flag' is not an argument of tazel run; program arguments follow '--'")
+        reject(
+          "'$flag' is not an argument of tazel run; program arguments follow '--'",
+          hint(flag, selectionFlags),
+        )
       }
     }
     return Command.Run(selection.build(), emptyList())
@@ -289,7 +350,12 @@ private class ArgumentReader(private val arguments: List<String>) {
           global = true
         }
         else -> {
-          if (argument.startsWith("-")) reject("'$argument' is not an option of tazel install")
+          if (argument.startsWith("-")) {
+            reject(
+              "'$argument' is not an option of tazel install",
+              hint(argument, listOf("--global", "-g")),
+            )
+          }
           if (coordinate != null)
             reject("tazel install takes one package, and '$argument' is a second")
           coordinate = packageCoordinate(argument)
@@ -307,7 +373,10 @@ private class ArgumentReader(private val arguments: List<String>) {
     val words = passThrough().joinToString(" ")
     val topic =
       CommandName.entries.firstOrNull { it.words == words }
-        ?: reject("'$words' is not a command of tazel; write tazel help for the commands")
+        ?: reject(
+          "'$words' is not a command of tazel; write tazel help for the commands",
+          hint(words, CommandName.entries.map { it.words }) { "tazel help $it" },
+        )
     return Command.Help(topic)
   }
 
@@ -334,7 +403,10 @@ private class ArgumentReader(private val arguments: List<String>) {
         if (workspace) reject("--workspace is written twice")
         workspace = true
       } else if (!selection.take(flag, this)) {
-        reject("'$flag' is not an argument of tazel lint; options of talalint follow '--'")
+        reject(
+          "'$flag' is not an argument of tazel lint; options of talalint follow '--'",
+          hint(flag, selectionFlags + "--workspace"),
+        )
       }
     }
     val targets = selection.build()

@@ -154,7 +154,7 @@ tazel <command> [arguments]
 | `tazel run [-- arguments]` | builds the executables and runs them |
 | `tazel test` | builds and runs the test suites |
 | `tazel lock resolve` | resolves the dependencies and renews `LOCK.sqlite3` |
-| `tazel lock create-dump` | writes `LOCK.dump`, the lockfile as text |
+| `tazel lock create-dump [--path File]` | writes the lockfile as text, to `LOCK.dump` or to the file `--path` names |
 | `tazel update` | updates the dependencies of the system and of the project |
 | `tazel install [--global \| -g] Publisher.Name` | downloads a package from ViGet into the project, or into the system |
 | `tazel vipkg create` | writes a local `.vipkg` for every target, without testing or publishing |
@@ -181,6 +181,33 @@ tazel build --library Name        tazel build -l Name
 An option of `tazel` takes its value from the next argument. Each flag may be written several times, and the kinds may be
 combined. `--vipkg` keeps the named ViPkgs; once `--executable` or `--library` is written, only named targets remain. A name
 that selects nothing is an error.
+
+### Writing the lockfile as text
+
+`tazel lock create-dump` writes `LOCK.dump` beside the project file. `--path` names another file, of any name and
+extension, relative to the directory `tazel` runs in:
+
+```text
+tazel lock create-dump --path Locks.sql
+tazel lock create-dump --path reviews/Locks.sql
+```
+
+The folder of the file has to exist. Tazel does not create it: a mistyped folder fails with an error instead of leaving
+a dump somewhere unexpected. A `--path` that names a folder is refused as well.
+
+### Mistyped words
+
+A command, an action, a flag or a target name that is not known is refused with exit code `2` (`1` for a target name,
+which is checked against the project). When it is close to a known one, a hint under the error says what was probably
+meant, with a short aside:
+
+```text
+error: 'biuld' is not a command of tazel; write tazel help for the commands
+ hint: did you mean tazel build? So close the keys almost had it.
+```
+
+Case is compared first, so `Build` suggests `build`; otherwise one edit is allowed for a short word and two for a
+longer one, two swapped letters counting as one edit.
 
 ### Passing arguments on
 

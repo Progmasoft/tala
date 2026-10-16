@@ -7,7 +7,6 @@ package com.progmasoft.tazel.cli
 
 import com.github.ajalt.mordant.rendering.TextColors.brightBlue
 import com.github.ajalt.mordant.rendering.TextColors.brightGreen
-import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextColors.brightYellow
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import com.github.ajalt.mordant.terminal.Terminal
@@ -18,6 +17,7 @@ import com.progmasoft.tazel.driver.SelectedTargets
 import com.progmasoft.tazel.driver.SourceFiles
 import com.progmasoft.tazel.driver.Tool
 import com.progmasoft.tazel.driver.Toolchain
+import com.progmasoft.tazel.driver.UnknownTargetException
 import com.progmasoft.tazel.driver.compilerArguments
 import com.progmasoft.tazel.driver.displayName
 import com.progmasoft.tazel.driver.executableExtension
@@ -73,7 +73,7 @@ class Tazel(
         is Command.Run -> runPrograms(command)
         is Command.Test -> test(command.targets)
         Command.LockResolve -> lockResolve()
-        Command.LockCreateDump -> lockCreateDump()
+        is Command.LockCreateDump -> lockCreateDump(command.path)
         is Command.Fmt -> tool(Tool.TALAFMT, false, TargetSelection(), command.toolArguments)
         is Command.Lint ->
           tool(Tool.TALALINT, command.workspace, command.targets, command.toolArguments)
@@ -94,14 +94,24 @@ class Tazel(
       }
     } catch (stop: Stop) {
       fail(stop.message.orEmpty())
+    } catch (unknown: UnknownTargetException) {
+      fail(
+        unknown.message.orEmpty(),
+        unknown.names.firstNotNullOfOrNull { name ->
+          closestTo(name, unknown.known)?.let { didYouMean(name, "${unknown.flag} $it") }
+        },
+      )
     } catch (problem: ProjectConfigurationException) {
       fail(problem.message.orEmpty())
     } catch (problem: java.sql.SQLException) {
       fail("${ProjectLockFile.FILE_NAME} could not be used: ${problem.message}")
     }
 
-  private fun fail(message: String): Int {
-    terminal.println((bold + brightRed)("error") + ": " + message, stderr = true)
+  private fun fail(
+    message: String,
+    hint: String? = null,
+  ): Int {
+    reportError(terminal, message, hint)
     return ExitCode.FAILURE
   }
 
@@ -261,13 +271,27 @@ class Tazel(
     return ExitCode.SUCCESS
   }
 
-  private fun lockCreateDump(): Int {
+  /**
+   * Writes the lockfile as text: to [path], resolved against the directory Tazel runs in, or to
+   * LOCK.dump beside the project file. The folder of the file has to exist; Tazel does not create
+   * it, so a mistyped folder fails instead of leaving a dump somewhere unexpected.
+   */
+  private fun lockCreateDump(path: String?): Int {
     val root = discoverProject(directory).root
     val lockfile = root.resolve(ProjectLockFile.FILE_NAME)
     if (!Files.isRegularFile(lockfile)) {
       throw Stop("$lockfile does not exist; write it with tazel lock resolve")
     }
-    val dump = root.resolve(ProjectLockFile.DUMP_FILE_NAME)
+    val dump =
+      if (path == null) root.resolve(ProjectLockFile.DUMP_FILE_NAME)
+      else directory.resolve(path).toAbsolutePath().normalize()
+    if (Files.isDirectory(dump)) {
+      throw Stop("$dump is a folder; --path names the file to write, such as $dump/LOCK.dump")
+    }
+    val folder = dump.parent
+    if (folder == null || !Files.isDirectory(folder)) {
+      throw Stop("the folder $folder does not exist; create it first, Tazel does not make folders")
+    }
     LockfileDump.write(lockfile, dump)
     status("Dumped", dump.toString())
     return ExitCode.SUCCESS

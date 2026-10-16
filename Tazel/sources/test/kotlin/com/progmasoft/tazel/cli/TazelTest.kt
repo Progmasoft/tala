@@ -215,6 +215,8 @@ class TazelTest {
     assertTrue(recorder.stderr().contains("no executable is named Absent"))
     assertEquals(ExitCode.FAILURE, run("build", "-p", "Absent"))
     assertTrue(recorder.stderr().contains("no ViPkg is named Absent"))
+    assertEquals(ExitCode.FAILURE, run("build", "-p", "Kti"))
+    assertTrue(recorder.stderr().contains("did you mean --vipkg Kit?"))
     assertEquals(ExitCode.FAILURE, run("test"))
     assertTrue(recorder.stderr().contains("Kit.Unit"))
 
@@ -250,6 +252,26 @@ class TazelTest {
     assertEquals(ExitCode.SUCCESS, run("lock", "resolve"))
     assertEquals(ExitCode.SUCCESS, run("lock", "create-dump"))
     assertTrue(root.resolve("LOCK.dump").readText().contains("'Publisher.Name','BUILD'"))
+  }
+
+  @Test
+  fun aDumpGoesToTheFileThatPathNamesInAFolderThatExists() = fixture {
+    demo()
+    assertEquals(ExitCode.SUCCESS, run("lock", "resolve"))
+
+    assertEquals(ExitCode.SUCCESS, run("lock", "create-dump", "--path", "Locks.txt"))
+    assertTrue(root.resolve("Locks.txt").readText().contains("BEGIN TRANSACTION;"))
+
+    write("dumps/.keep")
+    assertEquals(ExitCode.SUCCESS, run("lock", "create-dump", "--path", "dumps/Locks.sql"))
+    assertTrue(root.resolve("dumps/Locks.sql").readText().contains("COMMIT;"))
+
+    assertEquals(ExitCode.FAILURE, run("lock", "create-dump", "--path", "missing/Locks.sql"))
+    assertTrue(recorder.stderr().contains("does not exist"))
+    assertTrue(Files.notExists(root.resolve("missing")))
+
+    assertEquals(ExitCode.FAILURE, run("lock", "create-dump", "--path", "dumps"))
+    assertTrue(recorder.stderr().contains("is a folder"))
   }
 
   @Test

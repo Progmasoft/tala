@@ -287,7 +287,7 @@ plugins that evaluated it. `tazel lock resolve` renews it; `check`, `build` and 
 the project file. It records declarations, not a solved dependency graph.
 
 `tazel lock create-dump` writes `LOCK.dump`: the same content as SQL text, deterministic and replayable by SQLite, for
-review and for diffs.
+review and for diffs. `--path` writes it to another file in a folder that already exists; see [CLI](CLI.md).
 
 ## Tool configuration
 

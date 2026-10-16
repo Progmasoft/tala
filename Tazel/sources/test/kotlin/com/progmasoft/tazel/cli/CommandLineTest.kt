@@ -20,6 +20,9 @@ class CommandLineTest {
   private fun rejected(vararg arguments: String): String =
     assertIs<ParseResult.Rejected>(parseCommandLine(arguments.toList())).message
 
+  private fun hint(vararg arguments: String): String? =
+    assertIs<ParseResult.Rejected>(parseCommandLine(arguments.toList())).hint
+
   private val everything = TargetSelection()
 
   @Test
@@ -43,7 +46,7 @@ class CommandLineTest {
   @Test
   fun commandsOfTwoWordsParseToTheirValue() {
     assertEquals(Command.LockResolve, parsed("lock", "resolve"))
-    assertEquals(Command.LockCreateDump, parsed("lock", "create-dump"))
+    assertEquals(Command.LockCreateDump(), parsed("lock", "create-dump"))
     assertEquals(Command.ViPkgCreate, parsed("vipkg", "create"))
     assertEquals(Command.ViGetPush, parsed("viget", "push"))
     assertEquals(Command.ViGetUpdate, parsed("viget", "update"))
@@ -191,5 +194,51 @@ class CommandLineTest {
     assertContains(rejected("Build"), "'Build' is not a command of tazel")
     assertContains(rejected("version", "--short"), "'--short' is not an argument of tazel version")
     assertContains(rejected("update", "all"), "'all' is not an argument of tazel update")
+  }
+
+  @Test
+  fun aDumpCanBeWrittenToAFileOfAnyName() {
+    assertEquals(
+      Command.LockCreateDump("Locks.txt"),
+      parsed("lock", "create-dump", "--path", "Locks.txt"),
+    )
+    assertEquals(
+      Command.LockCreateDump("dumps/Locks.sql"),
+      parsed("lock", "create-dump", "--path", "dumps/Locks.sql"),
+    )
+    assertContains(rejected("lock", "create-dump", "--path"), "--path requires a value")
+    assertContains(
+      rejected("lock", "create-dump", "--path", "a", "--path", "b"),
+      "--path is written twice",
+    )
+    assertContains(rejected("lock", "create-dump", "Locks.txt"), "'Locks.txt' is not an argument")
+  }
+
+  @Test
+  fun aTypoIsAnsweredWithWhatWasProbablyMeant() {
+    assertContains(hint("biuld").orEmpty(), "did you mean tazel build?")
+    assertContains(hint("Build").orEmpty(), "did you mean tazel build?")
+    assertContains(hint("lnit").orEmpty(), "did you mean tazel lint?")
+    assertContains(hint("lock", "create-dumb").orEmpty(), "did you mean tazel lock create-dump?")
+    assertContains(hint("viget", "pushh").orEmpty(), "did you mean tazel viget push?")
+    assertContains(hint("build", "--vipgk", "Server").orEmpty(), "did you mean --vipkg?")
+    assertContains(hint("lint", "--worksapce").orEmpty(), "did you mean --workspace?")
+    assertContains(hint("lock", "create-dump", "--paht", "x").orEmpty(), "did you mean --path?")
+    assertContains(hint("help", "biuld").orEmpty(), "did you mean tazel help build?")
+    assertContains(hint("--help").orEmpty(), "did you mean tazel help?")
+    assertEquals(null, hint("compile"))
+    assertEquals(null, hint("build", "--fast"))
+  }
+
+  @Test
+  fun aSuggestionNeedsAShortDistance() {
+    assertEquals(1, editDistance("biuld", "build"))
+    assertEquals(2, editDistance("biudl", "build"))
+    assertEquals("build", closestTo("buidl", listOf("check", "build", "run")))
+    assertEquals(null, closestTo("xyz", listOf("run", "fmt")))
+    assertEquals(null, closestTo("b", listOf("run")))
+    assertEquals("run", closestTo("rn", listOf("run", "fmt")))
+    // A word picks its aside, so the same mistake reads the same every time.
+    assertEquals(asideFor("biuld"), asideFor("biuld"))
   }
 }

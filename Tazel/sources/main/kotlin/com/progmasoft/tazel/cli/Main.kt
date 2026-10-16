@@ -5,6 +5,7 @@
 
 package com.progmasoft.tazel.cli
 
+import com.github.ajalt.mordant.rendering.TextColors.brightCyan
 import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import com.github.ajalt.mordant.terminal.Terminal
@@ -25,6 +26,7 @@ private val usage =
     CommandName.BUILD to "[selection]",
     CommandName.RUN to "[selection] [-- program arguments]",
     CommandName.TEST to "[selection]",
+    CommandName.LOCK_CREATE_DUMP to "[--path File]",
     CommandName.INSTALL to "[--global | -g] Publisher.Name",
     CommandName.HELP to "[command]",
     CommandName.FMT to "[-- talafmt options]",
@@ -54,12 +56,25 @@ internal fun helpText(topic: CommandName?): String {
     "tazel help <command> explains one command."
 }
 
+/**
+ * Prints an error, and under it the hint of what was probably meant when there is one. Both go to
+ * standard error.
+ */
+internal fun reportError(
+  terminal: Terminal,
+  message: String,
+  hint: String? = null,
+) {
+  terminal.println((bold + brightRed)("error") + ": " + message, stderr = true)
+  if (hint != null) terminal.println((bold + brightCyan)(" hint") + ": " + hint, stderr = true)
+}
+
 fun main(arguments: Array<String>) {
   val terminal = Terminal()
   val exitCode =
     when (val parsed = parseCommandLine(arguments.toList())) {
       is ParseResult.Rejected -> {
-        terminal.println((bold + brightRed)("error") + ": " + parsed.message, stderr = true)
+        reportError(terminal, parsed.message, parsed.hint)
         ExitCode.USAGE
       }
       is ParseResult.Parsed -> {
