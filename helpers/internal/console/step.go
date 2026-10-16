@@ -79,19 +79,19 @@ func (c *Console) plainStep(title string, work func(stdout, stderr io.Writer) er
 }
 
 func (c *Console) actionsStep(title string, work func(stdout, stderr io.Writer) error) error {
-	fmt.Fprintf(c.out, "::group::%s\n", escapeData(title))
+	fmt.Fprintf(c.err, "::group::%s\n", escapeData(title))
 	output := newTranscript(nil)
 	started := c.now()
-	err := work(io.MultiWriter(c.out, output), io.MultiWriter(c.out, output))
+	err := work(io.MultiWriter(c.out, output), io.MultiWriter(c.err, output))
 	duration := c.now().Sub(started)
-	fmt.Fprintln(c.out, "::endgroup::")
+	fmt.Fprintln(c.err, "::endgroup::")
 	c.remember(title, duration, err, output, "")
 	if err != nil {
-		fmt.Fprintf(c.out, "::error title=%s::%s\n", escapeProperty(title+" failed"), escapeData(err.Error()))
-		c.printTail(c.out, title, output.tail(), "")
+		fmt.Fprintf(c.err, "::error title=%s::%s\n", escapeProperty(title+" failed"), escapeData(err.Error()))
+		c.printTail(c.err, title, output.tail(), "")
 		return err
 	}
-	fmt.Fprintf(c.out, "%s finished in %s%s\n", title, Duration(duration), warningNote(output.warnings()))
+	fmt.Fprintf(c.err, "%s finished in %s%s\n", title, Duration(duration), warningNote(output.warnings()))
 	return nil
 }
 

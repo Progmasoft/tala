@@ -95,16 +95,22 @@ func TestPlainStepReportsAFailure(t *testing.T) {
 }
 
 func TestActionsStepGroupsTheOutputAndRepeatsTheTailOfAFailure(t *testing.T) {
-	var out bytes.Buffer
-	console := NewWith(Actions, &out, io.Discard)
+	var out, errOut bytes.Buffer
+	console := NewWith(Actions, &out, &errOut)
 	console.now = fixedClock()
 	_ = console.Step("talac a,b: c", func(stdout, stderr io.Writer) error {
+		fmt.Fprintln(stdout, "/opt/llvm")
 		for line := range 50 {
 			fmt.Fprintf(stderr, "line %d\n", line)
 		}
 		return errors.New("exit status 2\nsecond line")
 	})
-	text := out.String()
+	// A workflow may capture standard output, as `develop llvm >> $GITHUB_ENV`
+	// does, so it holds what the program printed there and nothing else.
+	if out.String() != "/opt/llvm\n" {
+		t.Fatalf("stdout = %q", out.String())
+	}
+	text := errOut.String()
 	for _, want := range []string{
 		"::group::talac a,b: c\n",
 		"line 0\n",
