@@ -8,7 +8,11 @@ package com.progmasoft.tazel.cli
 import com.github.ajalt.mordant.rendering.TextColors.brightCyan
 import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.dim
+import com.github.ajalt.mordant.rendering.Widget
+import com.github.ajalt.mordant.table.verticalLayout
 import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.widgets.Text
 import com.progmasoft.tazel.driver.SystemProcesses
 import com.progmasoft.tazel.driver.Toolchain
 import com.progmasoft.tazel.dsl.detectHost
@@ -39,6 +43,26 @@ private const val SELECTION_HELP =
     "  --executable, -e Name   only the executable of this name\n" +
     "  --library, -l Name      only the library of this name\n" +
     "Each flag may be written several times."
+
+/** The help as Mordant renders it: a title, the usage, and the commands as a table. */
+internal fun helpWidget(topic: CommandName?): Widget {
+  if (topic != null) return Text(helpText(topic))
+  return verticalLayout {
+    cell((bold + brightCyan)("Tazel") + ", the build system and package manager of Tala.")
+    cell("")
+    cell(bold("usage") + ": tazel <command> [arguments]")
+    cell("")
+    cell(bold("commands") + ":")
+    // Aligned lines rather than a table: a table wraps a long summary into a second row and can
+    // cut a command name short on a narrow terminal, and a command name must stay whole.
+    val width = CommandName.entries.maxOf { it.words.length }
+    CommandName.entries.forEach {
+      cell("  " + (bold + brightCyan)(it.words.padEnd(width)) + "  " + it.summary)
+    }
+    cell("")
+    cell(dim("tazel help <command> explains one command."))
+  }
+}
 
 internal fun helpText(topic: CommandName?): String {
   if (topic != null) {

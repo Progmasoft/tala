@@ -5,6 +5,7 @@
 
 package com.progmasoft.tazel.cli
 
+import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.TerminalRecorder
 import com.progmasoft.tazel.driver.Processes
@@ -24,8 +25,10 @@ import kotlin.test.assertTrue
  * line they were started with and leave the file the real tool would leave.
  */
 class TazelTest {
-  private class Fixture(val root: Path) : Processes {
-    val recorder = TerminalRecorder()
+  private class Fixture(
+    val root: Path,
+    val recorder: TerminalRecorder = TerminalRecorder(),
+  ) : Processes {
     val commands = mutableListOf<Pair<List<String>, Path>>()
     var compilerExitCode = 0
     var programExitCode = 0
@@ -87,10 +90,13 @@ class TazelTest {
     override fun capture(command: List<String>) = "talac 0.5.2\n"
   }
 
-  private fun fixture(block: Fixture.() -> Unit) {
+  private fun fixture(
+    recorder: TerminalRecorder = TerminalRecorder(),
+    block: Fixture.() -> Unit,
+  ) {
     val root = Files.createTempDirectory("tazel-command-").toRealPath()
     try {
-      Fixture(root).block()
+      Fixture(root, recorder).block()
     } finally {
       root.toFile().deleteRecursively()
     }
@@ -369,6 +375,45 @@ class TazelTest {
     assertEquals(ExitCode.FAILURE, run("build"))
     assertTrue(recorder.stderr().contains("workspace member 'Missing' has no project file"))
   }
+
+  @Test
+  fun aProgressBarIsDrawnOnlyWhereTheTerminalCanShowOne() {
+    val interactive =
+      TerminalRecorder(
+        ansiLevel = AnsiLevel.TRUECOLOR,
+        outputInteractive = true,
+        inputInteractive = true,
+        supportsAnsiCursor = true,
+      )
+    StepProgress.start(Terminal(terminalInterface = interactive), "Building", 3).use {
+      assertTrue(it.drawing)
+      it.working("Demo")
+      it.done()
+    }
+    StepProgress.start(Terminal(terminalInterface = TerminalRecorder()), "Building", 3).use {
+      assertFalse(it.drawing)
+    }
+    StepProgress.start(Terminal(terminalInterface = interactive), "Building", 0).use {
+      assertFalse(it.drawing)
+    }
+  }
+
+  @Test
+  fun anInteractiveBuildStillEndsWithTimedStatusLines() =
+    fixture(
+      TerminalRecorder(
+        ansiLevel = AnsiLevel.TRUECOLOR,
+        outputInteractive = true,
+        inputInteractive = true,
+        supportsAnsiCursor = true,
+      )
+    ) {
+      demo()
+      write("Sources/Main.tala")
+      assertEquals(ExitCode.SUCCESS, run("build"))
+      assertTrue(recorder.stdout().contains("Compiling"))
+      assertTrue(Regex("""Finished.*build.*in \d+\.\d\ds""").containsMatchIn(recorder.stdout()))
+    }
 
   @Test
   fun printsItsVersionAndItsHelp() = fixture {

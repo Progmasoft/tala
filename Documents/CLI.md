@@ -195,6 +195,15 @@ tazel lock create-dump --path reviews/Locks.sql
 The folder of the file has to exist. Tazel does not create it: a mistyped folder fails with an error instead of leaving
 a dump somewhere unexpected. A `--path` that names a folder is refused as well.
 
+### Output
+
+Tazel prints a status line for each step, such as `Compiling Demo (Demo, 3 sources)`, and closes a command with the
+time it took: `Finished build in 1.84s`. While `check`, `build`, `run`, `fmt` and `lint` work through their targets on an
+interactive terminal, a progress bar under the status lines shows the step in hand, how many are done and the time so
+far; the output of `talac`, `talafmt` and `talalint` is then printed above the bar. In a pipe, in CI or on a terminal
+that cannot move its cursor no bar is drawn, and the tools write to the terminal directly. The program that `tazel run`
+starts always writes directly. The terminal output uses Mordant.
+
 ### Mistyped words
 
 A command, an action, a flag or a target name that is not known is refused with exit code `2` (`1` for a target name,

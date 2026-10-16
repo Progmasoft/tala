@@ -9,6 +9,7 @@ import com.github.ajalt.mordant.rendering.TextColors.brightBlue
 import com.github.ajalt.mordant.rendering.TextColors.brightGreen
 import com.github.ajalt.mordant.rendering.TextColors.brightYellow
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.dim
 import com.github.ajalt.mordant.terminal.Terminal
 import com.progmasoft.tazel.driver.Emit
 import com.progmasoft.tazel.driver.LoadedWorkspace
@@ -38,6 +39,7 @@ import com.progmasoft.tazel.lock.ProjectLockFile
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import kotlin.time.TimeSource
 
 /** The exit codes of Tazel. A program run by `tazel run` hands its own code through. */
 object ExitCode {
@@ -78,7 +80,7 @@ class Tazel(
         is Command.Lint ->
           tool(Tool.TALALINT, command.workspace, command.targets, command.toolArguments)
         Command.Version -> ExitCode.SUCCESS.also { terminal.println("tazel $version") }
-        is Command.Help -> ExitCode.SUCCESS.also { terminal.println(helpText(command.topic)) }
+        is Command.Help -> ExitCode.SUCCESS.also { terminal.println(helpWidget(command.topic)) }
         Command.Update,
         is Command.Install,
         Command.ViGetPush,
@@ -106,6 +108,30 @@ class Tazel(
     } catch (problem: java.sql.SQLException) {
       fail("${ProjectLockFile.FILE_NAME} could not be used: ${problem.message}")
     }
+
+  /**
+   * Starts [command] on the streams of Tazel, or, while a progress bar is drawn, gathers what it
+   * writes and prints that through the terminal so the bar stays below it.
+   */
+  private fun execute(
+    command: List<String>,
+    directory: Path,
+    progress: StepProgress,
+  ): Int {
+    if (!progress.drawing) return processes.run(command, directory)
+    val run = processes.runGathered(command, directory)
+    if (run.output.isNotBlank()) terminal.println(run.output.trimEnd(), stderr = true)
+    return run.exitCode
+  }
+
+  /** The closing status line of a command, with the time it took. */
+  private fun finished(
+    what: String,
+    started: TimeSource.Monotonic.ValueTimeMark,
+  ) {
+    val seconds = started.elapsedNow().inWholeMilliseconds / 1000.0
+    status("Finished", "$what " + dim("in ${"%.2f".format(java.util.Locale.ROOT, seconds)}s"))
+  }
 
   private fun fail(
     message: String,
@@ -150,21 +176,27 @@ class Tazel(
     selection: TargetSelection,
     emit: Emit,
   ): List<Path> {
+    val started = TimeSource.Monotonic.markNow()
     val workspace = load()
     val selected = select(workspace.all, selection)
     val compiler = toolchain.require(Tool.TALAC)
     val outputs = mutableListOf<Path>()
-    for (targets in selected) {
-      val project = targets.project
-      keepLockCurrent(project)
-      requireNoDependencies(project, DependencyScope.BUILD)
-      refuseLibraries(targets, selection)
-      for (executable in targets.executables) {
-        outputs.add(compile(compiler, project, executable, emit))
+    val verb = if (emit == Emit.METADATA) "Checking" else "Building"
+    StepProgress.start(terminal, verb, selected.sumOf { it.executables.size }).use { progress ->
+      for (targets in selected) {
+        val project = targets.project
+        keepLockCurrent(project)
+        requireNoDependencies(project, DependencyScope.BUILD)
+        refuseLibraries(targets, selection)
+        for (executable in targets.executables) {
+          progress.working(executable.name)
+          outputs.add(compile(compiler, project, executable, emit, progress))
+          progress.done()
+        }
       }
     }
     if (outputs.isEmpty()) throw Stop("the selection holds no executable to compile")
-    status("Finished", if (emit == Emit.METADATA) "check" else "build")
+    finished(if (emit == Emit.METADATA) "check" else "build", started)
     return outputs
   }
 
@@ -173,6 +205,7 @@ class Tazel(
     project: LoadedProject,
     target: ExecutableSourceTarget,
     emit: Emit,
+    progress: StepProgress,
   ): Path {
     val root = project.location.root
     val inputs =
@@ -191,7 +224,7 @@ class Tazel(
       "${target.name} " + brightBlue("(${project.displayName}, ${inputs.size} sources)"),
     )
     val arguments = compilerArguments(project.plan.compiler, target.entry, emit, inputs)
-    val exitCode = processes.run(listOf(compiler.toString()) + arguments, root)
+    val exitCode = execute(listOf(compiler.toString()) + arguments, root, progress)
     if (exitCode != 0)
       throw Stop("talac rejected executable '${target.name}' (exit code $exitCode)")
     // The compiler writes beside its first input, under that input's name; the project decides
@@ -309,21 +342,27 @@ class Tazel(
       if (wholeWorkspace || !selection.isEverything) workspace.all else workspace.default
     val selected = select(projects, selection)
     val program = toolchain.require(tool)
+    val verb = if (tool == Tool.TALAFMT) "Formatting" else "Linting"
     var result = ExitCode.SUCCESS
-    for (targets in selected) {
-      val files = sourcesOf(targets, includeTests = selection.isEverything)
-      if (files.isEmpty()) continue
-      status(
-        if (tool == Tool.TALAFMT) "Formatting" else "Linting",
-        "${targets.project.displayName} " + brightBlue("(${files.size} sources)"),
-      )
-      val exitCode =
-        processes.run(
-          listOf(program.toString()) + toolArguments + "--" + files,
-          targets.project.location.root,
-        )
-      if (exitCode != 0) result = exitCode
+    val started = TimeSource.Monotonic.markNow()
+    StepProgress.start(terminal, verb, selected.size).use { progress ->
+      for (targets in selected) {
+        progress.working(targets.project.displayName)
+        val files = sourcesOf(targets, includeTests = selection.isEverything)
+        if (files.isNotEmpty()) {
+          status(verb, "${targets.project.displayName} " + brightBlue("(${files.size} sources)"))
+          val exitCode =
+            execute(
+              listOf(program.toString()) + toolArguments + "--" + files,
+              targets.project.location.root,
+              progress,
+            )
+          if (exitCode != 0) result = exitCode
+        }
+        progress.done()
+      }
     }
+    if (result == ExitCode.SUCCESS) finished(if (tool == Tool.TALAFMT) "fmt" else "lint", started)
     return result
   }
 
