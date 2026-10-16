@@ -104,7 +104,7 @@ func TestLLVMRequirementIsHostSpecific(t *testing.T) {
 		t.Fatalf("macOS LLVM tools = %#v", macOS)
 	}
 	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora, bootstrapDebian} {
-		if got := requirementExecutables(host, llvm); !reflect.DeepEqual(got, []string{"llvm-config", "clang++"}) {
+		if got := requirementExecutables(host, llvm); !reflect.DeepEqual(got, []string{"clang++", "zstd"}) {
 			t.Fatalf("Linux LLVM tools = %#v", got)
 		}
 	}
@@ -116,9 +116,9 @@ func TestLinuxPackageMappingsKeepClangAndLLVMDevelopmentLibraries(t *testing.T) 
 		host bootstrapHost
 		want string
 	}{
-		{bootstrapUbuntu, "llvm-dev"},
-		{bootstrapDebian, "llvm-dev"},
-		{bootstrapFedora, "llvm-static"},
+		{bootstrapUbuntu, "libc++-dev"},
+		{bootstrapDebian, "libc++-dev"},
+		{bootstrapFedora, "libcxx-devel"},
 	} {
 		packages := linuxRequirementPackages(test.host, llvm)
 		if !strings.Contains(strings.Join(packages, ","), test.want) {

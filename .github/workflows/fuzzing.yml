@@ -236,8 +236,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
-          llvm_root="$(llvm-config --prefix)"
+          sudo apt-get install -y clang lld libc++-dev libc++abi-dev libzstd-dev libxml2-dev zlib1g-dev zstd
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
       - name: Install GHC and Cabal
@@ -286,7 +288,7 @@ jobs:
         shell: bash
         run: |
           dnf install -y git ca-certificates curl tar gzip unzip xz which findutils \
-            clang lld llvm-devel llvm-static libzstd-devel libxml2-devel \
+            clang lld libcxx-devel libcxxabi-devel zstd libzstd-devel libxml2-devel \
             zlib-devel golang gcc gcc-c++ make gmp-devel libffi-devel ncurses-devel perl
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -300,7 +302,9 @@ jobs:
           # into later container steps. Expose the pinned Bazelisk as `bazel`
           # explicitly so develop.go can find it.
           install -m 0755 "$(go env GOPATH)/bin/bazelisk" /usr/local/bin/bazel
-          llvm_root="$(llvm-config --prefix)"
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
       - name: Restore synchronized fuzz corpus
