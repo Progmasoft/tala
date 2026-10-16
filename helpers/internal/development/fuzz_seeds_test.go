@@ -38,7 +38,7 @@ func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 	repository := t.TempDir()
 	writeSource(t, repository, "Examples/Hello/Hello.tala", "namespace Hello;")
 	writeSource(t, repository, "Spec/Language/Sample.TALA", "namespace Sample;")
-	writeSource(t, repository, "Talac/Driver/Tests/Fixtures/Source/source/a.tala", "namespace A;")
+	writeSource(t, repository, "Talac/Core/Tests/a.tala", "namespace A;")
 	writeSource(t, repository, "Ecosystem/tala-analyzer/Tests/Data/b.tala", "namespace B;")
 	// Not a source, outside the roots, empty, and longer than the target reads.
 	writeSource(t, repository, "Examples/Hello/README.md", "namespace Hello;")

@@ -4,7 +4,7 @@ SPDX-PackageSupplier = "Organization: Progmasoft"
 SPDX-PackageDownloadLocation = "https://github.com/Progmasoft/tala"
 
 [[annotations]]
-path = [".bazelversion", "MODULE.bazel.lock", ".github/brand/tala-social.png", ".github/brand/tala-social.svg", "Talac/Core/Tests/Fixtures/Core/**", "Talac/Driver/Tests/Fixtures/CorePrep/**", "Talac/Driver/Tests/Fixtures/Source/projects/native_call/sources/Generated/**"]
+path = [".bazelversion", "MODULE.bazel.lock", ".github/brand/tala-social.png", ".github/brand/tala-social.svg", "Talac/Core/Tests/Fixtures/Core/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Progmasoft <support@progmasoft.com>"
 SPDX-License-Identifier = "MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1"
