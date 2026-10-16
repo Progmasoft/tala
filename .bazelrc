@@ -135,8 +135,10 @@ build:fuzz-linux --linkopt=-fsanitize=fuzzer
 # The libFuzzer runtime comes with the distribution's Clang, built with
 # libstdc++. It keeps its own std::__cxx11 objects internally, which do not
 # collide with the std::__1 objects of libc++, so the driver links libstdc++
-# beside the libc++ the compiler code uses.
-build:fuzz-linux --linkopt=-lstdc++
+# beside the libc++ the compiler code uses. The option goes to the linker
+# directly: Clang's driver rewrites a plain -lstdc++ into the library that
+# -stdlib selects, which is libc++ here.
+build:fuzz-linux --linkopt=-Wl,--push-state,--no-as-needed,-lstdc++,--pop-state
 # The host's Homebrew LLVM runtime is resolved by the developer helper. Bazel's macOS
 # linker can be Apple Clang, whose Xcode package omits libFuzzer's main.
 
