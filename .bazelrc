@@ -123,11 +123,13 @@ build:fuzz-windows --linkopt=/DEFAULTLIB:clang_rt.fuzzer-x86_64.lib
 build:fuzz-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --linkopt=-fsanitize=fuzzer
-# AFL++ builds the same libFuzzer drivers with its own compiler: afl-clang-fast
-# replaces -fsanitize=fuzzer-no-link with its coverage instrumentation and
-# links its libFuzzer-compatible driver for -fsanitize=fuzzer. The developer
-# helper (`develop fuzz-afl`) adds the sanitizers or AFL_LLVM_CMPLOG.
-build:afl-linux --config=fuzz-linux
+# AFL++ builds the same libFuzzer drivers with its own compiler. afl-clang-fast
+# instruments every translation unit itself and links its libFuzzer-compatible
+# driver for -fsanitize=fuzzer. It does not inherit fuzz-linux: afl-clang-fast
+# passes -fsanitize=fuzzer-no-link through to clang, whose SanitizerCoverage
+# callbacks the AFL++ driver does not define. The developer helper
+# (`develop fuzz-afl`) adds the sanitizers or AFL_LLVM_CMPLOG.
+build:afl-linux --linkopt=-fsanitize=fuzzer
 build:afl-linux --repo_env=CC=afl-clang-fast
 build:afl-linux --repo_env=CXX=afl-clang-fast++
 # Without AFL_QUIET the compiler prints a banner on every invocation, which
