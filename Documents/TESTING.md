@@ -215,6 +215,12 @@ support the separate `sanitize thread` profile. Each profile verifies real
 intentional failures before running the complete native suite set. See
 [Fuzzing](FUZZING.md) for the Windows and Fedora TSan boundaries.
 
+On macOS, AddressSanitizer runs with `detect_container_overflow=0`. The LLVM
+libraries from Homebrew are not instrumented, and libc++ annotates a vector
+only where instrumented code grows it, so a vector that LLVM fills and reads
+would be reported as overflowing its own allocation. Out-of-bounds,
+use-after-free and the other address checks stay enabled.
+
 The Compiler Tier 1/2/3 workflows also run a separate deterministic wire-mutation
 smoke target. It is separate from the component-owned `develop test` suite set.
 Run it directly when a Core, CorePrep, Xpp, or Xmm decoder changes:
