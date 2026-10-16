@@ -139,6 +139,19 @@ build:fuzz-linux --linkopt=-fsanitize=fuzzer
 # directly: Clang's driver rewrites a plain -lstdc++ into the library that
 # -stdlib selects, which is libc++ here.
 build:fuzz-linux --linkopt=-Wl,--push-state,--no-as-needed,-lstdc++,--pop-state
+# AFL++ builds the same libFuzzer drivers with its own compiler. afl-clang-fast
+# instruments every translation unit itself and links its libFuzzer-compatible
+# driver for -fsanitize=fuzzer. It does not inherit fuzz-linux: afl-clang-fast
+# passes -fsanitize=fuzzer-no-link through to clang, whose SanitizerCoverage
+# callbacks the AFL++ driver does not define. The developer helper
+# (`develop fuzz-afl`) adds the sanitizers or AFL_LLVM_CMPLOG.
+build:afl-linux --linkopt=-fsanitize=fuzzer
+build:afl-linux --repo_env=CC=afl-clang-fast
+build:afl-linux --repo_env=CXX=afl-clang-fast++
+# Without AFL_QUIET the compiler prints a banner on every invocation, which
+# Bazel's toolchain detection would read as compiler output.
+build:afl-linux --repo_env=AFL_QUIET=1
+build:afl-linux --action_env=AFL_QUIET=1
 # The host's Homebrew LLVM runtime is resolved by the developer helper. Bazel's macOS
 # linker can be Apple Clang, whose Xcode package omits libFuzzer's main.
 

@@ -78,12 +78,14 @@ func newCommand(runner commandRunner, output, errorOutput io.Writer) *cobra.Comm
 		}
 		root.AddCommand(child)
 	}
-	fuzz := newFuzzCommand(runner, "fuzz", "Run bounded ASan/UBSan libFuzzer campaigns and the Haskell HPC campaign.", false, nativeFuzzTargets())
-	thread := newFuzzCommand(runner, "fuzz-thread", "Run the threaded fuzz targets under ThreadSanitizer (macOS/Linux).", false, threadFuzzTargets())
+	fuzz := newFuzzCommand(runner, "fuzz", "Run bounded ASan/UBSan libFuzzer campaigns and the Haskell HPC campaign.", false, true, nativeFuzzTargets())
+	thread := newFuzzCommand(runner, "fuzz-thread", "Run the threaded fuzz targets under ThreadSanitizer (macOS/Linux).", false, true, threadFuzzTargets())
 	var asan bool
-	stress := newFuzzCommand(runner, "fuzz-stress", "Run long per-target fuzz campaigns with ASan and UBSan.", true, nativeFuzzTargets())
+	stress := newFuzzCommand(runner, "fuzz-stress", "Run long per-target fuzz campaigns with ASan and UBSan.", true, true, nativeFuzzTargets())
 	stress.Flags().BoolVar(&asan, "asan", false, "compatibility flag; ASan and UBSan are always enabled")
-	root.AddCommand(fuzz, thread, stress)
+	// AFL++ runs one target at a time, so it has no --jobs.
+	afl := newFuzzCommand(runner, "fuzz-afl", "Run AFL++ with CmpLog over the targets without the frontend or threads (Linux).", false, false, aflFuzzTargets())
+	root.AddCommand(fuzz, thread, stress, afl)
 
 	root.AddCommand(&cobra.Command{
 		Use:   "llvm",
@@ -224,7 +226,7 @@ the same load. Times from different machines measure the machines.`,
 // which are checked here, before the workflow discovers a tool or builds a
 // target: the limits of the campaign and the names of the inventory are known
 // without either.
-func newFuzzCommand(runner commandRunner, name, description string, stress bool, inventory []fuzzTarget) *cobra.Command {
+func newFuzzCommand(runner commandRunner, name, description string, stress, parallel bool, inventory []fuzzTarget) *cobra.Command {
 	var options fuzzOptions
 	command := &cobra.Command{
 		Use:   name,
@@ -242,7 +244,9 @@ func newFuzzCommand(runner commandRunner, name, description string, stress bool,
 	}
 	flags := command.Flags()
 	flags.IntVar(&options.seconds, "seconds", 0, "time budget of each target in seconds, 1 to 3600 (default: TALA_FUZZ_SECONDS, or the command's own)")
-	flags.IntVar(&options.jobs, "jobs", 0, "targets to run at once, 1 to 64 (default: TALA_FUZZ_JOBS, or one per four logical processors)")
+	if parallel {
+		flags.IntVar(&options.jobs, "jobs", 0, "targets to run at once, 1 to 64 (default: TALA_FUZZ_JOBS, or one per four logical processors)")
+	}
 	flags.StringVar(&options.corpus, "corpus", "", "directory that keeps the corpus between runs (default: TALA_FUZZ_CORPUS, or a temporary one)")
 	flags.StringArrayVar(&options.targets, "target", nil, "run this target only; repeat for several (see fuzz-targets)")
 	return command
