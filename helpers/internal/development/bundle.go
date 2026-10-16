@@ -216,8 +216,10 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	}
 	defer os.RemoveAll(temporary)
 
-	fixture := filepath.Join(repository, "Talac", "Driver", "Tests", "Fixtures", "Source", "haskell_frontend", "Main.tala")
-	source := filepath.Join(temporary, "Main.tala")
+	// The smallest example the repository maintains; it prints a line that
+	// the smoke test checks, so the executable is proven to run, not only to exit.
+	fixture := filepath.Join(repository, "Examples", "HelloWorld", "HelloWorld.tala")
+	source := filepath.Join(temporary, "HelloWorld.tala")
 	if err := copyFile(fixture, source, 0o644); err != nil {
 		return fmt.Errorf("cannot stage the smoke-test source: %w", err)
 	}
@@ -257,16 +259,20 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 		}
 	}
 	fmt.Println("Smoke-testing source-to-native compilation through the staged frontend...")
-	if err := runner.Run(temporary, nil, compiler, source, "--entry=Example.Program"); err != nil {
+	if err := runner.Run(temporary, nil, compiler, source, "--entry=Examples.HelloWorld.HelloWorld"); err != nil {
 		return fmt.Errorf("staged source-to-native compilation failed: %w", err)
 	}
-	executable := filepath.Join(temporary, "Main"+currentHost.executable)
+	executable := filepath.Join(temporary, "HelloWorld"+currentHost.executable)
 	information, err := os.Stat(executable)
 	if err != nil || information.IsDir() {
 		return fmt.Errorf("staged compiler did not produce the expected native executable %s", executable)
 	}
-	if err := runner.Run(temporary, nil, executable); err != nil {
+	output, err = runner.RunWithInput(temporary, nil, "", executable)
+	if err != nil {
 		return fmt.Errorf("generated native executable smoke test failed: %w", err)
+	}
+	if !strings.Contains(output, "Hello from Tala!") {
+		return fmt.Errorf("generated native executable printed %q; expected Hello from Tala!", output)
 	}
 	return nil
 }

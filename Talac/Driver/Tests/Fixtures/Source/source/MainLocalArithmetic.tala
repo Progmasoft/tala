@@ -1,8 +1,0 @@
-// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
-
-fn main() -> Long {
-  val left: Long = 3;
-  val right: Long = 4;
-  return left + right;
-}

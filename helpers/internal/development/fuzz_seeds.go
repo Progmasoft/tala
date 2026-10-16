@@ -15,14 +15,13 @@ import (
 // repositorySourceRoots are the directories whose Tala sources seed the
 // targets that read source text. They are the programs the repository already
 // maintains for other reasons: the examples, the samples of the specification
-// and the fixtures of the driver and analyzer tests. Seeding from them keeps
+// and the fixtures of the Core and analyzer tests. Seeding from them keeps
 // the corpus as wide as the language the repository exercises, without a
 // second copy of any program to keep in step.
 func repositorySourceRoots() []string {
 	return []string{
 		"Examples",
 		"Spec",
-		filepath.Join("Talac", "Driver", "Tests", "Fixtures", "Source"),
 		filepath.Join("Talac", "Core"),
 		filepath.Join("Ecosystem", "tala-analyzer", "Tests"),
 	}
