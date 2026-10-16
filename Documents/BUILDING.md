@@ -12,8 +12,8 @@ direct build interfaces for their Haskell and Kotlin ownership boundaries.
 Official Tala development is supported on:
 
 - Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD;
-- macOS 15 Sequoia, using Clang/LLD and the Apple SDK; and
-- macOS 26 Tahoe, using Clang/LLD and the Apple SDK;
+- macOS 15 Sequoia, using Clang/LLD and the Apple SDK (CI tests it on Intel); and
+- macOS 26 Tahoe, using Clang/LLD and the Apple SDK (CI tests it on Apple silicon);
 - Ubuntu 26.04 LTS, using Clang/LLD and LLVM development packages; and
 - Fedora 43 (the Fedora N-1 release as of September 2026), using Clang/LLD and LLVM development packages.
 

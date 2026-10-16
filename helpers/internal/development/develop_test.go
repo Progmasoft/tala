@@ -93,7 +93,7 @@ func TestSelectAddressSanitizerUsesHostSpecificProfile(t *testing.T) {
 	if macOS.config != "asan-macos" || macOS.name != "AddressSanitizer" {
 		t.Fatalf("unexpected macOS sanitizer: %#v", macOS)
 	}
-	if !reflect.DeepEqual(macOS.environment, []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1"}) {
+	if !reflect.DeepEqual(macOS.environment, []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_container_overflow=0"}) {
 		t.Fatalf("unexpected macOS AddressSanitizer environment: %#v", macOS.environment)
 	}
 	linux, err := selectSanitizer(host{kind: hostLinux}, "address")
