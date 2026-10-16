@@ -423,9 +423,9 @@ The repository currently separates these workflow ownership areas:
 
 | Workflow | Responsibility |
 | --- | --- |
-| `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 15/26 native suites, sanitizers, and fuzzing |
-| `compiler-tier2.yml` | Ubuntu 26.04 LTS native suites and AddressSanitizer |
-| `compiler-tier3.yml` | Fedora 43 container native suites and wire-mutation smoke |
+| `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 15/26 native suites, host distribution, sanitizers, and fuzzing |
+| `compiler-tier2.yml` | Ubuntu 26.04 LTS native suites, host distribution, and AddressSanitizer |
+| `compiler-tier3.yml` | Fedora 43 container native suites, host distribution, and wire-mutation smoke |
 | `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on all four host families |
 | `language-layers.yml` | Kotlin project system plus Haskell compiler layers |
 | `haskell-coverage.yml` | Haskell coverage reporting |
@@ -484,8 +484,8 @@ go run ./helpers/cmd/develop bundle
 ```
 
 This is more than an archive or copy test. A passing run proves that the staged `talac` reports the checkout's compiler
-version, loads the adjacent private `tala-frontend` shared library in-process, compiles a real `.tala` source into an executable, and executes the result
-successfully. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
+version, loads the adjacent private `tala-frontend` shared library in-process, compiles `Examples/HelloWorld` into an executable, and runs it until it prints
+`Hello from Tala!`. The tier workflows run it on every official host after the native suites. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
 texts, and a `SHA256SUMS` manifest covering the other staged files.
 
 The output under `dist/tala-<version>-<platform>-<arch>/` is ignored and reproducible. Do not treat an old bundle as
