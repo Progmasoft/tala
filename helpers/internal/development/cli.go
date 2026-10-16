@@ -85,6 +85,23 @@ func newCommand(runner commandRunner, output, errorOutput io.Writer) *cobra.Comm
 	stress.Flags().BoolVar(&asan, "asan", false, "compatibility flag; ASan and UBSan are always enabled")
 	root.AddCommand(fuzz, thread, stress)
 
+	root.AddCommand(&cobra.Command{
+		Use:   "llvm",
+		Short: "Print the LLVM root of this Linux host, downloading its libc++ toolchain the first time.",
+		Long: `Print the LLVM root of this Linux host, downloading its libc++ toolchain the first time.
+
+The Linux hosts build with libc++ and link an LLVM built with libc++. This
+command downloads the archive of the host from the toolchain release, checks
+its SHA-256 against the digest the repository records, unpacks it below
+TALA_LLVM_CACHE (default: tala/llvm in the user cache) and prints its root,
+which is what LLVM_ROOT should name. The build commands do the same by
+themselves when LLVM_ROOT is not set.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return executeWorkflow([]string{"llvm"}, runner)
+		},
+	})
+
 	root.AddCommand(newBenchmarkCommand(runner), newBenchmarkReportCommand(), newBenchmarkCompareCommand())
 
 	var sanitizersAsJSON bool

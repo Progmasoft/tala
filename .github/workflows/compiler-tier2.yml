@@ -49,8 +49,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
-          llvm_root="$(llvm-config --prefix)"
+          sudo apt-get install -y clang lld libc++-dev libc++abi-dev libzstd-dev libxml2-dev zlib1g-dev zstd
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
 
