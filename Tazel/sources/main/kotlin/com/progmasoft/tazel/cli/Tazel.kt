@@ -22,6 +22,7 @@ import com.progmasoft.tazel.driver.UnknownTargetException
 import com.progmasoft.tazel.driver.compilerArguments
 import com.progmasoft.tazel.driver.displayName
 import com.progmasoft.tazel.driver.executableExtension
+import com.progmasoft.tazel.driver.hasTargets
 import com.progmasoft.tazel.driver.loadWorkspace
 import com.progmasoft.tazel.driver.select
 import com.progmasoft.tazel.dsl.DependencyScope
@@ -30,15 +31,20 @@ import com.progmasoft.tazel.dsl.LoadedProject
 import com.progmasoft.tazel.dsl.OperatingSystem
 import com.progmasoft.tazel.dsl.ProjectConfigurationException
 import com.progmasoft.tazel.dsl.ProjectLoader
+import com.progmasoft.tazel.dsl.ProjectLocation
 import com.progmasoft.tazel.dsl.coordinate
 import com.progmasoft.tazel.dsl.discoverProject
+import com.progmasoft.tazel.dsl.projectFileIn
 import com.progmasoft.tazel.lock.LockedPlugin
 import com.progmasoft.tazel.lock.LockedProject
 import com.progmasoft.tazel.lock.LockfileDump
 import com.progmasoft.tazel.lock.ProjectLockFile
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.nio.file.attribute.BasicFileAttributes
 import kotlin.time.TimeSource
 
 /** The exit codes of Tazel. A program run by `tazel run` hands its own code through. */
@@ -48,8 +54,14 @@ object ExitCode {
   const val USAGE = 2
 }
 
-/** A command that stops with a message; the message is all the user needs to see. */
-private class Stop(message: String) : Exception(message)
+/**
+ * A command that stops with a message; the message is all the user needs to see, with [hint] under
+ * it when a word looks like a typo of a real one.
+ */
+private class Stop(
+  message: String,
+  val hint: String? = null,
+) : Exception(message)
 
 /**
  * Runs one command of Tazel.
@@ -76,6 +88,7 @@ class Tazel(
         is Command.Test -> test(command.targets)
         Command.LockResolve -> lockResolve()
         is Command.LockCreateDump -> lockCreateDump(command.path)
+        is Command.LockGraph -> lockGraph(command)
         is Command.Fmt -> tool(Tool.TALAFMT, false, TargetSelection(), command.toolArguments)
         is Command.Lint ->
           tool(Tool.TALALINT, command.workspace, command.targets, command.toolArguments)
@@ -84,7 +97,8 @@ class Tazel(
         Command.Update,
         is Command.Install,
         Command.ViGetPush,
-        Command.ViGetUpdate ->
+        Command.ViGetUpdate,
+        is Command.ViGetVipkgDesc ->
           throw Stop(
             "tazel ${command.name.words} needs ViGet, and the ViGet client is not implemented yet"
           )
@@ -95,7 +109,7 @@ class Tazel(
           )
       }
     } catch (stop: Stop) {
-      fail(stop.message.orEmpty())
+      fail(stop.message.orEmpty(), stop.hint)
     } catch (unknown: UnknownTargetException) {
       fail(
         unknown.message.orEmpty(),
@@ -328,6 +342,162 @@ class Tazel(
     LockfileDump.write(lockfile, dump)
     status("Dumped", dump.toString())
     return ExitCode.SUCCESS
+  }
+
+  /**
+   * Prints the dependency graph of the project, or of every project of the workspace at its root.
+   * The graph is what the lockfiles record, so they are renewed first when they are out of date;
+   * with --locked they are only compared, and one that is missing or out of date is an error.
+   *
+   * `--invert MyPackage` names a project rather than a package, so the graph is then made of every
+   * project below the directory Tazel runs in, and of the workspace that directory belongs to.
+   */
+  private fun lockGraph(command: Command.LockGraph): Int {
+    val invert = command.invert
+    val loader = ProjectLoader(compilerVersion())
+    val workspace =
+      if (invert is InvertTarget.Project) {
+        projectFileAbove(directory)?.let { loadWorkspace(loader, it) }
+      } else {
+        loadWorkspace(loader, discoverProject(directory))
+      }
+    val shown =
+      workspace
+        ?.let {
+          listOf(it.root).filter { root -> root.hasTargets || !root.plan.dependencies.isEmpty } +
+            it.members
+        }
+        .orEmpty()
+    val projects =
+      if (invert is InvertTarget.Project) {
+        (shown + projectsBelow(directory, loader)).distinctBy { it.location.root }
+      } else {
+        shown
+      }
+    projects.forEach { keepLockCurrent(it, command.locked) }
+    val graph = projects.map {
+      graphProject(
+        it.displayName,
+        it.plan.dependencies,
+        it.plan.defaultFeatures,
+        command.allFeatures,
+      )
+    }
+    val lines =
+      when (invert) {
+        is InvertTarget.Project -> dependentsOf(invert.name, projects, graph, command.depth)
+        is InvertTarget.Package -> dependentsOf(invert.coordinate.toString(), graph, command.depth)
+        is InvertTarget.Local -> dependentsOf(invert.path, graph, command.depth)
+        null -> renderGraph(graph, GraphView(command.duplicates, null, command.depth))
+      }
+    if (lines.isEmpty()) {
+      terminal.println(dim("no package is there in more than one version"))
+    } else {
+      lines.forEach(terminal::println)
+    }
+    if (graph.any { project -> project.edges.any { it.target is GraphPackage.Remote } }) {
+      terminal.println(
+        dim("ViGet packages are shown without their own dependencies until Tazel can fetch them"),
+        stderr = true,
+      )
+    }
+    return ExitCode.SUCCESS
+  }
+
+  /** Renews the lockfile of [project] when it is out of date, or, when [locked], refuses to. */
+  private fun keepLockCurrent(
+    project: LoadedProject,
+    locked: Boolean,
+  ) {
+    val path = project.location.root.resolve(ProjectLockFile.FILE_NAME)
+    if (ProjectLockFile.isCurrent(path, locked(project))) return
+    if (locked) {
+      val state =
+        if (Files.exists(path)) "does not record what the project declares" else "does not exist"
+      throw Stop(
+        "$path $state, and --locked leaves it as it is",
+        "renew it with tazel lock resolve, or leave out --locked",
+      )
+    }
+    ProjectLockFile.write(project.location.root, locked(project))
+    terminal.println(
+      (bold + brightGreen)("Locked".padStart(STATUS_WIDTH)) + " $path",
+      stderr = true,
+    )
+  }
+
+  /** The lines of `--invert` for a package: each version of [key] with its dependents. */
+  private fun dependentsOf(
+    key: String,
+    graph: List<GraphProject>,
+    depth: Int?,
+  ): List<String> {
+    if (graph.packagesWithKey(key).isEmpty()) {
+      throw Stop(
+        "no project here depends on $key",
+        closestTo(key, graph.packageKeys())?.let { didYouMean(key, "--invert $it") },
+      )
+    }
+    return renderGraph(graph, GraphView(invert = key, depth = depth))
+  }
+
+  /** The project file of [start] or of the nearest directory above it; null when there is none. */
+  private fun projectFileAbove(start: Path): ProjectLocation? =
+    generateSequence(start.toAbsolutePath().normalize()) { it.parent }
+      .firstNotNullOfOrNull(::projectFileIn)
+
+  /** The lines of `--invert MyPackage`: every project of that name with its dependents. */
+  private fun dependentsOf(
+    name: String,
+    projects: List<LoadedProject>,
+    graph: List<GraphProject>,
+    depth: Int?,
+  ): List<String> {
+    val named = projects.filter { it.plan.identity?.name == name }
+    if (named.isEmpty()) {
+      val names = projects.mapNotNull { it.plan.identity?.name }.distinct()
+      throw Stop(
+        "no project below $directory has the name $name",
+        closestTo(name, names)?.let { didYouMean(name, "--invert $it") },
+      )
+    }
+    val targets = named.map {
+      val place = directory.relativize(it.location.root).joinToString("/")
+      NamedProject(name, it.plan.identity?.version, place.ifEmpty { "." })
+    }
+    return renderDependents(targets, graph, depth)
+  }
+
+  /**
+   * Every project below [start], [start] included, in the order of their paths. A folder whose name
+   * starts with a dot, such as .git or .tazel, is not looked into.
+   */
+  private fun projectsBelow(
+    start: Path,
+    loader: ProjectLoader,
+  ): List<LoadedProject> {
+    val locations = mutableListOf<ProjectLocation>()
+    Files.walkFileTree(
+      start,
+      object : SimpleFileVisitor<Path>() {
+        override fun preVisitDirectory(
+          folder: Path,
+          attributes: BasicFileAttributes,
+        ): FileVisitResult {
+          if (folder != start && folder.fileName.toString().startsWith(".")) {
+            return FileVisitResult.SKIP_SUBTREE
+          }
+          projectFileIn(folder)?.let(locations::add)
+          return FileVisitResult.CONTINUE
+        }
+
+        override fun visitFileFailed(
+          file: Path,
+          problem: java.io.IOException,
+        ) = FileVisitResult.CONTINUE
+      },
+    )
+    return locations.sortedBy { it.root.toString() }.map(loader::load)
   }
 
   /** Starts the formatter or the linter once per ViPkg, on every source the ViPkg owns. */

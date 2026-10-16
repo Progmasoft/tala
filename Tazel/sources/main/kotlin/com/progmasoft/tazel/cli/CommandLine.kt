@@ -26,6 +26,22 @@ data class PackageCoordinate(
   override fun toString() = "$publisher.$name"
 }
 
+/** What `tazel lock graph --invert` shows the dependents of, by how it was written. */
+sealed interface InvertTarget {
+  /**
+   * `MyPackage`: every project below the directory Tazel runs in whose `project.name` is [name].
+   * Its dependents are the projects that use a ViGet package of that name from any publisher, or a
+   * local `MyPackage.vipkg`.
+   */
+  data class Project(val name: String) : InvertTarget
+
+  /** `Publisher.Name`: that ViGet package, in every version the projects declare. */
+  data class Package(val coordinate: PackageCoordinate) : InvertTarget
+
+  /** `Libraries/Local.vipkg`: the local package at that path of a project. */
+  data class Local(val path: String) : InvertTarget
+}
+
 /** The commands of Tazel by the words that select them. */
 enum class CommandName(val words: String, val summary: String) {
   CHECK("check", "check the sources of the project without writing an executable"),
@@ -37,11 +53,13 @@ enum class CommandName(val words: String, val summary: String) {
     "lock create-dump",
     "write the lockfile as text, to LOCK.dump unless --path names a file",
   ),
+  LOCK_GRAPH("lock graph", "print the dependency graph; renews LOCK.sqlite3 unless --locked"),
   UPDATE("update", "update the dependencies of the system and of the project"),
   INSTALL("install", "download a package from ViGet into the project"),
   VIPKG_CREATE("vipkg create", "write a local .vipkg for every target"),
   VIGET_PUSH("viget push", "build, test and publish the package to ViGet for the first time"),
   VIGET_UPDATE("viget update", "build, test and publish a new version of the package"),
+  VIGET_VIPKG_DESC("viget vipkg-desc", "print the description of a package of ViGet"),
   VERSION("version", "print the version of Tazel"),
   HELP("help", "print this help, or the help of one command"),
   FMT("fmt", "format the sources of the project with talafmt"),
@@ -84,6 +102,22 @@ sealed interface Command {
     override val name = CommandName.LOCK_CREATE_DUMP
   }
 
+  /**
+   * Prints the dependency graph. [locked] leaves LOCK.sqlite3 as it is and fails when it does not
+   * record what the project declares. [allFeatures] turns every feature of the project on.
+   * [duplicates] shows only the packages that are there in more than one version, [invert] the
+   * projects that depend on one package, and [depth] how many levels below each root are printed.
+   */
+  data class LockGraph(
+    val locked: Boolean = false,
+    val allFeatures: Boolean = false,
+    val duplicates: Boolean = false,
+    val invert: InvertTarget? = null,
+    val depth: Int? = null,
+  ) : Command {
+    override val name = CommandName.LOCK_GRAPH
+  }
+
   data object Update : Command {
     override val name = CommandName.UPDATE
   }
@@ -106,6 +140,11 @@ sealed interface Command {
 
   data object ViGetUpdate : Command {
     override val name = CommandName.VIGET_UPDATE
+  }
+
+  /** Prints the `project.description` of [coordinate] as ViGet holds it. */
+  data class ViGetVipkgDesc(val coordinate: PackageCoordinate) : Command {
+    override val name = CommandName.VIGET_VIPKG_DESC
   }
 
   data object Version : Command {
@@ -182,6 +221,9 @@ private fun hint(
 
 /** The first word of every command, in the order of the help. */
 private val commandWords = CommandName.entries.map { it.words.substringBefore(' ') }.distinct()
+
+private val graphFlags =
+  listOf("--locked", "--all-features", "--duplicates", "-d", "--invert", "-i", "--depth")
 
 private val selectionFlags = listOf("--vipkg", "-p", "--executable", "-e", "--library", "-l")
 
@@ -266,8 +308,9 @@ private class ArgumentReader(private val arguments: List<String>) {
       "run" -> run()
       "test" -> Command.Test(selection(CommandName.TEST))
       "lock" ->
-        when (action("lock", "resolve", "create-dump")) {
+        when (action("lock", "resolve", "create-dump", "graph")) {
           "resolve" -> Command.LockResolve.also { finish(CommandName.LOCK_RESOLVE) }
+          "graph" -> lockGraph()
           else -> lockCreateDump()
         }
       "update" -> Command.Update.also { finish(CommandName.UPDATE) }
@@ -277,9 +320,10 @@ private class ArgumentReader(private val arguments: List<String>) {
         Command.ViPkgCreate.also { finish(CommandName.VIPKG_CREATE) }
       }
       "viget" ->
-        when (action("viget", "push", "update")) {
+        when (action("viget", "push", "update", "vipkg-desc")) {
           "push" -> Command.ViGetPush.also { finish(CommandName.VIGET_PUSH) }
-          else -> Command.ViGetUpdate.also { finish(CommandName.VIGET_UPDATE) }
+          "update" -> Command.ViGetUpdate.also { finish(CommandName.VIGET_UPDATE) }
+          else -> vipkgDesc()
         }
       "version" -> Command.Version.also { finish(CommandName.VERSION) }
       "help" -> help()
@@ -310,6 +354,54 @@ private class ArgumentReader(private val arguments: List<String>) {
       }
     }
     return Command.LockCreateDump(path)
+  }
+
+  private fun vipkgDesc(): Command {
+    if (!hasNext()) {
+      reject("tazel viget vipkg-desc needs a package: tazel viget vipkg-desc Publisher.Name")
+    }
+    val argument = next()
+    if (argument.startsWith("-")) {
+      reject("'$argument' is not an option of tazel viget vipkg-desc; it takes Publisher.Name")
+    }
+    val command = Command.ViGetVipkgDesc(packageCoordinate(argument))
+    finish(CommandName.VIGET_VIPKG_DESC)
+    return command
+  }
+
+  private fun lockGraph(): Command {
+    var graph = Command.LockGraph()
+    val seen = mutableSetOf<String>()
+    fun once(flag: String) {
+      if (!seen.add(flag)) reject("$flag is written twice")
+    }
+    while (hasNext()) {
+      when (val argument = next()) {
+        "--locked" -> graph = graph.copy(locked = true).also { once("--locked") }
+        "--all-features" -> graph = graph.copy(allFeatures = true).also { once("--all-features") }
+        "--duplicates",
+        "-d" -> graph = graph.copy(duplicates = true).also { once("--duplicates") }
+        "--invert",
+        "-i" -> {
+          once("--invert")
+          graph = graph.copy(invert = invertTarget(value(argument)))
+        }
+        "--depth" -> {
+          once("--depth")
+          val text = value(argument)
+          val depth =
+            text.toIntOrNull()?.takeIf { it >= 0 }
+              ?: reject("--depth takes a number of levels, 0 or more, and '$text' is not one")
+          graph = graph.copy(depth = depth)
+        }
+        else ->
+          reject("'$argument' is not an argument of tazel lock graph", hint(argument, graphFlags))
+      }
+    }
+    if (graph.duplicates && graph.invert != null) {
+      reject("--duplicates and --invert each choose what to show; write one of them")
+    }
+    return graph
   }
 
   /** A command whose only arguments select targets. */
@@ -421,6 +513,24 @@ private val identifier = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 /** A target is named like the declaration it comes from: one case-sensitive identifier. */
 internal fun isTargetName(text: String) = identifier.matches(text)
+
+/**
+ * The target of `--invert`. A path that ends in `.vipkg` is a local package, so `Name.vipkg` is
+ * never read as the ViGet package `Name.vipkg`; a word with one dot is a ViGet package, and one
+ * identifier the name of a project.
+ */
+private fun invertTarget(text: String): InvertTarget =
+  when {
+    text.endsWith(".vipkg", ignoreCase = true) ->
+      InvertTarget.Local(text.replace('\\', '/').removePrefix("./"))
+    '.' in text -> InvertTarget.Package(packageCoordinate(text))
+    identifier.matches(text) -> InvertTarget.Project(text)
+    else ->
+      reject(
+        "--invert takes a project name, Publisher.Name or the path of a .vipkg, and '$text' is " +
+          "none of them"
+      )
+  }
 
 private fun packageCoordinate(text: String): PackageCoordinate {
   val parts = text.split('.')
