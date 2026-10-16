@@ -56,6 +56,15 @@ build:linux --repo_env=CC=clang
 build:linux --repo_env=BAZEL_COMPILER=clang
 build:linux --cxxopt=-std=c++20
 build:linux --host_cxxopt=-std=c++20
+# Linux builds with libc++, as macOS does. The backend passes standard library
+# types through LLVM's C++ API, so LLVM itself is built with libc++ as well:
+# the developer helper downloads that build (`develop llvm`) and points
+# LLVM_ROOT at it. The toolchain configuration would otherwise link libstdc++.
+build:linux --cxxopt=-stdlib=libc++
+build:linux --host_cxxopt=-stdlib=libc++
+build:linux --linkopt=-stdlib=libc++
+build:linux --host_linkopt=-stdlib=libc++
+build:linux --repo_env=BAZEL_LINKLIBS=-lc++:-lm
 
 # These profiles are implementation details of helpers/cmd/develop. Keeping the
 # compiler and linker flags here makes sanitizer builds reproducible while the
@@ -123,6 +132,13 @@ build:fuzz-windows --linkopt=/DEFAULTLIB:clang_rt.fuzzer-x86_64.lib
 build:fuzz-macos --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --per_file_copt=^(Talac|Interactive|Benchmarks)/.*,-^Talac/Runtime/Hosted/.*@-fsanitize=fuzzer-no-link
 build:fuzz-linux --linkopt=-fsanitize=fuzzer
+# The libFuzzer runtime comes with the distribution's Clang, built with
+# libstdc++. It keeps its own std::__cxx11 objects internally, which do not
+# collide with the std::__1 objects of libc++, so the driver links libstdc++
+# beside the libc++ the compiler code uses. The option goes to the linker
+# directly: Clang's driver rewrites a plain -lstdc++ into the library that
+# -stdlib selects, which is libc++ here.
+build:fuzz-linux --linkopt=-Wl,--push-state,--no-as-needed,-lstdc++,--pop-state
 # AFL++ builds the same libFuzzer drivers with its own compiler. afl-clang-fast
 # instruments every translation unit itself and links its libFuzzer-compatible
 # driver for -fsanitize=fuzzer. It does not inherit fuzz-linux: afl-clang-fast

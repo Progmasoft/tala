@@ -122,7 +122,10 @@ func selectSanitizer(currentHost host, requested string) (sanitizer, error) {
 			}, nil
 		}
 		if currentHost.kind == hostLinux {
-			return sanitizer{name: "AddressSanitizer", config: "asan-linux", environment: []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1"}}, nil
+			// As on macOS, the LLVM libraries are built with libc++ but without
+			// instrumentation, so libc++ container annotations would report
+			// overflows inside allocations that LLVM fills and reads.
+			return sanitizer{name: "AddressSanitizer", config: "asan-linux", environment: []string{"ASAN_OPTIONS=halt_on_error=1:strict_string_checks=1:detect_container_overflow=0"}}, nil
 		}
 		return sanitizer{
 			name:   "AddressSanitizer",
@@ -222,6 +225,9 @@ func runDoctor(currentHost host, runner commandRunner) error {
 
 func requireBuildTools(currentHost host, runner commandRunner) error {
 	if _, err := findBazel(runner); err != nil {
+		return err
+	}
+	if err := prepareLinuxLLVMRoot(currentHost, runner); err != nil {
 		return err
 	}
 	tools := []string{"llvm-config", "ghc", "cabal"}

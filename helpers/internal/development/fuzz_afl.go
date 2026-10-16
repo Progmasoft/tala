@@ -210,6 +210,9 @@ func runAFLCampaign(repository string, currentHost host, runner commandRunner) e
 	if err != nil {
 		return err
 	}
+	if err := prepareLinuxLLVMRoot(currentHost, runner); err != nil {
+		return err
+	}
 	selected, err := selectSanitizer(currentHost, "address-undefined")
 	if err != nil {
 		return err

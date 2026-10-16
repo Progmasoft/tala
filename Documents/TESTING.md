@@ -215,8 +215,9 @@ support the separate `sanitize thread` profile. Each profile verifies real
 intentional failures before running the complete native suite set. See
 [Fuzzing](FUZZING.md) for the Windows and Fedora TSan boundaries.
 
-On macOS, AddressSanitizer runs with `detect_container_overflow=0`. The LLVM
-libraries from Homebrew are not instrumented, and libc++ annotates a vector
+On macOS and Linux, AddressSanitizer runs with `detect_container_overflow=0`.
+Both build with libc++, and their LLVM libraries (from Homebrew on macOS, from
+the toolchain release on Linux) are not instrumented. libc++ annotates a vector
 only where instrumented code grows it, so a vector that LLVM fills and reads
 would be reported as overflowing its own allocation. Out-of-bounds,
 use-after-free and the other address checks stay enabled.

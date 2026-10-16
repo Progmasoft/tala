@@ -14,8 +14,9 @@ Official Tala development is supported on:
 - Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD;
 - macOS 15 Sequoia, using Clang/LLD and the Apple SDK (CI tests it on Intel); and
 - macOS 26 Tahoe, using Clang/LLD and the Apple SDK (CI tests it on Apple silicon);
-- Ubuntu 26.04 LTS, using Clang/LLD and LLVM development packages; and
-- Fedora 43 (the Fedora N-1 release as of September 2026), using Clang/LLD and LLVM development packages.
+- Ubuntu 26.04 LTS, using Clang/LLD and libc++ from the distribution and LLVM built with libc++; and
+- Fedora 43 (the Fedora N-1 release as of September 2026), using Clang/LLD and libc++ from the distribution and LLVM
+  built with libc++.
 
 Bazel chooses `windows`, `macos`, or `linux` settings automatically. A developer does not pass an OS-specific `--config`.
 Visual Studio-bundled compilers are not part of the Windows toolchain, and the full Xcode IDE is not a
@@ -25,7 +26,8 @@ Required tools:
 
 - Bazelisk;
 - Clang and LLD from an LLVM installation appropriate to the host;
-- an LLVM development package containing LLVM headers, libraries, and `llvm-config`;
+- an LLVM development tree containing LLVM headers, libraries, and `llvm-config`. On Linux it is LLVM built with
+  libc++, which the developer helper downloads; see [LLVM discovery](#llvm-discovery);
 - GHC 9.10 or newer and Cabal; every maintained Haskell component uses the `GHC2024` edition;
 - JDK 25. Tazel evaluates project files with the Kotlin scripting host it embeds, so no Kotlin installation is needed.
 
@@ -69,6 +71,22 @@ Do not write a machine-specific LLVM path into the repository. Use one of these 
 
 - set `LLVM_ROOT` to an LLVM development installation prefix; or
 - put the development package's `llvm-config` on `PATH`.
+
+Linux builds with libc++, as macOS does, and the backend passes standard library types through LLVM's C++ API, so it
+links an LLVM built with libc++ as well. The LLVM packages of Ubuntu and Fedora are built with libstdc++ and cannot be
+used. Install Clang, LLD, libc++ and zstd from the distribution (`prebuild install` does), then let the helper fetch
+LLVM:
+
+```bash
+go run ./helpers/cmd/develop llvm
+```
+
+It downloads LLVM 22.1.6 built with libc++ for the host from the toolchain release of the repository, refuses the
+archive unless its SHA-256 is the one `helpers/internal/development/llvm_toolchain.go` records, unpacks it below
+`TALA_LLVM_CACHE` (default: `tala/llvm` in the user cache directory) and prints its root. The build, test, sanitize,
+fuzz and bundle commands do the same by themselves when `LLVM_ROOT` is not set, so a Linux checkout needs no LLVM
+setting at all. The archives are built by the `LLVM with libc++` workflow, for x86-64 only so far; a published archive
+is never replaced, and a rebuild is published under a new revision with new digests.
 
 The Bazel repository rule fails during analysis if it cannot discover a complete LLVM development tree. It asks the
 selected `llvm-config` for its actual include and library directories; these may live under `lib64` or a versioned

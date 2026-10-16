@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Progmasoft/tala/helpers/internal/repository"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // Main runs the developer command with the host process streams.
@@ -86,6 +88,16 @@ func executeWorkflow(arguments []string, runner commandRunner) error {
 			return err
 		}
 		return runThreadFuzzCampaign(repository, currentHost, runner)
+	case "llvm":
+		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
+			return errors.New("llvm does not accept arguments")
+		}
+		root, err := ensureLLVMToolchain(currentHost, runner, &http.Client{Timeout: 30 * time.Minute})
+		if err != nil {
+			return err
+		}
+		fmt.Println(root)
+		return nil
 	case "fuzz-afl":
 		if len(commandArguments) != 0 || len(bazelArguments) != 0 {
 			return errors.New("fuzz-afl does not accept arguments")
