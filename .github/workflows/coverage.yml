@@ -21,7 +21,7 @@ concurrency:
 jobs:
   native:
     name: Native C++ LCOV
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,6 +55,33 @@ jobs:
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
+      - name: Pin the SDK of the selected Xcode
+        shell: bash
+        run: |
+          # The Command Line Tools SDK can be newer than the linker of the
+          # selected Xcode: SDK 27.0 lists arm64e.x1, which ld of Xcode 26
+          # rejects as a malformed file. Homebrew clang's configuration files
+          # and the GHC installation name that SDK by path, which overrides
+          # SDKROOT, so every such reference is pointed at the selected SDK.
+          sdk="$(xcrun --show-sdk-path)"
+          echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
+          clt='/Library/Developer/CommandLineTools/SDKs/MacOSX[0-9.]*sdk'
+          libdir="$(ghc --print-libdir)"
+          changed=0
+          for file in "$LLVM_ROOT"/etc/clang/*.cfg \
+              "$(brew --prefix)"/etc/clang/*.cfg \
+              "$libdir/settings" "$libdir"/package.conf.d/*.conf; do
+            if [ -f "$file" ] && grep -Eq "$clt" "$file"; then
+              echo "Pinning $sdk in $file"
+              sed -E -i '' "s#$clt#$sdk#g" "$file"
+              changed=1
+            fi
+          done
+          if [ "$changed" = 1 ]; then
+            ghc-pkg recache --global
+          else
+            echo "No reference to the Command Line Tools SDK was found"
+          fi
       - name: Resolve frontend package index
         shell: bash
         working-directory: Talac
