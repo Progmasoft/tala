@@ -27,7 +27,7 @@ library
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.13,
         text >=2.1 && <2.3,
-        tala-compiler >=0.6.0 && <0.7
+        tala-tooling >=0.6.0 && <0.7
     default-language: GHC2024
 
 executable talafmt
@@ -50,7 +50,7 @@ executable talafmt
         process >=1.6 && <1.7,
         text >=2.1 && <2.3,
         talafmt,
-        tala-compiler
+        tala-tooling
     default-language: GHC2024
 
 test-suite talafmt-tests
@@ -63,5 +63,5 @@ test-suite talafmt-tests
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.13,
         talafmt,
-        tala-compiler
+        tala-tooling
     default-language: GHC2024

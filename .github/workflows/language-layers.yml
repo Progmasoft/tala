@@ -71,7 +71,8 @@ jobs:
             "Talac/Haskell/Syntax",
             "Talac/Haskell/Frontend",
             "Talac/Haskell/Core",
-            "Talac/Haskell/Driver"
+            "Talac/Haskell/Driver",
+            "Talac/Haskell/Tooling"
           )
           foreach ($directory in $packageDirectories) {
             Push-Location $directory

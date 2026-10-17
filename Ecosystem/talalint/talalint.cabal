@@ -21,7 +21,7 @@ library
     build-depends:
         base >=4.20 && <4.23,
         talafmt >=0.2 && <0.3,
-        tala-compiler >=0.6.0 && <0.7
+        tala-tooling >=0.6.0 && <0.7
     default-language: GHC2024
 
 executable talalint
@@ -38,7 +38,7 @@ executable talalint
         text >=2.1 && <2.3,
         talafmt,
         talalint,
-        tala-compiler
+        tala-tooling
     default-language: GHC2024
 
 test-suite talalint-tests
@@ -51,5 +51,5 @@ test-suite talalint-tests
         base >=4.20 && <4.23,
         talafmt,
         talalint,
-        tala-compiler
+        tala-tooling
     default-language: GHC2024
