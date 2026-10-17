@@ -5,7 +5,7 @@
 
 Tala Interactive is the expression-oriented REPL distributed as `tali`. It is a user of the compiler, not a second
 language implementation: source cells enter the maintained Haskell frontend and then follow the production native
-pipeline. The public compiler remains the `talac` command.
+pipeline. The public compiler remains the Talac command.
 
 ## Invocation
 
@@ -17,7 +17,7 @@ tali --help
 
 `tali` is a program of its own; the compiler has no command that starts it.
 
-The repository's native bundle stages `talac`, `tali`, and the private `tala-frontend` shared library together. `tali`
+The repository's native bundle stages Talac, `tali`, and the private `tala-frontend` shared library together. `tali`
 loads the shared library beside its own executable. The library is not a user-facing compiler, and an unrelated copy on
 `PATH` cannot override it.
 

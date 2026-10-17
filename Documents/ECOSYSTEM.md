@@ -235,7 +235,7 @@ without coupling all releases to the compiler workflow.
 ## Boundary rules
 
 - Do not move language parsing or type checking into editor code.
-- Do not make `talac` silently format or lint during ordinary compilation.
+- Do not make Talac silently format or lint during ordinary compilation.
 - Do not make Ecosystem/talafmt/Linter installation a compiler build dependency.
 - Do not use filesystem layout as namespace identity.
 - Do not call an unevaluated Kotlin model an active configuration evaluator.
