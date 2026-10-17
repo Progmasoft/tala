@@ -196,7 +196,7 @@ working tree clean, because a workflow tests what the remote has.`,
 			return crossplatform.Dispatch(engine, checkout, workflows, branch, watch, output, errorOutput)
 		},
 	}
-	ci.Flags().StringSliceVar(&hostedNames, "target", nil, "windows, macos-15, macos-26, ubuntu-26.04 or fedora-43; repeat or separate with commas (default: all)")
+	ci.Flags().StringSliceVar(&hostedNames, "target", nil, "windows, macos-15-intel, macos-26, ubuntu-26.04 or fedora-43; repeat or separate with commas (default: all)")
 	ci.Flags().BoolVar(&watch, "watch", false, "follow the runs to their end and fail if one fails")
 	ci.Flags().BoolVar(&hostedJSON, "list", false, "print the targets the workflows cover as JSON and start nothing")
 

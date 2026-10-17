@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+name: OSV-Scanner
+
+# Matches the locked dependencies of the repository against the OSV database:
+# the Go helpers (go.sum) and the npm packages of the VS Code extension
+# (package-lock.json). A pull request fails only on a vulnerability it brings
+# in; main and the weekly run report every known one to code scanning, so an
+# advisory published after a merge shows up without turning main red.
+# Dependency Review gates the same pull requests on severity; this adds the
+# scan of what is already on main.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions: {}
+
+concurrency:
+  group: osv-scanner-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pull-request:
+    name: New vulnerabilities
+    if: github.event_name == 'pull_request'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+    with:
+      scan-args: |-
+        --recursive
+        ./
+
+  main:
+    name: Known vulnerabilities
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+    with:
+      scan-args: |-
+        --recursive
+        ./
+      fail-on-vuln: false

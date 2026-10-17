@@ -29,13 +29,13 @@ jobs:
       # the steps of the path that leads to it.
       security-events: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -51,8 +51,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
-          llvm_root="$(llvm-config --prefix)"
+          sudo apt-get install -y clang lld libc++-dev libc++abi-dev libzstd-dev libxml2-dev zlib1g-dev zstd
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
           clang --version

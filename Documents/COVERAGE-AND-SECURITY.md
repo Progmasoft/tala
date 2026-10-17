@@ -58,6 +58,13 @@ Dependabot no longer proposes version updates here, so that two bots do not open
 and its security updates stay enabled in the repository settings: a dependency with a known vulnerability is still
 reported, and its fix is still proposed, by Dependabot. Neither bot replaces CodeQL.
 
+[OSV-Scanner](../.github/workflows/osv-scanner.yml) matches the locked dependencies against the OSV database: the Go
+helpers (`helpers/go.sum`) and the VS Code extension (`package-lock.json`). A pull request fails only on a
+vulnerability it introduces. The run on `main` and the weekly run upload every known one to code scanning without
+failing, so an advisory published after a merge is reported without turning `main` red. The Gradle builds have no
+lock files and the Bazel and Cabal resolutions have no format OSV-Scanner reads, so those dependencies are not part
+of this scan.
+
 [Codacy configuration](../.codacy.yml) excludes third-party and generated output while retaining project-owned
 implementation, tests, and CI. Codacy's GitHub application must be connected to the Progmasoft organization and this
 repository added in Codacy before its hosted analysis runs. No Codacy API token is needed for hosted static analysis;
