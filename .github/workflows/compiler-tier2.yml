@@ -22,8 +22,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   ubuntu-clang:
     name: Ubuntu 26.04 LTS Clang
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 75
     steps:
@@ -105,7 +113,13 @@ jobs:
     name: Compiler Tier 2 Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [ubuntu-clang]
+    needs: [changes, ubuntu-clang]
     steps:
       - name: Require the native and sanitizer host
-        run: test '${{ needs.ubuntu-clang.result }}' = success
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
+        run: |
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.ubuntu-clang.result }}' = success
+          fi

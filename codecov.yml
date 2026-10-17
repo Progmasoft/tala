@@ -60,13 +60,13 @@ coverage:
 # The sources each flag answers for. A report is only counted for the paths
 # of its flag, so that a file is never measured by a suite that does not own
 # it. A flag whose suite did not run for a commit keeps its last figure
-# instead of dropping to nothing; the Haskell suite runs for every commit and
-# needs no such memory.
+# instead of dropping to nothing. The Haskell suite, like the native one, is
+# skipped for a pull request that changes nothing the native build reads.
 flags:
   haskell-frontend:
     paths:
       - Talac/Haskell/
-    carryforward: false
+    carryforward: true
   native-cpp:
     paths:
       - Talac/

@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/Progmasoft/tala/helpers/internal/crossplatform"
 	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"github.com/spf13/cobra"
@@ -39,9 +40,12 @@ The Linux targets run from every host. macOS and Windows do not run in a
 container; "targets" lists them with the reason.`
 
 func main() {
-	command := newCommand(crossplatform.SystemEngine{}, runtime.GOOS, os.Stdout, os.Stderr)
-	if err := command.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+	output := console.New()
+	command := newCommand(crossplatform.SystemEngine{Console: output}, runtime.GOOS, os.Stdout, os.Stderr)
+	err := command.Execute()
+	output.Summary()
+	if err != nil {
+		output.Failure("%v", err)
 		os.Exit(1)
 	}
 }
@@ -164,8 +168,8 @@ func newCommand(engine crossplatform.Engine, hostOS string, output, errorOutput 
 		Short: "Start the compiler workflows for the current branch, on real Windows, macOS and Linux machines.",
 		Long: `Start the compiler workflows for the current branch.
 
-The workflows build and test on Windows, macOS 15 and 26, Ubuntu 26.04 and
-Fedora 43, on machines GitHub runs. They start by themselves for a pull
+The workflows build and test on Windows, macOS 26 and Ubuntu 26.04, on
+machines GitHub runs. They start by themselves for a pull
 request; this starts them for a branch that has none yet. Nothing runs on
 this machine and nothing is stored on it. The branch has to be pushed and the
 working tree clean, because a workflow tests what the remote has.`,
@@ -196,7 +200,7 @@ working tree clean, because a workflow tests what the remote has.`,
 			return crossplatform.Dispatch(engine, checkout, workflows, branch, watch, output, errorOutput)
 		},
 	}
-	ci.Flags().StringSliceVar(&hostedNames, "target", nil, "windows, macos-15-intel, macos-26, ubuntu-26.04 or fedora-43; repeat or separate with commas (default: all)")
+	ci.Flags().StringSliceVar(&hostedNames, "target", nil, "windows, macos-26 or ubuntu-26.04; repeat or separate with commas (default: all)")
 	ci.Flags().BoolVar(&watch, "watch", false, "follow the runs to their end and fail if one fails")
 	ci.Flags().BoolVar(&hostedJSON, "list", false, "print the targets the workflows cover as JSON and start nothing")
 

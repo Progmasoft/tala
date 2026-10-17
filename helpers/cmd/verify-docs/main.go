@@ -7,8 +7,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -34,8 +36,11 @@ type moduleCoverage struct {
 }
 
 func main() {
-	if err := execute(os.Args[1:], os.Stdout, os.Stderr, verify); err != nil {
-		fmt.Fprintln(os.Stderr, "API documentation verification failed:", err)
+	steps = console.New()
+	err := execute(os.Args[1:], os.Stdout, os.Stderr, verify)
+	steps.Summary()
+	if err != nil {
+		steps.Failure("API documentation verification failed: %v", err)
 		os.Exit(1)
 	}
 }
@@ -141,22 +146,34 @@ func findRepositoryRoot() (string, error) {
 	}
 }
 
+// steps presents the documentation tools; main gives it the host's streams.
+var steps = console.NewWith(console.Plain, os.Stdout, os.Stderr)
+
 func run(directory, executable string, arguments ...string) error {
-	command := exec.Command(executable, arguments...)
-	command.Dir = directory
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	if err := command.Run(); err != nil {
+	err := steps.Step(console.Describe(executable, arguments), func(stdout, stderr io.Writer) error {
+		command := exec.Command(executable, arguments...)
+		command.Dir = directory
+		command.Stdout = stdout
+		command.Stderr = stderr
+		return command.Run()
+	})
+	if err != nil {
 		return fmt.Errorf("%s %s: %w", executable, strings.Join(arguments, " "), err)
 	}
 	return nil
 }
 
+// runCaptured runs a tool as a step and also returns everything it printed.
 func runCaptured(directory, executable string, arguments ...string) (string, error) {
-	command := exec.Command(executable, arguments...)
-	command.Dir = directory
-	output, err := command.CombinedOutput()
-	return string(output), err
+	var output bytes.Buffer
+	err := steps.Step(console.Describe(executable, arguments), func(stdout, stderr io.Writer) error {
+		command := exec.Command(executable, arguments...)
+		command.Dir = directory
+		command.Stdout = io.MultiWriter(stdout, &output)
+		command.Stderr = io.MultiWriter(stderr, &output)
+		return command.Run()
+	})
+	return output.String(), err
 }
 
 func parseCoverage(output string) ([]moduleCoverage, error) {

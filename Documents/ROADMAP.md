@@ -60,7 +60,7 @@ runtime features must not displace completion of that pipeline.
 - define the AARC closure environment and indirect invocation ABI;
 - connect project-wide object/assembly output with unambiguous names;
 - validate target-specific calling conventions and link inputs; and
-- keep `talac` as the only public compiler command while the private Haskell frontend remains an adjacent companion process.
+- keep Talac as the only public compiler command while the private Haskell frontend remains an adjacent companion process.
 
 ### 5. Project and ecosystem integration
 

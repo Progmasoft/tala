@@ -9,14 +9,15 @@ direct build interfaces for their Haskell and Kotlin ownership boundaries.
 
 ## Official hosts
 
-Official Tala development is supported on:
+Official Tala development is supported on the hosts the workflows test:
 
-- Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD;
-- macOS 15 Sequoia, using Clang/LLD and the Apple SDK (CI tests it on Intel); and
-- macOS 26 Tahoe, using Clang/LLD and the Apple SDK (CI tests it on Apple silicon);
-- Ubuntu 26.04 LTS, using Clang/LLD and libc++ from the distribution and LLVM built with libc++; and
-- Fedora 43 (the Fedora N-1 release as of September 2026), using Clang/LLD and libc++ from the distribution and LLVM
-  built with libc++.
+- Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD (CI tests it on Windows Server 2025);
+- macOS 26 Tahoe on Apple silicon, using Clang/LLD and the Apple SDK; and
+- Ubuntu 26.04 LTS, using Clang/LLD and libc++ from the distribution and LLVM built with libc++.
+
+macOS 15 Sequoia, macOS on Intel and Fedora 43 are no longer tested by the workflows. The helpers still recognize them
+(`develop`, `prebuild` and `develop llvm` keep their setup for Fedora 43), so a build there may work, but it is not an
+official host.
 
 Bazel chooses `windows`, `macos`, or `linux` settings automatically. A developer does not pass an OS-specific `--config`.
 Visual Studio-bundled compilers are not part of the Windows toolchain, and the full Xcode IDE is not a
@@ -121,7 +122,7 @@ go run ./helpers/cmd/develop build
 go run ./helpers/cmd/develop test
 ```
 
-`build` compiles `talac`, `tali`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
+`build` compiles Talac, `tali`, and 16 component-owned test targets (15 Catch3 suites plus the C11 AARC ABI contract).
 `test` performs the same build and then executes each native program directly. This
 avoids introducing Git Bash/MSYS solely for Bazel's POSIX-oriented `cc_test` launcher on Windows while retaining the same
 suite set on macOS.
@@ -133,7 +134,7 @@ go run ./helpers/cmd/develop version 0.6.0
 ```
 
 The check compares `MODULE.bazel`, the changelog heading, the Haskell package, and the Kotlin project runtime using exact
-release lines. If a Bazel-built `talac` is available, its `version` output must agree as well. This Go command replaces the
+release lines. If a Bazel-built Talac is available, its `version` output must agree as well. This Go command replaces the
 retired root `release.java`; repository automation does not require a Java script runtime.
 
 Useful component targets for incremental work are:
@@ -172,15 +173,15 @@ Kotlin:
 
 The repository wrapper pins the Gradle distribution used by the project. Use it instead of a machine-global Gradle command.
 JDK 25 must be visible to the wrapper process. Kotlin Script Runner remains an external runtime requirement; it is not
-embedded into `talac`.
+embedded into Talac.
 
 ## Building the private frontend
 
-The Haskell driver package produces the private frontend consumed by `talac`. Build all compiler packages together so Cabal
+The Haskell driver package produces the private frontend consumed by Talac. Build all compiler packages together so Cabal
 selects one coherent local package set:
 
 ```powershell
-Push-Location Compiler
+Push-Location Talac
 try {
   cabal build all
 } finally {
@@ -201,7 +202,7 @@ Build and validate an install-shaped compiler directory with one command:
 go run ./helpers/cmd/develop bundle
 ```
 
-The command performs both build-system steps deliberately: Bazel produces the C++20 `talac` driver and Cabal produces the
+The command performs both build-system steps deliberately: Bazel produces the C++20 Talac driver and Cabal produces the
 Haskell frontend shared library. It then stages a fresh directory with this shape:
 
 ```text
@@ -222,9 +223,9 @@ The brackets above describe the host suffix; they are not literal filename chara
 compiler version, host platform, and architecture so separately built bundles do not silently overwrite one another.
 `dist/` is ignored generated output and is not committed.
 
-The bundle contains two executables and one shared library. Users invoke `talac`; the driver calls the adjacent
+The bundle contains two executables and one shared library. Users invoke Talac; the driver calls the adjacent
 `tala-frontend` library in-process through the versioned C ABI, and `tali` is the REPL executable.
-Do not move `talac` without its matching library or place an unrelated library beside it.
+Do not move Talac without its matching library or place an unrelated library beside it.
 
 Staging is not considered successful merely because both build systems returned zero. The bundle command invokes the
 staged tools, checks the compiler version, compiles a real `.tala` fixture to an executable, and executes that native program.
@@ -348,7 +349,7 @@ Generated trees are disposable. Prefer deleting only the build system's known ou
 
 ```powershell
 bazelisk clean
-Push-Location Compiler
+Push-Location Talac
 try { cabal clean } finally { Pop-Location }
 .\Tazel\gradlew.bat -p Tazel clean
 ```
@@ -359,6 +360,26 @@ Do not commit `bazel-*`, Cabal `dist-newstyle`, Gradle `.gradle`/`build`, IDE ca
 artifacts used only for smoke tests. Local compiler bundles below `dist/` are equally reproducible and disposable. Before
 removing a large tree manually, resolve the exact absolute target and verify that it is a generated directory inside this
 checkout.
+
+## Helper output
+
+The Go helpers (`develop`, `githelper`, `cross-platform-test`, `prebuild`, `optional-packages`, `verify-docs`) show each
+program they start as one step. How a step looks depends on where it runs:
+
+| Where | What is shown |
+| --- | --- |
+| A terminal | A spinner with the step's name, its latest output line and its time; then a check mark and the time, or a cross and the last 40 lines of output. |
+| GitHub Actions | The output inside a collapsible log group, an error annotation for a failed step, and the last 40 lines again after the group. |
+| Anything else | The output as it is printed, between a `==>` line that names the step and one that gives its result. |
+
+In a terminal the whole output of each step is kept in a log file under the user cache directory, `tala/helper-logs`,
+one folder per run; a failed step and a step with warnings print the path of theirs. Folders older than seven days are
+removed. A run of more than one step ends with a table of its steps, and on GitHub Actions the table is also added to the
+job summary.
+
+Package managers and `gh run watch` talk to the developer themselves, so their output is never held back. Git's output is
+shown after each command, since it is the answer of that command. `TALA_HELPERS_OUTPUT` chooses the presentation:
+`rich`, `plain` or `actions`.
 
 ## Troubleshooting
 
@@ -382,7 +403,7 @@ depend on a temporary directory.
 
 ### Private frontend is missing
 
-Build the Haskell workspace and confirm the frontend is placed in the layout expected by `talac`. Installing a same-named
+Build the Haskell workspace and confirm the frontend is placed in the layout expected by Talac. Installing a same-named
 command globally is not a supported fix because it could mismatch the Core wire contract.
 
 For an install-shaped local layout, prefer `go run ./helpers/cmd/develop bundle`; it stages the matching Bazel and Cabal
