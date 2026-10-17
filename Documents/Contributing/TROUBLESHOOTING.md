@@ -34,6 +34,12 @@ On macOS, check the selected Xcode Command Line Tools SDK and `xcrun`. The full 
 repository. The native script selects the supported host configuration automatically; do not add an unexplained
 `--config` to a public build recipe.
 
+If linking fails with `tapi error: malformed file` and `unknown architecture` in a `.tbd` file, Homebrew's clang found
+a Command Line Tools SDK that is newer than the selected linker. Homebrew's clang configuration files
+(`$(brew --prefix)/etc/clang/*.cfg`) and a GHC installation can name that SDK by path, which overrides `SDKROOT`. Point
+those references at `$(xcrun --show-sdk-path)`, the SDK of the selected developer directory, and run
+`ghc-pkg recache --global` after changing GHC's package files; the macOS CI jobs do the same.
+
 ## Haskell or Kotlin uses the wrong toolchain
 
 Maintained Haskell packages use `GHC2024`; a compiler older than the required GHC will reject the edition before a

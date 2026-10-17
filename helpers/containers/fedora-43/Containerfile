@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # The Fedora 43 host of the compiler, as the workflows install it: Clang and
-# LLVM from the distribution, GHC 9.10.3, Cabal 3.16.1.0 and Bazel through a
-# pinned Bazelisk. `cross-platform-test` builds this image and runs the
-# repository's own commands in it.
+# libc++ from the distribution, LLVM built with libc++ from the toolchain
+# release, GHC 9.10.3, Cabal 3.16.1.0 and Bazel through a pinned Bazelisk.
+# `cross-platform-test` builds this image and runs the repository's own
+# commands in it.
 
 # GHC is taken from the official Haskell image and not installed here. An
 # installation unpacks and copies some forty thousand files one at a time,
@@ -22,10 +23,30 @@ ARG TARGETARCH
 
 RUN dnf install -y \
         ca-certificates clang clang-tools-extra curl findutils gcc gcc-c++ git \
-        gmp-devel golang gzip libffi-devel libxml2-devel libzstd-devel lld \
-        llvm-devel llvm-static make ncurses-devel perl tar unzip which xz \
-        zlib-devel \
+        gmp-devel golang gzip libcxx-devel libcxxabi-devel libffi-devel \
+        libxml2-devel libzstd-devel lld make ncurses-devel perl tar unzip \
+        which xz zlib-devel zstd \
     && dnf clean all
+
+# LLVM comes from the toolchain release, built with libc++ for this host,
+# because the compiler is built with libc++ and the distribution's LLVM uses
+# libstdc++. The archive is refused unless it has the digest the repository
+# records (helpers/internal/development/llvm_toolchain.go checks that the two
+# agree). It is unpacked while the image is built: a run has no network.
+# Only x86-64 archives are published so far.
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+        amd64) ;; \
+        *) echo "no LLVM toolchain archive with libc++ for ${TARGETARCH} yet" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/llvm.tar.zst \
+        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-1/llvm-22.1.6-libcxx-fedora-43-x86_64.tar.zst"; \
+    echo "5355714911c1d1dcf7f3486d2f2c0b3a468be838314fbe42b49a07b1e86db7b5  /tmp/llvm.tar.zst" | sha256sum -c -; \
+    tar --zstd -xf /tmp/llvm.tar.zst -C /opt; \
+    mv /opt/llvm-22.1.6-libcxx-fedora-43-x86_64 /opt/llvm-libcxx; \
+    rm /tmp/llvm.tar.zst; \
+    /opt/llvm-libcxx/bin/llvm-config --version
+ENV LLVM_ROOT=/opt/llvm-libcxx
 
 COPY --from=ghc /opt/ghc/9.10.3 /opt/ghc/9.10.3
 ENV PATH=/opt/ghc/9.10.3/bin:${PATH}
