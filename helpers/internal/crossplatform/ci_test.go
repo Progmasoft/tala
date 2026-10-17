@@ -38,11 +38,11 @@ func TestTheHostedTargetsNameWorkflowsThatExistAndCanBeStartedByHand(t *testing.
 func TestHostedWorkflowsAreNamedOnceInOrder(t *testing.T) {
 	all := HostedTargets()
 	every, err := HostedWorkflows(all, nil)
-	if err != nil || !reflect.DeepEqual(every, []string{"compiler-tier1.yml", "compiler-tier2.yml", "compiler-tier3.yml"}) {
+	if err != nil || !reflect.DeepEqual(every, []string{"compiler-tier1.yml", "compiler-tier2.yml"}) {
 		t.Fatalf("every workflow = %v, %v", every, err)
 	}
-	some, err := HostedWorkflows(all, []string{"fedora-43, macos-26", "windows"})
-	if err != nil || !reflect.DeepEqual(some, []string{"compiler-tier1.yml", "compiler-tier3.yml"}) {
+	some, err := HostedWorkflows(all, []string{"ubuntu-26.04, macos-26", "windows"})
+	if err != nil || !reflect.DeepEqual(some, []string{"compiler-tier1.yml", "compiler-tier2.yml"}) {
 		t.Fatalf("selected workflows = %v, %v", some, err)
 	}
 	if _, err := HostedWorkflows(all, []string{"windows", "solaris"}); err == nil || !strings.Contains(err.Error(), "unknown target solaris") {

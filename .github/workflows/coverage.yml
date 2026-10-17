@@ -19,18 +19,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   native:
     name: Native C++ LCOV
-    runs-on: macos-26
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
+    runs-on: ubuntu-26.04
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -39,49 +47,29 @@ jobs:
         uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: coverage-macos-clang
+          disk-cache: coverage-ubuntu-2604-clang
           repository-cache: true
 
-      - name: Install LLVM development package
+      - name: Install LLVM development and link packages
         shell: bash
         run: |
-          brew list llvm >/dev/null 2>&1 || brew install llvm
-          llvm_root="$(brew --prefix llvm)"
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm libc++-dev libc++abi-dev libzstd-dev libxml2-dev zlib1g-dev zstd
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-          echo "$llvm_root/bin" >> "$GITHUB_PATH"
+          # The profiles are written by the distribution's clang, so they are
+          # read by the profile tools of the same release.
+          version="$(clang -dumpversion | cut -d. -f1)"
+          echo "LLVM_PROFDATA=$(command -v "llvm-profdata-$version" || command -v llvm-profdata)" >> "$GITHUB_ENV"
+          echo "LLVM_COV=$(command -v "llvm-cov-$version" || command -v llvm-cov)" >> "$GITHUB_ENV"
 
       - name: Install GHC and Cabal
         uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
-      - name: Pin the SDK of the selected Xcode
-        shell: bash
-        run: |
-          # The Command Line Tools SDK can be newer than the linker of the
-          # selected Xcode: SDK 27.0 lists arm64e.x1, which ld of Xcode 26
-          # rejects as a malformed file. Homebrew clang's configuration files
-          # and the GHC installation name that SDK by path, which overrides
-          # SDKROOT, so every such reference is pointed at the selected SDK.
-          sdk="$(xcrun --show-sdk-path)"
-          echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
-          clt='/Library/Developer/CommandLineTools/SDKs/MacOSX[0-9.]*sdk'
-          libdir="$(ghc --print-libdir)"
-          changed=0
-          for file in "$LLVM_ROOT"/etc/clang/*.cfg \
-              "$(brew --prefix)"/etc/clang/*.cfg \
-              "$libdir/settings" "$libdir"/package.conf.d/*.conf; do
-            if [ -f "$file" ] && grep -Eq "$clt" "$file"; then
-              echo "Pinning $sdk in $file"
-              sed -E -i '' "s#$clt#$sdk#g" "$file"
-              changed=1
-            fi
-          done
-          if [ "$changed" = 1 ]; then
-            ghc-pkg recache --global
-          else
-            echo "No reference to the Command Line Tools SDK was found"
-          fi
       - name: Resolve frontend package index
         shell: bash
         working-directory: Talac
@@ -113,7 +101,7 @@ jobs:
             echo 'The instrumented native tests produced no raw profiles' >&2
             exit 1
           fi
-          xcrun llvm-profdata merge -sparse "${profiles[@]}" -o "$report_dir/native.profdata"
+          "$LLVM_PROFDATA" merge -sparse "${profiles[@]}" -o "$report_dir/native.profdata"
 
           binaries=()
           while IFS= read -r -d '' binary; do
@@ -129,7 +117,7 @@ jobs:
             objects+=("-object=$binary")
           done
 
-          xcrun llvm-cov export \
+          "$LLVM_COV" export \
             -format=lcov \
             -instr-profile="$report_dir/native.profdata" \
             -ignore-filename-regex='(^|/)(third_party|external|bazel-out)/' \
@@ -153,18 +141,18 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Install JDK 25
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '25'
 
       - name: Install Gradle
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           gradle-version: '9.6.1'
 
@@ -199,12 +187,12 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -241,7 +229,7 @@ jobs:
           name: native-cpp-coverage
           path: coverage
       - name: Upload native C++ coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
@@ -264,7 +252,7 @@ jobs:
           name: kotlin-components-coverage
           path: coverage/kotlin
       - name: Upload Tazel coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
@@ -274,7 +262,7 @@ jobs:
           flags: kotlin-project-system
           name: kotlin-project-system
       - name: Upload Analyzer coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
@@ -284,7 +272,7 @@ jobs:
           flags: kotlin-analyzer
           name: kotlin-analyzer
       - name: Upload Formatter coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
@@ -294,7 +282,7 @@ jobs:
           flags: kotlin-formatter
           name: kotlin-formatter
       - name: Upload Linter coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true
@@ -327,7 +315,7 @@ jobs:
           fi
           echo "CODECOV_GO_FILES=$files" >> "$GITHUB_ENV"
       - name: Upload Go helper coverage
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           use_oidc: true
           fail_ci_if_error: true

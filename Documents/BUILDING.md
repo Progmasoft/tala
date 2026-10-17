@@ -9,14 +9,15 @@ direct build interfaces for their Haskell and Kotlin ownership boundaries.
 
 ## Official hosts
 
-Official Tala development is supported on:
+Official Tala development is supported on the hosts the workflows test:
 
-- Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD;
-- macOS 15 Sequoia, using Clang/LLD and the Apple SDK (CI tests it on Intel); and
-- macOS 26 Tahoe, using Clang/LLD and the Apple SDK (CI tests it on Apple silicon);
-- Ubuntu 26.04 LTS, using Clang/LLD and libc++ from the distribution and LLVM built with libc++; and
-- Fedora 43 (the Fedora N-1 release as of September 2026), using Clang/LLD and libc++ from the distribution and LLVM
-  built with libc++.
+- Windows 10 and Windows 11, using standalone LLVM `clang-cl` and LLD (CI tests it on Windows Server 2025);
+- macOS 26 Tahoe on Apple silicon, using Clang/LLD and the Apple SDK; and
+- Ubuntu 26.04 LTS, using Clang/LLD and libc++ from the distribution and LLVM built with libc++.
+
+macOS 15 Sequoia, macOS on Intel and Fedora 43 are no longer tested by the workflows. The helpers still recognize them
+(`develop`, `prebuild` and `develop llvm` keep their setup for Fedora 43), so a build there may work, but it is not an
+official host.
 
 Bazel chooses `windows`, `macos`, or `linux` settings automatically. A developer does not pass an OS-specific `--config`.
 Visual Studio-bundled compilers are not part of the Windows toolchain, and the full Xcode IDE is not a

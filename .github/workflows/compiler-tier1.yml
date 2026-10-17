@@ -22,18 +22,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   windows-clangcl:
     name: Windows ClangCL
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025-vs2026
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           # Dependency versions and checksums live in helpers/go.mod and go.sum.
@@ -47,7 +55,7 @@ jobs:
           repository-cache: true
 
       - name: Restore LLVM development package
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.tool_cache }}\llvm-dev-22.1.6
           key: llvm-dev-22.1.6-x86_64-windows-msvc
@@ -157,26 +165,25 @@ jobs:
 
   macos-clang:
     name: ${{ matrix.name }} Clang
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: macOS Sequoia Intel
-            runner: macos-15-intel
-            sanitizer: address-undefined
           - name: macOS Tahoe Apple Silicon
             runner: macos-26
             sanitizer: address-undefined
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -275,9 +282,14 @@ jobs:
     name: Compiler Tier 1 Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [windows-clangcl, macos-clang]
+    needs: [changes, windows-clangcl, macos-clang]
     steps:
       - name: Require every native and sanitizer host
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
         run: |
-          test '${{ needs.windows-clangcl.result }}' = success
-          test '${{ needs.macos-clang.result }}' = success
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.windows-clangcl.result }}' = success
+            test '${{ needs.macos-clang.result }}' = success
+          fi
