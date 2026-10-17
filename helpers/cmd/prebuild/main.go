@@ -729,9 +729,9 @@ func bootstrapHostName(host bootstrapHost) string {
 	case bootstrapUbuntu:
 		return "Ubuntu 26.04 LTS (Tier 2)"
 	case bootstrapFedora:
-		return "Fedora 43 (Tier 3, N-1)"
+		return "Fedora 43 (N-1, not tested by CI)"
 	case bootstrapDebian:
-		// The workflows build on Ubuntu and Fedora; Debian shares Ubuntu's
+		// The workflows build on Ubuntu; Debian shares Ubuntu's
 		// packages and is prepared the same way, without a tier of its own.
 		return "Debian 13"
 	default:

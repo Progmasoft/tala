@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+name: Changes
+
+# Decides whether a pull request can affect the native build. The heavy
+# workflows call it first and skip their jobs when the answer is no: a pull
+# request that changes only prose, Tazel or the ecosystem tools has nothing
+# for Bazel, the sanitizers or the fuzzers to check. A skipped job reports
+# success to a required check, and each workflow's Required job accepts a
+# skip only when this answer was no.
+#
+# Every event that is not a pull request (a push to main, a schedule, a run
+# by hand) builds everything.
+on:
+  workflow_call:
+    outputs:
+      native:
+        description: "'true' when the native build has to run"
+        value: ${{ jobs.classify.outputs.native }}
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    name: Classify the change
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      native: ${{ steps.classify.outputs.native }}
+    steps:
+      - id: classify
+        name: List the changed files
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != pull_request ]; then
+            echo "native=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh api --paginate "repos/$REPOSITORY/pulls/$NUMBER/files?per_page=100" \
+            --jq '.[].filename' > changed.txt
+          count="$(wc -l < changed.txt)"
+          # The API lists at most 3000 files; a longer list is not complete.
+          if [ "$count" -eq 0 ] || [ "$count" -ge 3000 ]; then
+            echo "native=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Files that no native job reads. Markdown under Benchmarks/ and
+          # Examples/ is checked by verify-benchmarks and verify-examples, and
+          # the fuzz corpus is seeded from Ecosystem/tala-analyzer/Tests/, so
+          # those stay native.
+          native=false
+          while IFS= read -r file; do
+            case "$file" in
+              Benchmarks/*|Examples/*|Ecosystem/tala-analyzer/Tests/*) native=true ;;
+              *.md|Tazel/*|Ecosystem/*|.github/ISSUE_TEMPLATE/*) ;;
+              *) native=true ;;
+            esac
+            if [ "$native" = true ]; then
+              echo "native: $file"
+              break
+            fi
+          done < changed.txt
+          echo "$count changed files; native=$native"
+          echo "native=$native" >> "$GITHUB_OUTPUT"
