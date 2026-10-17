@@ -39,7 +39,7 @@ parent commit will include those edits automatically.
 
 ## 3. Prepare the host
 
-Official development hosts are Windows 10/11 and macOS Sequoia/Tahoe. First inspect the toolchain without installing
+Official development hosts are Windows 10/11, macOS 26 Tahoe on Apple silicon and Ubuntu 26.04 LTS. First inspect the toolchain without installing
 anything:
 
 ```text

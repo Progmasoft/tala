@@ -397,17 +397,13 @@ their own threads, currently `ownership_fuzzer`, with libFuzzer and
 ThreadSanitizer, proves that the runtime reports an intentional data race, and
 then runs a bounded campaign with the same corpus, limits and report checks.
 The command fails on Windows, where Clang has no ThreadSanitizer runtime; it
-never reports a skipped run as success. The fuzzing workflow runs it on macOS
-and native Ubuntu. The Fedora container job does not run it for the
-shadow-memory reason given below.
+never reports a skipped run as success. The fuzzing workflow runs it on native
+Ubuntu.
 
-Compiler Tier 1/2/3 run complete native suites with ASan/UBSan. Tier 1 macOS
-and Tier 2 native Ubuntu additionally run separate TSan suites. Fedora Tier 3
-runs inside a GitHub Actions container; the current TSan runtime cannot reserve
-its shadow memory under that host/container ASLR layout, so Fedora does not
-claim TSan coverage. The native Linux TSan gate remains required in Tier 2.
-Windows does not have a supported Clang TSan runtime; it is not represented by
-a fabricated passing TSan job.
+Compiler Tier 1/2 run complete native suites with ASan/UBSan. Tier 1 macOS 26
+and Tier 2 native Ubuntu additionally run separate TSan suites; the Linux TSan
+gate is required in Tier 2. Windows does not have a supported Clang TSan
+runtime; it is not represented by a fabricated passing TSan job.
 Stable aggregate required checks reject failed, cancelled or skipped host jobs.
 The scheduled long campaign supplements rather than replaces the bounded PR
 gate. Workflow declarations alone do not enforce merging: repository branch
@@ -456,8 +452,7 @@ The harnesses above are evidence about the inputs they ran, not proofs:
   ownership and templates have no generated-program oracle here; their
   executable checks live in the component test suites;
 - `ownership_fuzzer` varies thread count and iteration count, not arbitrary
-  interleavings, and its ThreadSanitizer campaign does not run on Windows or in
-  the Fedora container;
+  interleavings, and its ThreadSanitizer campaign does not run on Windows;
 - HPC feedback is expression-tick coverage of the frontend, without
   memory-safety instrumentation, and its mutator is byte- and token-level, not
   grammar-aware;
