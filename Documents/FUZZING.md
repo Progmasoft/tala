@@ -361,7 +361,7 @@ removed. What an argument by need costs in generated code is a cost of the
 current lowering, listed in `EVALUATION.md`.
 
 The source fuzz targets and the source smoke programs run the compiler on the
-compiler stack, as `talac` does, because an input nested up to the frontend's
+compiler stack, as Talac does, because an input nested up to the frontend's
 limits does not fit on the default stack of a process. `Corpus/source` has
 permanent seeds for deep nesting, for nesting at and one level beyond each
 limit, for long `else if` and operator chains, which are not nesting, for

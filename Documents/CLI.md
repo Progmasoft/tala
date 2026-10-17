@@ -13,8 +13,8 @@ Tala ships several programs, and each does one job:
 | `talafmt` | the formatter | Haskell |
 | `talalint` | the linter | Haskell |
 
-`talac` knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
-`talac`, `talafmt` and `talalint` as separate programs and passes them arguments.
+Talac knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
+Talac, `talafmt` and `talalint` as separate programs and passes them arguments.
 
 Every command line is read by a parser written by hand for that program. A line that is accepted becomes a typed value,
 and no later stage looks at the argument text again. No program uses a command-line library.
@@ -135,7 +135,7 @@ An option the compiler reads but cannot carry out is refused by name with exit c
 
 ### The frontend library
 
-`talac` loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
+Talac loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
 `libtala-frontend.dylib` or `libtala-frontend.so`. It is an implementation library, not a second command.
 
 ## `tazel`
@@ -167,7 +167,7 @@ tazel <command> [arguments]
 | `tazel version` | prints the version of Tazel |
 | `tazel help [command]` | prints the help, or the help of one command |
 
-`tazel check` starts `talac` with `--emit=metadata` and the compiler options of the project file. `tazel build` starts it
+`tazel check` starts Talac with `--emit=metadata` and the compiler options of the project file. `tazel build` starts it
 with `--emit=executable` and moves the result into the output directory of the build mode, under the name of the target.
 
 ### Selecting targets

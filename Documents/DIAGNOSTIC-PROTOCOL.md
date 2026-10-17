@@ -10,7 +10,7 @@ boundary between the compiler and trusted local tools such as Xide. It is not a 
 format, or a replacement for readable terminal diagnostics.
 
 TADG version 1 carries enough structure for an editor to present an error list, navigate to related declarations, and
-offer explicitly described edits without parsing English text. The public `talac` command remains the only compiler
+offer explicitly described edits without parsing English text. The public Talac command remains the only compiler
 executable users invoke. The native driver starts the Haskell frontend and passes the side-channel path privately.
 
 ## Design rules
@@ -32,7 +32,7 @@ diagnostics produced there use the ordinary `CorePrep` stage tag.
 
 ## Transport
 
-A trusted local consumer sets `TALA_DIAGNOSTICS_FILE` on the native `talac` process when it requests structured diagnostics.
+A trusted local consumer sets `TALA_DIAGNOSTICS_FILE` on the native Talac process when it requests structured diagnostics.
 The native driver preserves that private variable for its child frontend, which writes one complete document before it
 exits. In the absence of the environment variable, the frontend performs no extra I/O and preserves existing CLI behavior.
 

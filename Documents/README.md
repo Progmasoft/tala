@@ -36,7 +36,7 @@ following vocabulary:
 | Exercise malformed compiler inputs | [Fuzzing](FUZZING.md) |
 | Place tests and fixtures | [Test ownership](TEST-OWNERSHIP.md) |
 | Measure compiler throughput | [Benchmarking](BENCHMARKING.md) and [recorded baselines](../Benchmarks/README.md) |
-| Use `talac` | [CLI](CLI.md) |
+| Use Talac | [CLI](CLI.md) |
 | Use or implement the REPL | [Tala Interactive](INTERACTIVE.md) |
 | Write `BUILD.kts` | [Project files](PROJECT_FILES.md) |
 | Understand per-source object and assembly outputs | [Project native artifacts](PROJECT-ARTIFACTS.md) |

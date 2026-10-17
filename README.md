@@ -102,7 +102,7 @@ The same commands run from macOS and Linux terminals. Direct `bazelisk build //T
 configuration automatically; ordinary builds never need `--config`. The Bazel graph discovers LLVM from `LLVM_ROOT` or
 `llvm-config` and does not store a machine-specific installation path.
 
-`bundle` is the reproducible local path from a checkout to a usable compiler layout. It builds the C++20 `talac` driver with
+`bundle` is the reproducible local path from a checkout to a usable compiler layout. It builds the C++20 Talac driver with
 Bazel, builds its private Haskell `tala-frontend` shared library with Cabal, stages the driver, REPL, and library under
 `dist/tala-<version>-<platform>-<arch>/`, and verifies that the staged pair can compile and run a real `.tala`
 program. The ignored `dist/` tree also contains `LICENSE.txt`, `PATENTS`, the current Progmasoft exception and
@@ -115,7 +115,7 @@ they measure; methodology and recorded baselines live under [Benchmarks](Benchma
 
 ## Command line
 
-Each program does one job. `talac` is the compiler: sources in, one artifact out. `tazel` is the build system and package
+Each program does one job. Talac is the compiler: sources in, one artifact out. `tazel` is the build system and package
 manager: it reads the project file and starts the compiler. `tali` is the REPL; `talafmt` and `talalint` format and lint.
 
 Compile one file and run it:
@@ -143,7 +143,7 @@ Every command line is read by a parser written by hand that turns an accepted li
 command-line library. See [command-line interfaces](Documents/CLI.md) for every option and for what is not implemented
 yet.
 
-`tala-frontend` is an implementation library, not a second compiler command. `talac` loads it beside itself and calls
+`tala-frontend` is an implementation library, not a second compiler command. Talac loads it beside itself and calls
 through a versioned C11 ABI; no frontend child process or temporary Core handoff is involved.
 
 ## Project files
@@ -181,7 +181,7 @@ See [project files](Documents/PROJECT_FILES.md) for the whole DSL.
 
 The [Spec](Spec/README.md) directory contains 24 topic-oriented `.tala` example suites. They record current language design
 intent, including valid and invalid fragments, but they are not concatenated applications and must not be treated as a claim
-that every rule is already implemented by `talac`.
+that every rule is already implemented by Talac.
 
 The [Tala EBNF](Grammar/tala.ebnf) summarizes the concrete syntax, while the
 [TextMate grammar](Grammar/tala.tmLanguage.json) provides matching editor token scopes for `.tala` files. Semantic
