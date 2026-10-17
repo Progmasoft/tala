@@ -50,9 +50,10 @@ or the number of stages involved.
 ## Fixture ownership
 
 Fixtures follow their tests. Core wire golden files live below
-`Talac/Core/Tests/Fixtures`. Source projects used by the connected driver
-live below `Talac/Driver/Tests/Fixtures`. Retired intermediate examples and
-their readers are removed rather than retained as a second pipeline.
+`Talac/Core/Tests/Fixtures`. The driver tests build their programs in the test
+itself, and the bundle smoke test compiles `Examples/HelloWorld`. Retired
+intermediate examples, their readers and the source fixtures of the former
+project driver are removed rather than retained as a second pipeline.
 
 Do not create a common fixture directory merely because two components use the
 same file today. If the file represents a stable boundary, the producer owns

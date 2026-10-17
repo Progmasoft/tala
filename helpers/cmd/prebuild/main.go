@@ -184,7 +184,7 @@ var bootstrapTools = []toolRequirement{
 	{name: "Go", executables: []string{"go"}, wingetPackageID: "GoLang.Go", homebrewFormula: "go", aptPackages: []string{"golang-go"}, dnfPackages: []string{"golang"}},
 	{name: "Git", executables: []string{"git"}, wingetPackageID: "Git.Git", homebrewFormula: "git", aptPackages: []string{"git"}, dnfPackages: []string{"git"}},
 	{name: "Bazelisk", executables: []string{"bazelisk"}, wingetPackageID: "Bazel.Bazelisk", homebrewFormula: "bazelisk"},
-	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "llvm-dev", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "llvm-devel", "llvm-static", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
+	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "libc++-dev", "libc++abi-dev", "zstd", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "libcxx-devel", "libcxxabi-devel", "zstd", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
 	{name: "GHCup", executables: []string{"ghcup"}, homebrewFormula: "ghcup"},
 	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}},
 	{name: "Temurin JDK 25", executables: []string{"java"}, wingetPackageID: "EclipseAdoptium.Temurin.25.JDK", homebrewFormula: "temurin@25", aptPackages: []string{"temurin-25-jdk"}, dnfPackages: []string{"temurin-25-jdk"}},
@@ -351,7 +351,13 @@ func requirementExecutables(host bootstrapHost, requirement toolRequirement) []s
 	if host == bootstrapWindows {
 		return append(executables, "clang-cl", "lld-link")
 	}
-	return append(executables, "clang++")
+	if host == bootstrapMacOS {
+		return append(executables, "clang++")
+	}
+	// On Linux the distribution provides Clang and libc++. LLVM itself, built
+	// with libc++, is downloaded by `develop llvm` and the build commands, which
+	// unpack it with zstd; llvm-config is therefore not looked for on PATH.
+	return []string{"clang++", "zstd"}
 }
 
 func reportBootstrapState(host bootstrapHost, runner bootstrapRunner) error {
@@ -723,9 +729,9 @@ func bootstrapHostName(host bootstrapHost) string {
 	case bootstrapUbuntu:
 		return "Ubuntu 26.04 LTS (Tier 2)"
 	case bootstrapFedora:
-		return "Fedora 43 (Tier 3, N-1)"
+		return "Fedora 43 (N-1, not tested by CI)"
 	case bootstrapDebian:
-		// The workflows build on Ubuntu and Fedora; Debian shares Ubuntu's
+		// The workflows build on Ubuntu; Debian shares Ubuntu's
 		// packages and is prepared the same way, without a tier of its own.
 		return "Debian 13"
 	default:

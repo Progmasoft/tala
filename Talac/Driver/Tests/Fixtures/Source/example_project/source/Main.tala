@@ -1,9 +1,0 @@
-// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
-
-fn Main() {
-    message: &Str = "Hello from X#\n";
-    hirOutput: &Str = ".xhir -> HIR code\n";
-    mirOutput: &Str = ".xmir -> MIR code\n";
-    xlilOutput: &Str = ".xlil -> XLIL code\n";
-}

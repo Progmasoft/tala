@@ -42,6 +42,9 @@ is needed beside the JRE.
 .\gradlew.bat installDist    # build\install\tazel\bin\tazel(.bat)
 ```
 
+Every resolved dependency is locked in `gradle.lockfile`, which OSV-Scanner also reads. After changing a dependency, run
+`.\gradlew.bat dependencies --write-locks` and commit the lock file with the change.
+
 Tazel finds a tool through `TAZEL_TALAC`, `TAZEL_TALAFMT` or `TAZEL_TALALINT`, then in the installation it runs from, then
 on `PATH`. To try a development build against a compiler built by Bazel:
 

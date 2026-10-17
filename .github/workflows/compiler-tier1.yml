@@ -22,18 +22,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   windows-clangcl:
     name: Windows ClangCL
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025-vs2026
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           # Dependency versions and checksums live in helpers/go.mod and go.sum.
@@ -47,7 +55,7 @@ jobs:
           repository-cache: true
 
       - name: Restore LLVM development package
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.tool_cache }}\llvm-dev-22.1.6
           key: llvm-dev-22.1.6-x86_64-windows-msvc
@@ -136,6 +144,13 @@ jobs:
         shell: pwsh
         run: go run ./helpers/cmd/develop test
 
+      # Stages the programs of this host as a distribution and runs them
+      # from it: talac compiles Examples/HelloWorld through the staged
+      # frontend, and the program must print its greeting.
+      - name: Stage and smoke-test the host distribution
+        shell: pwsh
+        run: go run ./helpers/cmd/develop bundle
+
       - name: Verify ASan and UBSan runtimes and native suites
         shell: pwsh
         run: go run ./helpers/cmd/develop sanitize address-undefined
@@ -150,26 +165,25 @@ jobs:
 
   macos-clang:
     name: ${{ matrix.name }} Clang
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: macOS Sequoia
-            runner: macos-15
-            sanitizer: address-undefined
-          - name: macOS Tahoe
+          - name: macOS Tahoe Apple Silicon
             runner: macos-26
             sanitizer: address-undefined
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -194,6 +208,33 @@ jobs:
         with:
           ghc: 9.10.3
           cabal: 3.16.1.0
+      - name: Pin the SDK of the selected Xcode
+        shell: bash
+        run: |
+          # The Command Line Tools SDK can be newer than the linker of the
+          # selected Xcode: SDK 27.0 lists arm64e.x1, which ld of Xcode 26
+          # rejects as a malformed file. Homebrew clang's configuration files
+          # and the GHC installation name that SDK by path, which overrides
+          # SDKROOT, so every such reference is pointed at the selected SDK.
+          sdk="$(xcrun --show-sdk-path)"
+          echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
+          clt='/Library/Developer/CommandLineTools/SDKs/MacOSX[0-9.]*sdk'
+          libdir="$(ghc --print-libdir)"
+          changed=0
+          for file in "$LLVM_ROOT"/etc/clang/*.cfg \
+              "$(brew --prefix)"/etc/clang/*.cfg \
+              "$libdir/settings" "$libdir"/package.conf.d/*.conf; do
+            if [ -f "$file" ] && grep -Eq "$clt" "$file"; then
+              echo "Pinning $sdk in $file"
+              sed -E -i '' "s#$clt#$sdk#g" "$file"
+              changed=1
+            fi
+          done
+          if [ "$changed" = 1 ]; then
+            ghc-pkg recache --global
+          else
+            echo "No reference to the Command Line Tools SDK was found"
+          fi
       - name: Resolve frontend package index
         shell: bash
         working-directory: Talac
@@ -216,6 +257,13 @@ jobs:
         shell: bash
         run: go run ./helpers/cmd/develop test
 
+      # Stages the programs of this host as a distribution and runs them
+      # from it: talac compiles Examples/HelloWorld through the staged
+      # frontend, and the program must print its greeting.
+      - name: Stage and smoke-test the host distribution
+        shell: bash
+        run: go run ./helpers/cmd/develop bundle
+
       - name: Exercise native wire decoder mutations
         shell: bash
         run: |
@@ -234,9 +282,14 @@ jobs:
     name: Compiler Tier 1 Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [windows-clangcl, macos-clang]
+    needs: [changes, windows-clangcl, macos-clang]
     steps:
       - name: Require every native and sanitizer host
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
         run: |
-          test '${{ needs.windows-clangcl.result }}' = success
-          test '${{ needs.macos-clang.result }}' = success
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.windows-clangcl.result }}' = success
+            test '${{ needs.macos-clang.result }}' = success
+          fi

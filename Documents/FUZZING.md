@@ -209,8 +209,8 @@ older discovered inputs; conflicting contents under a stable hash fail closed.
 
 The targets that read source text, the lexer, the parser and the source
 target, are seeded with the repository's own Tala sources as well: the
-examples, the samples of the specification and the fixtures of the driver and
-analyzer tests, more than two hundred programs. They are read where they are,
+examples, the samples of the specification and the fixtures of the Core and
+analyzer tests, more than forty files. They are read where they are,
 so no second copy has to be kept in step, and a source that is added is a seed
 from the next campaign on. A seed is named after its content; a source that
 changes adds a seed and replaces none. A source longer than the input limit of
@@ -401,21 +401,44 @@ their own threads, currently `ownership_fuzzer`, with libFuzzer and
 ThreadSanitizer, proves that the runtime reports an intentional data race, and
 then runs a bounded campaign with the same corpus, limits and report checks.
 The command fails on Windows, where Clang has no ThreadSanitizer runtime; it
-never reports a skipped run as success. The fuzzing workflow runs it on macOS
-and native Ubuntu. The Fedora container job does not run it for the
-shadow-memory reason given below.
+never reports a skipped run as success. The fuzzing workflow runs it on native
+Ubuntu.
 
-Compiler Tier 1/2/3 run complete native suites with ASan/UBSan. Tier 1 macOS
-and Tier 2 native Ubuntu additionally run separate TSan suites. Fedora Tier 3
-runs inside a GitHub Actions container; the current TSan runtime cannot reserve
-its shadow memory under that host/container ASLR layout, so Fedora does not
-claim TSan coverage. The native Linux TSan gate remains required in Tier 2.
-Windows does not have a supported Clang TSan runtime; it is not represented by
-a fabricated passing TSan job.
+Compiler Tier 1/2 run complete native suites with ASan/UBSan. Tier 1 macOS 26
+and Tier 2 native Ubuntu additionally run separate TSan suites; the Linux TSan
+gate is required in Tier 2. Windows does not have a supported Clang TSan
+runtime; it is not represented by a fabricated passing TSan job.
 Stable aggregate required checks reject failed, cancelled or skipped host jobs.
 The scheduled long campaign supplements rather than replaces the bounded PR
 gate. Workflow declarations alone do not enforce merging: repository branch
 protection must require these actual checks.
+
+## AFL++ campaign
+
+`go run ./helpers/cmd/develop fuzz-afl` runs AFL++ over the same libFuzzer
+drivers, on Linux. It takes the targets that load no Haskell frontend and start
+no threads, currently `wire_fuzzer` and `cli_fuzzer`. AFL++ starts every input
+from a fork of a fresh process image, and the GHC runtime's start-up would
+dominate each execution of a frontend target; the findings of a threaded target
+depend on scheduling, which AFL++ does not control.
+
+The command builds each target twice with `afl-clang-fast` (Bazel config
+`afl-linux`): once with ASan and UBSan, once with `AFL_LLVM_CMPLOG` and no
+sanitizer. `afl-fuzz` runs the sanitized build and uses the CmpLog build to
+learn the operands of comparisons, which solves magic values such as the
+headers and length fields of the wire formats. Each target gets the time
+budget, the input length limit and the 30-second per-input limit of the
+libFuzzer campaign.
+
+AFL++ shares the corpus with libFuzzer. It starts from the target's corpus, as
+the versioned seeds and the wire seeds of the production writers extend it, and
+adds every input it keeps to that corpus under the SHA-1 of its content, the
+name libFuzzer gives an input. A crash or a hang fails the command; each
+finding is copied to the artifacts under a portable name, beside
+`afl-campaigns.json` with the executions, edges and new corpus inputs of each
+target. The fuzzing workflow runs it in its own Ubuntu job, `Ubuntu 26.04
+AFL++`, which restores and saves the Ubuntu corpus under the same cache prefix
+as the libFuzzer job.
 
 ## Remaining coverage boundaries
 
@@ -433,8 +456,7 @@ The harnesses above are evidence about the inputs they ran, not proofs:
   ownership and templates have no generated-program oracle here; their
   executable checks live in the component test suites;
 - `ownership_fuzzer` varies thread count and iteration count, not arbitrary
-  interleavings, and its ThreadSanitizer campaign does not run on Windows or in
-  the Fedora container;
+  interleavings, and its ThreadSanitizer campaign does not run on Windows;
 - HPC feedback is expression-tick coverage of the frontend, without
   memory-safety instrumentation, and its mutator is byte- and token-level, not
   grammar-aware;

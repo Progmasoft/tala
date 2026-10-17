@@ -22,18 +22,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   ubuntu-clang:
     name: Ubuntu 26.04 LTS Clang
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -49,8 +57,10 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang lld llvm-dev libzstd-dev libxml2-dev zlib1g-dev
-          llvm_root="$(llvm-config --prefix)"
+          sudo apt-get install -y clang lld libc++-dev libc++abi-dev libzstd-dev libxml2-dev zlib1g-dev zstd
+          # LLVM built with libc++ from the toolchain release, checked against
+          # the digest the repository records; the compiler builds with libc++.
+          llvm_root="$(go run ./helpers/cmd/develop llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
 
@@ -78,6 +88,13 @@ jobs:
         shell: bash
         run: go run ./helpers/cmd/develop test
 
+      # Stages the programs of this host as a distribution and runs them
+      # from it: talac compiles Examples/HelloWorld through the staged
+      # frontend, and the program must print its greeting.
+      - name: Stage and smoke-test the host distribution
+        shell: bash
+        run: go run ./helpers/cmd/develop bundle
+
       - name: Exercise wire decoder mutations
         shell: bash
         run: |
@@ -96,7 +113,13 @@ jobs:
     name: Compiler Tier 2 Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [ubuntu-clang]
+    needs: [changes, ubuntu-clang]
     steps:
       - name: Require the native and sanitizer host
-        run: test '${{ needs.ubuntu-clang.result }}' = success
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
+        run: |
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.ubuntu-clang.result }}' = success
+          fi
