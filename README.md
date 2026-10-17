@@ -52,7 +52,7 @@ normal compilation keeps intermediate data in memory unless explicit emission is
 
 ## Supported development environments
 
-The official native development hosts are Windows 10/11, macOS 15 Sequoia, macOS 26 Tahoe, Ubuntu 26.04 LTS, and Fedora 43 (N-1 as of September 2026). All hosts use:
+The official native development hosts, the ones the workflows test, are Windows 10/11, macOS 26 Tahoe on Apple silicon, and Ubuntu 26.04 LTS. All hosts use:
 
 - Bazelisk for the production C++20 graph;
 - an LLVM development package containing headers, libraries, and `llvm-config`;

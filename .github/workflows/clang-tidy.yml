@@ -19,18 +19,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: $/.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   analyze:
     name: Ubuntu 26.04 Clang-Tidy
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
 
       - name: Configure Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -76,7 +84,13 @@ jobs:
     name: Clang-Tidy Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [analyze]
+    needs: [changes, analyze]
     steps:
       - name: Require a clean analysis
-        run: test '${{ needs.analyze.result }}' = success
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
+        run: |
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.analyze.result }}' = success
+          fi
