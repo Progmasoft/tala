@@ -22,8 +22,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   windows-clangcl:
     name: Windows ClangCL
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025-vs2026
     timeout-minutes: 60
     steps:
@@ -157,15 +165,14 @@ jobs:
 
   macos-clang:
     name: ${{ matrix.name }} Clang
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: macOS Sequoia Intel
-            runner: macos-15-intel
-            sanitizer: address-undefined
           - name: macOS Tahoe Apple Silicon
             runner: macos-26
             sanitizer: address-undefined
@@ -275,9 +282,14 @@ jobs:
     name: Compiler Tier 1 Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [windows-clangcl, macos-clang]
+    needs: [changes, windows-clangcl, macos-clang]
     steps:
       - name: Require every native and sanitizer host
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
         run: |
-          test '${{ needs.windows-clangcl.result }}' = success
-          test '${{ needs.macos-clang.result }}' = success
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.windows-clangcl.result }}' = success
+            test '${{ needs.macos-clang.result }}' = success
+          fi

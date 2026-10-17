@@ -19,8 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   public-api:
     name: Doxygen and Haddock
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     steps:

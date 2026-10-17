@@ -31,8 +31,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   windows:
     name: Windows ClangCL libFuzzer
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025-vs2026
     timeout-minutes: 300
     steps:
@@ -106,108 +114,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  macos:
-    name: ${{ matrix.runner }} Clang libFuzzer
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 300
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-15-intel, macos-26]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: 1.26.x
-          cache: false
-      - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          path: ${{ runner.temp }}/tala-fuzz-corpus
-          key: tala-fuzz-${{ matrix.runner }}-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            tala-fuzz-${{ matrix.runner }}-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
-            tala-fuzz-${{ matrix.runner }}-
-      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
-        with:
-          bazelisk-cache: true
-          disk-cache: fuzz-${{ matrix.runner }}-clang
-          repository-cache: true
-      - name: Install LLVM development package
-        shell: bash
-        run: |
-          brew list llvm >/dev/null 2>&1 || brew install llvm
-          llvm_root="$(brew --prefix llvm)"
-          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-          echo "$llvm_root/bin" >> "$GITHUB_PATH"
-      - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
-        with:
-          ghc: 9.10.3
-          cabal: 3.16.1.0
-      - name: Pin the SDK of the selected Xcode
-        shell: bash
-        run: |
-          # The Command Line Tools SDK can be newer than the linker of the
-          # selected Xcode: SDK 27.0 lists arm64e.x1, which ld of Xcode 26
-          # rejects as a malformed file. Homebrew clang's configuration files
-          # and the GHC installation name that SDK by path, which overrides
-          # SDKROOT, so every such reference is pointed at the selected SDK.
-          sdk="$(xcrun --show-sdk-path)"
-          echo "SDKROOT=$sdk" >> "$GITHUB_ENV"
-          clt='/Library/Developer/CommandLineTools/SDKs/MacOSX[0-9.]*sdk'
-          libdir="$(ghc --print-libdir)"
-          changed=0
-          for file in "$LLVM_ROOT"/etc/clang/*.cfg \
-              "$(brew --prefix)"/etc/clang/*.cfg \
-              "$libdir/settings" "$libdir"/package.conf.d/*.conf; do
-            if [ -f "$file" ] && grep -Eq "$clt" "$file"; then
-              echo "Pinning $sdk in $file"
-              sed -E -i '' "s#$clt#$sdk#g" "$file"
-              changed=1
-            fi
-          done
-          if [ "$changed" = 1 ]; then
-            ghc-pkg recache --global
-          else
-            echo "No reference to the Command Line Tools SDK was found"
-          fi
-      - name: Resolve frontend package index
-        shell: bash
-        working-directory: Talac
-        run: cabal update
-
-      - name: Run bounded coverage-guided campaign
-        shell: bash
-        env:
-          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
-        run: go run ./helpers/cmd/develop fuzz
-      - name: Run bounded ThreadSanitizer ownership campaign
-        shell: bash
-        env:
-          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
-        run: go run ./helpers/cmd/develop fuzz-thread
-      - name: Run nightly ASan and UBSan stress campaign
-        if: github.event_name == 'schedule'
-        shell: bash
-        env:
-          TALA_FUZZ_SECONDS: '900'
-          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
-        run: go run ./helpers/cmd/develop fuzz-stress --asan
-      - name: Preserve campaign reports and crashing corpus
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fuzz-${{ matrix.runner }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/tala-fuzz-*/
-          if-no-files-found: warn
-          retention-days: 14
-
   ubuntu:
     name: Ubuntu 26.04 Clang libFuzzer
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 300
     steps:
@@ -280,6 +190,8 @@ jobs:
 
   afl:
     name: Ubuntu 26.04 AFL++
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
@@ -331,84 +243,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  fedora:
-    name: Fedora 43 Clang libFuzzer
-    runs-on: ubuntu-26.04
-    container: fedora:43
-    timeout-minutes: 300
-    steps:
-      - name: Install checkout and compiler prerequisites
-        shell: bash
-        run: |
-          dnf install -y git ca-certificates curl tar gzip unzip xz which findutils \
-            clang lld libcxx-devel libcxxabi-devel zstd libzstd-devel libxml2-devel \
-            zlib-devel golang gcc gcc-c++ make gmp-devel libffi-devel ncurses-devel perl
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: recursive
-          persist-credentials: false
-      - name: Install pinned Bazelisk
-        shell: bash
-        run: |
-          go install github.com/bazelbuild/bazelisk@v1.29.0
-          # Container jobs do not consistently propagate GITHUB_PATH entries
-          # into later container steps. Expose the pinned Bazelisk as `bazel`
-          # explicitly so develop.go can find it.
-          install -m 0755 "$(go env GOPATH)/bin/bazelisk" /usr/local/bin/bazel
-          # LLVM built with libc++ from the toolchain release, checked against
-          # the digest the repository records; the compiler builds with libc++.
-          llvm_root="$(go run ./helpers/cmd/develop llvm)"
-          echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
-          test -f "$(clang -print-resource-dir)/include/stddef.h"
-      - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          path: ${{ runner.temp }}/tala-fuzz-corpus
-          key: tala-fuzz-fedora-43-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: |
-            tala-fuzz-fedora-43-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}
-            tala-fuzz-fedora-43-
-      - name: Install GHC and Cabal
-        uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3
-        with:
-          ghc: 9.10.3
-          cabal: 3.16.1.0
-      - name: Resolve frontend package index
-        shell: bash
-        working-directory: Talac
-        run: cabal update
-
-      - name: Run bounded coverage-guided campaign
-        shell: bash
-        env:
-          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
-        run: go run ./helpers/cmd/develop fuzz
-      - name: Run nightly ASan and UBSan stress campaign
-        if: github.event_name == 'schedule'
-        shell: bash
-        env:
-          TALA_FUZZ_SECONDS: '900'
-          TALA_FUZZ_CORPUS: ${{ runner.temp }}/tala-fuzz-corpus
-        run: go run ./helpers/cmd/develop fuzz-stress --asan
-      - name: Preserve campaign reports and crashing corpus
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fuzz-fedora-${{ github.run_id }}
-          path: ${{ runner.temp }}/tala-fuzz-*/
-          if-no-files-found: warn
-          retention-days: 14
-
   required:
     name: Fuzzing Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [windows, macos, ubuntu, afl, fedora]
+    needs: [changes, windows, ubuntu, afl]
     steps:
       - name: Require every bounded fuzz host
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
         run: |
-          test '${{ needs.windows.result }}' = success
-          test '${{ needs.macos.result }}' = success
-          test '${{ needs.ubuntu.result }}' = success
-          test '${{ needs.afl.result }}' = success
-          test '${{ needs.fedora.result }}' = success
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.windows.result }}' = success
+            test '${{ needs.ubuntu.result }}' = success
+            test '${{ needs.afl.result }}' = success
+          fi

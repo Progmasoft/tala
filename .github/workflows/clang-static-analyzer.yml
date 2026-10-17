@@ -19,8 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   analyze:
     name: Ubuntu 26.04 Clang Static Analyzer
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     permissions:
@@ -101,7 +109,13 @@ jobs:
     name: Clang Static Analyzer Required
     runs-on: ubuntu-26.04
     if: always()
-    needs: [analyze]
+    needs: [changes, analyze]
     steps:
       - name: Require a clean analysis
-        run: test '${{ needs.analyze.result }}' = success
+        env:
+          NATIVE: ${{ needs.changes.outputs.native }}
+        run: |
+          test '${{ needs.changes.result }}' = success
+          if [ "$NATIVE" = true ]; then
+            test '${{ needs.analyze.result }}' = success
+          fi

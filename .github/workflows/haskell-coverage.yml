@@ -19,8 +19,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    uses: ./.github/workflows/changes.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
   frontend-coverage:
     name: Frontend LCOV
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: windows-2025
     timeout-minutes: 20
     steps:

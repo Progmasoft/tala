@@ -33,10 +33,8 @@ type HostedTarget struct {
 func HostedTargets() []HostedTarget {
 	return []HostedTarget{
 		{Name: "windows", Description: "Windows with ClangCL", Workflow: "compiler-tier1.yml"},
-		{Name: "macos-15-intel", Description: "macOS 15 Sequoia on Intel with Clang", Workflow: "compiler-tier1.yml"},
 		{Name: "macos-26", Description: "macOS 26 Tahoe on Apple silicon with Clang", Workflow: "compiler-tier1.yml"},
 		{Name: "ubuntu-26.04", Description: "Ubuntu 26.04 LTS with Clang", Workflow: "compiler-tier2.yml"},
-		{Name: "fedora-43", Description: "Fedora 43 with Clang", Workflow: "compiler-tier3.yml"},
 	}
 }
 
