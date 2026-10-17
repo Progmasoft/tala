@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # The Ubuntu 26.04 LTS host of the compiler, as the workflows install it:
-# Clang and LLVM from the distribution, GHC 9.10.3, Cabal 3.16.1.0 and Bazel
-# through a pinned Bazelisk. `cross-platform-test` builds this image and runs
-# the repository's own commands in it.
+# Clang and libc++ from the distribution, LLVM built with libc++ from the
+# toolchain release, GHC 9.10.3, Cabal 3.16.1.0 and Bazel through a pinned
+# Bazelisk. `cross-platform-test` builds this image and runs the repository's
+# own commands in it.
 
 # GHC is taken from the official Haskell image and not installed here. An
 # installation unpacks and copies some forty thousand files one at a time,
@@ -24,9 +25,29 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential ca-certificates clang clang-tidy curl git golang-go \
-        libffi-dev libgmp-dev libncurses-dev libxml2-dev libzstd-dev lld \
-        llvm-dev pkg-config unzip xz-utils zlib1g-dev \
+        libc++-dev libc++abi-dev libffi-dev libgmp-dev libncurses-dev \
+        libxml2-dev libzstd-dev lld pkg-config unzip xz-utils zlib1g-dev zstd \
     && rm -rf /var/lib/apt/lists/*
+
+# LLVM comes from the toolchain release, built with libc++ for this host,
+# because the compiler is built with libc++ and the distribution's LLVM uses
+# libstdc++. The archive is refused unless it has the digest the repository
+# records (helpers/internal/development/llvm_toolchain.go checks that the two
+# agree). It is unpacked while the image is built: a run has no network.
+# Only x86-64 archives are published so far.
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+        amd64) ;; \
+        *) echo "no LLVM toolchain archive with libc++ for ${TARGETARCH} yet" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/llvm.tar.zst \
+        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-1/llvm-22.1.6-libcxx-ubuntu-26.04-x86_64.tar.zst"; \
+    echo "5e8a4c1f52b7d7eedf155b76bd057cec079e11daa66822d1f6af1109c551694b  /tmp/llvm.tar.zst" | sha256sum -c -; \
+    tar --zstd -xf /tmp/llvm.tar.zst -C /opt; \
+    mv /opt/llvm-22.1.6-libcxx-ubuntu-26.04-x86_64 /opt/llvm-libcxx; \
+    rm /tmp/llvm.tar.zst; \
+    /opt/llvm-libcxx/bin/llvm-config --version
+ENV LLVM_ROOT=/opt/llvm-libcxx
 
 COPY --from=ghc /opt/ghc/9.10.3 /opt/ghc/9.10.3
 ENV PATH=/opt/ghc/9.10.3/bin:${PATH}
