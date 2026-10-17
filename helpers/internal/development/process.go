@@ -6,6 +6,7 @@ package development
 import (
 	"context"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"io"
 	"os"
 	"os/exec"
@@ -27,16 +28,28 @@ type commandRunner interface {
 type systemRunner struct {
 	stdout io.Writer
 	stderr io.Writer
+	// console presents each program as a step; without one the program's
+	// output goes straight to stdout and stderr.
+	console *console.Console
 }
 
 func (runner systemRunner) Run(directory string, environment []string, name string, arguments ...string) error {
+	if runner.console == nil {
+		return runProgram(directory, environment, runner.stdout, runner.stderr, name, arguments)
+	}
+	return runner.console.Step(console.Describe(name, arguments), func(stdout, stderr io.Writer) error {
+		return runProgram(directory, environment, stdout, stderr, name, arguments)
+	})
+}
+
+func runProgram(directory string, environment []string, stdout, stderr io.Writer, name string, arguments []string) error {
 	command, finish := watchedCommand(name, arguments)
 	defer finish(nil)
 	command.Dir = directory
 	command.Env = mergedEnvironment(environment)
 	command.Stdin = os.Stdin
-	command.Stdout = runner.stdout
-	command.Stderr = runner.stderr
+	command.Stdout = stdout
+	command.Stderr = stderr
 	return finish(command.Run())
 }
 

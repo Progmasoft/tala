@@ -6,6 +6,7 @@ package development
 import (
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"net/http"
 	"os"
@@ -15,9 +16,13 @@ import (
 
 // Main runs the developer command with the host process streams.
 func Main() {
-	runner := systemRunner{stdout: os.Stdout, stderr: os.Stderr}
-	if err := run(os.Args[1:], runner); err != nil {
-		fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
+	output := console.New()
+	runner := systemRunner{stdout: os.Stdout, stderr: os.Stderr, console: output}
+	err := run(os.Args[1:], runner)
+	output.Summary()
+	if err != nil {
+		fmt.Fprintln(os.Stderr)
+		output.Failure("%v", err)
 		os.Exit(1)
 	}
 }

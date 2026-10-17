@@ -181,7 +181,7 @@ The Haskell driver package produces the private frontend consumed by Talac. Buil
 selects one coherent local package set:
 
 ```powershell
-Push-Location Compiler
+Push-Location Talac
 try {
   cabal build all
 } finally {
@@ -349,7 +349,7 @@ Generated trees are disposable. Prefer deleting only the build system's known ou
 
 ```powershell
 bazelisk clean
-Push-Location Compiler
+Push-Location Talac
 try { cabal clean } finally { Pop-Location }
 .\Tazel\gradlew.bat -p Tazel clean
 ```
@@ -360,6 +360,26 @@ Do not commit `bazel-*`, Cabal `dist-newstyle`, Gradle `.gradle`/`build`, IDE ca
 artifacts used only for smoke tests. Local compiler bundles below `dist/` are equally reproducible and disposable. Before
 removing a large tree manually, resolve the exact absolute target and verify that it is a generated directory inside this
 checkout.
+
+## Helper output
+
+The Go helpers (`develop`, `githelper`, `cross-platform-test`, `prebuild`, `optional-packages`, `verify-docs`) show each
+program they start as one step. How a step looks depends on where it runs:
+
+| Where | What is shown |
+| --- | --- |
+| A terminal | A spinner with the step's name, its latest output line and its time; then a check mark and the time, or a cross and the last 40 lines of output. |
+| GitHub Actions | The output inside a collapsible log group, an error annotation for a failed step, and the last 40 lines again after the group. |
+| Anything else | The output as it is printed, between a `==>` line that names the step and one that gives its result. |
+
+In a terminal the whole output of each step is kept in a log file under the user cache directory, `tala/helper-logs`,
+one folder per run; a failed step and a step with warnings print the path of theirs. Folders older than seven days are
+removed. A run of more than one step ends with a table of its steps, and on GitHub Actions the table is also added to the
+job summary.
+
+Package managers and `gh run watch` talk to the developer themselves, so their output is never held back. Git's output is
+shown after each command, since it is the answer of that command. `TALA_HELPERS_OUTPUT` chooses the presentation:
+`rich`, `plain` or `actions`.
 
 ## Troubleshooting
 

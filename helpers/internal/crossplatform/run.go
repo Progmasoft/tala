@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"io"
 	"os"
 	"os/exec"
@@ -26,8 +27,11 @@ type Engine interface {
 	Run(directory string, input io.Reader, output io.Writer, errorOutput io.Writer, name string, arguments ...string) error
 }
 
-// SystemEngine runs real programs.
-type SystemEngine struct{}
+// SystemEngine runs real programs. With a Console each program is a step;
+// without one its output goes straight to the given writers.
+type SystemEngine struct {
+	Console *console.Console
+}
 
 func (SystemEngine) LookPath(name string) (string, error) { return exec.LookPath(name) }
 
@@ -43,7 +47,22 @@ func (SystemEngine) Output(directory string, name string, arguments ...string) (
 	return string(output), nil
 }
 
-func (SystemEngine) Run(directory string, input io.Reader, output io.Writer, errorOutput io.Writer, name string, arguments ...string) error {
+func (engine SystemEngine) Run(directory string, input io.Reader, output io.Writer, errorOutput io.Writer, name string, arguments ...string) error {
+	if engine.Console == nil {
+		return runProgram(directory, input, output, errorOutput, name, arguments)
+	}
+	work := func(stdout, stderr io.Writer) error {
+		return runProgram(directory, input, stdout, stderr, name, arguments)
+	}
+	title := console.Describe(name, arguments)
+	// gh run watch draws the state of a workflow run itself.
+	if len(arguments) >= 2 && arguments[0] == "run" && arguments[1] == "watch" {
+		return engine.Console.Live(title, work)
+	}
+	return engine.Console.Step(title, work)
+}
+
+func runProgram(directory string, input io.Reader, output io.Writer, errorOutput io.Writer, name string, arguments []string) error {
 	command := exec.Command(name, arguments...)
 	command.Dir = directory
 	command.Stdin = input

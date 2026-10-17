@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"io"
 	"os/exec"
 	"strings"
@@ -33,6 +34,9 @@ type processRunner struct {
 	stdin  io.Reader
 	stdout io.Writer
 	stderr io.Writer
+	// console presents each Git command that is not quiet as a step; without
+	// one the command is echoed and its output inherited.
+	console *console.Console
 }
 
 // exitError carries the process exit code a failed workflow should end with.
@@ -50,22 +54,38 @@ func failf(format string, arguments ...any) error {
 }
 
 func (runner processRunner) Run(input []byte, quiet bool, arguments ...string) (int, error) {
-	if !quiet {
-		fmt.Fprintln(runner.stderr, "+ git "+strings.Join(arguments, " "))
+	if quiet || runner.console == nil {
+		if !quiet {
+			fmt.Fprintln(runner.stderr, "+ git "+strings.Join(arguments, " "))
+		}
+		stdout := runner.stdout
+		if quiet {
+			stdout = io.Discard
+		}
+		return runner.exitCode(runner.git(input, stdout, runner.stderr, arguments))
 	}
+	// The step shows a failure; the workflow still decides what it means.
+	var err error
+	_ = runner.console.StepShowingOutput("git "+strings.Join(arguments, " "), func(stdout, stderr io.Writer) error {
+		err = runner.git(input, stdout, stderr, arguments)
+		return err
+	})
+	return runner.exitCode(err)
+}
+
+func (runner processRunner) git(input []byte, stdout, stderr io.Writer, arguments []string) error {
 	command := exec.Command("git", arguments...)
 	if input != nil {
 		command.Stdin = bytes.NewReader(input)
 	} else {
 		command.Stdin = runner.stdin
 	}
-	if quiet {
-		command.Stdout = io.Discard
-	} else {
-		command.Stdout = runner.stdout
-	}
-	command.Stderr = runner.stderr
-	err := command.Run()
+	command.Stdout = stdout
+	command.Stderr = stderr
+	return command.Run()
+}
+
+func (runner processRunner) exitCode(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}

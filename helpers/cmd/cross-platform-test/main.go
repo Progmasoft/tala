@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/Progmasoft/tala/helpers/internal/crossplatform"
 	"github.com/Progmasoft/tala/helpers/internal/repository"
 	"github.com/spf13/cobra"
@@ -39,9 +40,12 @@ The Linux targets run from every host. macOS and Windows do not run in a
 container; "targets" lists them with the reason.`
 
 func main() {
-	command := newCommand(crossplatform.SystemEngine{}, runtime.GOOS, os.Stdout, os.Stderr)
-	if err := command.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
+	output := console.New()
+	command := newCommand(crossplatform.SystemEngine{Console: output}, runtime.GOOS, os.Stdout, os.Stderr)
+	err := command.Execute()
+	output.Summary()
+	if err != nil {
+		output.Failure("%v", err)
 		os.Exit(1)
 	}
 }
