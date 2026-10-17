@@ -44,6 +44,51 @@ class CommandLineTest {
   }
 
   @Test
+  fun lockGraphReadsItsFlags() {
+    assertEquals(Command.LockGraph(), parsed("lock", "graph"))
+    assertEquals(
+      Command.LockGraph(
+        locked = true,
+        allFeatures = true,
+        invert = InvertTarget.Package(PackageCoordinate("Publisher", "Name")),
+        depth = 2,
+      ),
+      parsed("lock", "graph", "--locked", "--all-features", "-i", "Publisher.Name", "--depth", "2"),
+    )
+    assertEquals(Command.LockGraph(duplicates = true), parsed("lock", "graph", "-d"))
+    assertEquals(Command.LockGraph(duplicates = true), parsed("lock", "graph", "--duplicates"))
+    assertEquals(
+      Command.LockGraph(invert = InvertTarget.Local("Libraries/Local.vipkg")),
+      parsed("lock", "graph", "--invert", "./Libraries/Local.vipkg"),
+    )
+    assertEquals(
+      Command.LockGraph(invert = InvertTarget.Project("MyPackage")),
+      parsed("lock", "graph", "-i", "MyPackage"),
+    )
+    assertContains(rejected("lock", "graph", "-i", "My Package"), "none of them")
+    assertContains(rejected("lock", "graph", "-i", "A.B.C"), "Publisher.Name")
+    assertContains(rejected("lock", "graph", "-d", "--duplicates"), "--duplicates is written twice")
+    assertContains(rejected("lock", "graph", "-d", "-i", "Publisher.Name"), "write one of them")
+    assertContains(rejected("lock", "graph", "--depth", "deep"), "'deep' is not one")
+    assertContains(rejected("lock", "graph", "--depth", "-1"), "'-1' is an option")
+    assertContains(rejected("lock", "graph", "-i"), "-i requires a value")
+    assertContains(hint("lock", "graph", "--lokced").orEmpty(), "did you mean --locked?")
+    assertContains(hint("lock", "grahp").orEmpty(), "did you mean tazel lock graph?")
+  }
+
+  @Test
+  fun vipkgDescTakesOnePackage() {
+    assertEquals(
+      Command.ViGetVipkgDesc(PackageCoordinate("Publisher", "Name")),
+      parsed("viget", "vipkg-desc", "Publisher.Name"),
+    )
+    assertContains(rejected("viget", "vipkg-desc"), "needs a package")
+    assertContains(rejected("viget", "vipkg-desc", "Name"), "Publisher.Name")
+    assertContains(rejected("viget", "vipkg-desc", "A.B", "C.D"), "'C.D' is not an argument")
+    assertContains(rejected("viget", "vipkg-desc", "--help"), "is not an option")
+  }
+
+  @Test
   fun commandsOfTwoWordsParseToTheirValue() {
     assertEquals(Command.LockResolve, parsed("lock", "resolve"))
     assertEquals(Command.LockCreateDump(), parsed("lock", "create-dump"))
@@ -67,11 +112,13 @@ class CommandLineTest {
         CommandName.TEST to parsed("test"),
         CommandName.LOCK_RESOLVE to parsed("lock", "resolve"),
         CommandName.LOCK_CREATE_DUMP to parsed("lock", "create-dump"),
+        CommandName.LOCK_GRAPH to parsed("lock", "graph"),
         CommandName.UPDATE to parsed("update"),
         CommandName.INSTALL to parsed("install", "Publisher.Name"),
         CommandName.VIPKG_CREATE to parsed("vipkg", "create"),
         CommandName.VIGET_PUSH to parsed("viget", "push"),
         CommandName.VIGET_UPDATE to parsed("viget", "update"),
+        CommandName.VIGET_VIPKG_DESC to parsed("viget", "vipkg-desc", "Publisher.Name"),
         CommandName.VERSION to parsed("version"),
         CommandName.HELP to parsed("help"),
         CommandName.FMT to parsed("fmt"),

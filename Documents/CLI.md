@@ -155,11 +155,13 @@ tazel <command> [arguments]
 | `tazel test` | builds and runs the test suites |
 | `tazel lock resolve` | resolves the dependencies and renews `LOCK.sqlite3` |
 | `tazel lock create-dump [--path File]` | writes the lockfile as text, to `LOCK.dump` or to the file `--path` names |
+| `tazel lock graph [options]` | prints the dependency graph; renews `LOCK.sqlite3` unless `--locked` |
 | `tazel update` | updates the dependencies of the system and of the project |
 | `tazel install [--global \| -g] Publisher.Name` | downloads a package from ViGet into the project, or into the system |
 | `tazel vipkg create` | writes a local `.vipkg` for every target, without testing or publishing |
 | `tazel viget push` | builds, tests and publishes the package to ViGet for the first time |
 | `tazel viget update` | builds, tests and publishes a new version of the package |
+| `tazel viget vipkg-desc Publisher.Name` | prints the description (`project.description`) of a package of ViGet |
 | `tazel fmt [-- options]` | formats the sources with `talafmt` |
 | `tazel lint [--workspace] [-- options]` | lints the sources with `talalint` |
 | `tazel version` | prints the version of Tazel |
@@ -194,6 +196,42 @@ tazel lock create-dump --path reviews/Locks.sql
 
 The folder of the file has to exist. Tazel does not create it: a mistyped folder fails with an error instead of leaving
 a dump somewhere unexpected. A `--path` that names a folder is refused as well.
+
+### The dependency graph
+
+`tazel lock graph` prints what each project depends on. The graph is what the lockfile records, so `LOCK.sqlite3` is
+written first when it is missing or no longer records what the project file declares. At the root of a workspace every
+member is a root of the graph.
+
+```text
+Demo
+├── Publisher.Json 1.1.0 [by feature Json]
+├── Publisher.Name 1.0.0
+├── Local.vipkg (local)
+└── [test]
+    └── Publisher.Name 2.0.0
+```
+
+A dependency that a feature of the project brings in (`feature = "Json"`) is shown when that feature is on, which by
+default means it is one of the `defaultFeatures` of the project.
+
+| Option | Effect |
+| --- | --- |
+| `--locked` | leaves `LOCK.sqlite3` as it is; a lockfile that is missing or out of date is an error |
+| `--all-features` | turns every feature of the project on |
+| `--duplicates`, `-d` | shows only the ViGet packages that are there in more than one version, each with its dependents |
+| `--invert Package`, `-i Package` | shows the projects that depend on one package |
+| `--depth Levels` | prints at most this many levels below each root; `0` prints the roots alone |
+
+`--duplicates` and `--invert` cannot be written together. What `--invert` names depends on how it is written:
+
+| Written | Meaning |
+| --- | --- |
+| `MyPackage` | every project below the current directory whose `project.name` is `MyPackage`. Its dependents are the projects there that use a ViGet package of that name, from any publisher, or a local `MyPackage.vipkg`. Folders whose name starts with a dot are not searched. |
+| `Publisher.Name` | that ViGet package, in every version the projects declare |
+| `Libraries/Name.vipkg` | that local package. A word that ends in `.vipkg` is always a local package. |
+
+Tazel does not fetch packages from ViGet yet, so a ViGet package appears without the dependencies of its own.
 
 ### Output
 
@@ -249,7 +287,8 @@ These are refused by name with exit code `1`:
 - projects with dependencies: nothing fetches a dependency or hands it to the compiler yet. `tazel lock resolve` still
   records what the project declares.
 - `tazel test` when the selection declares a test suite: Tala has no test framework yet.
-- `tazel vipkg create`, `tazel update`, `tazel install`, `tazel viget push` and `tazel viget update`.
+- `tazel vipkg create`, `tazel update`, `tazel install`, `tazel viget push`, `tazel viget update` and
+  `tazel viget vipkg-desc`.
 
 `check`, `build` and `run` compile for the host. The `targets` of the project file are recorded and not built.
 

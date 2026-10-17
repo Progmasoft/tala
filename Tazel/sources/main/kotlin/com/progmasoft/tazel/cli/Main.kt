@@ -31,7 +31,10 @@ private val usage =
     CommandName.RUN to "[selection] [-- program arguments]",
     CommandName.TEST to "[selection]",
     CommandName.LOCK_CREATE_DUMP to "[--path File]",
+    CommandName.LOCK_GRAPH to
+      "[--locked] [--all-features] [--duplicates | -d] [--invert | -i Package] [--depth Levels]",
     CommandName.INSTALL to "[--global | -g] Publisher.Name",
+    CommandName.VIGET_VIPKG_DESC to "Publisher.Name",
     CommandName.HELP to "[command]",
     CommandName.FMT to "[-- talafmt options]",
     CommandName.LINT to "[--workspace | selection] [-- talalint options]",
@@ -43,6 +46,18 @@ private const val SELECTION_HELP =
     "  --executable, -e Name   only the executable of this name\n" +
     "  --library, -l Name      only the library of this name\n" +
     "Each flag may be written several times."
+
+private const val GRAPH_HELP =
+  "Every project of the workspace is a root of the graph. A dependency that a feature of the\n" +
+    "project brings in is shown when that feature is on.\n" +
+    "  --locked              leave LOCK.sqlite3 as it is; fail when it is missing or out of date\n" +
+    "  --all-features        turn every feature of the project on\n" +
+    "  --duplicates, -d      show only the packages that are there in more than one version\n" +
+    "  --invert, -i Package  show the projects that depend on one package:\n" +
+    "                          MyPackage        the projects below here whose project.name it is\n" +
+    "                          Publisher.Name   that ViGet package, in every version\n" +
+    "                          Name.vipkg       that local package\n" +
+    "  --depth Levels        print at most this many levels below each root"
 
 /** The help as Mordant renders it: a title, the usage, and the commands as a table. */
 internal fun helpWidget(topic: CommandName?): Widget {
@@ -68,7 +83,12 @@ internal fun helpText(topic: CommandName?): String {
   if (topic != null) {
     val arguments = usage[topic]
     val line = listOfNotNull("tazel", topic.words, arguments).joinToString(" ")
-    val selection = if (arguments.orEmpty().contains("selection")) "\n\n$SELECTION_HELP" else ""
+    val selection =
+      when {
+        arguments.orEmpty().contains("selection") -> "\n\n$SELECTION_HELP"
+        topic == CommandName.LOCK_GRAPH -> "\n\n$GRAPH_HELP"
+        else -> ""
+      }
     return "usage: $line\n\n${topic.summary.replaceFirstChar(Char::uppercase)}.$selection"
   }
   val width = CommandName.entries.maxOf { it.words.length }
