@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   changes:
-    uses: ./.github/workflows/changes.yml
+    uses: $/.github/workflows/changes.yml
     permissions:
       contents: read
       pull-requests: read
