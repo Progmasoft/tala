@@ -36,16 +36,16 @@ jobs:
     runs-on: windows-2025-vs2026
     timeout-minutes: 300
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
       - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.temp }}/tala-fuzz-corpus
           key: tala-fuzz-windows-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -99,7 +99,7 @@ jobs:
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: fuzz-windows-${{ github.run_id }}
           path: ${{ runner.temp }}/tala-fuzz-*/
@@ -115,16 +115,16 @@ jobs:
       matrix:
         runner: [macos-15-intel, macos-26]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
       - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.temp }}/tala-fuzz-corpus
           key: tala-fuzz-${{ matrix.runner }}-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -199,7 +199,7 @@ jobs:
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: fuzz-${{ matrix.runner }}-${{ github.run_id }}
           path: ${{ runner.temp }}/tala-fuzz-*/
@@ -211,16 +211,16 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 300
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
       - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.temp }}/tala-fuzz-corpus
           key: tala-fuzz-ubuntu-2604-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -271,7 +271,7 @@ jobs:
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: fuzz-ubuntu-${{ github.run_id }}
           path: ${{ runner.temp }}/tala-fuzz-*/
@@ -283,11 +283,11 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: 1.26.x
           cache: false
@@ -295,7 +295,7 @@ jobs:
       # libFuzzer kept and saves what it adds under the same key prefix, so
       # the next libFuzzer run restores it in turn.
       - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.temp }}/tala-fuzz-corpus
           key: tala-fuzz-ubuntu-2604-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-afl-${{ github.run_id }}-${{ github.run_attempt }}
@@ -343,7 +343,7 @@ jobs:
           dnf install -y git ca-certificates curl tar gzip unzip xz which findutils \
             clang lld libcxx-devel libcxxabi-devel zstd libzstd-devel libxml2-devel \
             zlib-devel golang gcc gcc-c++ make gmp-devel libffi-devel ncurses-devel perl
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
@@ -361,7 +361,7 @@ jobs:
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           test -f "$(clang -print-resource-dir)/include/stddef.h"
       - name: Restore synchronized fuzz corpus
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.temp }}/tala-fuzz-corpus
           key: tala-fuzz-fedora-43-${{ hashFiles('Talac/Fuzzing/Corpus/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -392,7 +392,7 @@ jobs:
         run: go run ./helpers/cmd/develop fuzz-stress --asan
       - name: Preserve campaign reports and crashing corpus
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: fuzz-fedora-${{ github.run_id }}
           path: ${{ runner.temp }}/tala-fuzz-*/
