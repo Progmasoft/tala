@@ -29,6 +29,7 @@ library
         Progmasoft.Tala.Core.Verifier
         Progmasoft.Tala.Core.Wire
         Progmasoft.Tala.Desugarer
+        Progmasoft.Tala.Desugarer.Boundary
         Progmasoft.Tala.Desugarer.Branching
         Progmasoft.Tala.Desugarer.Captures
         Progmasoft.Tala.Desugarer.Effects

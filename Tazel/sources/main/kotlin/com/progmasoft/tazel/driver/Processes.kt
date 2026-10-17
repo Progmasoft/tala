@@ -19,7 +19,22 @@ interface Processes {
 
   /** Runs [command] and returns what it wrote to its output, or null when it failed. */
   fun capture(command: List<String>): String?
+
+  /**
+   * Runs [command] in [directory] with its output and errors gathered instead of shown, so the
+   * caller can print them where it wants, above a progress bar for instance.
+   */
+  fun runGathered(
+    command: List<String>,
+    directory: Path,
+  ): GatheredRun = GatheredRun(run(command, directory), "")
 }
+
+/** The exit code of a program and everything it wrote, output and errors in the order written. */
+data class GatheredRun(
+  val exitCode: Int,
+  val output: String,
+)
 
 object SystemProcesses : Processes {
   override fun run(
@@ -28,6 +43,25 @@ object SystemProcesses : Processes {
   ): Int =
     try {
       ProcessBuilder(command).directory(directory.toFile()).inheritIO().start().waitFor()
+    } catch (error: java.io.IOException) {
+      throw ProjectConfigurationException(
+        "${command.first()} could not be started: ${error.message}"
+      )
+    }
+
+  override fun runGathered(
+    command: List<String>,
+    directory: Path,
+  ): GatheredRun =
+    try {
+      val process =
+        ProcessBuilder(command)
+          .directory(directory.toFile())
+          .redirectErrorStream(true)
+          .redirectInput(ProcessBuilder.Redirect.from(nullDevice()))
+          .start()
+      val output = process.inputStream.bufferedReader().readText()
+      GatheredRun(process.waitFor(), output)
     } catch (error: java.io.IOException) {
       throw ProjectConfigurationException(
         "${command.first()} could not be started: ${error.message}"

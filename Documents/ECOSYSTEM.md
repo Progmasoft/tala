@@ -182,11 +182,13 @@ rule evolution, Analyzer protocol features, and compiler language support can sh
 ViGet is the one hosted package registry. Tala packages and Kotlin DSL plugins occupy distinct catalogs:
 
 ```text
-https://viget.progmasoft.com/<Publisher>/<Name>/
-https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/
+https://viget.progmasoft.com/langs/tala/<Publisher>/<Name>/
+https://viget.progmasoft.com/dslplugins/tazel/<Publisher>/<Name>/
 ```
 
-The first path contains Tala-authored `.vipkg` packages. The second contains Kotlin DSL plugin JARs. A DSL plugin is not
+The first path contains Tala-authored `.vipkg` packages, in the catalog of the Tala language. The second contains the
+Kotlin DSL plugin JARs of Tazel, in the catalog of its build-system DSL. The language and the build system are part of
+the path so that each catalog stays separate from those of other languages and build systems. A DSL plugin is not
 a `.vipkg`, and a Tala library is not loaded as JVM build logic.
 
 Publisher identity is the Progmasoft Account name. Account management and dashboards belong under the account service, not
@@ -233,7 +235,7 @@ without coupling all releases to the compiler workflow.
 ## Boundary rules
 
 - Do not move language parsing or type checking into editor code.
-- Do not make `talac` silently format or lint during ordinary compilation.
+- Do not make Talac silently format or lint during ordinary compilation.
 - Do not make Ecosystem/talafmt/Linter installation a compiler build dependency.
 - Do not use filesystem layout as namespace identity.
 - Do not call an unevaluated Kotlin model an active configuration evaluator.

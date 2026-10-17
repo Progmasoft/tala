@@ -81,6 +81,18 @@ data class SelectedTargets(
 )
 
 /**
+ * A selection named targets that do not exist. [names] are the unknown ones, [known] the targets of
+ * the same kind that do, so the command line can suggest what was meant; [flag] is the long flag
+ * that selects this kind.
+ */
+class UnknownTargetException(
+  kind: String,
+  val flag: String,
+  val names: List<String>,
+  val known: List<String>,
+) : Exception("no $kind is named ${names.joinToString()}")
+
+/**
  * Applies the selection flags of a command line to [projects].
  *
  * `--vipkg` keeps the named ViPkgs. `--executable` and `--library` keep the named targets, and once
@@ -94,7 +106,12 @@ fun select(
   val unknownViPkgs =
     selection.viPkgs.filterNot { name -> projects.any { it.plan.identity?.name == name } }
   if (unknownViPkgs.isNotEmpty()) {
-    throw ProjectConfigurationException("no ViPkg is named ${unknownViPkgs.joinToString()}")
+    throw UnknownTargetException(
+      "ViPkg",
+      "--vipkg",
+      unknownViPkgs,
+      projects.mapNotNull { it.plan.identity?.name },
+    )
   }
   val kept =
     if (selection.viPkgs.isEmpty()) projects
@@ -112,8 +129,11 @@ fun select(
       selected.any { targets -> targets.executables.any { it.name == name } }
     }
   if (unknownExecutables.isNotEmpty()) {
-    throw ProjectConfigurationException(
-      "no executable is named ${unknownExecutables.joinToString()}"
+    throw UnknownTargetException(
+      "executable",
+      "--executable",
+      unknownExecutables,
+      selected.flatMap { targets -> targets.executables.map { it.name } },
     )
   }
   val unknownLibraries =
@@ -121,7 +141,12 @@ fun select(
       selected.any { targets -> targets.libraries.any { it.name == name } }
     }
   if (unknownLibraries.isNotEmpty()) {
-    throw ProjectConfigurationException("no library is named ${unknownLibraries.joinToString()}")
+    throw UnknownTargetException(
+      "library",
+      "--library",
+      unknownLibraries,
+      selected.flatMap { targets -> targets.libraries.map { it.name } },
+    )
   }
   return selected
 }

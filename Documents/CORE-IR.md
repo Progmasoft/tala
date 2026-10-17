@@ -425,7 +425,7 @@ Two bounds keep the recursion within the stack. The frontend rejects a
 function body that nests statements more than 256 levels or expressions more
 than 1024 levels deep, with a source position, before Core exists. The
 native wire reader and writer bound statement bodies and expressions at 4096
-levels each, so Core from a file is bounded as well. `talac`, `tali` and the
+levels each, so Core from a file is bounded as well. Talac, `tali` and the
 fuzz programs run the pipeline on a thread with 256 MiB of reserved stack,
 `Tala/Support/CompilerStack.hpp`, instead of the stack the
 operating system gives the process, which is one megabyte on Windows. A

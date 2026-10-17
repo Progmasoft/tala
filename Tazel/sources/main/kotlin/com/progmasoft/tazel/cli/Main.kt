@@ -5,9 +5,14 @@
 
 package com.progmasoft.tazel.cli
 
+import com.github.ajalt.mordant.rendering.TextColors.brightCyan
 import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.dim
+import com.github.ajalt.mordant.rendering.Widget
+import com.github.ajalt.mordant.table.verticalLayout
 import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.widgets.Text
 import com.progmasoft.tazel.driver.SystemProcesses
 import com.progmasoft.tazel.driver.Toolchain
 import com.progmasoft.tazel.dsl.detectHost
@@ -25,7 +30,11 @@ private val usage =
     CommandName.BUILD to "[selection]",
     CommandName.RUN to "[selection] [-- program arguments]",
     CommandName.TEST to "[selection]",
+    CommandName.LOCK_CREATE_DUMP to "[--path File]",
+    CommandName.LOCK_GRAPH to
+      "[--locked] [--all-features] [--duplicates | -d] [--invert | -i Package] [--depth Levels]",
     CommandName.INSTALL to "[--global | -g] Publisher.Name",
+    CommandName.VIGET_VIPKG_DESC to "Publisher.Name",
     CommandName.HELP to "[command]",
     CommandName.FMT to "[-- talafmt options]",
     CommandName.LINT to "[--workspace | selection] [-- talalint options]",
@@ -38,11 +47,48 @@ private const val SELECTION_HELP =
     "  --library, -l Name      only the library of this name\n" +
     "Each flag may be written several times."
 
+private const val GRAPH_HELP =
+  "Every project of the workspace is a root of the graph. A dependency that a feature of the\n" +
+    "project brings in is shown when that feature is on.\n" +
+    "  --locked              leave LOCK.sqlite3 as it is; fail when it is missing or out of date\n" +
+    "  --all-features        turn every feature of the project on\n" +
+    "  --duplicates, -d      show only the packages that are there in more than one version\n" +
+    "  --invert, -i Package  show the projects that depend on one package:\n" +
+    "                          MyPackage        the projects below here whose project.name it is\n" +
+    "                          Publisher.Name   that ViGet package, in every version\n" +
+    "                          Name.vipkg       that local package\n" +
+    "  --depth Levels        print at most this many levels below each root"
+
+/** The help as Mordant renders it: a title, the usage, and the commands as a table. */
+internal fun helpWidget(topic: CommandName?): Widget {
+  if (topic != null) return Text(helpText(topic))
+  return verticalLayout {
+    cell((bold + brightCyan)("Tazel") + ", the build system and package manager of Tala.")
+    cell("")
+    cell(bold("usage") + ": tazel <command> [arguments]")
+    cell("")
+    cell(bold("commands") + ":")
+    // Aligned lines rather than a table: a table wraps a long summary into a second row and can
+    // cut a command name short on a narrow terminal, and a command name must stay whole.
+    val width = CommandName.entries.maxOf { it.words.length }
+    CommandName.entries.forEach {
+      cell("  " + (bold + brightCyan)(it.words.padEnd(width)) + "  " + it.summary)
+    }
+    cell("")
+    cell(dim("tazel help <command> explains one command."))
+  }
+}
+
 internal fun helpText(topic: CommandName?): String {
   if (topic != null) {
     val arguments = usage[topic]
     val line = listOfNotNull("tazel", topic.words, arguments).joinToString(" ")
-    val selection = if (arguments.orEmpty().contains("selection")) "\n\n$SELECTION_HELP" else ""
+    val selection =
+      when {
+        arguments.orEmpty().contains("selection") -> "\n\n$SELECTION_HELP"
+        topic == CommandName.LOCK_GRAPH -> "\n\n$GRAPH_HELP"
+        else -> ""
+      }
     return "usage: $line\n\n${topic.summary.replaceFirstChar(Char::uppercase)}.$selection"
   }
   val width = CommandName.entries.maxOf { it.words.length }
@@ -54,12 +100,25 @@ internal fun helpText(topic: CommandName?): String {
     "tazel help <command> explains one command."
 }
 
+/**
+ * Prints an error, and under it the hint of what was probably meant when there is one. Both go to
+ * standard error.
+ */
+internal fun reportError(
+  terminal: Terminal,
+  message: String,
+  hint: String? = null,
+) {
+  terminal.println((bold + brightRed)("error") + ": " + message, stderr = true)
+  if (hint != null) terminal.println((bold + brightCyan)(" hint") + ": " + hint, stderr = true)
+}
+
 fun main(arguments: Array<String>) {
   val terminal = Terminal()
   val exitCode =
     when (val parsed = parseCommandLine(arguments.toList())) {
       is ParseResult.Rejected -> {
-        terminal.println((bold + brightRed)("error") + ": " + parsed.message, stderr = true)
+        reportError(terminal, parsed.message, parsed.hint)
         ExitCode.USAGE
       }
       is ParseResult.Parsed -> {

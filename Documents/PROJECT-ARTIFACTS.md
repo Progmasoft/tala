@@ -12,7 +12,7 @@ CLI option.
 
 The compiler selects an output kind with `--emit` when several sources are
 compiled as one program. Tazel itself asks only for an executable or for a
-check; the other kinds are reached by starting `talac` directly. An
+check; the other kinds are reached by starting Talac directly. An
 executable build still produces exactly one native executable. A project `object`
 or `assembly` build instead produces one native artifact for every physical
 source unit in the selected entry namespace's Core catalog:

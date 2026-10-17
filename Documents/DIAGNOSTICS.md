@@ -51,7 +51,7 @@ Human stderr may be displayed as supplemental detail, but it must never be repar
 
 ### Document-version ownership
 
-TADG version 1 describes the disk snapshot compiled by `talac`; it does not carry an editor document version. Xide records
+TADG version 1 describes the disk snapshot compiled by Talac; it does not carry an editor document version. Xide records
 the active version when it starts a check and publishes the resulting diagnostics only if that version remains current.
 Edits made while the compiler runs therefore invalidate the result. Fixes require the same version guard before their
 text edits can be applied.
@@ -62,7 +62,7 @@ highlighting after supplementary characters.
 
 ## Output channels
 
-`talac` writes ordinary requested output to standard output and diagnostics to standard error. Help and version are parser
+Talac writes ordinary requested output to standard output and diagnostics to standard error. Help and version are parser
 outcomes rendered by the driver; parsing itself does not print. This separation lets tests and embedding clients inspect a
 typed parse result without redirecting global streams.
 
@@ -612,7 +612,7 @@ A stable machine-facing diagnostic needs:
 - optional related locations and safe fixes.
 
 The current CLI is text-oriented. A future structured protocol must be versioned rather than inferred from terminal output.
-Until then, external tools should use the compiler libraries/frontends they own instead of scraping `talac` wording.
+Until then, external tools should use the compiler libraries/frontends they own instead of scraping Talac wording.
 
 ## Security and privacy
 
