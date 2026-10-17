@@ -7,9 +7,9 @@ package com.progmasoft.tazel.cli
 
 import com.github.ajalt.mordant.rendering.TextColors.brightBlue
 import com.github.ajalt.mordant.rendering.TextColors.brightGreen
-import com.github.ajalt.mordant.rendering.TextColors.brightRed
 import com.github.ajalt.mordant.rendering.TextColors.brightYellow
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import com.github.ajalt.mordant.rendering.TextStyles.dim
 import com.github.ajalt.mordant.terminal.Terminal
 import com.progmasoft.tazel.driver.Emit
 import com.progmasoft.tazel.driver.LoadedWorkspace
@@ -18,9 +18,11 @@ import com.progmasoft.tazel.driver.SelectedTargets
 import com.progmasoft.tazel.driver.SourceFiles
 import com.progmasoft.tazel.driver.Tool
 import com.progmasoft.tazel.driver.Toolchain
+import com.progmasoft.tazel.driver.UnknownTargetException
 import com.progmasoft.tazel.driver.compilerArguments
 import com.progmasoft.tazel.driver.displayName
 import com.progmasoft.tazel.driver.executableExtension
+import com.progmasoft.tazel.driver.hasTargets
 import com.progmasoft.tazel.driver.loadWorkspace
 import com.progmasoft.tazel.driver.select
 import com.progmasoft.tazel.dsl.DependencyScope
@@ -29,15 +31,21 @@ import com.progmasoft.tazel.dsl.LoadedProject
 import com.progmasoft.tazel.dsl.OperatingSystem
 import com.progmasoft.tazel.dsl.ProjectConfigurationException
 import com.progmasoft.tazel.dsl.ProjectLoader
+import com.progmasoft.tazel.dsl.ProjectLocation
 import com.progmasoft.tazel.dsl.coordinate
 import com.progmasoft.tazel.dsl.discoverProject
+import com.progmasoft.tazel.dsl.projectFileIn
 import com.progmasoft.tazel.lock.LockedPlugin
 import com.progmasoft.tazel.lock.LockedProject
 import com.progmasoft.tazel.lock.LockfileDump
 import com.progmasoft.tazel.lock.ProjectLockFile
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.nio.file.attribute.BasicFileAttributes
+import kotlin.time.TimeSource
 
 /** The exit codes of Tazel. A program run by `tazel run` hands its own code through. */
 object ExitCode {
@@ -46,8 +54,14 @@ object ExitCode {
   const val USAGE = 2
 }
 
-/** A command that stops with a message; the message is all the user needs to see. */
-private class Stop(message: String) : Exception(message)
+/**
+ * A command that stops with a message; the message is all the user needs to see, with [hint] under
+ * it when a word looks like a typo of a real one.
+ */
+private class Stop(
+  message: String,
+  val hint: String? = null,
+) : Exception(message)
 
 /**
  * Runs one command of Tazel.
@@ -73,16 +87,18 @@ class Tazel(
         is Command.Run -> runPrograms(command)
         is Command.Test -> test(command.targets)
         Command.LockResolve -> lockResolve()
-        Command.LockCreateDump -> lockCreateDump()
+        is Command.LockCreateDump -> lockCreateDump(command.path)
+        is Command.LockGraph -> lockGraph(command)
         is Command.Fmt -> tool(Tool.TALAFMT, false, TargetSelection(), command.toolArguments)
         is Command.Lint ->
           tool(Tool.TALALINT, command.workspace, command.targets, command.toolArguments)
         Command.Version -> ExitCode.SUCCESS.also { terminal.println("tazel $version") }
-        is Command.Help -> ExitCode.SUCCESS.also { terminal.println(helpText(command.topic)) }
+        is Command.Help -> ExitCode.SUCCESS.also { terminal.println(helpWidget(command.topic)) }
         Command.Update,
         is Command.Install,
         Command.ViGetPush,
-        Command.ViGetUpdate ->
+        Command.ViGetUpdate,
+        is Command.ViGetVipkgDesc ->
           throw Stop(
             "tazel ${command.name.words} needs ViGet, and the ViGet client is not implemented yet"
           )
@@ -93,15 +109,49 @@ class Tazel(
           )
       }
     } catch (stop: Stop) {
-      fail(stop.message.orEmpty())
+      fail(stop.message.orEmpty(), stop.hint)
+    } catch (unknown: UnknownTargetException) {
+      fail(
+        unknown.message.orEmpty(),
+        unknown.names.firstNotNullOfOrNull { name ->
+          closestTo(name, unknown.known)?.let { didYouMean(name, "${unknown.flag} $it") }
+        },
+      )
     } catch (problem: ProjectConfigurationException) {
       fail(problem.message.orEmpty())
     } catch (problem: java.sql.SQLException) {
       fail("${ProjectLockFile.FILE_NAME} could not be used: ${problem.message}")
     }
 
-  private fun fail(message: String): Int {
-    terminal.println((bold + brightRed)("error") + ": " + message, stderr = true)
+  /**
+   * Starts [command] on the streams of Tazel, or, while a progress bar is drawn, gathers what it
+   * writes and prints that through the terminal so the bar stays below it.
+   */
+  private fun execute(
+    command: List<String>,
+    directory: Path,
+    progress: StepProgress,
+  ): Int {
+    if (!progress.drawing) return processes.run(command, directory)
+    val run = processes.runGathered(command, directory)
+    if (run.output.isNotBlank()) terminal.println(run.output.trimEnd(), stderr = true)
+    return run.exitCode
+  }
+
+  /** The closing status line of a command, with the time it took. */
+  private fun finished(
+    what: String,
+    started: TimeSource.Monotonic.ValueTimeMark,
+  ) {
+    val seconds = started.elapsedNow().inWholeMilliseconds / 1000.0
+    status("Finished", "$what " + dim("in ${"%.2f".format(java.util.Locale.ROOT, seconds)}s"))
+  }
+
+  private fun fail(
+    message: String,
+    hint: String? = null,
+  ): Int {
+    reportError(terminal, message, hint)
     return ExitCode.FAILURE
   }
 
@@ -140,21 +190,27 @@ class Tazel(
     selection: TargetSelection,
     emit: Emit,
   ): List<Path> {
+    val started = TimeSource.Monotonic.markNow()
     val workspace = load()
     val selected = select(workspace.all, selection)
     val compiler = toolchain.require(Tool.TALAC)
     val outputs = mutableListOf<Path>()
-    for (targets in selected) {
-      val project = targets.project
-      keepLockCurrent(project)
-      requireNoDependencies(project, DependencyScope.BUILD)
-      refuseLibraries(targets, selection)
-      for (executable in targets.executables) {
-        outputs.add(compile(compiler, project, executable, emit))
+    val verb = if (emit == Emit.METADATA) "Checking" else "Building"
+    StepProgress.start(terminal, verb, selected.sumOf { it.executables.size }).use { progress ->
+      for (targets in selected) {
+        val project = targets.project
+        keepLockCurrent(project)
+        requireNoDependencies(project, DependencyScope.BUILD)
+        refuseLibraries(targets, selection)
+        for (executable in targets.executables) {
+          progress.working(executable.name)
+          outputs.add(compile(compiler, project, executable, emit, progress))
+          progress.done()
+        }
       }
     }
     if (outputs.isEmpty()) throw Stop("the selection holds no executable to compile")
-    status("Finished", if (emit == Emit.METADATA) "check" else "build")
+    finished(if (emit == Emit.METADATA) "check" else "build", started)
     return outputs
   }
 
@@ -163,6 +219,7 @@ class Tazel(
     project: LoadedProject,
     target: ExecutableSourceTarget,
     emit: Emit,
+    progress: StepProgress,
   ): Path {
     val root = project.location.root
     val inputs =
@@ -181,7 +238,7 @@ class Tazel(
       "${target.name} " + brightBlue("(${project.displayName}, ${inputs.size} sources)"),
     )
     val arguments = compilerArguments(project.plan.compiler, target.entry, emit, inputs)
-    val exitCode = processes.run(listOf(compiler.toString()) + arguments, root)
+    val exitCode = execute(listOf(compiler.toString()) + arguments, root, progress)
     if (exitCode != 0)
       throw Stop("talac rejected executable '${target.name}' (exit code $exitCode)")
     // The compiler writes beside its first input, under that input's name; the project decides
@@ -261,16 +318,186 @@ class Tazel(
     return ExitCode.SUCCESS
   }
 
-  private fun lockCreateDump(): Int {
+  /**
+   * Writes the lockfile as text: to [path], resolved against the directory Tazel runs in, or to
+   * LOCK.dump beside the project file. The folder of the file has to exist; Tazel does not create
+   * it, so a mistyped folder fails instead of leaving a dump somewhere unexpected.
+   */
+  private fun lockCreateDump(path: String?): Int {
     val root = discoverProject(directory).root
     val lockfile = root.resolve(ProjectLockFile.FILE_NAME)
     if (!Files.isRegularFile(lockfile)) {
       throw Stop("$lockfile does not exist; write it with tazel lock resolve")
     }
-    val dump = root.resolve(ProjectLockFile.DUMP_FILE_NAME)
+    val dump =
+      if (path == null) root.resolve(ProjectLockFile.DUMP_FILE_NAME)
+      else directory.resolve(path).toAbsolutePath().normalize()
+    if (Files.isDirectory(dump)) {
+      throw Stop("$dump is a folder; --path names the file to write, such as $dump/LOCK.dump")
+    }
+    val folder = dump.parent
+    if (folder == null || !Files.isDirectory(folder)) {
+      throw Stop("the folder $folder does not exist; create it first, Tazel does not make folders")
+    }
     LockfileDump.write(lockfile, dump)
     status("Dumped", dump.toString())
     return ExitCode.SUCCESS
+  }
+
+  /**
+   * Prints the dependency graph of the project, or of every project of the workspace at its root.
+   * The graph is what the lockfiles record, so they are renewed first when they are out of date;
+   * with --locked they are only compared, and one that is missing or out of date is an error.
+   *
+   * `--invert MyPackage` names a project rather than a package, so the graph is then made of every
+   * project below the directory Tazel runs in, and of the workspace that directory belongs to.
+   */
+  private fun lockGraph(command: Command.LockGraph): Int {
+    val invert = command.invert
+    val loader = ProjectLoader(compilerVersion())
+    val workspace =
+      if (invert is InvertTarget.Project) {
+        projectFileAbove(directory)?.let { loadWorkspace(loader, it) }
+      } else {
+        loadWorkspace(loader, discoverProject(directory))
+      }
+    val shown =
+      workspace
+        ?.let {
+          listOf(it.root).filter { root -> root.hasTargets || !root.plan.dependencies.isEmpty } +
+            it.members
+        }
+        .orEmpty()
+    val projects =
+      if (invert is InvertTarget.Project) {
+        (shown + projectsBelow(directory, loader)).distinctBy { it.location.root }
+      } else {
+        shown
+      }
+    projects.forEach { keepLockCurrent(it, command.locked) }
+    val graph = projects.map {
+      graphProject(
+        it.displayName,
+        it.plan.dependencies,
+        it.plan.defaultFeatures,
+        command.allFeatures,
+      )
+    }
+    val lines =
+      when (invert) {
+        is InvertTarget.Project -> dependentsOf(invert.name, projects, graph, command.depth)
+        is InvertTarget.Package -> dependentsOf(invert.coordinate.toString(), graph, command.depth)
+        is InvertTarget.Local -> dependentsOf(invert.path, graph, command.depth)
+        null -> renderGraph(graph, GraphView(command.duplicates, null, command.depth))
+      }
+    if (lines.isEmpty()) {
+      terminal.println(dim("no package is there in more than one version"))
+    } else {
+      lines.forEach(terminal::println)
+    }
+    if (graph.any { project -> project.edges.any { it.target is GraphPackage.Remote } }) {
+      terminal.println(
+        dim("ViGet packages are shown without their own dependencies until Tazel can fetch them"),
+        stderr = true,
+      )
+    }
+    return ExitCode.SUCCESS
+  }
+
+  /** Renews the lockfile of [project] when it is out of date, or, when [locked], refuses to. */
+  private fun keepLockCurrent(
+    project: LoadedProject,
+    locked: Boolean,
+  ) {
+    val path = project.location.root.resolve(ProjectLockFile.FILE_NAME)
+    if (ProjectLockFile.isCurrent(path, locked(project))) return
+    if (locked) {
+      val state =
+        if (Files.exists(path)) "does not record what the project declares" else "does not exist"
+      throw Stop(
+        "$path $state, and --locked leaves it as it is",
+        "renew it with tazel lock resolve, or leave out --locked",
+      )
+    }
+    ProjectLockFile.write(project.location.root, locked(project))
+    terminal.println(
+      (bold + brightGreen)("Locked".padStart(STATUS_WIDTH)) + " $path",
+      stderr = true,
+    )
+  }
+
+  /** The lines of `--invert` for a package: each version of [key] with its dependents. */
+  private fun dependentsOf(
+    key: String,
+    graph: List<GraphProject>,
+    depth: Int?,
+  ): List<String> {
+    if (graph.packagesWithKey(key).isEmpty()) {
+      throw Stop(
+        "no project here depends on $key",
+        closestTo(key, graph.packageKeys())?.let { didYouMean(key, "--invert $it") },
+      )
+    }
+    return renderGraph(graph, GraphView(invert = key, depth = depth))
+  }
+
+  /** The project file of [start] or of the nearest directory above it; null when there is none. */
+  private fun projectFileAbove(start: Path): ProjectLocation? =
+    generateSequence(start.toAbsolutePath().normalize()) { it.parent }
+      .firstNotNullOfOrNull(::projectFileIn)
+
+  /** The lines of `--invert MyPackage`: every project of that name with its dependents. */
+  private fun dependentsOf(
+    name: String,
+    projects: List<LoadedProject>,
+    graph: List<GraphProject>,
+    depth: Int?,
+  ): List<String> {
+    val named = projects.filter { it.plan.identity?.name == name }
+    if (named.isEmpty()) {
+      val names = projects.mapNotNull { it.plan.identity?.name }.distinct()
+      throw Stop(
+        "no project below $directory has the name $name",
+        closestTo(name, names)?.let { didYouMean(name, "--invert $it") },
+      )
+    }
+    val targets = named.map {
+      val place = directory.relativize(it.location.root).joinToString("/")
+      NamedProject(name, it.plan.identity?.version, place.ifEmpty { "." })
+    }
+    return renderDependents(targets, graph, depth)
+  }
+
+  /**
+   * Every project below [start], [start] included, in the order of their paths. A folder whose name
+   * starts with a dot, such as .git or .tazel, is not looked into.
+   */
+  private fun projectsBelow(
+    start: Path,
+    loader: ProjectLoader,
+  ): List<LoadedProject> {
+    val locations = mutableListOf<ProjectLocation>()
+    Files.walkFileTree(
+      start,
+      object : SimpleFileVisitor<Path>() {
+        override fun preVisitDirectory(
+          folder: Path,
+          attributes: BasicFileAttributes,
+        ): FileVisitResult {
+          if (folder != start && folder.fileName.toString().startsWith(".")) {
+            return FileVisitResult.SKIP_SUBTREE
+          }
+          projectFileIn(folder)?.let(locations::add)
+          return FileVisitResult.CONTINUE
+        }
+
+        override fun visitFileFailed(
+          file: Path,
+          problem: java.io.IOException,
+        ) = FileVisitResult.CONTINUE
+      },
+    )
+    return locations.sortedBy { it.root.toString() }.map(loader::load)
   }
 
   /** Starts the formatter or the linter once per ViPkg, on every source the ViPkg owns. */
@@ -285,21 +512,27 @@ class Tazel(
       if (wholeWorkspace || !selection.isEverything) workspace.all else workspace.default
     val selected = select(projects, selection)
     val program = toolchain.require(tool)
+    val verb = if (tool == Tool.TALAFMT) "Formatting" else "Linting"
     var result = ExitCode.SUCCESS
-    for (targets in selected) {
-      val files = sourcesOf(targets, includeTests = selection.isEverything)
-      if (files.isEmpty()) continue
-      status(
-        if (tool == Tool.TALAFMT) "Formatting" else "Linting",
-        "${targets.project.displayName} " + brightBlue("(${files.size} sources)"),
-      )
-      val exitCode =
-        processes.run(
-          listOf(program.toString()) + toolArguments + "--" + files,
-          targets.project.location.root,
-        )
-      if (exitCode != 0) result = exitCode
+    val started = TimeSource.Monotonic.markNow()
+    StepProgress.start(terminal, verb, selected.size).use { progress ->
+      for (targets in selected) {
+        progress.working(targets.project.displayName)
+        val files = sourcesOf(targets, includeTests = selection.isEverything)
+        if (files.isNotEmpty()) {
+          status(verb, "${targets.project.displayName} " + brightBlue("(${files.size} sources)"))
+          val exitCode =
+            execute(
+              listOf(program.toString()) + toolArguments + "--" + files,
+              targets.project.location.root,
+              progress,
+            )
+          if (exitCode != 0) result = exitCode
+        }
+        progress.done()
+      }
     }
+    if (result == ExitCode.SUCCESS) finished(if (tool == Tool.TALAFMT) "fmt" else "lint", started)
     return result
   }
 

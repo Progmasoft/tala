@@ -30,8 +30,11 @@ object LockfileDump {
       throw ProjectConfigurationException("dump output cannot overwrite the binary lockfile")
     }
 
+    // The folder is the caller's to provide; writing into a folder that was never made is refused.
     val parent = target.parent
-    Files.createDirectories(parent)
+    if (parent == null || !Files.isDirectory(parent)) {
+      throw ProjectConfigurationException("the folder of the dump does not exist: $parent")
+    }
     val temporary = Files.createTempFile(parent, ".tala-dump-", ".tmp")
     try {
       DriverManager.getConnection("jdbc:sqlite:$source").use { connection ->

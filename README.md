@@ -172,7 +172,8 @@ The entry is found by namespace and class: it does not name a source file, and n
 mirror namespaces. Tazel collects every `.tala` file below `srcDir`, applies the exclusions of the project and hands the
 files to the compiler as one program.
 
-`LOCK.sqlite3` records the dependencies the project declares; `tazel lock create-dump` writes it as SQL text, `LOCK.dump`.
+`LOCK.sqlite3` records the dependencies the project declares; `tazel lock create-dump` writes it as SQL text, to
+`LOCK.dump` or to the file `--path` names.
 
 See [project files](Documents/PROJECT_FILES.md) for the whole DSL.
 
