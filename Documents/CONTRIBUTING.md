@@ -31,23 +31,14 @@ cross-component rules that apply to every change.
 - Project-owned `.c` implementation files are not accepted. A narrow C11 `.h` header is permitted for a stable external
   ABI such as `AARC.h`; its implementation remains C++20. OS and LLVM C headers may also be included where their platform
   APIs require them.
-- C++ namespaces, classes, and functions use PascalCase. The canonical C++ root is `Tala`.
-- C++ local variables use camelCase, constants use `kPascalCase`, and macros use `UPPER_SNAKE_CASE`.
 - The `tala_aarc_*` runtime entry points are an intentional stable C ABI implemented in C++; do not generalize that
   exception into a C implementation layer.
 
-The checked-in `.clang-format` profile is the mechanical C++20 style authority and requires LLVM/Clang 23.1.0. It uses
-four-space Allman layout, return types on their own line, system includes before project includes, indented namespace
-bodies, leading continuation operators, west-const spelling, right-aligned pointer/reference declarators, and an 80-column
-limit. Run it only on project-owned C/C++ files; never reformat `third_party/` or generated sources.
-
-The style profile does not replace the Tala naming contract above. In particular, do not rename existing functions
-to camelCase or introduce storage/pointer prefixes from an external style guide. Public API naming changes remain explicit
-architecture decisions rather than formatting work.
-
-For design choices not expressible mechanically, prefer include-what-you-use, value/RAII ownership, explicit structured
-runtime errors, early returns, references for required observers, pointers for nullable observers, and synchronization
-owned by the state it protects. Exceptions must not cross stable ABI or C boundaries.
+C++ code follows [Progmasoft C++ Style](https://github.com/Progmasoft/progmasoft-cpp): naming, formatting,
+language rules, error handling, ownership, C interfaces, testing and tooling. The checked-in `.clang-format` and `.clang-tidy` files are its profiles, and the
+pinned LLVM/Clang 23.1.0 formats and checks with them. Run `clang-format` only on project-owned C/C++ files; never
+reformat `third_party/` or generated sources. [Style and licensing](Contributing/STYLE-AND-LICENSING.md#c-style)
+lists what this repository decides beyond the guide.
 
 ## Size and decomposition
 
