@@ -91,7 +91,7 @@ the normal workflow:
 
 ```powershell
 go run ./helpers/cmd/develop doctor
-go run ./helpers/cmd/develop version 0.6.0
+go run ./helpers/cmd/develop version 0.1.0
 go run ./helpers/cmd/develop build
 go run ./helpers/cmd/develop test
 go run ./helpers/cmd/develop benchmark

@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.progmasoft.tala"
-version = "0.6.0"
+version = "0.1.0"
 
 repositories {
   mavenCentral()

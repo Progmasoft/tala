@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 name: tala-frontend-host
-version: 0.6.0
+version: 0.1.0
 synopsis: The Haskell frontend as the native Tala compiler loads it
 description:
     The shared library tala-frontend that talac loads in its own process, its
@@ -31,7 +31,7 @@ foreign-library tala-frontend
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.14,
         text >=2.1 && <2.3,
-        tala-compiler >=0.6.0 && <0.7
+        tala-compiler >=0.1.0 && <0.2
     default-language: GHC2024
 
 executable frontend-fuzz
@@ -46,7 +46,7 @@ executable frontend-fuzz
         filepath >=1.5 && <1.6,
         hpc >=0.7 && <0.8,
         text >=2.1 && <2.3,
-        tala-compiler >=0.6.0 && <0.7
+        tala-compiler >=0.1.0 && <0.2
     ghc-options: -rtsopts "-with-rtsopts=-M512m -K8m"
     default-language: GHC2024
 
