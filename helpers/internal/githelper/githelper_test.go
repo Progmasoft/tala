@@ -93,7 +93,7 @@ func exitCode(err error) int {
 
 func TestGeneratedAndPrivatePathsAreRecognizedAtAnyDepth(t *testing.T) {
 	for _, path := range []string{
-		"build", "Talac/build/output.o", "Tazel/node_modules/tool",
+		"build", "Talac/build/output.o", "Ecosystem/tala-analyzer/vscode/node_modules/tool",
 		"Talac/Haskell/dist-newstyle/cache", ".codex/PLAN.md", ".claude/WORKLOG.md", ".claude",
 	} {
 		if !isGenerated(path) {

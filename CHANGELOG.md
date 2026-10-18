@@ -7,6 +7,11 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+- Tazel moved, with its history, to its own repository,
+  [Progmasoft/tazel](https://github.com/Progmasoft/tazel), and now has its own
+  versions starting at 0.1.0. The Gradle wrapper the tools use moved to the
+  repository root.
+
 ## 0.1.0 - 2026-10-18
 
 ### The numbering starts again

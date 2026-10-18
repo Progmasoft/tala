@@ -10,8 +10,8 @@ LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt.
 Third-party notices
 -------------------
 
-The Gradle wrapper launcher files `Tazel/gradlew` and
-`Tazel/gradlew.bat` retain their original copyright notices and remain
+The Gradle wrapper launcher files `gradlew` and
+`gradlew.bat` retain their original copyright notices and remain
 licensed under the Apache License, version 2.0.
 
 The Kotlin/JVM DSL test suites use `kotlin.test` and are currently executed by

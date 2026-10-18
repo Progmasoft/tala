@@ -159,7 +159,7 @@ jobs:
       - name: Test Kotlin owners with JaCoCo
         shell: pwsh
         run: |
-          foreach ($component in @('Tazel', 'Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
+          foreach ($component in @('Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
             gradle -p $component test jacocoTestReport
             if ($LASTEXITCODE -ne 0) {
               throw "JaCoCo test/report failed for $component"
@@ -175,7 +175,6 @@ jobs:
         with:
           name: kotlin-components-coverage
           path: |
-            Tazel/build/reports/jacoco/test/jacocoTestReport.xml
             Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
             Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
             Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
@@ -247,20 +246,12 @@ jobs:
     permissions:
       id-token: write
     steps:
+      # upload-artifact drops the common Ecosystem/ prefix of the reports,
+      # so each one lands in coverage/kotlin/<component>/.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: kotlin-components-coverage
           path: coverage/kotlin
-      - name: Upload Tazel coverage
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
-          disable_search: true
-          plugins: noop
-          files: coverage/kotlin/Tazel/build/reports/jacoco/test/jacocoTestReport.xml
-          flags: kotlin-project-system
-          name: kotlin-project-system
       - name: Upload Analyzer coverage
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
@@ -268,7 +259,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-analyzer
           name: kotlin-analyzer
       - name: Upload Formatter coverage
@@ -278,7 +269,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-formatter
           name: kotlin-formatter
       - name: Upload Linter coverage
@@ -288,7 +279,7 @@ jobs:
           fail_ci_if_error: true
           disable_search: true
           plugins: noop
-          files: coverage/kotlin/Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
+          files: coverage/kotlin/talalint/build/reports/jacoco/test/jacocoTestReport.xml
           flags: kotlin-linter
           name: kotlin-linter
 

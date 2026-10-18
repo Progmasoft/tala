@@ -91,7 +91,7 @@ jobs:
           # be read). Such a failure is not one of this repository, so the
           # build is tried again after a pause. A failure of the sources
           # fails every attempt and is reported after the last.
-          foreach ($component in @('Tazel', 'Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
+          foreach ($component in @('Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
             $attempts = 3
             for ($attempt = 1; $attempt -le $attempts; $attempt++) {
               gradle -p $component classes --rerun-tasks --no-build-cache

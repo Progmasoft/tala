@@ -27,8 +27,6 @@ website/
 .vs/
 vcpkg-debug.log
 vcpkg_installed/
-Tazel/sources/Tests/
-Tazel/sources/main.tala
 /bazel-bin
 /bazel-out
 /bazel-testlogs

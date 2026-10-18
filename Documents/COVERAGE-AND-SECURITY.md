@@ -18,7 +18,7 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) analyzes five supported s
 | GitHub Actions | Workflow source, without a build |
 | C/C++ | Project-owned source, without a build for every pull request and from a traced Bazel build for the default branch |
 | Go | Manual builds of every command and internal package in helpers/ |
-| Java/Kotlin | Manual Gradle compilation of Tazel, tala-analyzer, talafmt, and talalint |
+| Java/Kotlin | Manual Gradle compilation of tala-analyzer, talafmt, and talalint |
 | JavaScript/TypeScript | Editor integration source, without a build |
 
 The configuration excludes `third_party/` and generated build output. Haskell is not a CodeQL-supported language; its
@@ -87,7 +87,6 @@ Coverage uploads carry separate flags so one component's result cannot be mistak
 | --- | --- | --- |
 | `haskell-frontend` | Instrumented Cabal compiler tests | HPC converted to LCOV |
 | `native-cpp` | The native C++/Interactive suites on macOS | Clang source-based LCOV |
-| `kotlin-project-system` | Tazel Gradle tests | JaCoCo XML |
 | `kotlin-analyzer` | Analyzer Gradle tests | JaCoCo XML |
 | `kotlin-formatter` | Formatter Gradle tests | JaCoCo XML |
 | `kotlin-linter` | Linter Gradle tests | JaCoCo XML |
@@ -105,8 +104,8 @@ Codecov's GitHub OIDC path without a repository token. The native report is gene
 `develop test`; it does not count a binary merely because it built. JaCoCo XML is generated after running the owning
 tests, and Go profiles cover every package in the helper module.
 
-To reproduce a Kotlin report locally, run `gradle -p Tazel test jacocoTestReport` (or replace the directory with
-Analyzer, Formatter, or Linter). For native macOS coverage, run
+To reproduce a Kotlin report locally, run `gradle -p Ecosystem/talafmt test jacocoTestReport` (or replace the directory with
+the Analyzer or the Linter). For native macOS coverage, run
 `go run ./helpers/cmd/develop test -- --copt=-fprofile-instr-generate --copt=-fcoverage-mapping
 --linkopt=-fprofile-instr-generate` with `LLVM_PROFILE_FILE` set to a writable path containing
 `%p-%m`, then merge the raw profiles with `llvm-profdata` and export LCOV with `llvm-cov`. The CI workflow is the

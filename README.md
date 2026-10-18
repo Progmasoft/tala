@@ -57,7 +57,7 @@ The official native development hosts, the ones the workflows test, are Windows 
 - Bazelisk for the production C++20 graph;
 - an LLVM development package containing headers, libraries, and `llvm-config`;
 - GHC 9.10 or newer and Cabal for the GHC2024 Haskell frontend;
-- JDK 25 for Tazel, the build system.
+- JDK 25 for the Kotlin configuration DSLs of the tools. Tazel, the build system, lives in [Progmasoft/tazel](https://github.com/Progmasoft/tazel).
 
 Windows uses standalone ClangCL/LLD plus Windows SDK and MSVC CRT/STL development files. macOS uses Clang/LLD plus the
 Apple SDK supplied by the Xcode Command Line Tools. Ubuntu and Fedora use Clang/LLD with their LLVM development and
@@ -129,7 +129,7 @@ talac Program.tala --entry=Example.Program
 beside the source and takes the usual extension of the host. `--emit=core|xpp|xmm|object|assembly|llvm-ir|llvm-bitcode`
 selects another artifact, and `--emit=metadata` checks a program without building it.
 
-In a project, Tazel finds the sources and passes the compiler options of the project file:
+In a project, [Tazel](https://github.com/Progmasoft/tazel) finds the sources and passes the compiler options of the project file:
 
 ```powershell
 tazel check

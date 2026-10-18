@@ -45,7 +45,7 @@ those references at `$(xcrun --show-sdk-path)`, the SDK of the selected develope
 Maintained Haskell packages use `GHC2024`; a compiler older than the required GHC will reject the edition before a
 source test runs. Check `ghc --version` and `cabal --version`, then use the versions in [Building](../BUILDING.md).
 
-Kotlin project evaluation requires JDK 25. On Windows, use the pinned Gradle wrapper in `Tazel/` and check
+The Kotlin configuration DSLs require JDK 25. On Windows, use the pinned Gradle wrapper at the repository root and check
 `java -version` in the same terminal. If the Gradle distribution cannot be downloaded, record the network or cache
 error; do not commit a local binary or change the wrapper URL to an unreviewed mirror.
 

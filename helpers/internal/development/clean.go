@@ -13,8 +13,6 @@ import (
 var generatedBuildPaths = []string{
 	"Talac/dist-newstyle",
 	"Talac/dist-fuzz-coverage",
-	"Tazel/.gradle",
-	"Tazel/build",
 	"Ecosystem/tala-analyzer/.gradle",
 	"Ecosystem/tala-analyzer/build",
 	"Ecosystem/talafmt/.gradle",

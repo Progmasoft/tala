@@ -25,7 +25,6 @@ coverage:
         informational: true
       kotlin:
         flags:
-          - kotlin-project-system
           - kotlin-analyzer
           - kotlin-formatter
           - kotlin-linter
@@ -47,7 +46,6 @@ coverage:
         informational: true
       kotlin:
         flags:
-          - kotlin-project-system
           - kotlin-analyzer
           - kotlin-formatter
           - kotlin-linter
@@ -72,10 +70,6 @@ flags:
       - Talac/
       - Interactive/
       - "!Talac/Haskell/"
-    carryforward: true
-  kotlin-project-system:
-    paths:
-      - Tazel/
     carryforward: true
   kotlin-analyzer:
     paths:

@@ -81,7 +81,7 @@ side can hide a shared bug.
 On Windows, run the pinned project wrapper rather than a machine-global Gradle:
 
 ```text
-.\Tazel\gradlew.bat -p Tazel test
+.\gradlew.bat -p Ecosystem/talafmt test
 ```
 
 If a DSL plan reaches the native driver, add a bridge or process-level check in addition to the Kotlin model test. For
@@ -90,7 +90,7 @@ Kotlin Gradle tests; [Testing](../TESTING.md#analyzer-formatter-and-linter) give
 separate workflows and release lines.
 
 The current GitHub Kotlin gates use the Windows wrapper. A macOS contributor should use the Gradle version pinned in
-`Tazel/gradle/wrapper/gradle-wrapper.properties` for an equivalent local run, or explicitly report that the
+`gradle/wrapper/gradle-wrapper.properties` for an equivalent local run, or explicitly report that the
 Kotlin gate could not run locally; do not present an unverified macOS wrapper command as a pass.
 
 ## Go tooling and documentation

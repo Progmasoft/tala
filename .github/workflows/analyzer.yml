@@ -42,7 +42,7 @@ jobs:
 
       - name: Check analyzer configuration DSL
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer spotlessCheck test
+        run: .\gradlew.bat -p Ecosystem/tala-analyzer spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh
@@ -112,7 +112,7 @@ jobs:
 
       - name: Compile IntelliJ plugin
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
+        run: .\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
 
   kotlin-config:
     name: Kotlin configuration model
@@ -136,4 +136,4 @@ jobs:
 
       - name: Test, format, and generate Kotlin API documentation
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/tala-analyzer check jacocoTestReport spotlessCheck
+        run: .\gradlew.bat -p Ecosystem/tala-analyzer check jacocoTestReport spotlessCheck
