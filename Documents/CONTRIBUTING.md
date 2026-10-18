@@ -102,7 +102,7 @@ Run the checks appropriate to the changed ownership boundary:
 
 - Haskell: keep every component on the repository-wide `GHC2024` edition, then run `cabal build all`, `cabal test all`,
   and `cabal check`.
-- Kotlin: `.\gradlew.bat -p Ecosystem/talafmt test` for a tool; Tazel is tested in [its repository](https://github.com/Progmasoft/tazel).
+- Kotlin: `.\gradlew.bat -p Ecosystem/talafmt test` for a tool.
 - Native: `go run ./helpers/cmd/develop test` on an official Windows 10/11, macOS 26 Tahoe or Ubuntu 26.04 LTS host.
 - Sanitizers: `go run ./helpers/cmd/develop sanitize address`; macOS also exposes `undefined` and `thread`.
 - C/C++ style: LLVM 23.1.0 `clang-format --dry-run --Werror` over project-owned `.cpp`, `.hpp`, `.hh`, and `.h` files.

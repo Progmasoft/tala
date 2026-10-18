@@ -7,11 +7,6 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
-- Tazel moved, with its history, to its own repository,
-  [Progmasoft/tazel](https://github.com/Progmasoft/tazel), and now has its own
-  versions starting at 0.1.0. The Gradle wrapper the tools use moved to the
-  repository root.
-
 ## 0.1.0 - 2026-10-18
 
 ### The numbering starts again
@@ -19,22 +14,9 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 Tala restarts its version at 0.1.0. The numbers up to 0.6.0 were inherited
 from the projects Tala grew out of, X# and Visual X#. Their tags and releases
 stay as they were. From now on a release of the compiler repository is tagged
-`tala-<version>`, and the Haskell packages, `talac --version`, the bundle and
-Tazel carry the same number. The language and the compiler did not change
+`tala-<version>`, and the Haskell packages, `talac --version` and the bundle
+carry the same number. The language and the compiler did not change
 because of the new number: Tala 0.1.0 accepts what 0.6.0 accepted.
-
-### Tazel
-
-- `tazel lock create-dump --path File` writes the dump to any file. Its folder
-  has to exist; Tazel does not create folders.
-- `tazel lock graph` prints the dependency graph and renews `LOCK.sqlite3`
-  first, unless `--locked` forbids it. `--all-features`, `--duplicates` (`-d`),
-  `--invert` (`-i`, for `Publisher.Name`, a `.vipkg` path or a project name)
-  and `--depth` choose what it shows.
-- `tazel viget vipkg-desc Publisher.Name` is recognized, and refused by name
-  until the ViGet client exists.
-- A mistyped command, flag or name gets a "did you mean" hint, and on an
-  interactive terminal a progress bar follows the targets.
 
 ### Packages
 
@@ -57,7 +39,7 @@ because of the new number: Tala 0.1.0 accepts what 0.6.0 accepted.
 - The fuzzing workflow adds AFL++ with CmpLog over the wire and command-line
   targets. The Go helpers present the programs they start as steps.
 - OSV-Scanner checks the locked dependencies. Every pinned action names its
-  exact version, and Tazel's Gradle dependencies are locked.
+  exact version.
 
 ## Before 0.1.0
 

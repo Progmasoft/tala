@@ -55,11 +55,10 @@ Stage ownership is deliberate:
 | `Talac/Linker` | C++20/Bazel | typed LLD invocation and executable validation |
 | `Talac/Cli` | C++20/Bazel | command schema, dispatch, output, and exit status |
 | `Interactive/` | C++20/Bazel | `tali` REPL, isolated frontend cells, ORC LLJIT session, tests, and benchmarks |
-| [Progmasoft/tazel](https://github.com/Progmasoft/tazel) | Kotlin/Gradle | `tazel`, in its own repository: project DSL, plugins, source discovery, SQLite lockfile, and the commands that start the tools |
 
 This table is a dependency rule as well as a directory map. The frontend must not include LLVM concepts. LLVM must not parse
-source syntax. The compiler must not know projects: Tazel finds the `.tala` files of a target and names them on the
-compiler's command line. Each command line coordinates its owners but does not duplicate their semantic decisions.
+source syntax. The compiler must not know projects: whoever starts it names every `.tala` file on its command
+line. Each command line coordinates its owners but does not duplicate their semantic decisions.
 
 ## Frontend stages
 
@@ -174,10 +173,6 @@ The private frontend library is located relative to Talac in the build or instal
 is project input, not an executable search mechanism. The driver owns in-memory Core buffers plus temporary link artifacts through scoped
 cleanup objects so partial runs do not leak files or accidentally reuse an older artifact.
 
-`tazel run` executes only the executable produced by its current successful build. A failed compile or link cannot fall through to
-an executable left by a previous invocation. Tazel and the compiler are separate processes that share no memory and no
-private format: Tazel passes arguments and reads the exit code.
-
 ## Extension points
 
 The Kotlin project plugin API extends project configuration and deterministic plan metadata. It is trusted JVM build logic,
@@ -185,13 +180,11 @@ not a compiler backend API. A CMake DSL plugin may remain available for projects
 Tala compiler itself uses Bazel.
 
 Analyzer, Formatter, and Linter share frontend/source-policy contracts but remain independently versioned products. They do
-not become compiler passes merely because `tazel fmt` and `tazel lint` dispatch them for a project.
+not become compiler passes.
 
 ## Architecture constraints
 
 - One shipped Talac command coordinates frontend and backend; frontend/backend are not separate user binaries.
-- `tazel` starts Talac, `talafmt` and `talalint` as programs; it is never linked into them and they never read a
-  project file.
 - CorePrep remains internal and cannot appear in `--emit` or `--build`.
 - Public artifacts require an explicit, versioned reader/writer contract.
 - Machine-specific LLVM installation paths never enter tracked files.

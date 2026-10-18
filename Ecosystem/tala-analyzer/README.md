@@ -66,9 +66,9 @@ the returned configuration do not change when a caller later edits a DSL scope.
 The repository wrapper and JDK 25 are the supported build environment for the Kotlin configuration module:
 
 ```powershell
-.\Tazel\gradlew.bat -p Analyzer test
-.\Tazel\gradlew.bat -p Analyzer spotlessCheck
-.\Tazel\gradlew.bat -p Analyzer dokkaGenerateHtml
+.\gradlew.bat -p Ecosystem/tala-analyzer test
+.\gradlew.bat -p Ecosystem/tala-analyzer spotlessCheck
+.\gradlew.bat -p Ecosystem/tala-analyzer dokkaGenerateHtml
 ```
 
 The first command exercises default values, validation failures, nested-scope behavior, and snapshot immutability. The

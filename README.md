@@ -6,7 +6,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 # Tala
 
 Tala is an experimental native programming language and compiler project. This repository contains the compiler,
-project DSL, runtime components, language examples, tests, and supporting developer tools.
+runtime components, language examples, tests, and supporting developer tools.
 
 The repository is under an architectural transition. The production `.tala` route now uses the Haskell lexer-through-Core
 frontend and hands a verified `TACR` Core artifact to the C++20 CorePrep-to-Xpp-to-Xmm-to-LLVM pipeline. The previous C
@@ -17,7 +17,7 @@ compiler is Haskell through CorePrep and C++20 from Xpp onward.
 ## The name
 
 The name comes from Tagalog and Sanskrit. In Tagalog *tala* is a bright star; in Sanskrit *tāla* is a beat, the measure
-that keeps music in time. Tazel, the build system and package manager, joins Tala and Bazel.
+that keeps music in time.
 
 Through version 0.2.8 the project went by the code name X#. Its first real name was Visual X#, which risked being taken
 for the unrelated xBase language X#. Tala is the final name; earlier release notes keep the names they were written
@@ -57,7 +57,7 @@ The official native development hosts, the ones the workflows test, are Windows 
 - Bazelisk for the production C++20 graph;
 - an LLVM development package containing headers, libraries, and `llvm-config`;
 - GHC 9.10 or newer and Cabal for the GHC2024 Haskell frontend;
-- JDK 25 for the Kotlin configuration DSLs of the tools. Tazel, the build system, lives in [Progmasoft/tazel](https://github.com/Progmasoft/tazel).
+- JDK 25 for the Kotlin configuration DSLs of the tools.
 
 Windows uses standalone ClangCL/LLD plus Windows SDK and MSVC CRT/STL development files. macOS uses Clang/LLD plus the
 Apple SDK supplied by the Xcode Command Line Tools. Ubuntu and Fedora use Clang/LLD with their LLVM development and
@@ -115,8 +115,8 @@ they measure; methodology and recorded baselines live under [Benchmarks](Benchma
 
 ## Command line
 
-Each program does one job. Talac is the compiler: sources in, one artifact out. `tazel` is the build system and package
-manager: it reads the project file and starts the compiler. `tali` is the REPL; `talafmt` and `talalint` format and lint.
+Each program does one job. Talac is the compiler: sources in, one artifact out. `tali` is the REPL; `talafmt` and
+`talalint` format and lint.
 
 Compile one file and run it:
 
@@ -129,53 +129,12 @@ talac Program.tala --entry=Example.Program
 beside the source and takes the usual extension of the host. `--emit=core|xpp|xmm|object|assembly|llvm-ir|llvm-bitcode`
 selects another artifact, and `--emit=metadata` checks a program without building it.
 
-In a project, [Tazel](https://github.com/Progmasoft/tazel) finds the sources and passes the compiler options of the project file:
-
-```powershell
-tazel check
-tazel build
-tazel run
-tazel fmt -- --check
-tazel lint -- --fix
-```
-
 Every command line is read by a parser written by hand that turns an accepted line into a typed value; no program uses a
 command-line library. See [command-line interfaces](Documents/CLI.md) for every option and for what is not implemented
 yet.
 
 `tala-frontend` is an implementation library, not a second compiler command. Talac loads it beside itself and calls
 through a versioned C11 ABI; no frontend child process or temporary Core handoff is involved.
-
-## Project files
-
-A Tala project has one project file, a Kotlin script named `BUILD.kts` (or `BUILD.tzl`, `BUILD.tazel`, `BUILD`,
-`Tazel.build`; the first that exists is used).
-
-```kotlin
-project {
-  name = "Example"
-  version = "0.1.0"
-  stability = Stability.DEV
-}
-
-sources {
-  executable {
-    srcDir = "Sources"
-    entry = "Example.Program"
-  }
-}
-```
-
-`sources.executable.entry` names a namespace-qualified class; its last segment is a class name and need not be `Main` or
-`Program`. The class provides the parameterless `public static void Main()`; a top-level function is not an entry point.
-The entry is found by namespace and class: it does not name a source file, and neither file names nor directories have to
-mirror namespaces. Tazel collects every `.tala` file below `srcDir`, applies the exclusions of the project and hands the
-files to the compiler as one program.
-
-`LOCK.sqlite3` records the dependencies the project declares; `tazel lock create-dump` writes it as SQL text, to
-`LOCK.dump` or to the file `--path` names.
-
-See [project files](Documents/PROJECT_FILES.md) for the whole DSL.
 
 ## Language specification examples
 
@@ -199,7 +158,6 @@ and Java 21. The C# and Java variants are educational comparisons and do not add
 - [Building](Documents/BUILDING.md)
 - [Testing](Documents/TESTING.md)
 - [CLI](Documents/CLI.md)
-- [Project files](Documents/PROJECT_FILES.md)
 - [Diagnostics](Documents/DIAGNOSTICS.md)
 - [Ecosystem tools](Documents/ECOSYSTEM.md)
 - [Specification guide](Documents/SPECIFICATION.md)

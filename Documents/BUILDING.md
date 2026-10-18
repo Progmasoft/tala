@@ -30,7 +30,7 @@ Required tools:
 - an LLVM development tree containing LLVM headers, libraries, and `llvm-config`. On Linux it is LLVM built with
   libc++, which the developer helper downloads; see [LLVM discovery](#llvm-discovery);
 - GHC 9.10 or newer and Cabal; every maintained Haskell component uses the `GHC2024` edition;
-- JDK 25 for the Kotlin configuration DSLs of the tools. Tazel, in its own repository, needs the same JDK.
+- JDK 25 for the Kotlin configuration DSLs of the tools.
 
 Windows additionally needs Windows SDK headers/import libraries and MSVC CRT/STL development files. These provide platform
 headers and libraries only; ClangCL, LLD, and Bazelisk remain independent tools. macOS needs the Xcode Command Line Tools,
@@ -171,8 +171,7 @@ Kotlin: the Kotlin configuration DSLs of the tools build with the repository wra
 .\gradlew.bat -p Ecosystem/talafmt test
 ```
 
-The wrapper pins the Gradle distribution. Use it instead of a machine-global Gradle command. Tazel builds in its own
-repository, [Progmasoft/tazel](https://github.com/Progmasoft/tazel).
+The wrapper pins the Gradle distribution. Use it instead of a machine-global Gradle command.
 JDK 25 must be visible to the wrapper process. Kotlin Script Runner remains an external runtime requirement; it is not
 embedded into Talac.
 

@@ -12,7 +12,7 @@
 
 // talac is a compiler and nothing else: it reads the inputs named on its
 // command line and writes one kind of output. Projects, dependencies and
-// packages belong to Tazel, which starts talac as a separate process.
+// packages belong to the program that starts it.
 //
 // Raw argv spellings are consumed by the parser and become this typed model.
 // Strings remain only for values that are intrinsically textual.
@@ -53,7 +53,7 @@ enum class BuildOutput : std::uint8_t
     kLlvmBitcode,
     /// Check the program and write no executable: every verifier runs,
     /// code generation does not, and a `.talameta` file records what was
-    /// checked. It is what `tazel check` asks for.
+    /// checked.
     kMetadata,
 };
 
