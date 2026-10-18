@@ -9,6 +9,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -225,7 +226,9 @@ type packageRunner interface {
 	run(string, ...string) error
 }
 
-type systemPackageRunner struct{}
+type systemPackageRunner struct {
+	console *console.Console
+}
 
 func (systemPackageRunner) lookPaths(name string) []string {
 	paths := make([]string, 0, 4)
@@ -292,17 +295,24 @@ func (systemPackageRunner) output(name string, args ...string) (string, error) {
 	return strings.TrimSpace(string(output)), err
 }
 
-func (systemPackageRunner) run(name string, args ...string) error {
-	command := exec.Command(name, args...)
-	command.Stdin = os.Stdin
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	return command.Run()
+// run installs packages. A package manager may ask for a password or an
+// agreement, so its output is never held back.
+func (runner systemPackageRunner) run(name string, args ...string) error {
+	return runner.console.Live(console.Describe(name, args), func(stdout, stderr io.Writer) error {
+		command := exec.Command(name, args...)
+		command.Stdin = os.Stdin
+		command.Stdout = stdout
+		command.Stderr = stderr
+		return command.Run()
+	})
 }
 
 func main() {
-	if err := runOptionalPackages(os.Args[1:], systemPackageRunner{}); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+	output := console.New()
+	err := runOptionalPackages(os.Args[1:], systemPackageRunner{console: output})
+	output.Summary()
+	if err != nil {
+		output.Failure("%v", err)
 		os.Exit(1)
 	}
 }

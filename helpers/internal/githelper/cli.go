@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/spf13/cobra"
 )
 
@@ -138,7 +139,10 @@ func resolveMessage(arguments []string, messageFile string) (string, error) {
 // Execute runs the helper with the given arguments and returns the process
 // exit code.
 func Execute(arguments []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	runner := processRunner{stdin: stdin, stdout: stdout, stderr: stderr}
+	return execute(arguments, processRunner{stdin: stdin, stdout: stdout, stderr: stderr}, stdout, stderr)
+}
+
+func execute(arguments []string, runner processRunner, stdout, stderr io.Writer) int {
 	command := newCommand(runner, stdout, stderr)
 	command.SetArgs(arguments)
 	if err := command.Execute(); err != nil {
@@ -154,5 +158,6 @@ func Execute(arguments []string, stdin io.Reader, stdout, stderr io.Writer) int 
 
 // Main is the entry point of the githelper command.
 func Main() {
-	os.Exit(Execute(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
+	runner := processRunner{stdin: os.Stdin, stdout: os.Stdout, stderr: os.Stderr, console: console.New()}
+	os.Exit(execute(os.Args[1:], runner, os.Stdout, os.Stderr))
 }

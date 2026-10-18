@@ -7,6 +7,7 @@ packages:
     ../../Talac/Haskell/Frontend/tala-frontend.cabal
     ../../Talac/Haskell/Core/tala-core.cabal
     ../../Talac/Haskell/Driver/tala-compiler.cabal
+    ../../Talac/Haskell/Tooling/tala-tooling.cabal
 
 tests: True
 import: ../../Talac/Build/Warnings.project

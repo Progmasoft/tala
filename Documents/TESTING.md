@@ -65,7 +65,7 @@ go run ./helpers/cmd/cross-platform-test ci --target windows,macos-26 --watch
 go run ./helpers/cmd/cross-platform-test ci --list
 ```
 
-`ci` starts the compiler workflows for the current branch: Windows, macOS 15 and 26, Ubuntu 26.04 and Fedora 43, on
+`ci` starts the compiler workflows for the current branch: Windows, macOS 26 and Ubuntu 26.04, on
 machines GitHub runs. These are real Windows and macOS machines, which no container gives, and nothing runs or is
 stored on the developer's. The workflows start by themselves for a pull request; `ci` starts them for a branch that
 has none. It needs the GitHub command line, signed in. The branch has to be pushed and the working tree clean, and
@@ -90,7 +90,7 @@ and `podman machine start`.
 | Target | From | What runs |
 | --- | --- | --- |
 | `ubuntu-26.04` | every host | Ubuntu 26.04 LTS with the distribution's Clang and LLVM, as the workflows install it |
-| `fedora-43` | every host | Fedora 43 with the distribution's Clang and LLVM, as the workflows install it |
+| `fedora-43` | every host | Fedora 43 with the distribution's Clang and LLVM; not an official host, and no workflow tests it |
 | `macos` | nowhere | macOS does not run in a container: there is no image and no license for one outside Apple hardware |
 | `windows` | nowhere | Podman starts Linux containers only, on every host |
 
@@ -183,7 +183,7 @@ go run ./helpers/cmd/develop test
 
 The command executes 20 Catch3 binaries, one C11 ABI contract executable and
 one source/differential fuzz smoke executable on
-Windows 10/11, macOS Sequoia/Tahoe, Ubuntu 26.04 LTS, and Fedora 43. Bazel
+Windows 10/11, macOS 26 Tahoe, and Ubuntu 26.04 LTS. Bazel
 selects the host configuration automatically; no public test instruction
 requires `--config`.
 
@@ -213,7 +213,7 @@ Windows, macOS and Linux support combined ASan/UBSan and their individual
 `sanitize address` / `sanitize undefined` profiles. macOS and native Linux also
 support the separate `sanitize thread` profile. Each profile verifies real
 intentional failures before running the complete native suite set. See
-[Fuzzing](FUZZING.md) for the Windows and Fedora TSan boundaries.
+[Fuzzing](FUZZING.md) for the Windows TSan boundary.
 
 On macOS and Linux, AddressSanitizer runs with `detect_container_overflow=0`.
 Both build with libc++, and their LLVM libraries (from Homebrew on macOS, from
@@ -232,7 +232,7 @@ bazelisk build //Talac/Fuzzing:wire_fuzz_smoke
 ```
 
 The separate `fuzzing.yml` workflow runs `go run ./helpers/cmd/develop fuzz`, a 90-second-per-target CI campaign with
-ASan/UBSan on Windows, macOS, Ubuntu, and Fedora; scheduled stress runs use 900 seconds per target. See [Fuzzing](FUZZING.md) for coverage ownership, oracles, resource bounds, corpus,
+ASan/UBSan on Windows and Ubuntu; scheduled stress runs use 900 seconds per target. See [Fuzzing](FUZZING.md) for coverage ownership, oracles, resource bounds, corpus,
 crash artifacts, and current limits.
 
 Use Bazel target boundaries to keep iteration focused:
@@ -424,13 +424,13 @@ The repository currently separates these workflow ownership areas:
 
 | Workflow | Responsibility |
 | --- | --- |
-| `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 15/26 native suites, host distribution, sanitizers, and fuzzing |
+| `changes.yml` | Called first by the native workflows: decides whether a pull request can affect the native build |
+| `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 26 Apple silicon native suites, host distribution, sanitizers, and fuzzing |
 | `compiler-tier2.yml` | Ubuntu 26.04 LTS native suites, host distribution, and AddressSanitizer |
-| `compiler-tier3.yml` | Fedora 43 container native suites, host distribution, and wire-mutation smoke |
-| `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on all four host families, and an AFL++ campaign on Ubuntu |
+| `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on Windows and Ubuntu, and an AFL++ campaign on Ubuntu |
 | `language-layers.yml` | Kotlin project system plus Haskell compiler layers |
 | `haskell-coverage.yml` | Haskell coverage reporting |
-| `coverage.yml` | Native C++, Kotlin, and Go coverage reports uploaded to Codecov |
+| `coverage.yml` | Native C++ (on Ubuntu), Kotlin, and Go coverage reports uploaded to Codecov |
 | `codeql.yml` | CodeQL scanning for C/C++, Kotlin, Go, and GitHub Actions |
 | `analyzer.yml` | tala-analyzer layers |
 | `formatter.yml` | talafmt layers |
@@ -484,7 +484,7 @@ that boundary with:
 go run ./helpers/cmd/develop bundle
 ```
 
-This is more than an archive or copy test. A passing run proves that the staged `talac` reports the checkout's compiler
+This is more than an archive or copy test. A passing run proves that the staged Talac reports the checkout's compiler
 version, loads the adjacent private `tala-frontend` shared library in-process, compiles `Examples/HelloWorld` into an executable, and runs it until it prints
 `Hello from Tala!`. The tier workflows run it on every official host after the native suites. It also proves that the bundle contains `LICENSE.txt`, `PATENTS`, the current `1.1` exception and patent-grant
 texts, and a `SHA256SUMS` manifest covering the other staged files.

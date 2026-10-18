@@ -141,7 +141,7 @@ compiler or IDE part of the build architecture. ClangCL/LLD remain the native to
 
 ## Linking an executable
 
-`talac` links a native executable on every host. The entry of a program is a bridge the backend
+Talac links a native executable on every host. The entry of a program is a bridge the backend
 adds for an executable and for nothing else: it calls the program's `Main` and returns zero.
 
 | Host | Entry symbol | Linked by | Runtime library | Takes from the system |

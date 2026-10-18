@@ -46,6 +46,7 @@ Stage ownership is deliberate:
 | `Talac/Haskell/Frontend` | Haskell/Cabal | Lexer, Parser, Renamer, Name Resolution, Type Checker, and Desugarer |
 | `Talac/Haskell/Core` | Haskell/Cabal | Core/CorePrep models, specialization-demand planning, optimization, verification, and codecs |
 | `Talac/Haskell/Driver` | Haskell/Cabal | source loading, namespace merge, entry selection, and frontend process |
+| `Talac/Haskell/Tooling` | Haskell/Cabal | `tala-tooling`: the modules the formatter, the linter and the analyzer build on, and nothing else |
 | `Talac/Core` | C++20/Bazel | bounded Core reader, verifier, and CorePrep adapter |
 | `Talac/Codegen/Xpp` | C++20/Bazel | CorePrep-to-Xpp lowering, optimization, and verification |
 | `Talac/Codegen/Xmm` | C++20/Bazel | Xpp-to-Xmm lowering, optimization, and verification |
@@ -168,7 +169,7 @@ temporary object. Bounded Xpp/Xmm v7 readers and writers support verified forwar
 
 ## Process and temporary-file model
 
-The private frontend library is located relative to `talac` in the build or installed layout. The current working directory
+The private frontend library is located relative to Talac in the build or installed layout. The current working directory
 is project input, not an executable search mechanism. The driver owns in-memory Core buffers plus temporary link artifacts through scoped
 cleanup objects so partial runs do not leak files or accidentally reuse an older artifact.
 
@@ -187,8 +188,8 @@ not become compiler passes merely because `tazel fmt` and `tazel lint` dispatch 
 
 ## Architecture constraints
 
-- One shipped `talac` command coordinates frontend and backend; frontend/backend are not separate user binaries.
-- `tazel` starts `talac`, `talafmt` and `talalint` as programs; it is never linked into them and they never read a
+- One shipped Talac command coordinates frontend and backend; frontend/backend are not separate user binaries.
+- `tazel` starts Talac, `talafmt` and `talalint` as programs; it is never linked into them and they never read a
   project file.
 - CorePrep remains internal and cannot appear in `--emit` or `--build`.
 - Public artifacts require an explicit, versioned reader/writer contract.

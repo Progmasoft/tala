@@ -74,7 +74,7 @@ Use these layers when comparing design and code:
 1. `Spec/` defines the intended public language/library behavior.
 2. Compiler models show which parts can currently be represented.
 3. Focused tests show which behavior is implemented at an owning stage.
-4. Connected CLI tests show which behavior is usable through `talac`.
+4. Connected CLI tests show which behavior is usable through Talac.
 5. Backend tests show which represented values can produce native artifacts.
 
 A parser test alone does not prove runtime behavior. An LLVM test alone does not authorize new source syntax. A registered

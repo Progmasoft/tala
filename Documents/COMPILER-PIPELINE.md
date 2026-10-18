@@ -47,9 +47,9 @@ LLVM IR -> LLVM verifier -> optimization -> target machine
         `--> LLD -> executable
 ```
 
-The user-facing compiler command remains `talac`. The native driver calls the adjacent Haskell `tala-frontend` shared library
+The user-facing compiler command remains Talac. The native driver calls the adjacent Haskell `tala-frontend` shared library
 through a versioned C11 ABI; the library is not a second process or public compiler command. Native middle-end and backend
-libraries are linked into `talac`; CorePrep is never exposed as a command or file type.
+libraries are linked into Talac; CorePrep is never exposed as a command or file type.
 
 ## 1. Input selection
 

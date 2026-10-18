@@ -6,6 +6,7 @@ packages:
     Haskell/Frontend/tala-frontend.cabal
     Haskell/Core/tala-core.cabal
     Haskell/Driver/tala-compiler.cabal
+    Haskell/Tooling/tala-tooling.cabal
     ../Ecosystem/tala-analyzer/tala-analyzer.cabal
     ../Ecosystem/talafmt/talafmt.cabal
     ../Ecosystem/talalint/talalint.cabal
