@@ -13,12 +13,6 @@ import (
 var generatedBuildPaths = []string{
 	"Talac/dist-newstyle",
 	"Talac/dist-fuzz-coverage",
-	"Ecosystem/tala-analyzer/.gradle",
-	"Ecosystem/tala-analyzer/build",
-	"Ecosystem/talafmt/.gradle",
-	"Ecosystem/talafmt/build",
-	"Ecosystem/talalint/.gradle",
-	"Ecosystem/talalint/build",
 }
 
 func cleanGeneratedBuildPaths(repository string) error {

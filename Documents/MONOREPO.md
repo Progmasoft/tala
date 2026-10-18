@@ -52,46 +52,21 @@ publicly installed frontend/backend tools.
 ### Allowed dependency direction
 
 ```text
-Cli -> Commands -> Project bridge / Driver / Linker
+Cli -> Commands -> Driver / Linker
 Driver -> Core -> Xpp -> Xmm -> LLVM backend
 Haskell Driver -> Frontend -> Syntax
 Haskell Driver -> Core
-Project bridge -> evaluated Kotlin plan
 ```
 
 Reverse dependencies are avoided. LLVM does not call the CLI; Core does not depend on Xpp; Syntax does not depend on the
 build system; public headers do not expose private LLVM handles. Shared code belongs in the narrowest package that does
 not reverse this direction.
 
-The ecosystem tools have independent ownership and build systems:
-
-```text
-Ecosystem/tala-analyzer/         Haskell LSP and Kotlin configuration DSL
-Ecosystem/talafmt/        Haskell talafmt executable and Kotlin configuration DSL
-Ecosystem/talalint/           Haskell talalint executable and Kotlin configuration DSL
-```
-
-These canonical projects replace the retired `xs-analyzer`, `xsfmt`, and `xstidy` prototypes. Their Haskell components use
-Cabal, their Kotlin configuration layers use Gradle with an external JRE 25 and
-Kotlin Script Runner, and the tala-analyzer editor integrations additionally use their platform-specific build systems.
-
-Their first compiler-connected layer is intentionally narrow: tala-analyzer exposes syntax, semantic, and full frontend
-analysis without a standalone executable; `talafmt` performs parser-gated physical source normalization; and `talalint` combines
-semantic compiler diagnostics with independently actionable source-hygiene checks. Kotlin configuration and editor hosts
-remain separate ownership layers and are not represented by placeholder implementations.
-
-The analyzer, formatter, and linter Kotlin modules currently provide typed scopes, defaults, validation, and immutable
-snapshots. Their future script evaluators remain a separate integration layer.
-
-talafmt and talalint use independent release lines rather than inheriting the compiler version. Analyzer,
-Formatter, and Linter also have separate CI workflows so each project can evolve without coupling its validation gates to
-the others.
-
 ## Build ownership
 
 Bazel owns top-level native orchestration. `helpers/cmd/develop/main.go` is a thin, portable user interface over that graph for
 host discovery, suite execution, and sanitizers; it defines no targets or dependency edges of its own. Language-specific CI
-jobs call Cabal and Gradle directly, and the repository carries neither CMake configuration nor a second build graph such as
+jobs call Cabal directly, and the repository carries neither CMake configuration nor a second build graph such as
 `just`.
 
 ## Nested repositories
@@ -101,10 +76,10 @@ root Git index or root Bazel graph.
 
 ## Generated directories
 
-Build products, Cabal `dist-newstyle`, Gradle output, website distribution files, and local service state are
+Build products, Cabal `dist-newstyle`, website distribution files, and local service state are
 generated or local-only data and are not source ownership boundaries.
 
-Typical disposable paths include `bazel-*`, `dist-newstyle`, `.gradle`, `build`, website package-manager output,
+Typical disposable paths include `bazel-*`, `dist-newstyle`, `build`, website package-manager output,
 IDE caches, and local service databases. Their presence must not influence source discovery, tests, release content, or
 documentation claims.
 
@@ -125,7 +100,7 @@ namespace-to-file mapping on the compiler.
 
 ## Repository boundaries
 
-The root index contains compiler, project system, ecosystem tools, specification, tests, shared headers, and helpers. Local
+The root index contains the compiler, Interactive, the specification, tests, shared headers, and helpers. Local
 website, IDE, and service directories may be nested beneath the checkout while remaining separate repositories or ignored
 deployment state. A root change must not assume that committing the root automatically commits or deploys those children.
 
@@ -133,11 +108,8 @@ Go is the only implementation language for developer helpers. The independently
 buildable `helpers/` module owns `cmd/<tool>/` entry points and responsibility-based
 `internal/` packages. The root workspace selects this module without introducing
 a root module or another compiler build graph. Helpers use Cobra where typed
-subcommands and flags are needed. Bazel, Cabal, and Gradle retain build ownership.
+subcommands and flags are needed. Bazel and Cabal retain build ownership.
 See [Developer helpers](../helpers/README.md) for commands and package boundaries.
-
-CMake may still appear as a project-system DSL plugin. That plugin integrates user projects with CMake; it is not the build
-system for the Tala compiler and therefore does not contradict Bazel ownership.
 
 ## Placement checklist
 

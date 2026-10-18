@@ -10,15 +10,6 @@ LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt.
 Third-party notices
 -------------------
 
-The Gradle wrapper launcher files `gradlew` and
-`gradlew.bat` retain their original copyright notices and remain
-licensed under the Apache License, version 2.0.
-
-The Kotlin/JVM DSL test suites use `kotlin.test` and are currently executed by
-Gradle on the JUnit Platform. JUnit is not part of the Tala compiler or a
-shipped runtime dependency. JUnit Jupiter and the JUnit Platform are licensed
-under the Eclipse Public License, version 2.0.
-
 Progmasoft Catch3 0.2.0 is used by the native compiler test suite and is not a
 shipped compiler or runtime dependency. Its Catch2-derived compatibility engine
 retains the Boost Software License, version 1.0, and Catch2 Authors' notices.

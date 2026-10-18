@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-# Recipes only delegate to Go helpers. Bazel, Cabal and Gradle keep ownership
+# Recipes only delegate to Go helpers. Bazel and Cabal keep ownership
 # of their build graphs; this file is an optional command shortcut layer.
 set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 

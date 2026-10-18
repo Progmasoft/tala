@@ -214,17 +214,6 @@ Known gaps include:
 “Connected subset” means the route itself is real and never falls back to removed code. A source using a type or operation
 without a native layout still fails before producing a misleading artifact.
 
-## Ecosystem status
-
-Analyzer, Formatter, and Linter have canonical top-level projects, separate Haskell/Kotlin ownership, and independent CI.
-Their typed Kotlin configuration models are implemented. talafmt additionally evaluates the real Kotlin receiver
-and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. They are not
-compiler-internal passes.
-
-talafmt and talalint use their own version lines. tala-analyzer now provides the editor-facing
-`tala-analyzer` stdio LSP executable. It is not a compiler CLI command. See [Ecosystem tools](ECOSYSTEM.md) for the product
-boundary and current configuration surfaces.
-
 ## Data that is intentionally not duplicated
 
 - Namespace identity is not encoded by directories.

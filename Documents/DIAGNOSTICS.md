@@ -87,7 +87,6 @@ Compilation, malformed artifact, target-machine, and link failures return a nonz
 | missing target layout or invalid LLVM module | LLVM backend |
 | object/assembly emission failure | LLVM target machine boundary |
 | executable link failure | C++20 LLD driver |
-| missing Formatter or Linter installation | C++20 project-tool dispatch |
 
 A later layer should not reinterpret an earlier layer's error. For example, an unresolved name is not reported as a missing
 LLVM symbol, and a malformed integer token is not split into a valid prefix plus an unrelated identifier.
@@ -501,9 +500,6 @@ the build result of an emitted warning; it does not rewrite the diagnostic's sem
 category. The shadowing control is an explicit setting that no level turns on, and it follows the same
 CLI-over-project precedence as other compiler settings.
 
-talalint has its own rule severity model. Compiler diagnostics and linter diagnostics can appear in one Analyzer
-session, but their configuration and version lines remain independent.
-
 ## Artifact diagnostics
 
 Public Core decoding is hostile-input parsing. Reader failures should state the violated contract without dumping arbitrary
@@ -578,21 +574,17 @@ without exposing credentials or unrelated environment contents.
 
 ## Tool discovery failures
 
-Project `format` and `lint` commands require separately installed `talafmt` and `talalint`. If the executable is unavailable, the
-message names the missing binary and the ViGet package used to install it. The compiler does not fall back to an embedded
-formatter/linter or silently skip the command.
-
-The private Haskell frontend is different: it is part of the compiler distribution and is resolved from the running
+The private Haskell frontend is part of the compiler distribution and is resolved from the running
 compiler's layout. A missing frontend is an installation/build-layout failure, not a suggestion to install a random
 executable from `PATH`.
 
 LLVM discovery failures belong to Bazel analysis or build configuration. Repository diagnostics should instruct the user to
 set `LLVM_ROOT` or expose `llvm-config`; they must not recommend committing an absolute machine path.
 
-## Analyzer and machine-readable use
+## Machine-readable use
 
-The compiler pipeline keeps semantic rule decisions separate from final message construction. That lets tala-analyzer and
-talalint reuse symbol, type, range, and control-flow facts without parsing human prose.
+The compiler pipeline keeps semantic rule decisions separate from final message construction. That lets a tool built on
+the compiler reuse symbol, type, range, and control-flow facts without parsing human prose.
 
 A stable machine-facing diagnostic needs:
 

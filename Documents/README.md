@@ -40,7 +40,6 @@ following vocabulary:
 | Use or implement the REPL | [Tala Interactive](INTERACTIVE.md) |
 | Understand per-source object and assembly outputs | [Project native artifacts](PROJECT-ARTIFACTS.md) |
 | Understand diagnostics and exit behavior | [Diagnostics](DIAGNOSTICS.md) |
-| Use Analyzer, Formatter, or Linter | [Ecosystem tools](ECOSYSTEM.md) |
 | Work on LLVM lowering | [LLVM backend](LLVM-BACKEND.md) |
 | Work on callable literals | [Closure pipeline](CLOSURE-PIPELINE.md) |
 | Work on native callable invocation | [First-class callable ABI](CALLABLE-ABI.md) |
@@ -91,7 +90,6 @@ following vocabulary:
 - [Project native artifacts](PROJECT-ARTIFACTS.md) documents source ownership, per-file native emission, flattened output
   names, and safe batch replacement.
 - [Diagnostics](DIAGNOSTICS.md) describes error ownership, output streams, source positions, artifact safety, and exit status.
-- [Ecosystem tools](ECOSYSTEM.md) separates the compiler from tala-analyzer, talafmt, and talalint.
 
 ## Developer set
 

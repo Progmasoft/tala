@@ -3,7 +3,7 @@
 
 # Testing and verification
 
-Tala crosses Haskell, C++20, Kotlin, LLVM, and tool-specific boundaries. No single test command validates every layer.
+Tala crosses Haskell, C++20, and LLVM boundaries. No single test command validates every layer.
 This guide maps a change to the smallest meaningful local gate and the integrated workflows that protect the repository.
 
 ## Test principles
@@ -12,7 +12,7 @@ This guide maps a change to the smallest meaningful local gate and the integrate
 - Prefer semantic assertions over snapshots of unstable internal formatting.
 - Give malformed artifacts dedicated negative tests; do not rely only on parser rejection.
 - Keep unit tests deterministic and independent of network services.
-- Never make a passing test depend on an old generated artifact in `build`, `bazel-*`, `dist-newstyle`, or Gradle output.
+- Never make a passing test depend on an old generated artifact in `build`, `bazel-*`, or `dist-newstyle`.
 - A registered-but-disconnected CLI route needs a test for its explicit rejection.
 - A public language design example does not count as implementation coverage until an owning compiler test exercises it.
 
@@ -22,7 +22,7 @@ Run these before expensive language-layer checks:
 
 ```powershell
 git diff --check
-rg -n "d[o]cs/" README.md Documents Spec Talac Ecosystem
+rg -n "d[o]cs/" README.md Documents Spec Talac
 ```
 
 The second command is a migration/stale-link example rather than a permanent assertion that the text `docs` can never
@@ -327,48 +327,10 @@ fallback.
 Tests that construct Xpp or Xmm directly must still pass through that IR's verifier. Direct construction is a reason for
 more boundary verification, not an exemption.
 
-## Analyzer, Formatter, and Linter
-
-Each ecosystem project has an independent workflow and release line. Their Haskell and Kotlin layers are tested separately
-because a configuration snapshot can be correct while formatting or lint semantics are wrong.
-
-Typical local gates are:
-
-```powershell
-Set-Location Analyzer
-cabal build all
-cabal test all
-.\gradlew.bat test
-
-Set-Location ..\Formatter
-cabal build all
-cabal test all
-.\gradlew.bat test
-
-Set-Location ..\Linter
-cabal build all
-cabal test all
-.\gradlew.bat test
-```
-
-Run commands from the project they belong to; do not assume one Gradle or Cabal workspace owns all three tools. Evaluator
-integration is intentionally separate from the typed DSL model and must not be implied by model-only tests.
-
-Formatter tests need parser-gated idempotence: formatting valid input twice must produce the same bytes as formatting it
-once. Dry-run must not write, in-place mode must replace only the selected source, and malformed input must not be silently
-rewritten.
+## Lossless source model
 
 Lossless-source tests independently assert exact reconstruction, CRLF-aware spans, protected-fragment classification,
-delimiter-level termination, structural masks, and multi-line protected ranges. Formatter indentation tests must include
-braces inside every protected fragment kind; a green ordinary block test alone is not evidence that literal payloads are
-safe.
-
-Linter tests should assert rule identity, severity, source range, explanation metadata, safe/unsafe fix classification, and
-suppression behavior independently. A rule catalog entry is planned surface until an analysis implementation and focused
-test exist.
-
-Analyzer tests should keep syntax, semantic, and full analysis modes distinct and verify cancellation/stale-result behavior
-when workspace support is connected.
+delimiter-level termination, structural masks, and multi-line protected ranges.
 
 ## Formatting and static hygiene
 
@@ -379,15 +341,14 @@ $files = rg --files Compiler Interactive -g '*.cpp' -g '*.hpp' -g '*.hh' -g '*.h
 clang-format --dry-run --Werror $files
 ```
 
-Do not include `third_party/` or generated sources. Haskell formatting follows `fourmolu.yaml`; Kotlin formatting must respect
-the project sources and generated-code exclusions.
+Do not include `third_party/` or generated sources. Haskell formatting follows `fourmolu.yaml`.
 
 Every implementation, test, build, configuration, and internal source file outside the documented exceptions must remain at
 or below 1500 lines. A simple review aid is:
 
 ```powershell
-$extensions = '*.hs','*.cpp','*.hpp','*.hh','*.kt','*.kts','*.go','*.java'
-Get-ChildItem Talac,Interactive,Ecosystem,helpers -Recurse -File -Include $extensions |
+$extensions = '*.hs','*.cpp','*.hpp','*.hh','*.go'
+Get-ChildItem Talac,Interactive,helpers -Recurse -File -Include $extensions |
   Where-Object { (Get-Content -LiteralPath $_.FullName).Count -gt 1500 } |
   Select-Object FullName
 ```
@@ -404,13 +365,10 @@ The repository currently separates these workflow ownership areas:
 | `compiler-tier1.yml` | Windows Server 2025/ClangCL surrogate and macOS 26 Apple silicon native suites, host distribution, sanitizers, and fuzzing |
 | `compiler-tier2.yml` | Ubuntu 26.04 LTS native suites, host distribution, and AddressSanitizer |
 | `fuzzing.yml` | Coverage-guided libFuzzer campaigns with crash-corpus artifacts on Windows and Ubuntu, and an AFL++ campaign on Ubuntu |
-| `language-layers.yml` | Kotlin project system plus Haskell compiler layers |
+| `language-layers.yml` | Haskell compiler layers |
 | `haskell-coverage.yml` | Haskell coverage reporting |
-| `coverage.yml` | Native C++ (on Ubuntu), Kotlin, and Go coverage reports uploaded to Codecov |
-| `codeql.yml` | CodeQL scanning for C/C++, Kotlin, Go, and GitHub Actions |
-| `analyzer.yml` | tala-analyzer layers |
-| `formatter.yml` | talafmt layers |
-| `linter.yml` | talalint layers |
+| `coverage.yml` | Native C++ (on Ubuntu) and Go coverage reports uploaded to Codecov |
+| `codeql.yml` | CodeQL scanning for C/C++, Go, and GitHub Actions |
 | `benchmarks.yml` | Native and Haskell benchmark build and smoke coverage |
 | `llvm-libcxx.yml` | LLVM built with libc++ for the Linux hosts, published as immutable toolchain release assets when started by hand on main |
 

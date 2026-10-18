@@ -76,40 +76,10 @@ packages. Include malformed input and source spans where the contract requires t
 and C++ readers/writers, version rejection, golden bytes, and post-decode verification; a symmetric round trip on one
 side can hide a shared bug.
 
-## Kotlin project system and ecosystem tools
-
-On Windows, run the pinned project wrapper rather than a machine-global Gradle:
-
-```text
-.\gradlew.bat -p Ecosystem/talafmt test
-```
-
-If a DSL plan reaches the native driver, add a bridge or process-level check in addition to the Kotlin model test. For
-Analyzer, Formatter, or Linter work, run `cabal build all` and `cabal test all` from that project's directory, then its
-Kotlin Gradle tests; [Testing](../TESTING.md#analyzer-formatter-and-linter) gives the component commands. These tools have
-separate workflows and release lines.
-
-The current GitHub Kotlin gates use the Windows wrapper. A macOS contributor should use the Gradle version pinned in
-`gradle/wrapper/gradle-wrapper.properties` for an equivalent local run, or explicitly report that the
-Kotlin gate could not run locally; do not present an unverified macOS wrapper command as a pass.
-
-## Go tooling and documentation
-
-For changes to repository Go commands, run the paired source-file tests:
-
-```text
-go -C helpers test ./cmd/develop
-go -C helpers test ./cmd/githelper
-```
-
-For documentation, verify repository-relative links, current command spelling, component ownership, and whether the
-document describes connected code or intended design. Run `git diff --check`. Do not cite private planning files as
-public authority or change a `Spec/` example merely to match an incomplete implementation.
-
 ## Continuous integration
 
 The repository has separate Compiler Tier 1/2/3, Language Layers, Haskell Coverage, Component Coverage, CodeQL,
-Benchmarks, Analyzer, Formatter, Linter, and Coverage-Guided Fuzzing workflows. Find the jobs for your commit and inspect the final status of
+Benchmarks, and Coverage-Guided Fuzzing workflows. Find the jobs for your commit and inspect the final status of
 each triggered workflow. See [Code scanning and coverage](../COVERAGE-AND-SECURITY.md) for report ownership and limits.
 Different operating systems and sanitizer configurations catch failures that one local host cannot. A missing workflow
 is not automatically green; check its trigger before claiming coverage. If CI fails, identify the job and first failing

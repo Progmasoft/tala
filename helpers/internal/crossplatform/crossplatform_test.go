@@ -146,12 +146,12 @@ func TestTheArchiveHoldsTheListedFilesAsTheyAre(t *testing.T) {
 	root := t.TempDir()
 	write(t, root, "MODULE.bazel", "module()\n")
 	write(t, root, "Talac/a.cpp", "int a;\r\n")
-	write(t, root, "gradlew", "#!/bin/sh\n")
+	write(t, root, "run.sh", "#!/bin/sh\n")
 	if err := os.MkdirAll(filepath.Join(root, "third_party", "catch3"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	var stream bytes.Buffer
-	written, err := WriteArchive(&stream, root, []string{"Talac/a.cpp", "MODULE.bazel", "gradlew", "deleted.txt", "third_party/catch3"})
+	written, err := WriteArchive(&stream, root, []string{"Talac/a.cpp", "MODULE.bazel", "run.sh", "deleted.txt", "third_party/catch3"})
 	if err != nil || written != 3 {
 		t.Fatalf("wrote %d files, %v", written, err)
 	}
@@ -176,7 +176,7 @@ func TestTheArchiveHoldsTheListedFilesAsTheyAre(t *testing.T) {
 	if len(contents) != 3 || contents["Talac/a.cpp"] != "int a;\r\n" || contents["MODULE.bazel"] != "module()\n" {
 		t.Fatalf("archive = %v", contents)
 	}
-	if modes["gradlew"] != 0o755 || modes["Talac/a.cpp"] != 0o644 {
+	if modes["run.sh"] != 0o755 || modes["Talac/a.cpp"] != 0o644 {
 		t.Fatalf("modes = %v", modes)
 	}
 }

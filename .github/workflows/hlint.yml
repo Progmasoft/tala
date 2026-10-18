@@ -43,5 +43,5 @@ jobs:
       - name: Run HLint
         uses: haskell-actions/hlint-run@eaca4cfbf4a69f4eb875df38b6bc3e1657020378 # v2.4.10
         with:
-          path: '["Talac/Haskell/", "Ecosystem/tala-analyzer/", "Ecosystem/talafmt/", "Ecosystem/talalint/"]'
+          path: '["Talac/Haskell/"]'
           fail-on: never

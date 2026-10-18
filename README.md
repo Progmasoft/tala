@@ -57,7 +57,6 @@ The official native development hosts, the ones the workflows test, are Windows 
 - Bazelisk for the production C++20 graph;
 - an LLVM development package containing headers, libraries, and `llvm-config`;
 - GHC 9.10 or newer and Cabal for the GHC2024 Haskell frontend;
-- JDK 25 for the Kotlin configuration DSLs of the tools.
 
 Windows uses standalone ClangCL/LLD plus Windows SDK and MSVC CRT/STL development files. macOS uses Clang/LLD plus the
 Apple SDK supplied by the Xcode Command Line Tools. Ubuntu and Fedora use Clang/LLD with their LLVM development and
@@ -73,9 +72,8 @@ go run ./helpers/cmd/prebuild check
 go run ./helpers/cmd/prebuild install
 ```
 
-Windows installation uses exact winget package identities, including Temurin JDK 25, plus the official GHCup bootstrap. macOS uses Homebrew and the
-Xcode Command Line Tools installer. Ubuntu/Fedora use apt/dnf and GHCup; enable Adoptium's signed repository before
-installing Temurin 25 on Linux. The Windows SDK/CRT workload supplies link resources only; Tala still selects
+Windows installation uses exact winget package identities plus the official GHCup bootstrap. macOS uses Homebrew and the
+Xcode Command Line Tools installer. Ubuntu/Fedora use apt/dnf and GHCup. The Windows SDK/CRT workload supplies link resources only; Tala still selects
 ClangCL and LLD. Open a new terminal after installation, then run `go run ./helpers/cmd/develop doctor`.
 
 ## Build
@@ -115,8 +113,7 @@ they measure; methodology and recorded baselines live under [Benchmarks](Benchma
 
 ## Command line
 
-Each program does one job. Talac is the compiler: sources in, one artifact out. `tali` is the REPL; `talafmt` and
-`talalint` format and lint.
+Each program does one job. Talac is the compiler: sources in, one artifact out. `tali` is the REPL.
 
 Compile one file and run it:
 
@@ -159,7 +156,6 @@ and Java 21. The C# and Java variants are educational comparisons and do not add
 - [Testing](Documents/TESTING.md)
 - [CLI](Documents/CLI.md)
 - [Diagnostics](Documents/DIAGNOSTICS.md)
-- [Ecosystem tools](Documents/ECOSYSTEM.md)
 - [Specification guide](Documents/SPECIFICATION.md)
 - [Repository layout](Documents/MONOREPO.md)
 - [Contributor onboarding](Documents/Contributing/README.md)

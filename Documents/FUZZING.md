@@ -207,8 +207,8 @@ older discovered inputs; conflicting contents under a stable hash fail closed.
 
 The targets that read source text, the lexer, the parser and the source
 target, are seeded with the repository's own Tala sources as well: the
-examples, the samples of the specification and the fixtures of the Core and
-analyzer tests, more than forty files. They are read where they are,
+examples, the samples of the specification and the fixtures of the Core
+tests. They are read where they are,
 so no second copy has to be kept in step, and a source that is added is a seed
 from the next campaign on. A seed is named after its content; a source that
 changes adds a seed and replaces none. A source longer than the input limit of

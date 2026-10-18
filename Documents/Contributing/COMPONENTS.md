@@ -50,11 +50,7 @@ Use [implementation status](../IMPLEMENTATION.md) to distinguish connected, impl
 features. If a proposal needs a new public name or artifact format, say so explicitly in the issue and PR. Do not create
 a public CorePrep output or resurrect retired C/Rust compiler routes.
 
-## Ecosystem and other repositories
-
-`Ecosystem/tala-analyzer/`, `Ecosystem/talafmt/`, and `Ecosystem/talalint/` own independent Haskell and Kotlin components with their own validation gates.
-They consume compiler semantics but do not redefine the language. Their package-local tests and CI workflows should be
-updated when their behavior changes. [Ecosystem tools](../ECOSYSTEM.md) records their connected and planned boundaries.
+## Other repositories
 
 The Tala website (`Progmasoft/website`), Progmasoft account and ViGet service (`Progmasoft/progmaweb`), Xide
 (`Progmasoft/xide`), and Catch3 (`Progmasoft/catch3`) are separate Git repositories. A compiler change may require a

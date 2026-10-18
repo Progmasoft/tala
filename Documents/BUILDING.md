@@ -4,8 +4,8 @@
 # Building Tala
 
 The repository has one native build graph: Bazel. The portable Go developer command provides host detection, toolchain
-diagnostics, native-suite execution, and sanitizer selection without becoming a second graph. Cabal and Gradle remain the
-direct build interfaces for their Haskell and Kotlin ownership boundaries.
+diagnostics, native-suite execution, and sanitizer selection without becoming a second graph. Cabal remains the direct
+build interface for the Haskell packages.
 
 ## Official hosts
 
@@ -30,7 +30,6 @@ Required tools:
 - an LLVM development tree containing LLVM headers, libraries, and `llvm-config`. On Linux it is LLVM built with
   libc++, which the developer helper downloads; see [LLVM discovery](#llvm-discovery);
 - GHC 9.10 or newer and Cabal; every maintained Haskell component uses the `GHC2024` edition;
-- JDK 25 for the Kotlin configuration DSLs of the tools.
 
 Windows additionally needs Windows SDK headers/import libraries and MSVC CRT/STL development files. These provide platform
 headers and libraries only; ClangCL, LLD, and Bazelisk remain independent tools. macOS needs the Xcode Command Line Tools,
@@ -50,17 +49,16 @@ Install missing prerequisites on a supported host:
 go run ./helpers/cmd/prebuild install
 ```
 
-On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, Podman, and Eclipse Temurin JDK 25. GHCup has no
+On Windows the bootstrap uses exact winget package identifiers for Git, Go, Bazelisk, LLVM, and Podman. GHCup has no
 official winget package, so the script uses Haskell.org's documented non-interactive HTTPS PowerShell bootstrap and then
 asks GHCup to select recommended GHC and Cabal releases. If Windows SDK or CRT/C++ link libraries are absent, it installs
 the Build Tools workload solely for those headers and libraries; Bazel continues to select standalone ClangCL and LLD.
 
-On macOS the bootstrap requires Homebrew, installs the corresponding formulas and Temurin JDK 25 cask, requests Xcode
+On macOS the bootstrap requires Homebrew, installs the corresponding formulas, requests Xcode
 Command Line Tools when missing, and delegates Haskell versions to GHCup. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
 absolute path into the repository. On Ubuntu, Debian 13 and Fedora, the bootstrap uses apt/dnf for native dependencies and the official
-GHCup bootstrap for Haskell. Temurin 25 requires Eclipse Adoptium's signed package repository to be enabled first;
-`prebuild.go` reports that prerequisite instead of silently substituting another JDK. Installation never edits tracked
+GHCup bootstrap for Haskell. Installation never edits tracked
 build configuration.
 
 After the host package manager finishes, start a new terminal and run both `prebuild.go check` and `develop.go doctor`.
@@ -133,7 +131,7 @@ Before creating release artifacts, validate the exact cross-build-system version
 go run ./helpers/cmd/develop version 0.1.0
 ```
 
-The check compares `MODULE.bazel`, the changelog heading, the Haskell package, and the Kotlin project runtime using exact
+The check compares `MODULE.bazel`, the changelog heading, and the Haskell package using exact
 release lines. If a Bazel-built Talac is available, its `version` output must agree as well. This Go command replaces the
 retired root `release.java`; repository automation does not require a Java script runtime.
 
@@ -148,8 +146,7 @@ bazelisk build //Talac/Linker:native_linker
 bazelisk build //Talac/Driver:core_pipeline
 ```
 
-Bazel owns only the native graph. It does not replace Cabal for Haskell packages or Gradle for Kotlin configuration and
-project evaluation.
+Bazel owns only the native graph. It does not replace Cabal for the Haskell packages.
 
 ## Language-layer tests
 
@@ -165,14 +162,6 @@ Get-ChildItem Haskell -Filter *.cabal -Recurse | ForEach-Object {
 }
 ```
 
-Kotlin: the Kotlin configuration DSLs of the tools build with the repository wrapper, for example
-
-```powershell
-.\gradlew.bat -p Ecosystem/talafmt test
-```
-
-The wrapper pins the Gradle distribution. Use it instead of a machine-global Gradle command.
-JDK 25 must be visible to the wrapper process. Kotlin Script Runner remains an external runtime requirement; it is not
 embedded into Talac.
 
 ## Building the private frontend
@@ -355,7 +344,7 @@ try { cabal clean } finally { Pop-Location }
 
 For the native-only cleanup, `go run ./helpers/cmd/develop clean` performs an expunging Bazel clean.
 
-Do not commit `bazel-*`, Cabal `dist-newstyle`, Gradle `.gradle`/`build`, IDE caches, local service state, or compiler-emitted
+Do not commit `bazel-*`, Cabal `dist-newstyle`, IDE caches, local service state, or compiler-emitted
 artifacts used only for smoke tests. Local compiler bundles below `dist/` are equally reproducible and disposable. Before
 removing a large tree manually, resolve the exact absolute target and verify that it is a generated directory inside this
 checkout.

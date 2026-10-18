@@ -443,7 +443,7 @@ func TestWriteBundleChecksumsIsSortedAndContentSensitive(t *testing.T) {
 
 func TestCleanGeneratedPathsPreservesUnlistedDistribution(t *testing.T) {
 	repository := t.TempDir()
-	generated := filepath.Join(repository, "Ecosystem", "talafmt", "build", "nested")
+	generated := filepath.Join(repository, "Talac", "dist-newstyle", "nested")
 	if err := os.MkdirAll(generated, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -451,10 +451,10 @@ func TestCleanGeneratedPathsPreservesUnlistedDistribution(t *testing.T) {
 	if err := os.MkdirAll(bundle, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := cleanGeneratedPaths(repository, []string{"Ecosystem/talafmt/build"}); err != nil {
+	if err := cleanGeneratedPaths(repository, []string{"Talac/dist-newstyle"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(repository, "Ecosystem", "talafmt", "build")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(repository, "Talac", "dist-newstyle")); !os.IsNotExist(err) {
 		t.Fatalf("generated build directory survived cleanup: %v", err)
 	}
 	if information, err := os.Stat(bundle); err != nil || !information.IsDir() {

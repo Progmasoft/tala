@@ -4,8 +4,7 @@
 name: OSV-Scanner
 
 # Matches the locked dependencies of the repository against the OSV database:
-# the Go helpers (go.sum) and the npm packages of the VS Code extension
-# (package-lock.json). A pull request fails only on a vulnerability it brings
+# the Go helpers (go.sum). A pull request fails only on a vulnerability it brings
 # in; main and the weekly run report every known one to code scanning, so an
 # advisory published after a merge shows up without turning main red.
 # Dependency Review gates the same pull requests on severity; this adds the

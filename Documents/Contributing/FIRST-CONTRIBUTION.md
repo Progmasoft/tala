@@ -47,7 +47,7 @@ go run ./helpers/cmd/prebuild check
 go run ./helpers/cmd/develop doctor
 ```
 
-The [building guide](../BUILDING.md) explains Bazelisk, standalone Clang/LLD, LLVM development files, GHC/Cabal, JDK 25,
+The [building guide](../BUILDING.md) explains Bazelisk, standalone Clang/LLD, LLVM development files, GHC/Cabal,
 and platform SDK requirements. `go run ./helpers/cmd/prebuild install` can install missing tools on a supported host, but it
 changes your machine; review its output and choose when to run it. Reopen the terminal after installation. Set `LLVM_ROOT`
 locally or put `llvm-config` on `PATH`; do not add your machine's absolute path to tracked build files.
@@ -58,7 +58,7 @@ preflight before implementation so you can tell a missing tool from a regression
 ## 4. Make one coherent change
 
 Use the [component map](COMPONENTS.md) to choose ownership. Read the entire affected model, verifier, lowering, tests, and
-Bazel/Cabal/Gradle target—not just the first search result. Follow the current file's style, add comments for non-obvious
+Bazel/Cabal target—not just the first search result. Follow the current file's style, add comments for non-obvious
 invariants, and keep a change scoped enough that reviewers can understand its contract. Do not reformat vendored sources
 or generated outputs as part of a source PR.
 

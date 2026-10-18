@@ -45,7 +45,7 @@ func TestCollectMissingToolsAndTrackedChanges(t *testing.T) {
 	if r.Branch != "main" || r.Revision != "abcd" || !r.Dirty || p.calls != 3 {
 		t.Fatalf("%+v", r)
 	}
-	if len(r.Tools) != 12 || !r.Tools[0].Available || r.Tools[1].Available {
+	if len(r.Tools) != 10 || !r.Tools[0].Available || r.Tools[1].Available {
 		t.Fatal(r.Tools)
 	}
 }

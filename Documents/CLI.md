@@ -9,8 +9,6 @@ Tala ships several programs, and each does one job:
 | --- | --- | --- |
 | `talac` | the compiler: sources or artifacts in, one artifact out | C++20 |
 | `tali` | Tala Interactive, the REPL | C++20 |
-| `talafmt` | the formatter | Haskell |
-| `talalint` | the linter | Haskell |
 
 Talac knows nothing about projects, dependencies, packages, formatting or linting.
 
@@ -145,33 +143,3 @@ tali --help | -h
 ```
 
 See [Tala Interactive](INTERACTIVE.md).
-
-## `talafmt`
-
-```text
-talafmt [options] <file>...
-```
-
-Without options `talafmt` formats each file in place and prints nothing.
-
-| Option | Effect |
-| --- | --- |
-| `--check` | reports whether a file needs formatting; changes nothing |
-| `--emit=files` | writes the formatted source over the file; the default |
-| `--emit=stdout` | prints the formatted source; changes nothing |
-| `--emit=coverage` | reports how much of the source was formatted; changes nothing |
-| `--emit=checkstyle` | prints a Checkstyle report; changes nothing |
-| `--emit=json` | prints the differences as JSON; changes nothing |
-| `--help`, `-h` | prints the help |
-| `--version`, `-v` | prints the version |
-
-## `talalint`
-
-```text
-talalint [options] <file>...
-```
-
-`talalint` reports what it finds. `--fix` also applies the fixes that are safe to apply. `--help`, `-h`, `--version` and
-`-v` work as they do for `talafmt`.
-
-Both tools take several files, read `--` as the end of the options, and exit with `2` for a command line they cannot read.

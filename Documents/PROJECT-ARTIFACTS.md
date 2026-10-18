@@ -204,8 +204,8 @@ object and not a single output named after the project.
 
 `check` remains non-writing. `binary` remains a one-file executable route and
 does not create one executable per source. The output kind is selected by the
-existing CLI precedence rules; source partitioning is not persisted as a new
-Kotlin DSL setting.
+existing CLI precedence rules; source partitioning is not persisted as a
+setting.
 
 ## Current limits
 

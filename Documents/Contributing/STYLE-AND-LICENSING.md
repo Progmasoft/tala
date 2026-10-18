@@ -12,7 +12,7 @@ pattern. This page gives external contributors the high-impact rules that format
   stable external ABI such as AARC, with `extern "C"` guards for C++ callers and a C++20 implementation. Do not add a
   project-owned `.c` runtime or revive the retired C compiler route.
 - Public compiler headers live under `Talac/Headers/Progmasoft/Tala/` and are included as `Progmasoft/Tala/...`.
-  Haskell module names follow their existing `Progmasoft.Tala.*` ownership; Kotlin packages use `com.progmasoft.*`.
+  Haskell module names follow their existing `Progmasoft.Tala.*` ownership.
 - Tests and fixtures live next to their owning component, not in a new root `tests/` bucket. Build targets list their
   owned sources explicitly; do not add a broad recursive glob merely to avoid editing a BUILD file.
 - The repository's Go developer tooling lives in `helpers/`. Do not add a second build graph or a new scripting language for
@@ -38,8 +38,7 @@ decisions beyond the guide:
 
 ## Other languages
 
-Haskell uses the repository's Fourmolu configuration. Kotlin formatting is owned by its
-component's Gradle checks. Do not reformat vendored Catch3 or another dependency as part of a compiler PR.
+Haskell uses the repository's Fourmolu configuration. Do not reformat vendored Catch3 or another dependency as part of a compiler PR.
 
 ## Comments that preserve contracts
 
@@ -60,7 +59,7 @@ a useful design target, not a requirement to split coherent code prematurely. To
 exempt. Divide files by behavior—model, verifier, optimization, lowering, diagnostics, or wire I/O—not by arbitrary
 line numbers or a catch-all `Utils` module.
 
-Do not commit Bazel output, Cabal `dist-newstyle`, Gradle caches, generated website files, credentials, local paths, or
+Do not commit Bazel output, Cabal `dist-newstyle`, generated website files, credentials, local paths, or
 private service state. Check `git status --short` before staging. The root `.gitattributes` documents line-ending
 exceptions; avoid a whole-file LF/CRLF rewrite in a focused PR. Do not delete another contributor's generated output
 unless your task created it and you have identified the exact path.

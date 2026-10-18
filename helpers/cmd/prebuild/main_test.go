@@ -20,7 +20,6 @@ import (
 type bootstrapFakeRunner struct {
 	paths       map[string]string
 	invocations [][]string
-	javaDetails string
 	installed   map[string]bool
 	runHook     func(string, []string) error
 }
@@ -47,9 +46,6 @@ func (runner *bootstrapFakeRunner) Output(name string, arguments ...string) (str
 			return formula, nil
 		}
 		return "", errors.New("not installed")
-	}
-	if name == "java" && runner.javaDetails != "" {
-		return runner.javaDetails, nil
 	}
 	return "", errors.New("not available")
 }
@@ -130,23 +126,20 @@ func TestLinuxPackageMappingsKeepClangAndLLVMDevelopmentLibraries(t *testing.T) 
 	}
 }
 
-func TestMissingToolsRequiresCompleteLLVMAndTemurinVendor(t *testing.T) {
+func TestMissingToolsRequiresCompleteLLVM(t *testing.T) {
 	runner := &bootstrapFakeRunner{
 		paths: map[string]string{
 			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
-			"clang-cl": "clang-cl", "ghcup": "ghcup", "java": "java", "podman": "podman",
+			"clang-cl": "clang-cl", "ghcup": "ghcup", "podman": "podman",
 		},
-		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
 	}
 	missing := missingTools(bootstrapWindows, runner)
 	if len(missing) != 1 || missing[0].name != "LLVM" {
 		t.Fatalf("missing groups = %#v", missing)
 	}
 	runner.paths["lld-link"] = "lld-link"
-	runner.javaDetails = "java.vendor = Another Vendor\njava.version = 25.0.4"
-	missing = missingTools(bootstrapWindows, runner)
-	if len(missing) != 1 || missing[0].name != "Temurin JDK 25" {
-		t.Fatalf("non-Temurin JDK was accepted: %#v", missing)
+	if missing = missingTools(bootstrapWindows, runner); len(missing) != 0 {
+		t.Fatalf("a complete host still misses %#v", missing)
 	}
 }
 
@@ -166,9 +159,8 @@ func TestPodmanIsARequiredToolOnEveryHost(t *testing.T) {
 	runner := &bootstrapFakeRunner{
 		paths: map[string]string{
 			"go": "go", "git": "git", "bazelisk": "bazelisk", "llvm-config": "llvm-config",
-			"clang-cl": "clang-cl", "lld-link": "lld-link", "ghcup": "ghcup", "java": "java",
+			"clang-cl": "clang-cl", "lld-link": "lld-link", "ghcup": "ghcup",
 		},
-		javaDetails: "java.vendor = Eclipse Adoptium\njava.version = 25.0.4",
 	}
 	missing := missingTools(bootstrapWindows, runner)
 	if len(missing) != 1 || missing[0].name != "Podman" {
@@ -206,13 +198,10 @@ func TestWingetInstallSkipsOnlyTheAlreadyInstalledPackage(t *testing.T) {
 	}
 }
 
-func TestHomebrewInstalledCheckUsesFormulaAndCaskKinds(t *testing.T) {
-	runner := &bootstrapFakeRunner{installed: map[string]bool{"llvm": true, "temurin@25": true}}
+func TestHomebrewInstalledCheckUsesTheFormula(t *testing.T) {
+	runner := &bootstrapFakeRunner{installed: map[string]bool{"llvm": true}}
 	if !homebrewPackageInstalled(runner, "brew", toolRequirement{name: "LLVM", homebrewFormula: "llvm"}) {
 		t.Fatal("installed Homebrew formula was not recognized")
-	}
-	if !homebrewPackageInstalled(runner, "brew", toolRequirement{name: "Temurin JDK 25", homebrewFormula: "temurin@25"}) {
-		t.Fatal("installed Homebrew cask was not recognized")
 	}
 }
 
@@ -392,11 +381,7 @@ func TestWindowsLinkResourcesUseCurrentWingetBuildToolsIdentity(t *testing.T) {
 	}
 }
 
-func TestHomebrewUsesCaskOnlyForTemurin(t *testing.T) {
-	temurin := toolRequirement{name: "Temurin JDK 25", homebrewFormula: "temurin@25"}
-	if got := homebrewInstallArguments(temurin); !reflect.DeepEqual(got, []string{"install", "--cask", "temurin@25"}) {
-		t.Fatalf("Temurin arguments = %#v", got)
-	}
+func TestHomebrewInstallsFormulas(t *testing.T) {
 	llvm := toolRequirement{name: "LLVM", homebrewFormula: "llvm"}
 	if got := homebrewInstallArguments(llvm); !reflect.DeepEqual(got, []string{"install", "llvm"}) {
 		t.Fatalf("LLVM arguments = %#v", got)

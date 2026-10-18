@@ -136,51 +136,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  kotlin:
-    name: Kotlin JVM coverage
-    runs-on: windows-2025
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Install JDK 25
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: '25'
-
-      - name: Install Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          gradle-version: '9.8.1'
-
-      - name: Test Kotlin owners with JaCoCo
-        shell: pwsh
-        run: |
-          foreach ($component in @('Ecosystem/tala-analyzer', 'Ecosystem/talafmt', 'Ecosystem/talalint')) {
-            gradle -p $component test jacocoTestReport
-            if ($LASTEXITCODE -ne 0) {
-              throw "JaCoCo test/report failed for $component"
-            }
-            $report = Join-Path $component 'build/reports/jacoco/test/jacocoTestReport.xml'
-            if (-not (Test-Path -LiteralPath $report)) {
-              throw "No JaCoCo XML report was produced for $component"
-            }
-          }
-
-      - name: Preserve Kotlin component coverage for the isolated uploader
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: kotlin-components-coverage
-          path: |
-            Ecosystem/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
-            Ecosystem/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
-            Ecosystem/talalint/build/reports/jacoco/test/jacocoTestReport.xml
-          if-no-files-found: error
-          retention-days: 1
-
   go:
     name: Go helper coverage
     runs-on: windows-2025
@@ -237,51 +192,6 @@ jobs:
           files: coverage/native.lcov
           flags: native-cpp
           name: native-cpp
-
-  upload-kotlin-coverage:
-    needs: kotlin
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write
-    steps:
-      # upload-artifact drops the common Ecosystem/ prefix of the reports,
-      # so each one lands in coverage/kotlin/<component>/.
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: kotlin-components-coverage
-          path: coverage/kotlin
-      - name: Upload Analyzer coverage
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
-          disable_search: true
-          plugins: noop
-          files: coverage/kotlin/tala-analyzer/build/reports/jacoco/test/jacocoTestReport.xml
-          flags: kotlin-analyzer
-          name: kotlin-analyzer
-      - name: Upload Formatter coverage
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
-          disable_search: true
-          plugins: noop
-          files: coverage/kotlin/talafmt/build/reports/jacoco/test/jacocoTestReport.xml
-          flags: kotlin-formatter
-          name: kotlin-formatter
-      - name: Upload Linter coverage
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          fail_ci_if_error: true
-          disable_search: true
-          plugins: noop
-          files: coverage/kotlin/talalint/build/reports/jacoco/test/jacocoTestReport.xml
-          flags: kotlin-linter
-          name: kotlin-linter
 
   upload-go-coverage:
     needs: go
