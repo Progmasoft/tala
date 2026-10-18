@@ -53,7 +53,7 @@ at most 256 successful evaluation inputs, not failed expressions or `:type` quer
 
 The current input contract is one source expression per line with a 1 MiB maximum. The REPL drains and rejects an
 overlong line without retaining its contents. It does not accumulate incomplete multi-line declarations or
-provide a command to define classes/functions for later cells. Use a `.tala` source file with `tazel build` for declarations,
+provide a command to define classes/functions for later cells. Use a `.tala` source file compiled with `talac` for declarations,
 projects, entry-point execution, or input that requires more than one expression in a cell.
 
 ## Cell compilation

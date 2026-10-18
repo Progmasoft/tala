@@ -38,7 +38,6 @@ following vocabulary:
 | Measure compiler throughput | [Benchmarking](BENCHMARKING.md) and [recorded baselines](../Benchmarks/README.md) |
 | Use Talac | [CLI](CLI.md) |
 | Use or implement the REPL | [Tala Interactive](INTERACTIVE.md) |
-| Write `BUILD.kts` | [Project files](PROJECT_FILES.md) |
 | Understand per-source object and assembly outputs | [Project native artifacts](PROJECT-ARTIFACTS.md) |
 | Understand diagnostics and exit behavior | [Diagnostics](DIAGNOSTICS.md) |
 | Use Analyzer, Formatter, or Linter | [Ecosystem tools](ECOSYSTEM.md) |
@@ -89,8 +88,6 @@ following vocabulary:
 
 - [CLI](CLI.md) is the command and option reference. It also explains precedence and intentionally disconnected commands.
 - [Tala Interactive](INTERACTIVE.md) defines the REPL command, cell lifecycle, ORC boundary, result support, and known limits.
-- [Project files](PROJECT_FILES.md) documents discovery, source policy, entry selection, compiler settings, plugins,
-  dependencies, publishing metadata, test suites, and the SQLite lockfile.
 - [Project native artifacts](PROJECT-ARTIFACTS.md) documents source ownership, per-file native emission, flattened output
   names, and safe batch replacement.
 - [Diagnostics](DIAGNOSTICS.md) describes error ownership, output streams, source positions, artifact safety, and exit status.

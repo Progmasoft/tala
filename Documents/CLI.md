@@ -8,19 +8,17 @@ Tala ships several programs, and each does one job:
 | Program | Job | Written in |
 | --- | --- | --- |
 | `talac` | the compiler: sources or artifacts in, one artifact out | C++20 |
-| `tazel` | the build system and package manager: reads the project file and starts the others | Kotlin |
 | `tali` | Tala Interactive, the REPL | C++20 |
 | `talafmt` | the formatter | Haskell |
 | `talalint` | the linter | Haskell |
 
-Talac knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
-Talac, `talafmt` and `talalint` as separate programs and passes them arguments.
+Talac knows nothing about projects, dependencies, packages, formatting or linting.
 
 Every command line is read by a parser written by hand for that program. A line that is accepted becomes a typed value,
 and no later stage looks at the argument text again. No program uses a command-line library.
 
 Exit codes are shared: `0` success, `1` the work failed (a rejected program, a project that is wrong), `2` the command line
-itself was wrong. `tazel run` hands through the exit code of the program it ran.
+itself was wrong.
 
 ## `talac`
 
@@ -137,12 +135,6 @@ An option the compiler reads but cannot carry out is refused by name with exit c
 
 Talac loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
 `libtala-frontend.dylib` or `libtala-frontend.so`. It is an implementation library, not a second command.
-
-## `tazel`
-
-Tazel has a repository of its own, [Progmasoft/tazel](https://github.com/Progmasoft/tazel), and documents its command line there:
-[The `tazel` command](https://github.com/Progmasoft/tazel/blob/main/Documents/CLI.md). It is also published at
-[tazel.tala.run](https://tazel.tala.run/).
 
 ## `tali`
 

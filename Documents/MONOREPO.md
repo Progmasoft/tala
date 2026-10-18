@@ -108,15 +108,6 @@ Typical disposable paths include `bazel-*`, `dist-newstyle`, `.gradle`, `build`,
 IDE caches, and local service databases. Their presence must not influence source discovery, tests, release content, or
 documentation claims.
 
-## Project-system ownership
-
-Tazel, in its own repository [Progmasoft/tazel](https://github.com/Progmasoft/tazel), owns the project file, plugin loading, source discovery,
-dependency declarations, lockfile persistence, and the project commands. It is Kotlin only and reaches the compiler through its command line: no native bridge exists, so
-the C++ driver cannot become a second implementation of Kotlin validation rules.
-
-The JVM package root is `com.progmasoft.tazel.project`. Legacy `org.progmasoft` or `xs` package segments are not used
-for renewed project-system code. JVM support does not implement Xmm readers/writers; native IR ownership remains C++20.
-
 ## Specification ownership
 
 `Spec/` is grouped by language responsibility:

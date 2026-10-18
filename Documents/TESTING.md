@@ -327,26 +327,6 @@ fallback.
 Tests that construct Xpp or Xmm directly must still pass through that IR's verifier. Direct construction is a reason for
 more boundary verification, not an exemption.
 
-## Kotlin project system
-
-Tazel moved to its own repository, [Progmasoft/tazel](https://github.com/Progmasoft/tazel), and is tested there with `./gradlew check`.
-
-Its tests should distinguish script parsing, immutable model construction, validation, lockfile persistence, and
-native plan transport. Important cases include:
-
-- project discovery from nested directories;
-- required and all-or-none project metadata rules;
-- namespace-qualified entry validation without path guessing;
-- null versus explicit exclusion state;
-- contained local plugin and package paths;
-- exact hosted coordinates and duplicate declarations;
-- case-sensitive identifiers, versions, targets, and test suite names;
-- plugin descriptor/service/digest validation;
-- deterministic SQLite lockfile contents; and
-- `panic` producing no partial plan, lock update, or compilation start.
-
-Do not test the evaluator by searching for `.tala` files in Kotlin. Source discovery belongs to the Haskell compiler driver.
-
 ## Analyzer, Formatter, and Linter
 
 Each ecosystem project has an independent workflow and release line. Their Haskell and Kotlin layers are tested separately

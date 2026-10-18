@@ -19,25 +19,13 @@ Each product also contains a Kotlin Script DSL model. All three configuration ho
 the runtime is not embedded into the Haskell tool.
 
 The Kotlin projects provide typed scopes, defaults, validation, and immutable configuration snapshots. talafmt
-also has a real Kotlin scripting evaluator used by the project-wide CLI bridge; the other tool evaluators remain separate
-integration work. A checked-in DSL type alone must not be described as proof of end-to-end script evaluation.
+also has a real Kotlin scripting evaluator; the other tool evaluators remain separate integration work. A checked-in DSL
+type alone must not be described as proof of end-to-end script evaluation.
 
-## Shared project source policy
+## Tool configuration
 
-`tazel fmt` and `tazel lint` operate on the project. Tazel evaluates the project file, collects the same sources and
-exclusions it hands to the compiler, and starts the tool once per ViPkg with those files. Everything after `--` goes to
-the tool unread.
-
-```text
-tazel fmt
-tazel fmt -- --check
-tazel lint
-tazel lint -- --fix
-```
-
-`format` requires `talafmt`; a project containing `talafmt.kts` also requires the installed `talafmt-config` evaluator.
-`lint` requires `talalint`. If the corresponding configuration file is absent from the project root, the installed tool uses
-its defaults. When present, configuration is selected for that tool only:
+Each tool reads only its own configuration file, from the root of the sources it works on; when the file is absent, the
+tool uses its defaults:
 
 ```text
 talafmt.kts
@@ -45,8 +33,8 @@ talalint.kts
 tala-analyzer.kts
 ```
 
-The compiler project file does not grow formatter or linter rule blocks. Tool versioning and configuration remain owned by
-the tool.
+`talafmt.kts` is evaluated by the installed `talafmt-config` helper. The compiler does not grow formatter or linter rule
+blocks; tool versioning and configuration remain owned by the tool.
 
 ## tala-analyzer
 
@@ -103,10 +91,9 @@ output and leaves the files alone; `--emit=files` is the default. See the [comma
 
 Formatter configuration includes version selection, column and indentation widths, tab behavior, brace style, parenthesis
 and punctuation spacing, line endings, final newline policy, sorting, input/output encoding, and byte-order-mark emission.
-The current configuration model defaults to UTF-8 input/output and no BOM. During `tazel fmt`, source discovery examines
-paths without decoding source contents. The formatter then decodes each file with `encoding.input` and writes it with
-`encoding.output` and `emitByteOrderMark`; compiler builds continue to require strict UTF-8 independently. Project format
-is in place by default, while `tazel fmt -- --check` performs byte-accurate checks without writing.
+The current configuration model defaults to UTF-8 input/output and no BOM. The formatter decodes each file with `encoding.input` and writes it with
+`encoding.output` and `emitByteOrderMark`; compiler builds continue to require strict UTF-8 independently. Formatting is in
+place by default, while `talafmt --check` performs byte-accurate checks without writing.
 
 Formatting must be parser-gated and idempotent. The formatter may normalize physical source layout, but it must not invent
 language forms, change name identity, turn an invalid source into a different valid program, or apply C-family `switch/case`
@@ -117,12 +104,6 @@ and final-newline policy. It consumes the compiler's lossless source-fragment mo
 alter nesting, and lines crossed by raw strings or long comments retain payload whitespace. The executable engine supports
 space or tab indentation with independent indent and tab widths. Remaining configuration keys stay typed configuration
 surface until their corresponding layout passes exist; they are not silently treated as implemented behavior.
-
-Install the package globally through ViGet:
-
-```text
-tazel install --global Progmasoft.Talafmt
-```
 
 ## talalint
 
@@ -160,17 +141,11 @@ A key in the typed catalog is not automatically an implemented analysis. A linte
 semantic/source implementation, stable rule identity, severity behavior, focused tests, and—when relevant—safe/unsafe fix
 classification.
 
-Install the package globally through ViGet:
-
-```text
-tazel install --global Progmasoft.Talalint
-```
-
 ## Configuration independence
 
-Formatter and Linter configurations are not sections of `BUILD.kts`. Their defaulting rules are:
+Formatter and Linter configurations belong to the tools. Their defaulting rules are:
 
-1. use the tool configuration file in the project root when it exists;
+1. use the tool configuration file in the source root when it exists;
 2. otherwise use the installed tool's default configuration; and
 3. apply command-line controls of the standalone tool to the current invocation.
 
@@ -179,17 +154,14 @@ rule evolution, Analyzer protocol features, and compiler language support can sh
 
 ## Distribution and registry paths
 
-ViGet is the one hosted package registry. Tala packages and Kotlin DSL plugins occupy distinct catalogs:
+ViGet is the one hosted package registry. Tala packages live in the catalog of the Tala language:
 
 ```text
 https://viget.progmasoft.com/langs/tala/<Publisher>/<Name>/
-https://viget.progmasoft.com/dslplugins/tazel/<Publisher>/<Name>/
 ```
 
-The first path contains Tala-authored `.vipkg` packages, in the catalog of the Tala language. The second contains the
-Kotlin DSL plugin JARs of Tazel, in the catalog of its build-system DSL. The language and the build system are part of
-the path so that each catalog stays separate from those of other languages and build systems. A DSL plugin is not
-a `.vipkg`, and a Tala library is not loaded as JVM build logic.
+It contains Tala-authored `.vipkg` packages. The language is part of the path so that the catalog stays separate
+from those of other languages.
 
 Publisher identity is the Progmasoft Account name. Account management and dashboards belong under the account service, not
 under a fake registry dashboard path:
@@ -198,25 +170,7 @@ under a fake registry dashboard path:
 https://account.progmasoft.com/<Account>/dashboard
 ```
 
-ViGet coordinates are case-sensitive. Local project declarations use explicit contained paths and do not create another
-repository:
-
-```kotlin
-plugins {
-  localPlugin {
-    path = "plugin.jar"
-  }
-}
-
-dependencies {
-  localDependency {
-    path = "dependency.vipkg"
-  }
-}
-```
-
-Remote coordinate layout is fixed by ViGet. Project files do not configure a Gradle-like repository list or generate an
-alternative DSL-plugin repository coordinate.
+ViGet coordinates are case-sensitive.
 
 ## Build and workflow ownership
 

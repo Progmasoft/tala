@@ -190,15 +190,6 @@ versioned ABI, while its implementation, ownership, and tests are C++20.
 The compiler reads its command line with a typed schema written by hand: option arity, duplicate rejection, defaults, and
 value conversion. It has no command-line library and knows nothing about projects.
 
-Tazel is a separate Kotlin program. It owns project discovery, the project DSL, source discovery, the SQLite lock file and
-its text dump, and it starts Talac, `talafmt` and `talalint` as programs. `tazel check` evaluates the project, collects
-the sources of each executable and starts Talac with `--emit=metadata` and the compiler options of the project;
-`tazel build` does the same with `--emit=executable` and moves the result into the output directory. The entry is
-resolved by the frontend from namespace and class identity; no source file is guessed from the entry spelling.
-
-Tazel refuses, by name, what it cannot do yet: library targets, projects with dependencies, test suites, `.vipkg`
-creation and every command that needs ViGet.
-
 Known gaps include:
 
 - Core input can be checked through LLVM and can emit `.ll`, `.bc`, `.o`, `.asm`, or a native executable;
@@ -227,8 +218,8 @@ without a native layout still fails before producing a misleading artifact.
 
 Analyzer, Formatter, and Linter have canonical top-level projects, separate Haskell/Kotlin ownership, and independent CI.
 Their typed Kotlin configuration models are implemented. talafmt additionally evaluates the real Kotlin receiver
-and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. `tazel fmt` and
-`tazel lint` start the installed tools on the sources Tazel finds for the project; they are not compiler-internal passes.
+and transfers its encoding contract to `talafmt`; the Analyzer and Linter evaluator bridges remain pending. They are not
+compiler-internal passes.
 
 talafmt and talalint use their own version lines. tala-analyzer now provides the editor-facing
 `tala-analyzer` stdio LSP executable. It is not a compiler CLI command. See [Ecosystem tools](ECOSYSTEM.md) for the product
@@ -237,10 +228,9 @@ boundary and current configuration surfaces.
 ## Data that is intentionally not duplicated
 
 - Namespace identity is not encoded by directories.
-- The compiler does not read project files or expand source globs; Tazel names every input.
+- The compiler does not read project files or expand source globs; its caller names every input.
 - CorePrep is not serialized as a public project artifact.
 - The compiler does not contain formatter/linter rule configuration.
-- A ViGet `.vipkg` does not add a second `MANIFEST.TOML` beside `BUILD.kts`.
 - JVM support does not own an Xmm reader/writer.
 - Standard-library namespaces are not repeated as package dependencies.
 - The native driver does not shell-join LLD arguments or use DIMCLI.
@@ -249,7 +239,6 @@ boundary and current configuration surfaces.
 
 GitHub CI runs:
 
-- Tazel tests, including whole commands against stand-in tools;
 - Haskell build, behavior tests, and package checks;
 - Windows ClangCL Bazel build and native CLI contract tests; and
 - patch hygiene checks.

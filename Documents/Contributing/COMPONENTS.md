@@ -31,7 +31,6 @@ explain the contracts and implementation limits.
 | LLVM lowering or object emission | `Talac/Backend/LLVM` | Backend tests and native artifact smoke checks |
 | AARC runtime/ABI | `Talac/Runtime/AARC` and owned public headers | C++ runtime tests and C11 caller ABI test |
 | Native CLI spelling, precedence, help, dispatch | `Talac/Cli` | CLI tests and a Talac process test |
-| Project file evaluation, plugins, lockfile, project commands | [Progmasoft/tazel](https://github.com/Progmasoft/tazel) | Kotlin tests in that repository, which run whole commands against stand-in tools |
 | REPL cell/session behavior | `Interactive` | `Interactive/Tests` and a `tali` smoke check |
 
 Compiler-owned C++ public headers live under `Talac/Headers/Progmasoft/Tala/`; callers include them as

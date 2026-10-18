@@ -625,8 +625,8 @@ options produce equal reports.
 
 All passes are enabled by default, and the default inline expression budget is
 twenty-four nodes. Options exist for compiler testing,
-diagnostics, and controlled development. They are not currently public Visual
-X# project DSL keys or CLI flags.
+diagnostics, and controlled development. They are not currently public
+build settings or CLI flags.
 
 Setting the maximum below one still permits one iteration. This guarantees that
 the optimizer has a deterministic result and report without introducing a
