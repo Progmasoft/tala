@@ -5,7 +5,7 @@
 
 ## Summary
 
-Tala now has one production source route for the implemented language subset. The C++20 `talac` driver starts the private
+Tala now has one production source route for the implemented language subset. The C++20 Talac driver starts the private
 Haskell frontend, receives bounded verified Core, and continues through CorePrep, Xpp, Xmm, and LLVM. The old C lexer/parser,
 macro, HIR/MIR, and C-to-Rust syntax-packet route has been removed rather than retained as a fallback.
 
@@ -191,8 +191,8 @@ The compiler reads its command line with a typed schema written by hand: option 
 value conversion. It has no command-line library and knows nothing about projects.
 
 Tazel is a separate Kotlin program. It owns project discovery, the project DSL, source discovery, the SQLite lock file and
-its text dump, and it starts `talac`, `talafmt` and `talalint` as programs. `tazel check` evaluates the project, collects
-the sources of each executable and starts `talac` with `--emit=metadata` and the compiler options of the project;
+its text dump, and it starts Talac, `talafmt` and `talalint` as programs. `tazel check` evaluates the project, collects
+the sources of each executable and starts Talac with `--emit=metadata` and the compiler options of the project;
 `tazel build` does the same with `--emit=executable` and moves the result into the output directory. The entry is
 resolved by the frontend from namespace and class identity; no source file is guessed from the entry spelling.
 

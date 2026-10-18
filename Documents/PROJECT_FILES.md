@@ -254,7 +254,7 @@ plugins {
 ```
 
 A plugin of ViGet is found in the cache of the project, `.tazel/plugins`; fetching it from
-`https://viget.progmasoft.com/dslplugins/<Publisher>/<Name>/` is not connected yet. A local plugin is a JAR inside the
+`https://viget.progmasoft.com/dslplugins/tazel/<Publisher>/<Name>/` is not connected yet. A local plugin is a JAR inside the
 project directory. Either way the JAR describes itself in `META-INF/tazel-plugin.properties` (publisher, name, version,
 API version, the imports it adds to the project file) and provides exactly one `ProjectPlugin` service. Tazel checks the
 coordinate, the version, the API version and the SHA-256 digest before it loads the plugin; a `<plugin>.jar.sha256` file
@@ -287,7 +287,7 @@ plugins that evaluated it. `tazel lock resolve` renews it; `check`, `build` and 
 the project file. It records declarations, not a solved dependency graph.
 
 `tazel lock create-dump` writes `LOCK.dump`: the same content as SQL text, deterministic and replayable by SQLite, for
-review and for diffs.
+review and for diffs. `--path` writes it to another file in a folder that already exists; see [CLI](CLI.md).
 
 ## Tool configuration
 

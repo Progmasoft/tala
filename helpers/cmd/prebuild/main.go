@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/Progmasoft/tala/helpers/internal/console"
 	"github.com/spf13/cobra"
 	"io"
 	"net/http"
@@ -151,14 +152,20 @@ func withTemporaryBootstrapScript(contents []byte, pattern string, run func(stri
 	return run(path)
 }
 
-type bootstrapSystemRunner struct{}
+// bootstrapSystemRunner installs tools. A package manager may ask for a
+// password or an agreement, so its output is never held back.
+type bootstrapSystemRunner struct {
+	console *console.Console
+}
 
-func (bootstrapSystemRunner) Run(name string, arguments ...string) error {
-	command := exec.Command(name, arguments...)
-	command.Stdin = os.Stdin
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	return command.Run()
+func (runner bootstrapSystemRunner) Run(name string, arguments ...string) error {
+	return runner.console.Live(console.Describe(name, arguments), func(stdout, stderr io.Writer) error {
+		command := exec.Command(name, arguments...)
+		command.Stdin = os.Stdin
+		command.Stdout = stdout
+		command.Stderr = stderr
+		return command.Run()
+	})
 }
 
 func (bootstrapSystemRunner) Output(name string, arguments ...string) (string, error) {
@@ -191,8 +198,12 @@ var bootstrapTools = []toolRequirement{
 }
 
 func main() {
-	if err := runPrebuild(os.Args[1:], bootstrapSystemRunner{}); err != nil {
-		fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
+	output := console.New()
+	err := runPrebuild(os.Args[1:], bootstrapSystemRunner{console: output})
+	output.Summary()
+	if err != nil {
+		fmt.Fprintln(os.Stderr)
+		output.Failure("%v", err)
 		os.Exit(1)
 	}
 }

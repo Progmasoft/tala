@@ -13,8 +13,8 @@ Tala ships several programs, and each does one job:
 | `talafmt` | the formatter | Haskell |
 | `talalint` | the linter | Haskell |
 
-`talac` knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
-`talac`, `talafmt` and `talalint` as separate programs and passes them arguments.
+Talac knows nothing about projects, dependencies, packages, formatting or linting. `tazel` compiles nothing: it starts
+Talac, `talafmt` and `talalint` as separate programs and passes them arguments.
 
 Every command line is read by a parser written by hand for that program. A line that is accepted becomes a typed value,
 and no later stage looks at the argument text again. No program uses a command-line library.
@@ -135,7 +135,7 @@ An option the compiler reads but cannot carry out is refused by name with exit c
 
 ### The frontend library
 
-`talac` loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
+Talac loads the Haskell frontend from a shared library beside the executable: `tala-frontend.dll`,
 `libtala-frontend.dylib` or `libtala-frontend.so`. It is an implementation library, not a second command.
 
 ## `tazel`
@@ -154,18 +154,20 @@ tazel <command> [arguments]
 | `tazel run [-- arguments]` | builds the executables and runs them |
 | `tazel test` | builds and runs the test suites |
 | `tazel lock resolve` | resolves the dependencies and renews `LOCK.sqlite3` |
-| `tazel lock create-dump` | writes `LOCK.dump`, the lockfile as text |
+| `tazel lock create-dump [--path File]` | writes the lockfile as text, to `LOCK.dump` or to the file `--path` names |
+| `tazel lock graph [options]` | prints the dependency graph; renews `LOCK.sqlite3` unless `--locked` |
 | `tazel update` | updates the dependencies of the system and of the project |
 | `tazel install [--global \| -g] Publisher.Name` | downloads a package from ViGet into the project, or into the system |
 | `tazel vipkg create` | writes a local `.vipkg` for every target, without testing or publishing |
 | `tazel viget push` | builds, tests and publishes the package to ViGet for the first time |
 | `tazel viget update` | builds, tests and publishes a new version of the package |
+| `tazel viget vipkg-desc Publisher.Name` | prints the description (`project.description`) of a package of ViGet |
 | `tazel fmt [-- options]` | formats the sources with `talafmt` |
 | `tazel lint [--workspace] [-- options]` | lints the sources with `talalint` |
 | `tazel version` | prints the version of Tazel |
 | `tazel help [command]` | prints the help, or the help of one command |
 
-`tazel check` starts `talac` with `--emit=metadata` and the compiler options of the project file. `tazel build` starts it
+`tazel check` starts Talac with `--emit=metadata` and the compiler options of the project file. `tazel build` starts it
 with `--emit=executable` and moves the result into the output directory of the build mode, under the name of the target.
 
 ### Selecting targets
@@ -181,6 +183,78 @@ tazel build --library Name        tazel build -l Name
 An option of `tazel` takes its value from the next argument. Each flag may be written several times, and the kinds may be
 combined. `--vipkg` keeps the named ViPkgs; once `--executable` or `--library` is written, only named targets remain. A name
 that selects nothing is an error.
+
+### Writing the lockfile as text
+
+`tazel lock create-dump` writes `LOCK.dump` beside the project file. `--path` names another file, of any name and
+extension, relative to the directory `tazel` runs in:
+
+```text
+tazel lock create-dump --path Locks.sql
+tazel lock create-dump --path reviews/Locks.sql
+```
+
+The folder of the file has to exist. Tazel does not create it: a mistyped folder fails with an error instead of leaving
+a dump somewhere unexpected. A `--path` that names a folder is refused as well.
+
+### The dependency graph
+
+`tazel lock graph` prints what each project depends on. The graph is what the lockfile records, so `LOCK.sqlite3` is
+written first when it is missing or no longer records what the project file declares. At the root of a workspace every
+member is a root of the graph.
+
+```text
+Demo
+├── Publisher.Json 1.1.0 [by feature Json]
+├── Publisher.Name 1.0.0
+├── Local.vipkg (local)
+└── [test]
+    └── Publisher.Name 2.0.0
+```
+
+A dependency that a feature of the project brings in (`feature = "Json"`) is shown when that feature is on, which by
+default means it is one of the `defaultFeatures` of the project.
+
+| Option | Effect |
+| --- | --- |
+| `--locked` | leaves `LOCK.sqlite3` as it is; a lockfile that is missing or out of date is an error |
+| `--all-features` | turns every feature of the project on |
+| `--duplicates`, `-d` | shows only the ViGet packages that are there in more than one version, each with its dependents |
+| `--invert Package`, `-i Package` | shows the projects that depend on one package |
+| `--depth Levels` | prints at most this many levels below each root; `0` prints the roots alone |
+
+`--duplicates` and `--invert` cannot be written together. What `--invert` names depends on how it is written:
+
+| Written | Meaning |
+| --- | --- |
+| `MyPackage` | every project below the current directory whose `project.name` is `MyPackage`. Its dependents are the projects there that use a ViGet package of that name, from any publisher, or a local `MyPackage.vipkg`. Folders whose name starts with a dot are not searched. |
+| `Publisher.Name` | that ViGet package, in every version the projects declare |
+| `Libraries/Name.vipkg` | that local package. A word that ends in `.vipkg` is always a local package. |
+
+Tazel does not fetch packages from ViGet yet, so a ViGet package appears without the dependencies of its own.
+
+### Output
+
+Tazel prints a status line for each step, such as `Compiling Demo (Demo, 3 sources)`, and closes a command with the
+time it took: `Finished build in 1.84s`. While `check`, `build`, `run`, `fmt` and `lint` work through their targets on an
+interactive terminal, a progress bar under the status lines shows the step in hand, how many are done and the time so
+far; the output of `talac`, `talafmt` and `talalint` is then printed above the bar. In a pipe, in CI or on a terminal
+that cannot move its cursor no bar is drawn, and the tools write to the terminal directly. The program that `tazel run`
+starts always writes directly. The terminal output uses Mordant.
+
+### Mistyped words
+
+A command, an action, a flag or a target name that is not known is refused with exit code `2` (`1` for a target name,
+which is checked against the project). When it is close to a known one, a hint under the error says what was probably
+meant, with a short aside:
+
+```text
+error: 'biuld' is not a command of tazel; write tazel help for the commands
+ hint: did you mean tazel build? So close the keys almost had it.
+```
+
+Case is compared first, so `Build` suggests `build`; otherwise one edit is allowed for a short word and two for a
+longer one, two swapped letters counting as one edit.
 
 ### Passing arguments on
 
@@ -213,7 +287,8 @@ These are refused by name with exit code `1`:
 - projects with dependencies: nothing fetches a dependency or hands it to the compiler yet. `tazel lock resolve` still
   records what the project declares.
 - `tazel test` when the selection declares a test suite: Tala has no test framework yet.
-- `tazel vipkg create`, `tazel update`, `tazel install`, `tazel viget push` and `tazel viget update`.
+- `tazel vipkg create`, `tazel update`, `tazel install`, `tazel viget push`, `tazel viget update` and
+  `tazel viget vipkg-desc`.
 
 `check`, `build` and `run` compile for the host. The `targets` of the project file are recorded and not built.
 

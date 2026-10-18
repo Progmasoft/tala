@@ -3,7 +3,7 @@
 
 # Find the owning component
 
-The public `talac` command is one compiler, but implementation ownership is split deliberately. Put a rule where it first
+The public Talac command is one compiler, but implementation ownership is split deliberately. Put a rule where it first
 becomes meaningful, then test the next boundary that consumes it. Do not add a second parser, semantic model, or option
 validator in a convenient downstream component merely because that is where a symptom appears.
 
@@ -30,7 +30,7 @@ explain the contracts and implementation limits.
 | Xpp/Xmm operation or ownership check | `Talac/Codegen/Xpp`, `Talac/Codegen/Xmm`, or `Talac/Analysis` | Component tests plus connected `Talac/Driver/Tests` |
 | LLVM lowering or object emission | `Talac/Backend/LLVM` | Backend tests and native artifact smoke checks |
 | AARC runtime/ABI | `Talac/Runtime/AARC` and owned public headers | C++ runtime tests and C11 caller ABI test |
-| Native CLI spelling, precedence, help, dispatch | `Talac/Cli` | CLI tests and a `talac` process test |
+| Native CLI spelling, precedence, help, dispatch | `Talac/Cli` | CLI tests and a Talac process test |
 | Project file evaluation, plugins, lockfile, project commands | `Tazel/` | Kotlin tests, which run whole commands against stand-in tools |
 | REPL cell/session behavior | `Interactive` | `Interactive/Tests` and a `tali` smoke check |
 
