@@ -8,21 +8,37 @@ pattern. This page gives external contributors the high-impact rules that format
 
 ## Names and file ownership
 
-- The canonical C++ namespace root is `Tala`; classes, functions, and namespace components use PascalCase.
-  Locals use camelCase, constants `kPascalCase`, and macros `UPPER_SNAKE_CASE`.
 - C++20 implementation files use `.cpp`; C++-only headers use `.hpp`. A small C11 `.h` is allowed only for an actual
   stable external ABI such as AARC, with `extern "C"` guards for C++ callers and a C++20 implementation. Do not add a
   project-owned `.c` runtime or revive the retired C compiler route.
-- Public compiler headers live under `Talac/Headers/Progmasoft/Tala/` and are included as `Tala/...`.
-  Haskell module names follow their existing `Tala.*` ownership; renewed Kotlin package names use
-  `com.progmasoft.tala.*`.
+- Public compiler headers live under `Talac/Headers/Progmasoft/Tala/` and are included as `Progmasoft/Tala/...`.
+  Haskell module names follow their existing `Progmasoft.Tala.*` ownership; Kotlin packages use `com.progmasoft.*`.
 - Tests and fixtures live next to their owning component, not in a new root `tests/` bucket. Build targets list their
   owned sources explicitly; do not add a broad recursive glob merely to avoid editing a BUILD file.
 - The repository's Go developer tooling lives in `helpers/`. Do not add a second build graph or a new scripting language for
   a routine project command.
 
-The checked-in `.clang-format` file requires LLVM/Clang 23.1.0, uses an 80-column limit, and controls mechanical C++
-formatting—not API naming. Haskell uses the repository's Fourmolu configuration. Kotlin formatting is owned by its
+## C++ style
+
+C++ follows [Progmasoft C++ Style](https://github.com/Progmasoft/progmasoft-cpp). Its `.clang-format` and
+`.clang-tidy` profiles are checked in at the root and pinned to LLVM/Clang 23.1.0. This repository records these
+decisions beyond the guide:
+
+- The namespace root is `Progmasoft::Tala`, one level per component (`Progmasoft::Tala::Analysis`). The intermediate
+  representations keep the short lowercase namespaces `tala::core`, `tala::xpp` and `tala::xmm`, because they are
+  qualified on almost every line of the compiler (guide, Naming 3.4).
+- Every first-party translation unit, tests, fuzzers and benchmarks included, is built with `-fno-exceptions`; see
+  [native error handling](../CPP-ERROR-HANDLING.md). The error types are `llvm::Expected` and `llvm::Error`.
+- LLVM ADTs are used under the rules of the [compiler ADT policy](../COMPILER-ADTS.md); public IR models keep standard
+  owning types.
+- C symbols start with `tala_`, macros and environment variables with `TALA_`. Every binary interface is recorded in
+  `Documents/abi-manifest.json` and checked by `verify-abi`.
+- Tests use [Catch3](https://github.com/Progmasoft/catch3); fuzz targets run under libFuzzer, and AFL++ for the
+  targets without threads; benchmarks use Google Benchmark.
+
+## Other languages
+
+Haskell uses the repository's Fourmolu configuration. Kotlin formatting is owned by its
 component's Gradle checks. Do not reformat vendored Catch3 or another dependency as part of a compiler PR.
 
 ## Comments that preserve contracts
