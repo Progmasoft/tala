@@ -42,7 +42,7 @@ jobs:
 
       - name: Check linter configuration DSL
         shell: pwsh
-        run: .\Tazel\gradlew.bat -p Ecosystem/talalint spotlessCheck test
+        run: .\gradlew.bat -p Ecosystem/talalint spotlessCheck test
 
       - name: Update Hackage package index
         shell: pwsh

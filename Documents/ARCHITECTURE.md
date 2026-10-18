@@ -55,7 +55,7 @@ Stage ownership is deliberate:
 | `Talac/Linker` | C++20/Bazel | typed LLD invocation and executable validation |
 | `Talac/Cli` | C++20/Bazel | command schema, dispatch, output, and exit status |
 | `Interactive/` | C++20/Bazel | `tali` REPL, isolated frontend cells, ORC LLJIT session, tests, and benchmarks |
-| `Tazel/` | Kotlin/Gradle | `tazel`: project DSL, plugins, source discovery, SQLite lockfile, and the commands that start the tools |
+| [Progmasoft/tazel](https://github.com/Progmasoft/tazel) | Kotlin/Gradle | `tazel`, in its own repository: project DSL, plugins, source discovery, SQLite lockfile, and the commands that start the tools |
 
 This table is a dependency rule as well as a directory map. The frontend must not include LLVM concepts. LLVM must not parse
 source syntax. The compiler must not know projects: Tazel finds the `.tala` files of a target and names them on the

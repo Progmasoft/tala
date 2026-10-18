@@ -8,7 +8,6 @@
 ```text
 Interactive/     Tala Interactive (tali) source, owned public headers, tests, and LLJIT benchmarks
 Talac/     Native talac driver, public headers, modular C++20 implementation, Haskell packages, and build support
-Tazel/ Kotlin build system and package manager (tazel) and the project DSL
 Spec/         Public language-design example suites
 third_party/  Pinned source dependencies
 ```
@@ -111,8 +110,8 @@ documentation claims.
 
 ## Project-system ownership
 
-`Tazel/` owns the project file, plugin loading, source discovery, dependency declarations, lockfile persistence, and
-the project commands. It is Kotlin only and reaches the compiler through its command line: no native bridge exists, so
+Tazel, in its own repository [Progmasoft/tazel](https://github.com/Progmasoft/tazel), owns the project file, plugin loading, source discovery,
+dependency declarations, lockfile persistence, and the project commands. It is Kotlin only and reaches the compiler through its command line: no native bridge exists, so
 the C++ driver cannot become a second implementation of Kotlin validation rules.
 
 The JVM package root is `com.progmasoft.tazel.project`. Legacy `org.progmasoft` or `xs` package segments are not used
