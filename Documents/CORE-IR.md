@@ -758,5 +758,5 @@ Before extending it:
 10. document current native support without claiming a later stage is connected
     before its implementation exists.
 
-Do not place source parser recovery nodes, project DSL settings, LLVM objects,
+Do not place source parser recovery nodes, build settings, LLVM objects,
 or target ABI state in Core. Those belong to their owning layers.

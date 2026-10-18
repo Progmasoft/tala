@@ -157,8 +157,8 @@ objects and, on macOS, the system libraries are, which differs between distribut
 library stands beside the compiler under the name of the table; `develop build` puts it there.
 
 A program that needs a value that cannot be computed stops at an instruction the processor refuses. Windows reports
-the exception as the status of the process. Elsewhere the process is ended by a signal, and `tazel run` reports it the
-way a shell does, 128 and the number of the signal.
+the exception as the status of the process. Elsewhere the process is ended by a signal, which a shell reports as 128 and
+the number of the signal.
 
 ## Artifacts
 

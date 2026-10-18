@@ -21,7 +21,7 @@ Describe the user-visible result. If this changes language syntax or semantics, 
 
 ### Affected layers
 
-Which parts need work: parser, type checker, Core/CorePrep, Xpp/Xmm, runtime, CLI, project DSL, formatter, linter, analyzer, or documentation? Note any ABI, artifact, or compatibility impact you expect.
+Which parts need work: parser, type checker, Core/CorePrep, Xpp/Xmm, runtime, CLI, formatter, linter, analyzer, or documentation? Note any ABI, artifact, or compatibility impact you expect.
 
 ### Alternatives and acceptance checks
 

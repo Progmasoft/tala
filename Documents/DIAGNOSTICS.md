@@ -66,9 +66,7 @@ Talac writes ordinary requested output to standard output and diagnostics to sta
 outcomes rendered by the driver; parsing itself does not print. This separation lets tests and embedding clients inspect a
 typed parse result without redirecting global streams.
 
-Compilation, project evaluation, tool discovery, malformed artifact, target-machine, and link failures return a nonzero
-status. `tazel run` returns a build failure without launching anything, and after a successful build it propagates the native
-program's exit status.
+Compilation, malformed artifact, target-machine, and link failures return a nonzero status.
 
 ## Diagnostic ownership
 
@@ -77,8 +75,6 @@ program's exit status.
 | unknown option of the compiler | C++20 CLI parser |
 | missing/duplicate option | C++20 CLI parser |
 | invalid typed option value | C++20 CLI parser |
-| unknown command or selection of Tazel | Kotlin CLI parser |
-| project discovery or DSL validation | Tazel |
 | source-root containment or UTF-8 decoding | Haskell source loader |
 | token spelling, escape, or literal structure | Haskell Lexer |
 | grammar and precedence | Haskell Parser |
@@ -100,7 +96,6 @@ LLVM symbol, and a malformed integer token is not split into a valid prefix plus
 
 Each command-line parser owns canonical spelling, arity, and value domains. Useful parse failures distinguish:
 
-- unknown command (Tazel);
 - unknown option;
 - missing option value;
 - duplicate option;
@@ -113,8 +108,7 @@ Each command-line parser owns canonical spelling, arity, and value domains. Usef
 Option and value spelling is case-sensitive. The diagnostic should repeat the rejected spelling and, where bounded, the
 accepted domain. It must not lowercase a target-sensitive identifier or reinterpret a misspelled option as a file.
 
-`talac --help` prints the options of the compiler. `tazel help` lists the commands and `tazel help <command>` explains
-one. Help is a successful outcome and does not start project evaluation or compilation.
+`talac --help` prints the options of the compiler. Help is a successful outcome and does not start compilation.
 
 ## Source positions
 
@@ -502,7 +496,7 @@ Compiler warning policy is controlled by the resolved CLI/project settings:
 --warnings-as-errors=true|false
 ```
 
-In a project file these are `compiler.warnings`, `compiler.wshadow` and `compiler.werror`. `--warnings-as-errors` changes
+`--warnings-as-errors` changes
 the build result of an emitted warning; it does not rewrite the diagnostic's semantic identity into an unrelated error
 category. The shadowing control is an explicit setting that no level turns on, and it follows the same
 CLI-over-project precedence as other compiler settings.
@@ -577,8 +571,6 @@ Failure must not make an old file look newly built.
 - Binary emission removes temporary objects after success and failure.
 - Project-wide object and assembly requests are rejected before writing while Core lacks source ownership. Once that route is
   connected, flattened source-stem collisions must be rejected before either input overwrites the other.
-- Project evaluation aborted by `panic` does not begin compilation.
-- `tazel lock create-dump` never writes its text over the binary lock database.
 
 When atomic replacement is available, writers should create a sibling temporary file, flush/close it, and replace the
 destination only after validation. A failure message should mention both the requested destination and the underlying error,

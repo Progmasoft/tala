@@ -34,5 +34,5 @@ ending changes when an explicit output ending is requested.
 The Kotlin module under `sources/main/kotlin` owns the typed `talafmt.kts` configuration surface, canonical
 defaults, validation, immutable snapshots, and real scripting evaluator. `talafmt` invokes the installed `talafmt-config` helper
 once, then applies the selected input encoding, output encoding, and BOM policy to every requested source. Encoding is not
-a formatter CLI option: both direct `talafmt` use and project-wide `tazel fmt` obey `talafmt.kts`. UTF-16 and UTF-32
+a formatter CLI option: every `talafmt` run obeys `talafmt.kts`. UTF-16 and UTF-32
 output uses deterministic little-endian payloads, with BOM emission controlled independently.

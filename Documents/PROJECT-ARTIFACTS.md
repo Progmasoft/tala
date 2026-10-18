@@ -5,15 +5,13 @@
 
 This document describes project-wide object and assembly emission from a
 verified Core artifact. It is an implementation contract for the connected
-compiler route; it does not add source syntax, a project DSL property, or a new
+compiler route; it does not add source syntax, a build setting, or a new
 CLI option.
 
 ## Emission model
 
 The compiler selects an output kind with `--emit` when several sources are
-compiled as one program. Tazel itself asks only for an executable or for a
-check; the other kinds are reached by starting Talac directly. An
-executable build still produces exactly one native executable. A project `object`
+compiled as one program. An executable build still produces exactly one native executable. A project `object`
 or `assembly` build instead produces one native artifact for every physical
 source unit in the selected entry namespace's Core catalog:
 

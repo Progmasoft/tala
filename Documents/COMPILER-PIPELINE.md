@@ -62,10 +62,8 @@ agree. The compiler never searches for a project.
 
 ### Project source set
 
-Several source files on one command line are one program: `talac Main.tala Helper.tala --entry=Demo.Program`. This is
-how a project is compiled. Tazel evaluates the project file, collects the `.tala` files below the source directory of a
-target, applies the exclusions of the project, and starts the compiler with those files and the compiler options of the
-project. Source discovery and exclusion patterns are Tazel's; namespaces, entry resolution and every language rule are
+Several source files on one command line are one program: `talac Main.tala Helper.tala --entry=Demo.Program`. The
+compiler takes the files it is given and finds no others; namespaces, entry resolution and every language rule are
 the frontend's.
 
 ### Explicit artifact

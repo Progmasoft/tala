@@ -17,7 +17,7 @@ KDoc comments are rendered by Dokka with the `dokkaGenerateHtml` Gradle task.
 Build and generate API documentation with the repository's pinned Gradle wrapper:
 
 ```powershell
-.\Tazel\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
+.\gradlew.bat -p Ecosystem/tala-analyzer/intellij compileKotlin processResources dokkaGenerateHtml
 ```
 
 `runIde` starts a disposable IntelliJ instance for manual smoke testing. Set `TALA_ANALYZER_PATH` in the environment

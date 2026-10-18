@@ -7,7 +7,7 @@ title: "[Bug] "
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-This repository owns the Tala language, compiler, project DSL, runtime, formatter, linter, and analyzer. Website, Progmasoft account/ViGet, and Xide issues belong in their own repositories. The public language contract is in `Spec/`; please distinguish a specification mismatch from an unimplemented feature. Do not post secrets or private source. Send security vulnerabilities privately to support@progmasoft.com.
+This repository owns the Tala language, compiler, runtime, formatter, linter, and analyzer. Website, Progmasoft account/ViGet, and Xide issues belong in their own repositories. The public language contract is in `Spec/`; please distinguish a specification mismatch from an unimplemented feature. Do not post secrets or private source. Send security vulnerabilities privately to support@progmasoft.com.
 
 If you plan to submit a fix, see the [contributor guide](https://github.com/Progmasoft/tala/blob/main/CONTRIBUTING.md).
 
@@ -15,7 +15,7 @@ If you plan to submit a fix, see the [contributor guide](https://github.com/Prog
 
 - [ ] Haskell lexer, parser, resolver, type checker, Core, or CorePrep
 - [ ] C++20 Xpp, Xmm, LLVM backend, linker, or AARC runtime
-- [ ] `talac`/`tali` CLI or Kotlin project DSL
+- [ ] `talac`/`tali` CLI
 - [ ] talafmt, Linter, or Analyzer
 - [ ] Specification, examples, or documentation
 
@@ -25,7 +25,7 @@ What happened? What should happen according to the relevant `Spec/` page or docu
 
 ### Minimal reproduction
 
-Provide the smallest `.tala` source or `BUILD.kts` fragment that reproduces the issue, the exact `talac` command, and the resulting output. If an artifact is involved, name its format (`.core`, `.xpp`, `.xmm`, object, or the executable) without attaching private binaries. State whether it reproduces without a project file.
+Provide the smallest `.tala` source that reproduces the issue, the exact `talac` command, and the resulting output. If an artifact is involved, name its format (`.core`, `.xpp`, `.xmm`, object, or the executable) without attaching private binaries.
 
 ### Environment
 

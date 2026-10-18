@@ -68,8 +68,8 @@ itself. `verify-benchmarks` and `verify-examples` take the checkout as
 command is given. An invocation a command does not understand fails before
 it reads, probes or installs anything; each command has tests that hold that.
 
-Compiler options, BUILD.kts evaluation, and user project configuration
-are not parsed by these developer tools.
+Compiler options and user project configuration are not parsed by these
+developer tools.
 
 ### Diagnostics without changing the machine
 

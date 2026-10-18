@@ -16,7 +16,6 @@ body:
         - Analyzer
         - Formatter
         - Linter
-        - Kotlin project DSL
         - Documentation or examples
         - Other
     validations:
