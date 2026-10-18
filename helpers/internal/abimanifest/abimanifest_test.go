@@ -14,8 +14,8 @@ import (
 var described = []string{
 	Path,
 	"Talac/Headers/Progmasoft/Tala/Frontend.h",
-	"Talac/Haskell/Driver/ffi/tala-frontend.def",
-	"Talac/Haskell/Driver/src/Progmasoft/Tala/Driver/FFI.hs",
+	"Talac/Haskell/Host/ffi/tala-frontend.def",
+	"Talac/Haskell/Host/src/Progmasoft/Tala/Driver/FFI.hs",
 	"Talac/Cli/Commands/Frontend.cpp",
 	"Talac/Headers/Progmasoft/Tala/Runtime/AARC.h",
 	"Talac/Headers/Progmasoft/Tala/Runtime/Text.h",
@@ -109,7 +109,7 @@ func TestEveryStatementOfTheManifestIsChecked(t *testing.T) {
 	}{
 		{"a frontend function the manifest lacks", Path, "      \"tala_frontend_shutdown\"\n", "      \"tala_frontend_shutdown_now\"\n", "frontend functions"},
 		{"a frontend function the header gains", "Talac/Headers/Progmasoft/Tala/Frontend.h", "    tala_frontend_shutdown(void);", "    tala_frontend_shutdown(void);\n    int32_t\n    tala_frontend_added(void);", "tala_frontend_added"},
-		{"an export the definition file loses", "Talac/Haskell/Driver/ffi/tala-frontend.def", "    tala_frontend_execute\n", "", "tala-frontend.def"},
+		{"an export the definition file loses", "Talac/Haskell/Host/ffi/tala-frontend.def", "    tala_frontend_execute\n", "", "tala-frontend.def"},
 		{"the frontend ABI version", Path, "\"abi_version\": 2,\n    \"header\": \"Talac/Headers/Progmasoft/Tala/Frontend.h\"", "\"abi_version\": 3,\n    \"header\": \"Talac/Headers/Progmasoft/Tala/Frontend.h\"", "frontend ABI version"},
 		{"an output kind's number", Path, "\"TALA_FRONTEND_WARNING_TEXT\": 5", "\"TALA_FRONTEND_WARNING_TEXT\": 6", "TALA_FRONTEND_WARNING_TEXT"},
 		{"a status the header gains", "Talac/Headers/Progmasoft/Tala/Frontend.h", "TALA_FRONTEND_OUTPUT_REJECTED = 4", "TALA_FRONTEND_OUTPUT_REJECTED = 4,\n        TALA_FRONTEND_ADDED = 5", "TALA_FRONTEND_ADDED"},

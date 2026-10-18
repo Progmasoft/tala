@@ -269,7 +269,7 @@ func Verify(repository string) ([]string, error) {
 	source.sameSet("frontend exports in tala-frontend.def", frontend.Symbols,
 		func() []string {
 			var names []string
-			for _, match := range definitionExport.FindAllStringSubmatch(source.read("Talac/Haskell/Driver/ffi/tala-frontend.def"), -1) {
+			for _, match := range definitionExport.FindAllStringSubmatch(source.read("Talac/Haskell/Host/ffi/tala-frontend.def"), -1) {
 				names = append(names, match[1])
 			}
 			return names
@@ -278,7 +278,7 @@ func Verify(repository string) ([]string, error) {
 	statuses := between(header, "enum tala_frontend_status", "};")
 	source.sameNumbers("frontend output kind", frontend.OutputKinds, numbers(enumerator, kinds, nil))
 	source.sameNumbers("frontend status", frontend.Statuses, numbers(enumerator, statuses, nil))
-	ffi := source.read("Talac/Haskell/Driver/src/Progmasoft/Tala/Driver/FFI.hs")
+	ffi := source.read("Talac/Haskell/Host/src/Progmasoft/Tala/Driver/FFI.hs")
 	if found := source.number("the frontend ABI version", ffi, `(?m)^frontendAbiVersion = pure (\d+)$`); found != frontend.AbiVersion {
 		source.differ("frontend ABI version", frontend.AbiVersion, found)
 	}

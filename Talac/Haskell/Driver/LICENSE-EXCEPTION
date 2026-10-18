@@ -1,0 +1,81 @@
+Progmasoft Linking Exception, Version 1.1
+
+This Exception is an additional permission to the Mozilla Public License, version 2.0 ("MPL-2.0"). It is intended to preserve MPL-2.0's file-level obligations for Covered Software while removing doubt about combining that software with independent code. Capitalized terms not defined here have the meanings given in MPL-2.0.
+
+1. Definitions
+
+"Independent Component" means software contained in one or more Source Code Form files that neither contain Covered Software nor are Modifications of Covered Software. A component does not cease to be independent merely because compilation, static or dynamic linking, loading, packaging, or deployment places its Executable Form in the same file, process, address space, archive, image, or distribution as Covered Software.
+
+"Combined Work" means a Larger Work that combines Covered Software with one or more Independent Components by any technical means, including static or dynamic linking, loading, embedding, plugins, extensions, language bindings, an API, ABI, FFI boundary, command-line interface, protocol, inter-process communication mechanism, or file format.
+
+"Output" means material produced by executing Covered Software, including generated source, object code, executable code, intermediate representations, documentation, reports, diagnostics, formatted text, and analysis results.
+
+2. Additional Permission for Combined Works
+
+Subject to compliance with MPL-2.0 for the Covered Software, each recipient has a worldwide, royalty-free, non-exclusive, irrevocable additional copyright permission to create, reproduce, use, modify, display, perform, make available, and distribute a Combined Work under terms of the recipient's choice, including proprietary or closed-source terms.
+
+Those chosen terms may govern Independent Components and other portions of the Combined Work, but must not restrict or alter any recipient's rights in the Covered Software under MPL-2.0 and this Exception. No distributor is required to relicense an Independent Component merely because it forms part of a Combined Work.
+
+3. Boundary of Covered Software
+
+Linking, loading, calling, communicating with, packaging, installing, or distributing an Independent Component with Covered Software does not, by itself:
+
+(a) make the Independent Component Covered Software or a Modification;
+(b) subject the Independent Component's Source Code Form to MPL-2.0; or
+(c) expand MPL-2.0 beyond files that are Covered Software or Modifications under MPL-2.0.
+
+If Source Code Form from Covered Software is copied into another file, or a new Source Code Form file contains Covered Software, MPL-2.0 determines whether that file is a Modification. Labels, file extensions, build boundaries, code generation, or later separation of files do not avoid that determination.
+
+4. Outputs
+
+An Output does not become Covered Software merely because Covered Software produced, transformed, linked, or processed it. The copyright license chosen for input material does not change merely because Covered Software processes that material.
+
+If an Output contains copyrightable Source Code Form or other copyrightable material copied or derived from Covered Software, this Exception does not remove MPL-2.0 obligations from that incorporated material. Facts, ideas, interfaces, names, signatures, diagnostics, and other material not protected by copyright are not converted into Covered Software by this Exception.
+
+5. Preservation of MPL-2.0 Obligations
+
+This Exception does not remove, replace, waive, or narrow any MPL-2.0 obligation applicable to Covered Software. In particular:
+
+(a) Covered Software in Source Code Form and every Modification remain subject to MPL-2.0;
+(b) distribution in Executable Form remains subject to MPL-2.0 Section 3.2, including the obligation to inform recipients how to obtain the corresponding Source Code Form when that section applies;
+(c) notices protected by MPL-2.0 Section 3.4 must be retained; and
+(d) this Exception grants no permission to withhold Source Code Form that MPL-2.0 requires to be made available.
+
+Distribution of a Combined Work under terms of choice is permission for the Combined Work as a whole and its Independent Components. It is not permission to relicense a Covered Software file.
+
+6. Packaging and Deployment
+
+Placing Covered Software and an Independent Component in the same archive, package, installer, application bundle, container image, firmware image, distribution medium, hosted deployment, or process does not change their respective copyright licenses. Network interaction or operation as separate processes is not required for independence.
+
+7. Direct Grant to Recipients
+
+The additional permission in this Exception is granted directly by the copyright holders applying it to every recipient of the applicable Covered Software. A distributor need not sublicense this Exception. Distribution through one or more intermediaries does not reduce the permission, and termination of an upstream distributor's rights does not terminate rights already received by a compliant downstream recipient.
+
+8. Termination and Reinstatement
+
+This Exception has no separate patent-litigation, field-of-use, combination, or compatibility termination condition. A recipient may exercise it only while entitled to exercise the corresponding MPL-2.0 copyright rights. If those rights terminate under MPL-2.0 Section 5.1, exercise of this Exception for the affected Covered Software is suspended to the same extent and is reinstated when, and to the extent that, the MPL-2.0 rights are reinstated.
+
+A recipient may elect to use Covered Software under MPL-2.0 without relying on this Exception.
+
+9. Other Rights
+
+This Exception grants copyright permission only. It grants no trademark, trade dress, service mark, publicity, confidential-information, or patent rights. Patent rights, if any, arise only under MPL-2.0 or a separately applicable patent grant. Nothing in this Exception limits rights arising independently under exhaustion, fair use, fair dealing, implied license, estoppel, or other applicable law.
+
+10. Relationship to MPL-2.0
+
+MPL-2.0 and this Exception are read together. If this Exception and MPL-2.0 cannot both be given effect with respect to the creation or distribution of a Combined Work, this Exception controls only to the minimum extent necessary to provide the additional permission stated in Sections 2 through 6. MPL-2.0 controls in every other respect.
+
+Nothing here changes whether Covered Software is "Incompatible With Secondary Licenses" or changes the operation of MPL-2.0 Section 3.3 for a work governed by a Secondary License.
+
+11. Applicability and Version
+
+This Exception applies only to a file that expressly identifies it with this exact SPDX license expression:
+
+MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+
+Reference to Version 1.1 does not incorporate any later version. A copy of this text supplied in a repository or distribution identifies the permission; the per-file expression determines which files receive it.
+
+12. Severability
+
+If any provision of this Exception is held unenforceable, it shall be reformed only to the minimum extent necessary to make it enforceable. If reformation is unavailable, that provision is severed and the remaining provisions continue to the maximum extent permitted by law.
+
