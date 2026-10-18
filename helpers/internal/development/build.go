@@ -147,7 +147,7 @@ func buildFrontendLibrary(repository string, runner commandRunner) (string, erro
 	}
 	compilerDirectory := filepath.Join(repository, "Talac")
 	fmt.Println("Building the in-process Haskell frontend shared library...")
-	if err := runner.Run(compilerDirectory, criterionEnvironment(), cabal, "build", "tala-compiler"); err != nil {
+	if err := runner.Run(compilerDirectory, criterionEnvironment(), cabal, "build", "tala-frontend-host"); err != nil {
 		return "", fmt.Errorf("Haskell frontend shared-library build failed: %w", err)
 	}
 	return locateFrontendLibrary(compilerDirectory)

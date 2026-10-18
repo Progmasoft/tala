@@ -45,7 +45,8 @@ Stage ownership is deliberate:
 | `Talac/Haskell/Syntax` | Haskell/Cabal | positioned tokens and parsed AST vocabulary |
 | `Talac/Haskell/Frontend` | Haskell/Cabal | Lexer, Parser, Renamer, Name Resolution, Type Checker, and Desugarer |
 | `Talac/Haskell/Core` | Haskell/Cabal | Core/CorePrep models, specialization-demand planning, optimization, verification, and codecs |
-| `Talac/Haskell/Driver` | Haskell/Cabal | source loading, namespace merge, entry selection, and frontend process |
+| `Talac/Haskell/Driver` | Haskell/Cabal | source loading, namespace merge, entry selection, and verified CorePrep |
+| `Talac/Haskell/Host` | Haskell/Cabal | `tala-frontend-host`, not published: the shared library talac loads, its C ABI, and the frontend fuzzer |
 | `Talac/Haskell/Tooling` | Haskell/Cabal | `tala-tooling`: the modules the formatter, the linter and the analyzer build on, and nothing else |
 | `Talac/Core` | C++20/Bazel | bounded Core reader, verifier, and CorePrep adapter |
 | `Talac/Codegen/Xpp` | C++20/Bazel | CorePrep-to-Xpp lowering, optimization, and verification |

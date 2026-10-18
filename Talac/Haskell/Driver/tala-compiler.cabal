@@ -4,9 +4,26 @@ cabal-version: 3.12
 name: tala-compiler
 version: 0.6.0
 synopsis: Target-independent Tala compiler driver
+description:
+    The target-independent driver of the Tala compiler: it runs the
+    frontend and Core over a program and produces verified CorePrep.
+    .
+    This is an implementation package of the Tala compiler. Its modules may
+    change in any release; tools should depend on tala-tooling instead.
+    .
+    The source is also offered under the Progmasoft Linking Exception 1.1
+    (LICENSE-EXCEPTION), an additional permission to MPL-2.0 for works that
+    combine this package with independent code.
 license: MPL-2.0
+license-files:
+    LICENSE
+    LICENSE-EXCEPTION
 author: Progmasoft
 maintainer: support@progmasoft.com
+homepage: https://tala.run/
+bug-reports: https://github.com/Progmasoft/tala/issues
+category: Language, Compiler
+tested-with: GHC ==9.10.3
 build-type: Simple
 
 library
@@ -71,57 +88,9 @@ library
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.14,
         text >=2.1 && <2.3,
-        tala-core,
-        tala-frontend,
-        tala-syntax
-    default-language: GHC2024
-
-foreign-library tala-frontend
-    type: native-shared
-    other-modules:
-        Progmasoft.Tala.Driver.FFI
-        Progmasoft.Tala.Compiler
-        Progmasoft.Tala.Diagnostic.SideChannel
-        Progmasoft.Tala.Driver.Command
-    hs-source-dirs: src
-    cxx-sources: ffi/FrontendRuntime.cpp
-    cxx-options: -std=c++20 -fno-exceptions
-    if os(windows)
-        options: standalone
-        mod-def-file: ffi/tala-frontend.def
-    build-depends:
-        base >=4.20 && <4.23,
-        bytestring >=0.12 && <0.14,
-        text >=2.1 && <2.3,
-        tala-compiler
-    default-language: GHC2024
-
-executable frontend-fuzz
-    main-is: Main.hs
-    other-modules: Feedback Mutation
-    hs-source-dirs: Fuzzing
-    build-depends:
-        base >=4.20 && <4.23,
-        bytestring >=0.12 && <0.14,
-        containers >=0.7 && <0.9,
-        directory >=1.3 && <1.4,
-        filepath >=1.5 && <1.6,
-        hpc >=0.7 && <0.8,
-        text >=2.1 && <2.3,
-        tala-compiler
-    ghc-options: -rtsopts "-with-rtsopts=-M512m -K8m"
-    default-language: GHC2024
-
-test-suite fuzz-feedback-tests
-    type: exitcode-stdio-1.0
-    main-is: Tests.hs
-    other-modules: Feedback Mutation
-    hs-source-dirs: Fuzzing
-    build-depends:
-        base >=4.20 && <4.23,
-        bytestring >=0.12 && <0.14,
-        containers >=0.7 && <0.9,
-        hpc >=0.7 && <0.8
+        tala-core >=0.6.0 && <0.7,
+        tala-frontend >=0.6.0 && <0.7,
+        tala-syntax >=0.6.0 && <0.7
     default-language: GHC2024
 
 test-suite tala-compiler-tests
@@ -197,6 +166,11 @@ test-suite tala-compiler-tests
         containers >=0.7 && <0.9,
         directory >=1.3 && <1.4,
         filepath >=1.5 && <1.6,
-        tala-frontend,
-        tala-compiler
+        tala-frontend >=0.6.0 && <0.7,
+        tala-compiler >=0.6.0 && <0.7
     default-language: GHC2024
+
+source-repository head
+    type: git
+    location: https://github.com/Progmasoft/tala
+    subdir: Talac/Haskell/Driver

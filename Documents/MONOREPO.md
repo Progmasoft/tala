@@ -39,7 +39,9 @@ Talac/
 │   ├── Syntax/            tokens and AST vocabulary
 │   ├── Frontend/          Lexer through Desugarer
 │   ├── Core/              Core/CorePrep, optimization, verification, codecs
-│   └── Driver/            source loading and private frontend process
+│   ├── Driver/            source loading and verified CorePrep
+│   ├── Tooling/           tala-tooling: the modules tools build on
+│   └── Host/              the shared library talac loads, and the frontend fuzzer
 ├── Headers/Progmasoft/Tala/ public/native interface headers
 └── Linker/                typed LLD execution
 ```

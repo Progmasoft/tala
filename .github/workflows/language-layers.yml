@@ -52,7 +52,8 @@ jobs:
       - name: Build Haskell compiler layers
         shell: pwsh
         working-directory: Talac
-        run: cabal build tala-compiler
+        # tala-frontend-host holds the shared library talac loads.
+        run: cabal build tala-compiler tala-frontend-host
 
       - name: Test Haskell compiler layers
         shell: pwsh
@@ -72,7 +73,8 @@ jobs:
             "Talac/Haskell/Frontend",
             "Talac/Haskell/Core",
             "Talac/Haskell/Driver",
-            "Talac/Haskell/Tooling"
+            "Talac/Haskell/Tooling",
+            "Talac/Haskell/Host"
           )
           foreach ($directory in $packageDirectories) {
             Push-Location $directory
@@ -83,6 +85,23 @@ jobs:
               }
             } finally {
               Pop-Location
+            }
+          }
+
+      # The packages published to Hackage carry the license and its exception
+      # in their own directories, because a source archive holds only what is
+      # below the package. The copies must not drift from the repository's.
+      - name: Check the license copies of the published packages
+        shell: pwsh
+        run: |
+          foreach ($directory in @("Syntax", "Frontend", "Core", "Driver", "Tooling")) {
+            $package = "Talac/Haskell/$directory"
+            foreach ($pair in @(@("LICENSE.txt", "LICENSE"), @("LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt", "LICENSE-EXCEPTION"))) {
+              $expected = (Get-FileHash $pair[0]).Hash
+              $actual = (Get-FileHash (Join-Path $package $pair[1])).Hash
+              if ($expected -ne $actual) {
+                throw "$package/$($pair[1]) differs from $($pair[0])"
+              }
             }
           }
 

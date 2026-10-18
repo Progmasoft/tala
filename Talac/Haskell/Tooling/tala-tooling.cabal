@@ -10,10 +10,20 @@ description:
     the syntax tree, the diagnostics, the frontend and the compiler entry
     that runs every check. Tools depend on this package alone; the other
     compiler packages are its implementation and may change in any release.
+    .
+    The source is also offered under the Progmasoft Linking Exception 1.1
+    (LICENSE-EXCEPTION), an additional permission to MPL-2.0 for works that
+    combine this package with independent code.
 license: MPL-2.0
+license-files:
+    LICENSE
+    LICENSE-EXCEPTION
 author: Progmasoft
 maintainer: support@progmasoft.com
-category: Language
+homepage: https://tala.run/
+bug-reports: https://github.com/Progmasoft/tala/issues
+category: Language, Compiler
+tested-with: GHC ==9.10.3
 build-type: Simple
 
 library
@@ -29,3 +39,8 @@ library
         tala-frontend >=0.6.0 && <0.7,
         tala-syntax >=0.6.0 && <0.7
     default-language: GHC2024
+
+source-repository head
+    type: git
+    location: https://github.com/Progmasoft/tala
+    subdir: Talac/Haskell/Tooling
