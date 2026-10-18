@@ -27,7 +27,7 @@ library
         base >=4.20 && <4.23,
         bytestring >=0.12 && <0.13,
         text >=2.1 && <2.3,
-        tala-tooling >=0.6.0 && <0.7
+        tala-tooling >=0.1.0 && <0.2
     default-language: GHC2024
 
 executable talafmt

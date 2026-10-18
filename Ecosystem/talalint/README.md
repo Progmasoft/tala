@@ -14,7 +14,7 @@ talalint --version
 ```
 
 The linter reports what the compiler it is built with reports. Version 0.2.0 is built with the compiler of
-Tala 0.6.0: a source may use method references (`Type::Method`), names written through their namespace,
+Tala 0.1.0: a source may use method references (`Type::Method`), names written through their namespace,
 conditionals over strings and console output, and their diagnostics arrive under the `compiler` check, for example
 `compiler.TAT0080` for a method reference that does not select one overload and `compiler.TAT0076` for a format the
 compiler rejects.

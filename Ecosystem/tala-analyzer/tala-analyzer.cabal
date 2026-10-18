@@ -29,7 +29,7 @@ library
         lsp-types >=2.4 && <2.5,
         text >=2.0 && <2.2,
         transformers >=0.6 && <0.7,
-        tala-tooling >=0.6.0 && <0.7
+        tala-tooling >=0.1.0 && <0.2
     default-language: GHC2024
 
 executable tala-analyzer
