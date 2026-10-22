@@ -40,6 +40,17 @@ single_version_override(
     version = "0.2.22",
 )
 
+# rules_swift reaches the graph through protobuf and rules_apple. Up to 3.4.1
+# its Windows autoconfiguration, which runs whenever swiftc.exe is on PATH,
+# writes a toolchain that indexes APPLE_PLATFORMS_CONSTRAINTS with an
+# undefined name, and every build on such a host fails during analysis.
+# 3.4.2 is the first fixed release with the same compatibility level and no
+# newer protobuf.
+single_version_override(
+    module_name = "rules_swift",
+    version = "3.4.2",
+)
+
 # LLVM is a machine toolchain, not a source dependency. The extension discovers
 # it through LLVM_ROOT or llvm-config on PATH and exposes only the components the
 # native backend owns.

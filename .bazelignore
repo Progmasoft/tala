@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-# Cabal owns this generated tree. GHC emits binary cache files named BUILD,
+# Cabal owns these generated trees (dist-fuzz-coverage is the build directory
+# of `develop fuzz`). GHC emits binary cache files named BUILD,
 # which Bazel must never interpret as Starlark packages during //Talac/...
 # queries or tests.
 Talac/dist-newstyle
+Talac/dist-fuzz-coverage
