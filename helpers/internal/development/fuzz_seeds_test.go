@@ -39,7 +39,6 @@ func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 	writeSource(t, repository, "Examples/Hello/Hello.tala", "namespace Hello;")
 	writeSource(t, repository, "Spec/Language/Sample.TALA", "namespace Sample;")
 	writeSource(t, repository, "Talac/Core/Tests/a.tala", "namespace A;")
-	writeSource(t, repository, "Ecosystem/tala-analyzer/Tests/Data/b.tala", "namespace B;")
 	// Not a source, outside the roots, empty, and longer than the target reads.
 	writeSource(t, repository, "Examples/Hello/README.md", "namespace Hello;")
 	writeSource(t, repository, "helpers/c.tala", "namespace C;")
@@ -52,8 +51,8 @@ func TestRepositorySourcesSeedTheSourceCorpora(t *testing.T) {
 		t.Fatal(err)
 	}
 	names := seedNames(t, corpus)
-	if held != 4 || len(names) != 4 {
-		t.Fatalf("held %d seeds in %v, want the four sources under the roots", held, names)
+	if held != 3 || len(names) != 3 {
+		t.Fatalf("held %d seeds in %v, want the three sources under the roots", held, names)
 	}
 	for _, name := range names {
 		if !strings.HasPrefix(name, "repository-") || !strings.HasSuffix(name, ".tala") {

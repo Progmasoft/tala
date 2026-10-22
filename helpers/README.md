@@ -6,7 +6,7 @@
 This is an independent Go module, `github.com/Progmasoft/tala/helpers`.
 It contains developer applications and reusable implementation packages, not
 compiler runtime code or another build system. Bazel owns the native graph,
-Cabal owns Haskell packages, and Gradle owns Kotlin components.
+and Cabal owns the Haskell packages.
 
 ## Package layout
 

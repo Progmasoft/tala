@@ -13,9 +13,6 @@ body:
       label: Affected component
       options:
         - Compiler
-        - Analyzer
-        - Formatter
-        - Linter
         - Documentation or examples
         - Other
     validations:

@@ -8,8 +8,6 @@ xide/
 .codex/
 .claude/
 .agents/
-.gradle/
-.kotlin/
 *.sqlite3
 node_modules/
 dist/

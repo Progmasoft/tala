@@ -3,7 +3,7 @@
 The root `justfile` is optional. It delegates to the existing Go helper
 commands with `go run`; it does not implement a second build graph or copy
 the helpers' platform detection, installation, testing or cleanup logic.
-Bazel, Cabal and Gradle remain the build owners.
+Bazel and Cabal remain the build owners.
 
 ```text
 just                         # Go developer command reference

@@ -71,7 +71,7 @@ ImplementationFileExtensions:
 # Bazel exposes the public headers under bazel-out/<config>/bin/_virtual_includes,
 # so that tree must be analyzed too. Fetched repositories live under an
 # external/ directory in both the source and the output tree and stay excluded.
-HeaderFilterRegex: '(^|.*/)(Talac|Interactive|Benchmarks|Ecosystem|_virtual_includes)/.*'
+HeaderFilterRegex: '(^|.*/)(Talac|Interactive|Benchmarks|_virtual_includes)/.*'
 ExcludeHeaderFilterRegex: '(^|.*/)(build|vendor|third_party|external|subprojects)/.*'
 SystemHeaders: false
 FormatStyle: file

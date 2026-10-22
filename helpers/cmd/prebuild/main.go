@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-// prebuild installs system tools used to develop Tala. Bazel, Cabal, and
-// Gradle remain the owners of their build graphs after host bootstrap.
+// prebuild installs system tools used to develop Tala. Bazel and Cabal
+// remain the owners of their build graphs after host bootstrap.
 package main
 
 import (
@@ -28,7 +28,7 @@ const prebuildUsage = `Tala development-host bootstrap
 
 Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
 Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
-toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Temurin JDK 25, Git, and the
+toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Git, Podman, and the
 platform link resources. Tala uses ClangCL/LLD on Windows, not MSVC.`
 
 type bootstrapHost int
@@ -194,7 +194,6 @@ var bootstrapTools = []toolRequirement{
 	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "libc++-dev", "libc++abi-dev", "zstd", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "libcxx-devel", "libcxxabi-devel", "zstd", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
 	{name: "GHCup", executables: []string{"ghcup"}, homebrewFormula: "ghcup"},
 	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}},
-	{name: "Temurin JDK 25", executables: []string{"java"}, wingetPackageID: "EclipseAdoptium.Temurin.25.JDK", homebrewFormula: "temurin@25", aptPackages: []string{"temurin-25-jdk"}, dnfPackages: []string{"temurin-25-jdk"}},
 }
 
 func main() {
@@ -302,12 +301,6 @@ func classifyBootstrapLinux(release string) (bootstrapHost, error) {
 func missingTools(host bootstrapHost, runner bootstrapRunner) []toolRequirement {
 	missing := make([]toolRequirement, 0)
 	for _, requirement := range bootstrapTools {
-		if requirement.name == "Temurin JDK 25" {
-			if !temurinJDK25Available(runner) {
-				missing = append(missing, requirement)
-			}
-			continue
-		}
 		ready := true
 		for _, executable := range requirementExecutables(host, requirement) {
 			if !bootstrapToolAvailable(runner, executable) {
@@ -320,19 +313,6 @@ func missingTools(host bootstrapHost, runner bootstrapRunner) []toolRequirement 
 		}
 	}
 	return missing
-}
-
-func temurinJDK25Available(runner bootstrapRunner) bool {
-	if _, err := runner.LookPath("java"); err != nil {
-		return false
-	}
-	properties, err := runner.Output("java", "-XshowSettings:properties", "-version")
-	if err != nil {
-		return false
-	}
-	lower := strings.ToLower(properties)
-	return strings.Contains(lower, "java.vendor = eclipse adoptium") &&
-		(strings.Contains(lower, "java.version = 25.") || strings.Contains(lower, `openjdk version "25.`))
 }
 
 func bootstrapToolAvailable(runner bootstrapRunner, executable string) bool {
@@ -517,9 +497,6 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 				return fmt.Errorf("no %s package is defined for %s", requirement.name, bootstrapHostName(host))
 			}
 			if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(arguments)); err != nil {
-				if requirement.name == "Temurin JDK 25" {
-					return fmt.Errorf("cannot install Temurin 25; enable Eclipse Adoptium's signed apt/dnf repository and rerun prebuild: %w", err)
-				}
 				return fmt.Errorf("cannot install %s: %w", requirement.name, err)
 			}
 		}
@@ -549,9 +526,6 @@ func runLinuxPackageManager(runner bootstrapRunner, manager string, arguments []
 }
 
 func homebrewInstallArguments(requirement toolRequirement) []string {
-	if requirement.name == "Temurin JDK 25" {
-		return []string{"install", "--cask", requirement.homebrewFormula}
-	}
 	return []string{"install", requirement.homebrewFormula}
 }
 
@@ -577,11 +551,7 @@ func homebrewPackageInstalled(runner bootstrapRunner, brew string, requirement t
 	if requirement.homebrewFormula == "" {
 		return false
 	}
-	arguments := []string{"list", "--formula", requirement.homebrewFormula}
-	if requirement.name == "Temurin JDK 25" {
-		arguments[1] = "--cask"
-	}
-	_, err := runner.Output(brew, arguments...)
+	_, err := runner.Output(brew, "list", "--formula", requirement.homebrewFormula)
 	return err == nil
 }
 

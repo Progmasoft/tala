@@ -31,7 +31,7 @@ fix this guide in the same change.
 
 ## Repository boundaries
 
-`Progmasoft/tala` contains the compiler, language specification, project system, Interactive, and ecosystem tools.
+`Progmasoft/tala` contains the compiler, the language specification and Interactive.
 The Tala language website, Progmasoft accounts/ViGet, Xide, and Catch3 each have their own repository and issue tracker.
 A nested checkout may sit physically below this directory without belonging to its Git index. Check `git remote -v` and
 `git status --short` before editing or committing across a repository boundary.

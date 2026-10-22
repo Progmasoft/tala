@@ -121,7 +121,7 @@ to differ, just as it is for normal project sources.
 - `System.Worlds` entries are compiler-special library surfaces, not language built-ins.
 - `Core`, `Xpp`, and `Xmm` are the current intermediate artifact vocabulary.
 - CorePrep is internal and has no public extension.
-- Tala packages are `.vipkg`; Kotlin DSL plugins are JARs.
+- Tala packages are `.vipkg`.
 
 Historical implementation names can remain in legacy source that is deliberately retained, but they do not enter the public
 catalog as current language or artifact names.

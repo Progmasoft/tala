@@ -8,9 +8,6 @@ packages:
     Haskell/Driver/tala-compiler.cabal
     Haskell/Host/tala-frontend-host.cabal
     Haskell/Tooling/tala-tooling.cabal
-    ../Ecosystem/tala-analyzer/tala-analyzer.cabal
-    ../Ecosystem/talafmt/talafmt.cabal
-    ../Ecosystem/talalint/talalint.cabal
 
 with-compiler: ghc
 optimization: 2

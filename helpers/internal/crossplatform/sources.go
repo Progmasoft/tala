@@ -45,14 +45,14 @@ func SourceFiles(listing string) ([]string, error) {
 }
 
 // executableSource reports whether a file should be executable in the
-// archive. A Windows working tree does not record that, so the launchers the
-// repository keeps are named.
+// archive. A Windows working tree does not record that, so shell scripts are
+// recognized by their extension.
 func executableSource(path string, mode os.FileMode) bool {
 	if mode&0o111 != 0 {
 		return true
 	}
 	base := filepath.Base(path)
-	return base == "gradlew" || strings.HasSuffix(base, ".sh")
+	return strings.HasSuffix(base, ".sh")
 }
 
 // WriteArchive writes the named files of the checkout as a tar stream and

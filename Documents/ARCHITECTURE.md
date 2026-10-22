@@ -47,7 +47,7 @@ Stage ownership is deliberate:
 | `Talac/Haskell/Core` | Haskell/Cabal | Core/CorePrep models, specialization-demand planning, optimization, verification, and codecs |
 | `Talac/Haskell/Driver` | Haskell/Cabal | source loading, namespace merge, entry selection, and verified CorePrep |
 | `Talac/Haskell/Host` | Haskell/Cabal | `tala-frontend-host`, not published: the shared library talac loads, its C ABI, and the frontend fuzzer |
-| `Talac/Haskell/Tooling` | Haskell/Cabal | `tala-tooling`: the modules the formatter, the linter and the analyzer build on, and nothing else |
+| `Talac/Haskell/Tooling` | Haskell/Cabal | `tala-tooling`: the stable modules for tools built on the compiler, and nothing else |
 | `Talac/Core` | C++20/Bazel | bounded Core reader, verifier, and CorePrep adapter |
 | `Talac/Codegen/Xpp` | C++20/Bazel | CorePrep-to-Xpp lowering, optimization, and verification |
 | `Talac/Codegen/Xmm` | C++20/Bazel | Xpp-to-Xmm lowering, optimization, and verification |
@@ -174,13 +174,6 @@ is project input, not an executable search mechanism. The driver owns in-memory 
 cleanup objects so partial runs do not leak files or accidentally reuse an older artifact.
 
 ## Extension points
-
-The Kotlin project plugin API extends project configuration and deterministic plan metadata. It is trusted JVM build logic,
-not a compiler backend API. A CMake DSL plugin may remain available for projects that need CMake integration even though the
-Tala compiler itself uses Bazel.
-
-Analyzer, Formatter, and Linter share frontend/source-policy contracts but remain independently versioned products. They do
-not become compiler passes.
 
 ## Architecture constraints
 

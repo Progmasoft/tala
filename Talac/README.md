@@ -8,7 +8,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 Buildable Tala compiler project.
 
 This project owns the C++20 compiler CLI and Core-to-LLVM driver, the Haskell source-set loader and lexer-through-CorePrep
-frontend, Kotlin project evaluation, compatibility libraries, and compiler tests. Project roots are discovered and merged
+frontend, compatibility libraries, and compiler tests. Project roots are discovered and merged
 by namespace in Haskell rather than mapped from entry names to file paths. Alongside semantic tokens, the syntax package
 exports a lossless source-fragment model for tools that must preserve exact comment, escape, and raw-string spelling. The
 public driver has no DIMCLI dependency. The retired C lexer/parser and their duplicate semantic pipeline are not part of this

@@ -7,7 +7,7 @@ title: "[Bug] "
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
 <!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
 
-This repository owns the Tala language, compiler, runtime, formatter, linter, and analyzer. Website, Progmasoft account/ViGet, and Xide issues belong in their own repositories. The public language contract is in `Spec/`; please distinguish a specification mismatch from an unimplemented feature. Do not post secrets or private source. Send security vulnerabilities privately to support@progmasoft.com.
+This repository owns the Tala language, compiler, and runtime. Website, Progmasoft account/ViGet, and Xide issues belong in their own repositories. The public language contract is in `Spec/`; please distinguish a specification mismatch from an unimplemented feature. Do not post secrets or private source. Send security vulnerabilities privately to support@progmasoft.com.
 
 If you plan to submit a fix, see the [contributor guide](https://github.com/Progmasoft/tala/blob/main/CONTRIBUTING.md).
 
@@ -16,7 +16,6 @@ If you plan to submit a fix, see the [contributor guide](https://github.com/Prog
 - [ ] Haskell lexer, parser, resolver, type checker, Core, or CorePrep
 - [ ] C++20 Xpp, Xmm, LLVM backend, linker, or AARC runtime
 - [ ] `talac`/`tali` CLI
-- [ ] talafmt, Linter, or Analyzer
 - [ ] Specification, examples, or documentation
 
 ### Observed and expected behavior
@@ -31,7 +30,7 @@ Provide the smallest `.tala` source that reproduces the issue, the exact `talac`
 
 - Tala version or commit (`talac --version`):
 - OS (Windows 10/11, macOS 26 Tahoe, Ubuntu 26.04 LTS, or other) and architecture:
-- Relevant toolchain versions (Bazelisk, GHC, Clang/LLVM, JDK) if building from source:
+- Relevant toolchain versions (Bazelisk, GHC, Clang/LLVM) if building from source:
 - Clean checkout and recursive submodules? Yes/No:
 
 ### Additional context

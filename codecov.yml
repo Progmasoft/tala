@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 # Coverage is followed for each language on its own. The repository holds a
-# Haskell frontend, a C++ backend and runtime, four Kotlin components and Go
-# tools; one figure for all of them hides a fall in one behind a rise in
-# another. Every upload carries a flag, and each flag has a status of its own
+# Haskell frontend, a C++ backend and runtime, and Go tools; one figure for
+# all of them hides a fall in one behind a rise in another. Every upload
+# carries a flag, and each flag has a status of its own
 # for the whole of its sources and for the lines a pull request changes.
 #
 # The statuses are informational: they show on a pull request and never fail
@@ -23,12 +23,6 @@ coverage:
         flags:
           - native-cpp
         informational: true
-      kotlin:
-        flags:
-          - kotlin-analyzer
-          - kotlin-formatter
-          - kotlin-linter
-        informational: true
       go-tools:
         flags:
           - go-tools
@@ -43,12 +37,6 @@ coverage:
       native-cpp:
         flags:
           - native-cpp
-        informational: true
-      kotlin:
-        flags:
-          - kotlin-analyzer
-          - kotlin-formatter
-          - kotlin-linter
         informational: true
       go-tools:
         flags:
@@ -70,18 +58,6 @@ flags:
       - Talac/
       - Interactive/
       - "!Talac/Haskell/"
-    carryforward: true
-  kotlin-analyzer:
-    paths:
-      - Ecosystem/tala-analyzer/
-    carryforward: true
-  kotlin-formatter:
-    paths:
-      - Ecosystem/talafmt/
-    carryforward: true
-  kotlin-linter:
-    paths:
-      - Ecosystem/talalint/
     carryforward: true
   go-tools:
     paths:

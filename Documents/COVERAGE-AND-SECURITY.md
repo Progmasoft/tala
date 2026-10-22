@@ -18,8 +18,6 @@ The [CodeQL workflow](../.github/workflows/codeql.yml) analyzes five supported s
 | GitHub Actions | Workflow source, without a build |
 | C/C++ | Project-owned source, without a build for every pull request and from a traced Bazel build for the default branch |
 | Go | Manual builds of every command and internal package in helpers/ |
-| Java/Kotlin | Manual Gradle compilation of tala-analyzer, talafmt, and talalint |
-| JavaScript/TypeScript | Editor integration source, without a build |
 
 The configuration excludes `third_party/` and generated build output. Haskell is not a CodeQL-supported language; its
 compiler packages retain Cabal tests, HPC coverage, and ordinary review instead of a misleading empty CodeQL job. The
@@ -48,8 +46,8 @@ own summary and telemetry, to the job summary and to the log.
 
 ## Dependency and additional quality analysis
 
-[Renovate](../.github/renovate.json5) proposes version updates for GitHub Actions, Bazel module dependencies, all four
-Gradle builds, the Go tooling module in `helpers/` and the VS Code extension. It looks once a week, takes a release a
+[Renovate](../.github/renovate.json5) proposes version updates for GitHub Actions, Bazel module dependencies and the
+Go tooling module in `helpers/`. It looks once a week, takes a release a
 week after it is published, opens one pull request for each kind of dependency, and rebases a pull request only when it
 conflicts. It proposes reviewable pull requests; it does not auto-merge them. Cobra and its transitive dependencies
 are version-pinned with module checksums. Cabal packages and pinned submodules need manual dependency review.
@@ -59,11 +57,10 @@ and its security updates stay enabled in the repository settings: a dependency w
 reported, and its fix is still proposed, by Dependabot. Neither bot replaces CodeQL.
 
 [OSV-Scanner](../.github/workflows/osv-scanner.yml) matches the locked dependencies against the OSV database: the Go
-helpers (`helpers/go.sum`) and the VS Code extension (`package-lock.json`). A pull request fails only on a
+helpers (`helpers/go.sum`). A pull request fails only on a
 vulnerability it introduces. The run on `main` and the weekly run upload every known one to code scanning without
-failing, so an advisory published after a merge is reported without turning `main` red. The Gradle builds have no
-lock files and the Bazel and Cabal resolutions have no format OSV-Scanner reads, so those dependencies are not part
-of this scan.
+failing, so an advisory published after a merge is reported without turning `main` red. The Bazel and Cabal
+resolutions have no format OSV-Scanner reads, so those dependencies are not part of this scan.
 
 [Codacy configuration](../.codacy.yml) excludes third-party and generated output while retaining project-owned
 implementation, tests, and CI. Codacy's GitHub application must be connected to the Progmasoft organization and this
@@ -87,13 +84,10 @@ Coverage uploads carry separate flags so one component's result cannot be mistak
 | --- | --- | --- |
 | `haskell-frontend` | Instrumented Cabal compiler tests | HPC converted to LCOV |
 | `native-cpp` | The native C++/Interactive suites on macOS | Clang source-based LCOV |
-| `kotlin-analyzer` | Analyzer Gradle tests | JaCoCo XML |
-| `kotlin-formatter` | Formatter Gradle tests | JaCoCo XML |
-| `kotlin-linter` | Linter Gradle tests | JaCoCo XML |
 | `go-tools` | All helper command and internal package tests | Go cover profiles |
 
 Each language has a status of its own on a pull request, for the whole of its sources and for the lines the pull request
-changes: `haskell-frontend`, `native-cpp`, `kotlin` (the four Kotlin flags together) and `go-tools`, beside the figure
+changes: `haskell-frontend`, `native-cpp` and `go-tools`, beside the figure
 for the repository as a whole. [`codecov.yml`](../codecov.yml) gives each flag the paths it answers for, so a file is
 never measured by a suite that does not own it. The statuses are informational: they show a fall and do not fail a
 pull request. A flag whose suite did not run for a commit keeps its last figure.
@@ -101,11 +95,10 @@ pull request. A flag whose suite did not run for a commit keeps its last figure.
 The [Haskell coverage workflow](../.github/workflows/haskell-coverage.yml) still owns HPC conversion. The
 [component coverage workflow](../.github/workflows/coverage.yml) owns the remaining reports. Both upload through
 Codecov's GitHub OIDC path without a repository token. The native report is generated from the same native suite matrix as
-`develop test`; it does not count a binary merely because it built. JaCoCo XML is generated after running the owning
-tests, and Go profiles cover every package in the helper module.
+`develop test`; it does not count a binary merely because it built. Go profiles cover every package in the helper
+module.
 
-To reproduce a Kotlin report locally, run `gradle -p Ecosystem/talafmt test jacocoTestReport` (or replace the directory with
-the Analyzer or the Linter). For native macOS coverage, run
+For native macOS coverage, run
 `go run ./helpers/cmd/develop test -- --copt=-fprofile-instr-generate --copt=-fcoverage-mapping
 --linkopt=-fprofile-instr-generate` with `LLVM_PROFILE_FILE` set to a writable path containing
 `%p-%m`, then merge the raw profiles with `llvm-profdata` and export LCOV with `llvm-cov`. The CI workflow is the

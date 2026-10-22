@@ -5,7 +5,7 @@ name: Changes
 
 # Decides whether a pull request can affect the native build. The heavy
 # workflows call it first and skip their jobs when the answer is no: a pull
-# request that changes only prose or the ecosystem tools has nothing
+# request that changes only prose has nothing
 # for Bazel, the sanitizers or the fuzzers to check. A skipped job reports
 # success to a required check, and each workflow's Required job accepts a
 # skip only when this answer was no.
@@ -56,14 +56,13 @@ jobs:
             exit 0
           fi
           # Files that no native job reads. Markdown under Benchmarks/ and
-          # Examples/ is checked by verify-benchmarks and verify-examples, and
-          # the fuzz corpus is seeded from Ecosystem/tala-analyzer/Tests/, so
+          # Examples/ is checked by verify-benchmarks and verify-examples, so
           # those stay native.
           native=false
           while IFS= read -r file; do
             case "$file" in
-              Benchmarks/*|Examples/*|Ecosystem/tala-analyzer/Tests/*) native=true ;;
-              *.md|Ecosystem/*|.github/ISSUE_TEMPLATE/*) ;;
+              Benchmarks/*|Examples/*) native=true ;;
+              *.md|.github/ISSUE_TEMPLATE/*) ;;
               *) native=true ;;
             esac
             if [ "$native" = true ]; then

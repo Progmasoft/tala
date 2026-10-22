@@ -43,7 +43,7 @@ func newCommand(runner commandRunner, output, errorOutput io.Writer) *cobra.Comm
 		{"version", "Validate major.minor.patch[.revision] release metadata.", 1, false},
 		{"incremental-clean-build", "Rebuild while preserving downloaded dependencies.", 0, false},
 		{"cold-clean-build", "Expunge Bazel state and rebuild the compiler.", 0, false},
-		{"clean", "Remove generated Bazel, Cabal, and Gradle output.", 0, false},
+		{"clean", "Remove generated Bazel and Cabal output.", 0, false},
 	}
 	for _, spec := range specs {
 		use := spec.name

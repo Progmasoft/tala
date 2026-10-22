@@ -34,7 +34,7 @@ runtime features must not displace completion of that pipeline.
 - complete cross-file and cross-namespace reference semantics;
 - expand target-aware scalar and constant-expression behavior;
 - complete object/value, generic/template, exception, ownership, generator, FFI, and assembly semantics; and
-- preserve source positions and reusable semantic facts for Analyzer and Linter.
+- preserve source positions and reusable semantic facts for tools built on the compiler.
 
 ### 2. Core and module boundary
 
@@ -62,16 +62,7 @@ runtime features must not displace completion of that pipeline.
 - validate target-specific calling conventions and link inputs; and
 - keep Talac as the only public compiler command while the private Haskell frontend remains an adjacent companion process.
 
-### 5. Project and ecosystem integration
-
-- connect the ViGet client to registered install/publication commands;
-- complete transitive dependency solving and deterministic lock updates;
-- connect named test suites to their framework runner;
-- complete Ecosystem/tala-analyzer/Ecosystem/talafmt/Linter Kotlin evaluator layers independently;
-- preserve one source discovery policy across compiler and project-wide tools; and
-- keep talafmt, talalint, tala-analyzer, and compiler release versions independent.
-
-### 6. Legacy removal completed
+### 5. Legacy removal completed
 
 The duplicate C and Rust compiler implementations are removed. The C lexer/parser route is not restored, and compiler work
 continues only in the maintained Haskell and C++20 owners. Compatibility is expressed through explicit artifact and runtime

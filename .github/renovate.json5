@@ -38,35 +38,12 @@
   // What Dependabot watched here, and nothing more for now. The Haskell
   // packages bound each other and the compiler on purpose and are updated by
   // hand.
-  enabledManagers: ["github-actions", "bazel-module", "gradle", "gradle-wrapper", "gomod", "npm"],
+  enabledManagers: ["github-actions", "bazel-module", "gomod"],
 
   packageRules: [
     // One pull request for each kind of dependency.
     { matchManagers: ["github-actions"], groupName: "GitHub Actions" },
     { matchManagers: ["bazel-module"], groupName: "Bazel modules" },
-    { matchManagers: ["gradle", "gradle-wrapper"], groupName: "Gradle plugins and libraries" },
     { matchManagers: ["gomod"], groupName: "Go helpers" },
-    { matchManagers: ["npm"], groupName: "VS Code extension" },
-
-    // The type definitions must not be newer than the Node.js runtime the
-    // extension runs on: the VS Code versions it supports and the Node.js
-    // version CI uses. A major update is made by hand together with those.
-    {
-      matchManagers: ["npm"],
-      matchPackageNames: ["@types/node"],
-      matchUpdateTypes: ["major"],
-      enabled: false,
-    },
-
-    // The type definitions of the VS Code API must be those of the oldest
-    // VS Code the extension says it supports, `engines.vscode` in its
-    // package.json. Newer ones let the code use an API that version does
-    // not have, and the packaging tool refuses the mismatch. They are raised
-    // by hand, together with `engines.vscode`.
-    {
-      matchManagers: ["npm"],
-      matchPackageNames: ["@types/vscode"],
-      enabled: false,
-    },
   ],
 }

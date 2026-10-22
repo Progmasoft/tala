@@ -49,7 +49,7 @@ func (systemProbe) Git(ctx context.Context, root string, args ...string) (string
 }
 func collect(ctx context.Context, root string, p probe) report {
 	result := report{Root: root, OS: runtime.GOOS, Architecture: runtime.GOARCH}
-	for _, name := range []string{"go", "git", "bazelisk", "clang", "clang-cl", "lld", "llvm-config", "ghc", "cabal", "java", "gradle", "doxygen"} {
+	for _, name := range []string{"go", "git", "bazelisk", "clang", "clang-cl", "lld", "llvm-config", "ghc", "cabal", "doxygen"} {
 		path, err := p.LookPath(name)
 		result.Tools = append(result.Tools, toolInfo{Name: name, Path: path, Available: err == nil})
 	}

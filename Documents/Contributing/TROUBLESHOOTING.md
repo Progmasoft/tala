@@ -40,14 +40,10 @@ a Command Line Tools SDK that is newer than the selected linker. Homebrew's clan
 those references at `$(xcrun --show-sdk-path)`, the SDK of the selected developer directory, and run
 `ghc-pkg recache --global` after changing GHC's package files; the macOS CI jobs do the same.
 
-## Haskell or Kotlin uses the wrong toolchain
+## Haskell uses the wrong toolchain
 
 Maintained Haskell packages use `GHC2024`; a compiler older than the required GHC will reject the edition before a
 source test runs. Check `ghc --version` and `cabal --version`, then use the versions in [Building](../BUILDING.md).
-
-The Kotlin configuration DSLs require JDK 25. On Windows, use the pinned Gradle wrapper at the repository root and check
-`java -version` in the same terminal. If the Gradle distribution cannot be downloaded, record the network or cache
-error; do not commit a local binary or change the wrapper URL to an unreviewed mirror.
 
 ## Bazel builds a test but does not run it
 
@@ -58,14 +54,14 @@ is not required for Bazel's ordinary `cc_test` launcher. A green `build` line is
 ## A stale artifact or generated output affects a result
 
 Check `git status --short`, the command's actual output path, and whether the artifact was produced by the current run.
-Do not make a test depend on an old `bazel-*`, `dist-newstyle`, or Gradle output. `go run ./helpers/cmd/develop clean`
-removes generated Bazel/Cabal/Gradle output; inspect its documented scope before running it, because it is not a Git
+Do not make a test depend on an old `bazel-*` or `dist-newstyle` output. `go run ./helpers/cmd/develop clean`
+removes generated Bazel and Cabal output; inspect its documented scope before running it, because it is not a Git
 reset and should not be used to erase unrelated local work. Never delete broad directories outside the checkout as a
 troubleshooting shortcut.
 
 ## A local pass and CI failure disagree
 
-Compare OS, Clang/LLVM, GHC, JDK, feature flags, sanitizer mode, and the exact source commit. Inspect the first failing
+Compare OS, Clang/LLVM, GHC, feature flags, sanitizer mode, and the exact source commit. Inspect the first failing
 CI job and reproduce its direct command. If the failure is in a submodule download or a service outage, show the
 evidence; do not silently rerun until a red badge turns green. For a code failure, add or repair the owning test and
 push a normal commit to your PR branch.
