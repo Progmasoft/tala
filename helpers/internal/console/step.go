@@ -101,7 +101,11 @@ func (c *Console) richStep(title string, work func(stdout, stderr io.Writer) err
 		defer logFile.Close()
 	}
 	output := newTranscript(logFile)
-	spinner, _ := pterm.DefaultSpinner.WithWriter(c.err).WithText(title).Start()
+	// The spinner's line is removed when it stops, and the result is printed
+	// after it has stopped: pterm's Success and Fail print first and stop the
+	// animation afterwards, so a last frame could be drawn over the result or
+	// race with it on the writer.
+	spinner, _ := pterm.DefaultSpinner.WithWriter(c.err).WithRemoveWhenDone(true).WithText(title).Start()
 	done := make(chan struct{})
 	var follow sync.WaitGroup
 	follow.Go(func() { followLatest(spinner, title, output, done) })
@@ -113,13 +117,14 @@ func (c *Console) richStep(title string, work func(stdout, stderr io.Writer) err
 	follow.Wait()
 	c.remember(title, duration, err, output, logPath)
 
+	_ = spinner.Stop()
 	if err != nil {
-		spinner.Fail(fmt.Sprintf("%s failed after %s: %v", title, Duration(duration), err))
+		pterm.Error.WithWriter(c.err).Println(fmt.Sprintf("%s failed after %s: %v", title, Duration(duration), err))
 		c.printTail(c.err, title, output.tail(), logPath)
 		return err
 	}
 	note := warningNote(output.warnings())
-	spinner.Success(fmt.Sprintf("%s %s%s", title, pterm.Gray(Duration(duration)), note))
+	pterm.Success.WithWriter(c.err).Println(fmt.Sprintf("%s %s%s", title, pterm.Gray(Duration(duration)), note))
 	if showOutput {
 		for _, line := range output.tail() {
 			fmt.Fprintln(c.err, "  "+pterm.Gray(line))
