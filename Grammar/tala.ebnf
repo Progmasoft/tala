@@ -211,6 +211,7 @@ statement = block
           | asm-statement
           | return-statement
           | throw-statement
+          | expect-statement
           | yield-statement
           | break-statement
           | continue-statement ;
@@ -266,6 +267,7 @@ asm-clobber = normal-string | raw-string ;
 asm-label-list = identifier, { ",", identifier } ;
 return-statement = "return", [ expression ], ";" ;
 throw-statement = "throw", [ expression ], ";" ;
+expect-statement = "#expect", expression, ";" ;
 yield-statement = "yield", expression, ";" ;
 break-statement = "break", [ expression ], ";" ;
 continue-statement = "continue", ";" ;
