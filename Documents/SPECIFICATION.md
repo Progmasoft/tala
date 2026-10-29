@@ -23,7 +23,7 @@ The complete linked catalog is maintained in [`Spec/README.md`](../Spec/README.m
 | Area | Current suites |
 | --- | --- |
 | declarations and type forms | `Language/Decls.tala` |
-| attributes | `Language/Attributes.tala` |
+| attributes, tests (`[Fact]`, `#expect`) | `Language/Attributes.tala` |
 | evaluation by need and effects | `Language/Evaluation.tala` |
 | operators and precedence | `Language/Operators.tala` |
 | optionals and null behavior | `Language/Optional.tala` |
