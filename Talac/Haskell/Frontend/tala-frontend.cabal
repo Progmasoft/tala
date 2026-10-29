@@ -51,6 +51,7 @@ library
         Progmasoft.Tala.TypeChecker
         Progmasoft.Tala.TypeChecker.Branching
         Progmasoft.Tala.TypeChecker.Console
+        Progmasoft.Tala.TypeChecker.Testing
         Progmasoft.Tala.TypeChecker.Context
         Progmasoft.Tala.TypeChecker.Enums
         Progmasoft.Tala.TypeChecker.Format

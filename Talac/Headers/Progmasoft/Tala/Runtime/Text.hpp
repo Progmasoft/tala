@@ -33,3 +33,15 @@ namespace Progmasoft::Tala::Runtime::Console
     void
     SetSink(Sink sink, void *context) noexcept;
 } // namespace Progmasoft::Tala::Runtime::Console
+
+namespace Progmasoft::Tala::Runtime::Testing
+{
+    /** 0 when no test of the run failed, 1 otherwise. */
+    [[nodiscard]] auto
+    Status() noexcept -> std::int32_t;
+
+    /** Forget the tests run so far. A process that hosts generated code
+     * calls this before it runs another test build. */
+    void
+    Reset() noexcept;
+} // namespace Progmasoft::Tala::Runtime::Testing

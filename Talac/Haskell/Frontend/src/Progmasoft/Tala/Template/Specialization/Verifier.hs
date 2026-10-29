@@ -269,7 +269,7 @@ declarationMembers _ = []
 declarationDefinitionSymbols :: Declaration ResolvedName Type -> [SymbolId]
 declarationDefinitionSymbols declaration = case declaration of
     TypeDeclaration _ name _ members -> resolvedSymbol name : concatMap declarationDefinitionSymbols members
-    FunctionDeclaration _ name _ _ parameters body _ _ ->
+    FunctionDeclaration _ name _ _ parameters body _ _ _ ->
         resolvedSymbol name
             : map (resolvedSymbol . parameterName) parameters
             ++ blockDefinitionSymbols body
@@ -350,7 +350,7 @@ declarationHasError = any typeHasError . declarationTypes
 declarationTypes :: Declaration ResolvedName Type -> [Type]
 declarationTypes declaration = case declaration of
     TypeDeclaration _ _ annotation members -> annotation : concatMap declarationTypes members
-    FunctionDeclaration _ _ annotation _ parameters body _ _ ->
+    FunctionDeclaration _ _ annotation _ parameters body _ _ _ ->
         annotation : map parameterAnnotation parameters ++ blockTypes body
     TemplateTypeDeclaration _ _ annotation parameters members ->
         annotation : map templateParameterAnnotation parameters ++ concatMap declarationTypes members

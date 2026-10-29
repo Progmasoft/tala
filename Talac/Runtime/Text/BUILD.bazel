@@ -12,6 +12,7 @@ cc_library(
         "Console.cpp",
         "Format.cpp",
         "Platform.cpp",
+        "Testing.cpp",
         "Text.cpp",
     ],
     hdrs = [
@@ -41,6 +42,7 @@ filegroup(
         "Platform.cpp",
         "Platform.hpp",
         "Scalars.hpp",
+        "Testing.cpp",
         "Text.cpp",
     ],
 )

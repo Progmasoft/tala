@@ -7,6 +7,39 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Tests
+
+- `talac --test` builds the runner of the `[Fact]` methods of its sources. The
+  runner calls every fact in source order, prints `PASS` or `FAIL` with the
+  name of each and the totals, and exits with `1` when a test failed.
+- `#expect condition;` checks a condition in test code. A false one prints the
+  file, line and column and the text of the condition, and for a comparison
+  the value of each operand that is not a literal; the test goes on and fails
+  at its end. Each operand is evaluated once, for the comparison and the
+  report alike. `#expect` outside a `[Fact]` method and outside `#if Fact` is
+  an error (`TAP0044`), and so is `#expect` used as a value (`TAP0055`).
+- `[Fact]` and `[Fact("name")]` mark a static, parameterless `void` method as a
+  test (`TAE0015` to `TAE0020` for facts that cannot run).
+
+### Conditional directives
+
+- `#if`, `#elseif`, `#else` and `#endif` choose code for the target at the
+  boundaries of declarations, members and statements, with `Fact`, `os(...)`,
+  `family(...)`, `true`, `false`, `not`, `&&`, `||` and parentheses. Talac
+  passes the target's operating system to the frontend.
+- `#region` and `#endregion`, with an optional name that the closing directive
+  may repeat.
+- A directive that would split an expression, an unknown system or family, a
+  misplaced `#elseif` or `#else` and an unclosed group are errors (`TAP0042`
+  to `TAP0052` and `TAP0054`). `#define` and its symbols and the diagnostic directives are
+  refused as not implemented yet (`TAP0053`, `TAP0047`).
+
+### Runtime
+
+- The runtime catalog gains `tala_test_fail`, `tala_test_end` and
+  `tala_test_finish` (identities 14 to 16), and the runtime exports
+  `tala_test_status`, which the process entry of a test build returns.
+
 ## 0.1.0 - 2026-10-18
 
 ### The numbering starts again

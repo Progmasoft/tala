@@ -10,7 +10,7 @@ import Data.List (intercalate)
 import Data.Map.Strict qualified as Map
 import Progmasoft.Tala.AST
 import Progmasoft.Tala.Diagnostic
-import Progmasoft.Tala.RuntimeCall (builtinConsoleSymbol, builtinSystemSymbol)
+import Progmasoft.Tala.RuntimeCall (builtinConsoleSymbol, builtinSystemSymbol, builtinTestSymbol)
 
 -- | Pluggable pass that assigns declaration and local-binding identities.
 newtype Renamer = Renamer
@@ -69,6 +69,9 @@ predeclared =
     Map.fromList
         [ (Identifier "System", RenamedName (Identifier "System") (symbolIdValue builtinSystemSymbol))
         , (Identifier "Console", RenamedName (Identifier "Console") (symbolIdValue builtinConsoleSymbol))
+        , -- No identifier starts with @$@: only @#expect@ and the runner
+          -- of a test build use this name.
+          (Identifier "$Test", RenamedName (Identifier "$Test") (symbolIdValue builtinTestSymbol))
         ]
 
 {- | The declarations of a namespace under their qualified names:
@@ -186,11 +189,11 @@ renameDeclarationsWithBindings globals next (declaration : remaining) (assignedN
         EnumDeclaration spanValue _ _ underlying cases ->
             let (rest, final, restProblems) = renameDeclarationsWithBindings globals next remaining assignedRemaining
              in (EnumDeclaration spanValue assignedName () underlying cases : rest, final, restProblems)
-        FunctionDeclaration spanValue _ _ returnSyntax sourceParameters sourceBody isStatic access ->
+        FunctionDeclaration spanValue _ _ returnSyntax sourceParameters sourceBody isStatic access fact ->
             let name = assignedName
                 (parameters, parameterEnvironment, afterParameters, parameterProblems) = renameParameters globals next sourceParameters
                 (body, afterBody, bodyProblems) = renameBlock parameterEnvironment afterParameters sourceBody
-                renamed = FunctionDeclaration spanValue name () returnSyntax parameters body isStatic access
+                renamed = FunctionDeclaration spanValue name () returnSyntax parameters body isStatic access fact
                 (rest, final, restProblems) = renameDeclarationsWithBindings globals afterBody remaining assignedRemaining
              in (renamed : rest, final, parameterProblems ++ bodyProblems ++ restProblems)
 renameDeclarationsWithBindings _ next declarations _ =

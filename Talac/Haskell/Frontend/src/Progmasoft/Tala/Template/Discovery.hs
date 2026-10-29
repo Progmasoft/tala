@@ -164,7 +164,7 @@ discoverFunction ::
     DiscoveryState ->
     DiscoveryState
 discoverFunction catalog namespace owner member declaration state = case declaration of
-    FunctionDeclaration spanValue _ annotation _ parameters body _ _ ->
+    FunctionDeclaration spanValue _ annotation _ parameters body _ _ _ ->
         let root = TemplateDiscoveryOrigin owner member [FunctionSignatureSite] spanValue
             -- Function annotations repeat parameter types in a callable shape.
             -- Walk the result here and the declared parameters below so each
@@ -259,7 +259,12 @@ discoverStatement catalog namespace root index statement state = case statement 
         let origin = root {discoverySites = [ConditionTypeSite index], discoverySpan = spanValue}
          in discoverBlock catalog namespace origin block (discoverExpression catalog namespace origin condition state)
     BlockStatement spanValue block ->
-        discoverBlock catalog namespace (root {discoverySites = [ConditionTypeSite index], discoverySpan = spanValue}) block state
+        discoverBlock
+            catalog
+            namespace
+            (root {discoverySites = [ConditionTypeSite index], discoverySpan = spanValue})
+            block
+            state
     ExpressionStatement spanValue expression _ ->
         discoverExpression
             catalog

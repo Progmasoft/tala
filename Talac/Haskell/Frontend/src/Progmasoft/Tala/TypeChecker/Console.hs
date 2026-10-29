@@ -26,6 +26,7 @@ module Progmasoft.Tala.TypeChecker.Console
     , concatenation
     , textEquality
     , runtimeCall
+    , asText
     ) where
 
 import Progmasoft.Tala.AST

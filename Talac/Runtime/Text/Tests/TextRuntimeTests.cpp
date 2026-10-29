@@ -28,6 +28,7 @@ namespace
 {
     namespace Aarc = Progmasoft::Tala::Runtime::Aarc;
     namespace Console = Progmasoft::Tala::Runtime::Console;
+    namespace Testing = Progmasoft::Tala::Runtime::Testing;
 
     /// The scalars of a string as UTF-32, and the string released.
     [[nodiscard]] auto
@@ -886,6 +887,37 @@ TEST_CASE("writes reach the sink in the order they were made")
     CHECK(captured.error
           == "one" + std::string(kLine) + "two" + std::string(kLine) + "three"
                  + std::string(kLine));
+}
+
+TEST_CASE("the test runtime reports each test and the totals")
+{
+    Testing::Reset();
+    Captured captured;
+    Console::SetSink(Receive, &captured);
+    auto *first = Make(U"Math.Adds");
+    auto *second = Make(U"Math.Parity");
+    auto *report = Make(U"Math.tala:3:5: expectation failed: x == 1");
+    tala_test_end(first);
+    tala_test_fail(report);
+    tala_test_fail(report);
+    tala_test_end(second);
+    const auto failing = tala_test_status();
+    tala_test_finish();
+    Console::SetSink(nullptr, nullptr);
+    tala_aarc_release_strong(first);
+    tala_aarc_release_strong(second);
+    tala_aarc_release_strong(report);
+    const std::string line(kLine);
+    CHECK(captured.output
+          == "PASS Math.Adds" + line
+                 + "Math.tala:3:5: expectation failed: x == 1" + line
+                 + "Math.tala:3:5: expectation failed: x == 1" + line
+                 + "FAIL Math.Parity (2 failed expectations)" + line
+                 + "2 tests, 1 passed, 1 failed" + line);
+    CHECK(captured.error.empty());
+    CHECK(failing == 1);
+    Testing::Reset();
+    CHECK(tala_test_status() == 0);
 }
 
 TEST_CASE("the text runtime leaves no object behind")

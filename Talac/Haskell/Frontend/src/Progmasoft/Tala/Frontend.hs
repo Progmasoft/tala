@@ -13,12 +13,14 @@ module Progmasoft.Tala.Frontend
     , SyntaxArtifacts (..)
     , SemanticArtifacts (..)
     , analyzeSyntax
+    , analyzeSyntaxWith
     , analyzeSemantics
     , analyzeParsedSemantics
     ) where
 
 import Progmasoft.Tala.AST
 import Progmasoft.Tala.Diagnostic
+import Progmasoft.Tala.Directives
 import Progmasoft.Tala.Lexer
 import Progmasoft.Tala.NestingLimits
 import Progmasoft.Tala.Parser
@@ -59,9 +61,19 @@ data SemanticArtifacts = SemanticArtifacts
 
 -- | Lex and parse source without invoking semantic analysis or Core lowering.
 analyzeSyntax :: CompilerInput -> Either [Diagnostic] SyntaxArtifacts
-analyzeSyntax input = do
+analyzeSyntax = analyzeSyntaxWith hostDirectiveEnvironment
+
+{- | Lex and parse source for a target: the conditional directives choose
+their branches for it. The artifacts keep every token the lexer read, the
+directive lines and the branches that were not chosen among them, because a
+tool that rewrites the source needs all of it; the parsed tree has the
+chosen branches only.
+-}
+analyzeSyntaxWith :: DirectiveEnvironment -> CompilerInput -> Either [Diagnostic] SyntaxArtifacts
+analyzeSyntaxWith environment input = do
     tokens <- runLexer defaultLexer (LexerInput (compilerSourceFile input) (compilerSourceText input))
-    parsed <- runParser defaultParser (ParserInput (compilerSourceFile input) tokens)
+    chosen <- resolveDirectives environment tokens
+    parsed <- runParser defaultParser (ParserInput (compilerSourceFile input) chosen)
     pure (SyntaxArtifacts tokens parsed)
 
 -- | Run syntax analysis followed by renaming, resolution, and type checking.

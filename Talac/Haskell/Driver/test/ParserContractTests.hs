@@ -198,7 +198,7 @@ literalResult payload = case statements (sourceWith ("return " ++ show payload +
 
 statements :: String -> Maybe [Statement Identifier ()]
 statements source = case parseSource source of
-    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ _ (Block body) _ _]])) -> Just body
+    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ _ (Block body) _ _ _]])) -> Just body
     _ -> Nothing
 
 spanTests :: [(String, Bool)]
@@ -216,7 +216,10 @@ spanTests =
     , ("guard span runs from the keyword to the closing brace", guardSpan "guard (true) else { return 1; }")
     , ("nested block span includes both braces", blockSpan "{ int inner = 1; }")
     , ("empty nested block span includes both braces", blockSpan "{}")
-    , ("match statement span runs from the keyword to the closing brace", matchStatementSpan "match (1) { 1 -> { }, _ -> { } }")
+    ,
+        ( "match statement span runs from the keyword to the closing brace"
+        , matchStatementSpan "match (1) { 1 -> { }, _ -> { } }"
+        )
     , ("match statement without arms keeps its span", matchStatementSpan "match (1) { }")
     , ("match expression span excludes the binding around it", matchExpressionSpan "match (1) { 1 -> 2, _ -> 3 }")
     , ("if expression span runs from the keyword to the else block", ifExpressionSpan "if (true) { 1 } else { 2 }")
@@ -272,7 +275,8 @@ ifExpressionSpan spelling = case statements ("class Program { int Value() {\naut
 -- and 31 to 35.
 valueBlockSpans :: Bool
 valueBlockSpans = case statements "class Program { int Value() {\nauto r = if (true) { 1 } else { 2 };\nreturn r; } }" of
-    Just (BindingStatement _ _ _ _ _ (ConditionalExpression _ _ (BlockExpression first _ _) (BlockExpression second _ _) _) : _) ->
+    Just
+        (BindingStatement _ _ _ _ _ (ConditionalExpression _ _ (BlockExpression first _ _) (BlockExpression second _ _) _) : _) ->
         exactSpan first 2 20 25 && exactSpan second 2 31 36
     _ -> False
 
@@ -517,7 +521,7 @@ functionWithReturn spelling = "class Program { " ++ spelling ++ " Value() { retu
 
 returnSyntax :: String -> Maybe TypeSyntax
 returnSyntax spelling = case parseSource (functionWithReturn spelling) of
-    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ syntax _ _ _ _]])) -> Just syntax
+    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ syntax _ _ _ _ _]])) -> Just syntax
     _ -> Nothing
 
 bindingSyntax :: String -> Maybe TypeSyntax
@@ -533,7 +537,7 @@ callableParameterSyntax spelling = case statements (sourceWith ("auto value = " 
 
 parameterNameFor :: String -> Maybe Identifier
 parameterNameFor spelling = case parseSource ("class Program { void Apply(" ++ spelling ++ ") { return; } }") of
-    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ [parameter] _ _ _]])) ->
+    Right (ParsedAST (SyntaxTree _ [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ [parameter] _ _ _ _]])) ->
         Just (parameterName parameter)
     _ -> Nothing
 
@@ -543,7 +547,7 @@ typedParameterType spelling =
         (CompilerInput "type-contract.tala" ("class Program { void Apply(_ " ++ spelling ++ " value) { return; } }")) of
         Right artifacts ->
             case syntaxDeclarations (typedSyntaxTree (artifactTypedAST artifacts)) of
-                [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ [parameter] _ _ _]] ->
+                [TypeDeclaration _ _ _ [FunctionDeclaration _ _ _ _ [parameter] _ _ _ _]] ->
                     Just (parameterAnnotation parameter)
                 _ -> Nothing
         Left _ -> Nothing

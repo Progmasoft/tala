@@ -442,6 +442,34 @@ operand, a call argument, a conditional result and the operand of a unary
 operator are one level below the expression that holds them, so
 `a + (b + (c + ...))` nests one level per addition.
 
+### Directives and tests
+
+The conditional directives are resolved between the lexer and the parser, and the test driver checks the `[Fact]`
+methods of a test build:
+
+| Code | Meaning |
+| --- | --- |
+| `TAP0042` | a directive does not begin its line |
+| `TAP0043` | a directive would split an expression, or a branch leaves a bracket open or closes one it did not open |
+| `TAP0044` | `#expect` stands outside a `[Fact]` method and outside a branch that only a test build selects |
+| `TAP0045` | the condition of `#if` or `#elseif` is malformed |
+| `TAP0046` | `os(...)` or `family(...)` names no known system or family |
+| `TAP0047` | a condition names a directive symbol; `#define` is not implemented yet |
+| `TAP0048` | `#else` or `#endif` is followed by a condition |
+| `TAP0049` | `#elseif` or a second `#else` follows `#else` |
+| `TAP0050` | `#elseif`, `#else`, `#endif` or `#endregion` has nothing to close |
+| `TAP0051` | `#if` or `#region` is not closed before the end of the file |
+| `TAP0052` | `#endregion` names another region than the open one |
+| `TAP0053` | `#define`, `#setdef`, `#undef` or a diagnostic directive, which are not implemented yet |
+| `TAP0054` | an unknown directive |
+| `TAP0055` | `#expect` stands where an expression is expected; it is a statement and has no value |
+| `TAE0015` | a test build has no `[Fact]` method |
+| `TAE0016` | a `[Fact]` method of an instance or of a template class, which is not compiled yet |
+| `TAE0017` | a `[Fact]` method takes parameters |
+| `TAE0018` | a `[Fact]` method does not return `void` |
+| `TAE0019` | a `[Fact]` method stands outside a namespace |
+| `TAE0020` | `[Fact]` methods stand in several namespaces, which a test build does not compile yet |
+
 ### Supplied token streams
 
 Embedding clients may supply a token list through `ParserInput`. An empty list

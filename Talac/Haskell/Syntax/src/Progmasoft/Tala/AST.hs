@@ -14,6 +14,7 @@ module Progmasoft.Tala.AST
     , SyntaxTree (..)
     , Declaration (..)
     , EnumCase (..)
+    , FactAttribute (..)
     , enumType
     , enumUnderlyingType
     , enumMemberValues
@@ -145,6 +146,8 @@ data Declaration name annotation
         , declarationBody :: Block name annotation
         , declarationIsStatic :: Bool
         , declarationAccess :: Access
+        , declarationFact :: Maybe FactAttribute
+        -- ^ The @[Fact]@ attribute, which makes the method a test.
         }
     | TemplateTypeDeclaration
         { declarationSpan :: SourceSpan
@@ -163,6 +166,16 @@ data Declaration name annotation
         , enumUnderlying :: Maybe TypeSyntax
         , enumCases :: [EnumCase]
         }
+    deriving stock (Eq, Ord, Read, Show)
+
+{- | The @[Fact]@ attribute of a method: the method is a test. The name is
+the one @[Fact("...")]@ gives it in a report; without one a report names
+the class and the method.
+-}
+data FactAttribute = FactAttribute
+    { factSpan :: SourceSpan
+    , factName :: Maybe String
+    }
     deriving stock (Eq, Ord, Read, Show)
 
 {- | A member of a classic enum. A member without a written value takes the

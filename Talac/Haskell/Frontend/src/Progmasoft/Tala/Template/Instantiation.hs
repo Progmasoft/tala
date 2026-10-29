@@ -61,7 +61,7 @@ instantiateMember ::
     Declaration ResolvedName Type ->
     Either TemplateInstantiationError (Declaration ResolvedName Type)
 instantiateMember binding declaration = case declaration of
-    FunctionDeclaration spanValue name annotation returnSyntax parameters body isStatic access -> do
+    FunctionDeclaration spanValue name annotation returnSyntax parameters body isStatic access fact -> do
         closedAnnotation <- instantiateType binding annotation
         closedParameters <- traverse (instantiateParameter binding) parameters
         closedBody <- instantiateBlock binding body
@@ -75,6 +75,7 @@ instantiateMember binding declaration = case declaration of
                 closedBody
                 isStatic
                 access
+                fact
             )
     TypeDeclaration spanValue name annotation members -> do
         closedAnnotation <- instantiateType binding annotation

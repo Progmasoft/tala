@@ -21,6 +21,7 @@ import Progmasoft.Tala.TypeChecker.Enums
 import Progmasoft.Tala.TypeChecker.Literals
 import Progmasoft.Tala.TypeChecker.Loops
 import Progmasoft.Tala.TypeChecker.Returns
+import Progmasoft.Tala.TypeChecker.Testing
 
 -- | A resolved-tree checker that produces a typed tree only when checking succeeds.
 newtype TypeChecker = TypeChecker {checkResolvedAST :: ResolvedAST -> Either [Diagnostic] TypedAST}
@@ -136,7 +137,7 @@ memberScope catalog declaration = case declaration of
 
 signature :: TemplateContext -> Declaration ResolvedName () -> Type
 signature context declaration = case declaration of
-    FunctionDeclaration _ _ _ returnSyntax parameters _ _ _ ->
+    FunctionDeclaration _ _ _ returnSyntax parameters _ _ _ _ ->
         FunctionType
             (map (syntaxTypeIn context . parameterTypeSyntax) parameters)
             ( case returnSyntax of
@@ -235,6 +236,7 @@ checkDeclarationWith context globals declaration@FunctionDeclaration {} =
             body
             (declarationIsStatic declaration)
             (declarationAccess declaration)
+            (declarationFact declaration)
         , signatureProblems ++ problems ++ returnProblems
         )
 checkDeclarationWith context _ declaration@TypeDeclaration {} = checkTopDeclaration (templateCatalog context) declaration
@@ -1137,7 +1139,12 @@ with several is the one whose signature the place expects; where the place
 expects none of them, or nothing, the reference does not say which is meant.
 -}
 methodValue ::
-    TemplateContext -> Maybe Type -> SourceSpan -> SymbolId -> Identifier -> (Expression ResolvedName Type, Type, [Diagnostic])
+    TemplateContext ->
+    Maybe Type ->
+    SourceSpan ->
+    SymbolId ->
+    Identifier ->
+    (Expression ResolvedName Type, Type, [Diagnostic])
 methodValue context expected spanValue owner member = case chosen of
     [declaration] ->
         let valueType = signature context declaration
@@ -1194,6 +1201,8 @@ checkTypeQualifiedCall ::
 checkTypeQualifiedCall context environment _ callSpan receiver member arguments
     | consoleReceiver receiver =
         checkConsoleCall (checkExpressionExpectedWith context environment) callSpan member arguments
+    | testReceiver receiver =
+        checkTestCall (checkExpressionExpectedWith context environment) callSpan member arguments
 checkTypeQualifiedCall context environment expected callSpan receiver member arguments =
     case typeQualifiedReceiver receiver of
         Just typeName
