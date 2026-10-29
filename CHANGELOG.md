@@ -7,6 +7,14 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Optimization levels
+
+- `--opt-level=s` and `-Os` optimize without growing the code, and
+  `--opt-level=z` and `-Oz` make it as small as LLVM can (LLVM's `Os` and
+  `Oz` pipelines).
+- `--opt-level=g` runs the optimizations of level `1`, which keep a program
+  easy to debug, as Clang's `-Og` does. It ran none before, like `0`.
+
 ## 0.1.0 - 2026-10-18
 
 ### The numbering starts again

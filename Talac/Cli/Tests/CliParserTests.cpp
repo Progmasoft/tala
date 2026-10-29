@@ -140,6 +140,11 @@ TEST_CASE("a short option takes its value joined or after an equals sign")
           == LlvmOptLevel::kO1);
     CHECK(Ready({ "P.tala", "--entry=A.B", "-Og" }).compiler.llvmOptLevel
           == LlvmOptLevel::kOg);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "-Os" }).compiler.llvmOptLevel
+          == LlvmOptLevel::kOs);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "--opt-level=z" })
+              .compiler.llvmOptLevel
+          == LlvmOptLevel::kOz);
     CHECK(Ready({ "P.tala", "--entry=A.B", "-O0" }).compiler.llvmOptLevel
           == LlvmOptLevel::kO0);
     CHECK(Ready({ "P.tala", "--entry=A.B", "-taarch64-apple-darwin" }).target
