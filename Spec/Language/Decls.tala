@@ -945,15 +945,16 @@ FirstExtensions.Display(user);
 
 -- ============================================================================
 -- Example 91: 15. Attributes
--- Demonstrates: Tala supports general attributes.
+-- Demonstrates: Tala supports general attributes. An attribute is a type derived from System.Attribute;
+--   Attributes.tala defines the full rules.
 
-attribute Serializable;
+public data class Serializable() : Attribute;
 
 -- ============================================================================
 -- Example 92: 15. Attributes
--- Demonstrates: Attributes may take arguments.
+-- Demonstrates: Attributes may take arguments through their constructor.
 
-attribute Range(int minimum, int maximum);
+public data class Range(int minimum, int maximum) : Attribute;
 
 -- ============================================================================
 -- Example 93: 15. Attributes
@@ -988,31 +989,48 @@ data class Result(String value);
 
 -- ============================================================================
 -- Example 97: 15. Attributes
--- Demonstrates: An attribute may restrict its declaration targets.
+-- Demonstrates: An attribute may restrict its declaration targets with AttributeUsage.
 
-attribute Exhaustive
-    targets(data, data class, enum, enum class);
+using System.Reflection;
+
+[AttributeUsage(
+    AttributeTargets.Data |
+    AttributeTargets.DataClass |
+    AttributeTargets.Enum |
+    AttributeTargets.EnumClass
+)]
+public data class Exhaustive() : Attribute;
 
 -- ============================================================================
 -- Example 98: 15. Attributes
--- Demonstrates: An attribute may restrict its declaration targets.
+-- Demonstrates: An attribute may restrict its declaration targets with AttributeUsage.
 
-attribute InlineHint
-    targets(method, constructor);
+using System.Reflection;
+
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor)]
+public data class InlineHint() : Attribute;
 
 -- ============================================================================
 -- Example 99: 15. Attributes
--- Demonstrates: A repeatable attribute must opt in explicitly.
+-- Demonstrates: An attribute may be applied more than once to one declaration unless its
+--   AttributeUsage says allowMultiple: false.
 
-repeatable attribute Route(String path)
-    targets(method);
+using System.Reflection;
+
+[AttributeUsage(AttributeTargets.Method)]
+public data class Route(String path) : Attribute;
+
+[Route("/users")]
+[Route("/accounts")]
+void ListUsers() {
+}
 
 -- ============================================================================
 -- Example 100: 15. Attributes
--- Demonstrates: Attributes may have access modifiers; the default is internal.
+-- Demonstrates: Attribute types take access modifiers like other types; the default is internal.
 
-public attribute Serializable;
-internal attribute CompilerGenerated;
+public data class Serializable() : Attribute;
+internal data class CompilerGenerated() : Attribute;
 
 -- ============================================================================
 -- Example 101: 15. Attributes

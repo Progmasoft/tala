@@ -23,7 +23,7 @@ See [the specification guide](../Documents/SPECIFICATION.md) for the topic map a
 
 ### Language
 
-- [Declarations](Language/Decls.tala) and [attributes](Language/Attributes.tala)
+- [Declarations](Language/Decls.tala) and [attributes](Language/Attributes.tala), including tests: `[Fact]` and `#expect`
 - [Evaluation](Language/Evaluation.tala): evaluation by need and effects
 - [Operators](Language/Operators.tala), [iteration](Language/Iteration.tala), and [unsafe behavior](Language/Unsafe.tala)
 - [String](Language/String.tala), [Optional](Language/Optional.tala), and [exceptions](Language/Exceptions.tala)

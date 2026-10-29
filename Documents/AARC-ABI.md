@@ -159,7 +159,7 @@ runtime library; see "Native executables" below.
 `Progmasoft::Tala::Runtime::Aarc::LiveAllocations` counts the
 allocations whose storage has not been reclaimed; it is a C++ entry point for
 tests and is not part of the C ABI. The future concurrent Bacon–Rajan plus
-trial-deletion collector remains opt-in with `-Cycle-Collector true`. The
+trial-deletion collector remains opt-in with `--cycle-collector=true`. The
 ordinary acyclic path must not pay its cost when disabled, and no trial begins
 when no candidate exists or the program has already broken the candidate cycle.
 

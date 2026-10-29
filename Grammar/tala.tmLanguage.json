@@ -136,6 +136,14 @@
     "preprocessor": {
       "patterns": [
         {
+          "comment": "#expect is a statement of test code; its condition is an ordinary expression.",
+          "match": "(#)(expect)\\b",
+          "captures": {
+            "1": { "name": "punctuation.definition.keyword.tala" },
+            "2": { "name": "keyword.control.test.tala" }
+          }
+        },
+        {
           "name": "meta.preprocessor.tala",
           "begin": "^\\s*(#)(define|setdef|undef|if|elseif|else|endif|error|warn|info|message|region|endregion)\\b",
           "beginCaptures": {
