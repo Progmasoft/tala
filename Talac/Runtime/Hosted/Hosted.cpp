@@ -27,6 +27,7 @@
 #include "Talac/Runtime/Text/Console.cpp"
 #include "Talac/Runtime/Text/Format.cpp"
 #include "Talac/Runtime/Text/Platform.cpp"
+#include "Talac/Runtime/Text/Testing.cpp"
 #include "Talac/Runtime/Text/Text.cpp"
 
 namespace std
