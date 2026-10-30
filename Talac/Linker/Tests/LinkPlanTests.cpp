@@ -32,8 +32,8 @@ namespace
     Request(std::string_view target, std::string_view host) -> LinkPlanRequest
     {
         return { "out/Program",     { "out/Program.o" }, std::string(target),
-                 std::string(host), std::nullopt,        std::nullopt,
-                 std::nullopt };
+                 std::string(host), std::nullopt,        true,
+                 std::nullopt,      std::nullopt };
     }
 
     [[nodiscard]] auto
@@ -49,8 +49,12 @@ TEST_CASE("a target names its object format")
     CHECK(Driver::TargetObjectFormat(kWindows) == ObjectFormat::Coff);
     CHECK(Driver::TargetObjectFormat(kLinux) == ObjectFormat::Elf);
     CHECK(Driver::TargetObjectFormat(kMac) == ObjectFormat::MachO);
-    CHECK(Driver::RuntimeLibraryName(kWindows) == "tala-runtime.lib");
-    CHECK(Driver::RuntimeLibraryName(kLinux) == "libtala-runtime.a");
+    CHECK(Driver::RuntimeLibraryName(kWindows, false) == "talart.lib");
+    CHECK(Driver::RuntimeLibraryName(kWindows, true) == "talart.dll");
+    CHECK(Driver::RuntimeLibraryName(kLinux, false) == "libtalart.a");
+    CHECK(Driver::RuntimeLibraryName(kLinux, true) == "libtalart.so");
+    CHECK(Driver::RuntimeLibraryName(kMac, false) == "libtalart.a");
+    CHECK(Driver::RuntimeLibraryName(kMac, true) == "libtalart.dylib");
     CHECK(Driver::CrossRuntimeDirectory(kLinuxArm)
           == std::filesystem::path("runtimes") / "aarch64-unknown-linux-gnu");
 }
@@ -84,7 +88,8 @@ TEST_CASE("another Linux, macOS or BSD target is linked by clang with LLD")
     {
         auto request = Request(target, host);
         request.sysroot = "/sysroots/target";
-        request.runtimeLibrary = "runtimes/target/libtala-runtime.a";
+        request.sharedRuntime = false;
+        request.runtimeLibrary = "runtimes/target/libtalart.a";
         const auto result = Driver::PlanLink(request);
         REQUIRE(result.plan);
         CHECK(result.plan->linker == Linker::CrossDriver);
@@ -93,7 +98,8 @@ TEST_CASE("another Linux, macOS or BSD target is linked by clang with LLD")
         CHECK(arguments.front().starts_with("--target="));
         CHECK(Has(arguments, "-fuse-ld=lld"));
         CHECK(Has(arguments, "--sysroot=/sysroots/target"));
-        CHECK(arguments.back() == "runtimes/target/libtala-runtime.a");
+        CHECK(arguments.back() == "runtimes/target/libtalart.a");
+        CHECK_FALSE(result.plan->besideExecutable);
     }
 }
 
@@ -102,7 +108,8 @@ TEST_CASE("a Windows executable is linked by lld-link from every host")
     for (const auto host : { kWindows, kLinux, kMac })
     {
         auto request = Request(kWindows, host);
-        request.runtimeLibrary = "tala-runtime.lib";
+        request.sharedRuntime = false;
+        request.runtimeLibrary = "talart.lib";
         request.systemImports = "out/Program.imports.lib";
         const auto result = Driver::PlanLink(request);
         REQUIRE(result.plan);
@@ -116,6 +123,48 @@ TEST_CASE("a Windows executable is linked by lld-link from every host")
         CHECK(Has(arguments, "/out:out/Program"));
         CHECK(arguments.back() == "out/Program.imports.lib");
     }
+}
+
+TEST_CASE("TalaRT is taken from its archive or from beside the executable")
+{
+    // The archive goes into the executable and nothing goes beside it.
+    auto archive = Request(kLinux, kLinux);
+    archive.sharedRuntime = false;
+    archive.runtimeLibrary = "libtalart.a";
+    const auto linkedIn = Driver::PlanLink(archive);
+    REQUIRE(linkedIn.plan);
+    CHECK(linkedIn.plan->arguments.back() == "libtalart.a");
+    CHECK_FALSE(Has(linkedIn.plan->arguments, "-Wl,-rpath,$ORIGIN"));
+    CHECK_FALSE(linkedIn.plan->besideExecutable);
+
+    // The shared library is linked against, found through the run path,
+    // and copied beside the executable.
+    auto elfRequest = Request(kLinux, kLinux);
+    elfRequest.runtimeLibrary = "libtalart.so";
+    const auto elf = Driver::PlanLink(elfRequest);
+    REQUIRE(elf.plan);
+    CHECK(Has(elf.plan->arguments, "libtalart.so"));
+    CHECK(Has(elf.plan->arguments, "-Wl,-rpath,$ORIGIN"));
+    CHECK(elf.plan->besideExecutable
+          == std::optional<std::filesystem::path>("libtalart.so"));
+
+    auto mac = Request(kMac, kMac);
+    mac.runtimeLibrary = "libtalart.dylib";
+    const auto macho = Driver::PlanLink(mac);
+    REQUIRE(macho.plan);
+    CHECK(Has(macho.plan->arguments, "-Wl,-rpath,@executable_path"));
+
+    // A Windows executable imports talart.dll through the import library
+    // talac writes; the DLL itself is not an input of the link.
+    auto windows = Request(kWindows, kLinux);
+    windows.runtimeLibrary = "talart.dll";
+    windows.systemImports = "out/Program.imports.lib";
+    const auto pe = Driver::PlanLink(windows);
+    REQUIRE(pe.plan);
+    CHECK_FALSE(Has(pe.plan->arguments, "talart.dll"));
+    CHECK(pe.plan->arguments.back() == "out/Program.imports.lib");
+    CHECK(pe.plan->besideExecutable
+          == std::optional<std::filesystem::path>("talart.dll"));
 }
 
 TEST_CASE("the machine of a Windows link is the target's, not the host's")

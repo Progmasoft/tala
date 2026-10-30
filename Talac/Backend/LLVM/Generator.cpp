@@ -314,6 +314,26 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
         // emission, so object/library builds never acquire an
         // accidental process entry symbol.
         const auto entryName = triple.isOSWindows() ? "mainCRTStartup" : "main";
+        // Code for a Windows target that uses floating point refers to
+        // `_fltused`, which a C runtime defines. A Tala executable has none,
+        // and with TalaRT in talart.dll none of the runtime either, so the
+        // executable defines it. TalaRT's archive defines it as well; the
+        // linker keeps any one of them. The definition is external, not one
+        // the optimizer may drop: nothing in the IR refers to it, because
+        // the reference is added only when the object is written.
+        if (triple.isOSWindows()
+            && module.getNamedGlobal("_fltused") == nullptr)
+        {
+            auto *int32 = llvm::Type::getInt32Ty(context);
+            auto *fltused = new llvm::GlobalVariable(
+                module,
+                int32,
+                false,
+                llvm::GlobalValue::ExternalLinkage,
+                llvm::ConstantInt::get(int32, 0x9875),
+                "_fltused");
+            fltused->setComdat(module.getOrInsertComdat("_fltused"));
+        }
         auto *entryType
             = llvm::FunctionType::get(llvm::Type::getInt32Ty(context), false);
         auto *bridge

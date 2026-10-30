@@ -153,11 +153,12 @@ namespace Progmasoft::Tala::Driver
         /// Where the runtime of a target is installed: beside the compiler
         /// for the host, in `runtimes/<triple>` beside it for another one.
         [[nodiscard]] auto
-        RuntimeLocation(const std::string &target, const std::string &host)
-            -> std::filesystem::path
+        RuntimeLocation(const std::string &target,
+                        const std::string &host,
+                        const bool shared) -> std::filesystem::path
         {
             const std::filesystem::path name{ std::string(
-                RuntimeLibraryName(target)) };
+                RuntimeLibraryName(target, shared)) };
             const auto relative = IsCrossTarget(target, host)
                                       ? CrossRuntimeDirectory(target) / name
                                       : name;
@@ -257,6 +258,48 @@ namespace Progmasoft::Tala::Driver
                                                     "    WriteConsoleW\n"
                                                     "    WriteFile\n";
 
+        /// What a Windows executable takes from `talart.dll`: the C ABI of
+        /// TalaRT, which Documents/abi-manifest.json lists and verify-abi
+        /// compares, and the memory functions generated code calls, which
+        /// the executable does not carry when TalaRT is not in it.
+        constexpr std::string_view kRuntimeImports
+            = "LIBRARY talart.dll\n"
+              "EXPORTS\n"
+              "    tala_aarc_abi_version\n"
+              "    tala_aarc_allocate\n"
+              "    tala_aarc_copy_unowned\n"
+              "    tala_aarc_copy_weak\n"
+              "    tala_aarc_is_exact_type\n"
+              "    tala_aarc_load_unowned\n"
+              "    tala_aarc_lock_weak\n"
+              "    tala_aarc_make_unowned\n"
+              "    tala_aarc_make_weak\n"
+              "    tala_aarc_release_strong\n"
+              "    tala_aarc_release_unowned\n"
+              "    tala_aarc_release_weak\n"
+              "    tala_aarc_retain_strong\n"
+              "    tala_aarc_string_literal\n"
+              "    tala_console_write\n"
+              "    tala_test_end\n"
+              "    tala_test_fail\n"
+              "    tala_test_finish\n"
+              "    tala_test_status\n"
+              "    tala_text_concat\n"
+              "    tala_text_equals\n"
+              "    tala_text_format_char\n"
+              "    tala_text_format_floating\n"
+              "    tala_text_format_signed\n"
+              "    tala_text_format_string\n"
+              "    tala_text_format_unsigned\n"
+              "    tala_text_from_bool\n"
+              "    tala_text_from_char\n"
+              "    tala_text_from_signed\n"
+              "    tala_text_from_unsigned\n"
+              "    tala_text_newline\n"
+              "    memcpy\n"
+              "    memmove\n"
+              "    memset\n";
+
         /// Removes the files of one link when it goes out of scope.
         struct Scratch final
         {
@@ -290,6 +333,7 @@ namespace Progmasoft::Tala::Driver
         /// library, on any host.
         [[nodiscard]] auto
         WriteSystemImports(const std::filesystem::path &output,
+                           const std::string_view imports,
                            const std::string &linker,
                            const std::string &machine,
                            Scratch &scratch,
@@ -305,9 +349,8 @@ namespace Progmasoft::Tala::Driver
             {
                 std::ofstream stream(definition,
                                      std::ios::binary | std::ios::trunc);
-                stream.write(
-                    kSystemImports.data(),
-                    static_cast<std::streamsize>(kSystemImports.size()));
+                stream.write(imports.data(),
+                             static_cast<std::streamsize>(imports.size()));
                 if (!stream)
                 {
                     diagnostic = "could not write the list of system imports "
@@ -351,16 +394,32 @@ namespace Progmasoft::Tala::Driver
             !diagnostic.empty())
             return { -1, std::move(diagnostic) };
 
-        LinkPlanRequest planRequest{
-            request.outputPath, request.objectPaths, target,      host,
-            request.sysroot,    std::nullopt,        std::nullopt
-        };
+        LinkPlanRequest planRequest{ request.outputPath,
+                                     request.objectPaths,
+                                     target,
+                                     host,
+                                     request.sysroot,
+                                     request.sharedRuntime,
+                                     std::nullopt,
+                                     std::nullopt };
         // A program that creates no closure, uses no string and writes
         // nothing calls nothing of the runtime, and the linker takes nothing
         // from a library that is not called. When the library is not
         // installed, such a program still links; any other fails at an
         // unresolved runtime symbol, which the diagnostic below explains.
-        const auto runtime = RuntimeLocation(target, host);
+        auto runtime = RuntimeLocation(target, host, request.sharedRuntime);
+        // An installation without the shared library, such as a sanitizer
+        // build of the compiler, has the archive, and a program links with
+        // that.
+        if (request.sharedRuntime && !IsFile(runtime))
+        {
+            auto archive = RuntimeLocation(target, host, false);
+            if (IsFile(archive))
+            {
+                runtime = std::move(archive);
+                planRequest.sharedRuntime = false;
+            }
+        }
         if (IsFile(runtime))
             planRequest.runtimeLibrary = runtime;
         // The plan is made once without the import library to learn the
@@ -384,11 +443,13 @@ namespace Progmasoft::Tala::Driver
             && planRequest.runtimeLibrary)
         {
             std::string importDiagnostic;
-            const auto imports = WriteSystemImports(request.outputPath,
-                                                    planned.plan->program,
-                                                    planned.plan->machine,
-                                                    scratch,
-                                                    importDiagnostic);
+            const auto imports = WriteSystemImports(
+                request.outputPath,
+                planRequest.sharedRuntime ? kRuntimeImports : kSystemImports,
+                planned.plan->program,
+                planned.plan->machine,
+                scratch,
+                importDiagnostic);
             if (!imports)
                 return { -1, std::move(importDiagnostic) };
             planRequest.systemImports = imports;
@@ -430,6 +491,30 @@ namespace Progmasoft::Tala::Driver
             return { -1,
                      "'" + plan.program
                          + "' did not produce a non-empty executable" };
+
+        // The executable finds the shared library of TalaRT beside itself.
+        if (plan.besideExecutable)
+        {
+            const auto beside = request.outputPath.parent_path()
+                                / plan.besideExecutable->filename();
+            std::error_code same;
+            if (!std::filesystem::equivalent(*plan.besideExecutable,
+                                             beside,
+                                             same))
+            {
+                std::error_code copyError;
+                std::filesystem::copy_file(
+                    *plan.besideExecutable,
+                    beside,
+                    std::filesystem::copy_options::overwrite_existing,
+                    copyError);
+                if (copyError)
+                    return { -1,
+                             "could not put " + beside.filename().string()
+                                 + " beside the executable: "
+                                 + copyError.message() };
+            }
+        }
         return { 0, {} };
     }
 } // namespace Progmasoft::Tala::Driver

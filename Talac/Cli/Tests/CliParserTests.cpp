@@ -379,9 +379,9 @@ TEST_CASE("a system root is read for an executable")
     CHECK(*options.sysroot == "/opt/sysroots/arm64");
     CHECK_FALSE(options.compiler.sysroot);
     CHECK_FALSE(Ready({ "P.tala", "--entry=A.B" }).sysroot);
-    CHECK(Mentions(
-        Rejected({ "P.tala", "--entry=A.B", "--emit=object", "--sysroot=/s" }),
-        "--sysroot is read when an executable is linked"));
+    // A build that links nothing reads it without effect, so the same
+    // options serve a check and a build.
+    CHECK(Ready({ "P.tala", "--emit=metadata", "--sysroot=/s" }).sysroot);
     CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--sysroot=" }),
                    "--sysroot"));
     CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--sysroot" }),

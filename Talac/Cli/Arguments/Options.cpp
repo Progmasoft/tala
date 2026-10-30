@@ -46,6 +46,7 @@ namespace
         Header,
         Test,
         Sysroot,
+        StaticTalartLibrary,
         Count,
     };
 
@@ -177,8 +178,14 @@ namespace
           "sysroot",
           '\0',
           "<path>",
-          "system root the linker links an executable against",
+          "system root of the target, for what the build links",
           "the linker's" },
+        { Option::StaticTalartLibrary,
+          "static-talart-library",
+          '\0',
+          "true|false",
+          "link TalaRT into the output instead of beside it",
+          "false" },
     } };
 
     template<typename Value>
@@ -246,6 +253,7 @@ namespace
         .llvmCompiler = LlvmCompiler::kAot,
         .llvmLto = LlvmLto::kNone,
         .sysroot = nullptr,
+        .staticTalartLibrary = false,
     };
 
     template<typename Value, std::size_t Size>
@@ -511,6 +519,13 @@ namespace
             case Option::Test:
                 options.test = true;
                 return true;
+            case Option::StaticTalartLibrary:
+                if (const auto parsed = Boolean(value))
+                {
+                    options.compiler.staticTalartLibrary = *parsed;
+                    return true;
+                }
+                return false;
             case Option::Sysroot:
                 if (value.empty())
                     return false;
@@ -579,9 +594,6 @@ namespace
     {
         if (options.inputs.empty())
             return "an input file is required; use --help for usage";
-        if (options.sysroot && options.output != BuildOutput::kExecutable)
-            return "--sysroot is read when an executable is linked; it "
-                   "cannot be combined with another --emit";
         if (options.compiler.shadowWarnings
             && options.compiler.warningLevel == WarningLevel::kNone)
             return "--warnings=none reports nothing; it cannot be combined "

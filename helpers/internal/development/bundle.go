@@ -77,13 +77,13 @@ func buildBundle(repository string, currentHost host, runner commandRunner, baze
 	if err := copyFile(frontend, filepath.Join(stagingDirectory, frontendLibraryName), 0o755); err != nil {
 		return fmt.Errorf("cannot stage the Haskell frontend shared library: %w", err)
 	}
-	// A program the bundled compiler links needs the runtime library beside
-	// the compiler.
-	if runtimeLibraryTarget != "" {
-		if err := copyFile(builtRuntimeLibrary(repository), filepath.Join(stagingDirectory, runtimeLibraryName), 0o644); err != nil {
-			return fmt.Errorf("cannot stage the runtime library: %w", err)
+	// A program the bundled compiler links needs TalaRT beside the compiler:
+	// the shared library by default, the archive when it is linked in.
+	for _, library := range runtimeLibraries {
+		if err := copyFile(library.built(repository), filepath.Join(stagingDirectory, library.name), 0o755); err != nil {
+			return fmt.Errorf("cannot stage %s: %w", library.name, err)
 		}
-		stagedFiles = append(stagedFiles, runtimeLibraryName)
+		stagedFiles = append(stagedFiles, library.name)
 	}
 	for _, relative := range bundleFiles {
 		if err := copyFile(filepath.Join(repository, filepath.FromSlash(relative)), filepath.Join(stagingDirectory, filepath.FromSlash(relative)), 0o644); err != nil {
@@ -274,7 +274,52 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	if !strings.Contains(output, "Hello from Tala!") {
 		return fmt.Errorf("generated native executable printed %q; expected Hello from Tala!", output)
 	}
+	if err := smokeTestRuntimeLinkage(temporary, compiler, source, executable, runner); err != nil {
+		return err
+	}
 	return smokeTestTestBuild(temporary, compiler, currentHost, runner)
+}
+
+// smokeTestRuntimeLinkage checks both ways a program takes TalaRT. By default
+// the shared library stands beside the executable, which runs from another
+// directory with it; with --static-talart-library=true the executable runs
+// alone.
+func smokeTestRuntimeLinkage(temporary, compiler, source, executable string, runner commandRunner) error {
+	shared, _, _ := sharedRuntimeLibraryFor(runtime.GOOS)
+	fmt.Println("Smoke-testing TalaRT as a shared library and as an archive...")
+	if _, err := os.Stat(filepath.Join(temporary, shared)); err != nil {
+		return fmt.Errorf("the default link did not put %s beside the executable: %w", shared, err)
+	}
+	moved := filepath.Join(temporary, "moved")
+	if err := os.MkdirAll(moved, 0o755); err != nil {
+		return err
+	}
+	for _, name := range []string{filepath.Base(executable), shared} {
+		if err := copyFile(filepath.Join(temporary, name), filepath.Join(moved, name), 0o755); err != nil {
+			return fmt.Errorf("cannot move the program and %s: %w", shared, err)
+		}
+	}
+	if output, err := runner.RunWithInput(moved, nil, "", filepath.Join(moved, filepath.Base(executable))); err != nil || !strings.Contains(output, "Hello from Tala!") {
+		return fmt.Errorf("the program moved with %s printed %q (%v)", shared, output, err)
+	}
+	alone := filepath.Join(temporary, "alone")
+	if err := os.MkdirAll(alone, 0o755); err != nil {
+		return err
+	}
+	staticSource := filepath.Join(alone, filepath.Base(source))
+	if err := copyFile(source, staticSource, 0o644); err != nil {
+		return err
+	}
+	if err := runner.Run(alone, nil, compiler, staticSource, "--entry=Examples.HelloWorld.HelloWorld", "--static-talart-library=true"); err != nil {
+		return fmt.Errorf("linking TalaRT's archive failed: %w", err)
+	}
+	if _, err := os.Stat(filepath.Join(alone, shared)); err == nil {
+		return fmt.Errorf("a program with TalaRT's archive got %s beside it", shared)
+	}
+	if output, err := runner.RunWithInput(alone, nil, "", filepath.Join(alone, filepath.Base(executable))); err != nil || !strings.Contains(output, "Hello from Tala!") {
+		return fmt.Errorf("the program with TalaRT's archive printed %q (%v)", output, err)
+	}
+	return nil
 }
 
 // smokeTestTestBuild builds the runner of two [Fact] methods with

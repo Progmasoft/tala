@@ -12,10 +12,13 @@ namespace Progmasoft::Tala::Driver
         // The programs and runtime libraries of each kind of target, which
         // Documents/abi-manifest.json states and verify-abi compares.
         constexpr std::string_view kWindowsLinker = "lld-link";
-        constexpr std::string_view kWindowsRuntimeLibrary = "tala-runtime.lib";
+        constexpr std::string_view kWindowsRuntimeLibrary = "talart.lib";
+        constexpr std::string_view kWindowsSharedRuntime = "talart.dll";
         constexpr std::string_view kLinkerDriver = "cc";
         constexpr std::string_view kCrossDriver = "clang";
-        constexpr std::string_view kRuntimeLibraryName = "libtala-runtime.a";
+        constexpr std::string_view kRuntimeLibraryName = "libtalart.a";
+        constexpr std::string_view kElfSharedRuntime = "libtalart.so";
+        constexpr std::string_view kMachOSharedRuntime = "libtalart.dylib";
 
         [[nodiscard]] auto
         TripleOf(std::string_view text) -> llvm::Triple
@@ -90,11 +93,18 @@ namespace Progmasoft::Tala::Driver
     }
 
     auto
-    RuntimeLibraryName(const std::string_view triple) -> std::string_view
+    RuntimeLibraryName(const std::string_view triple, const bool shared)
+        -> std::string_view
     {
-        return TargetObjectFormat(triple) == Backend::LLVM::ObjectFormat::Coff
-                   ? kWindowsRuntimeLibrary
-                   : kRuntimeLibraryName;
+        switch (TargetObjectFormat(triple))
+        {
+            case Backend::LLVM::ObjectFormat::Coff:
+                return shared ? kWindowsSharedRuntime : kWindowsRuntimeLibrary;
+            case Backend::LLVM::ObjectFormat::MachO:
+                return shared ? kMachOSharedRuntime : kRuntimeLibraryName;
+            default:
+                return shared ? kElfSharedRuntime : kRuntimeLibraryName;
+        }
     }
 
     auto
@@ -148,9 +158,16 @@ namespace Progmasoft::Tala::Driver
                                "/out:" + Utf8(request.outputPath) };
             for (const auto &object : request.objectPaths)
                 plan.arguments.push_back(Utf8(object));
+            // With the archive, the executable carries TalaRT and imports
+            // kernel32 through the import library. With `talart.dll`, it
+            // imports TalaRT through the import library of the DLL, and the
+            // DLL imports kernel32 itself.
             if (request.runtimeLibrary)
             {
-                plan.arguments.push_back(Utf8(*request.runtimeLibrary));
+                if (!request.sharedRuntime)
+                    plan.arguments.push_back(Utf8(*request.runtimeLibrary));
+                else
+                    plan.besideExecutable = request.runtimeLibrary;
                 if (request.systemImports)
                     plan.arguments.push_back(Utf8(*request.systemImports));
             }
@@ -187,7 +204,19 @@ namespace Progmasoft::Tala::Driver
         for (const auto &object : request.objectPaths)
             plan.arguments.push_back(Utf8(object));
         if (request.runtimeLibrary)
+        {
             plan.arguments.push_back(Utf8(*request.runtimeLibrary));
+            // The shared library stands beside the executable, and the
+            // executable looks for it there wherever it is moved with it.
+            if (request.sharedRuntime)
+            {
+                plan.arguments.push_back(
+                    format == Backend::LLVM::ObjectFormat::MachO
+                        ? "-Wl,-rpath,@executable_path"
+                        : "-Wl,-rpath,$ORIGIN");
+                plan.besideExecutable = request.runtimeLibrary;
+            }
+        }
         return { std::move(plan), {} };
     }
 } // namespace Progmasoft::Tala::Driver
