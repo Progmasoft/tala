@@ -76,6 +76,8 @@ enum class LlvmOptLevel : std::uint8_t
     kO2,
     kO3,
     kOg,
+    kOs,
+    kOz,
 };
 
 enum class LlvmCompiler : std::uint8_t
