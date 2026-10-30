@@ -366,6 +366,23 @@ TEST_CASE("a header is written only for a C library")
                    "does not take a value"));
 }
 
+TEST_CASE("a test build names no entry")
+{
+    const auto options = Ready({ "Math.tala", "Tests.tala", "--test" });
+    CHECK(options.test);
+    CHECK_FALSE(options.entry);
+    CHECK(options.inputs.size() == 2U);
+    CHECK_FALSE(Ready({ "P.tala", "--entry=A.B" }).test);
+    CHECK(Mentions(Rejected({ "P.tala", "--test", "--entry=A.B" }),
+                   "takes no --entry"));
+    CHECK(Mentions(Rejected({ "P.core", "--build=core", "--test" }),
+                   "--test compiles Tala sources"));
+    CHECK(Mentions(Rejected({ "P.tala", "--test", "--vipkg-type=talalib" }),
+                   "--test builds an executable"));
+    CHECK(Mentions(Rejected({ "P.tala", "--test=yes" }),
+                   "does not take a value"));
+}
+
 TEST_CASE("inputs are every argument that is not an option, in order")
 {
     const auto options = Ready({ "One.tala",

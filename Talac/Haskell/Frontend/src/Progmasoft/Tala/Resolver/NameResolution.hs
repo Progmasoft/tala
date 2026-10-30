@@ -8,7 +8,7 @@ module Progmasoft.Tala.Resolver.NameResolution (NameResolution (..), defaultName
 
 import Progmasoft.Tala.AST
 import Progmasoft.Tala.Diagnostic
-import Progmasoft.Tala.RuntimeCall (builtinConsoleSymbol, builtinSystemSymbol)
+import Progmasoft.Tala.RuntimeCall (builtinConsoleSymbol, builtinSystemSymbol, builtinTestSymbol)
 
 -- | Pluggable name-resolution pass over a fully renamed syntax tree.
 newtype NameResolution = NameResolution
@@ -53,11 +53,11 @@ resolveDeclaration declaration = case declaration of
     EnumDeclaration spanValue sourceName _ underlying cases ->
         let name = resolveName spanValue sourceName
          in (EnumDeclaration spanValue (fst name) () underlying cases, snd name)
-    FunctionDeclaration spanValue sourceName _ returnSyntax sourceParameters sourceBody isStatic access ->
+    FunctionDeclaration spanValue sourceName _ returnSyntax sourceParameters sourceBody isStatic access fact ->
         let name = resolveName spanValue sourceName
             parameters = map resolveParameter sourceParameters
             (body, bodyProblems) = resolveBlock sourceBody
-         in ( FunctionDeclaration spanValue (fst name) () returnSyntax (map fst parameters) body isStatic access
+         in ( FunctionDeclaration spanValue (fst name) () returnSyntax (map fst parameters) body isStatic access fact
             , snd name ++ concatMap snd parameters ++ bodyProblems
             )
 
@@ -275,7 +275,7 @@ resolveName :: SourceSpan -> RenamedName -> (ResolvedName, [Diagnostic])
 resolveName spanValue name
     | renamedUnique name > 0 = (ResolvedName (SymbolId (renamedUnique name)) (renamedSpelling name), [])
     -- The names the language declares for every program.
-    | SymbolId (renamedUnique name) `elem` [builtinSystemSymbol, builtinConsoleSymbol] =
+    | SymbolId (renamedUnique name) `elem` [builtinSystemSymbol, builtinConsoleSymbol, builtinTestSymbol] =
         (ResolvedName (SymbolId (renamedUnique name)) (renamedSpelling name), [])
     | renamedUnique name == 0 =
         ( ResolvedName (SymbolId 0) (renamedSpelling name)

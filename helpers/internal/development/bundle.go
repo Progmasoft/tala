@@ -274,5 +274,46 @@ func smokeTestBundle(repository string, bundleDirectory string, currentHost host
 	if !strings.Contains(output, "Hello from Tala!") {
 		return fmt.Errorf("generated native executable printed %q; expected Hello from Tala!", output)
 	}
+	return smokeTestTestBuild(temporary, compiler, currentHost, runner)
+}
+
+// smokeTestTestBuild builds the runner of two [Fact] methods with
+// talac --test: one whose expectations hold, which must pass and leave the
+// runner's exit status at zero, and one with a false #expect, which must be
+// reported and make the runner exit with a failure.
+func smokeTestTestBuild(temporary string, compiler string, currentHost host, runner commandRunner) error {
+	fmt.Println("Smoke-testing a test build with [Fact], #expect and #if...")
+	for _, build := range []struct {
+		name   string
+		body   string
+		passes bool
+		output []string
+	}{
+		{"Passing", "#expect Twice(2) == 4;", true, []string{"PASS Checks.Doubles", "1 test, 1 passed, 0 failed"}},
+		{"Failing", "#expect Twice(1) == 3;", false, nil},
+	} {
+		source := filepath.Join(temporary, build.name+".tala")
+		text := "namespace Smoke;\nclass Checks {\n" +
+			"    public static int Twice(_ int v) { return v + v; }\n" +
+			"#if Fact && (family(Unix) || family(Windows))\n" +
+			"    [Fact] public static void Doubles() { " + build.body + " }\n" +
+			"#endif\n}\n"
+		if err := os.WriteFile(source, []byte(text), 0o644); err != nil {
+			return fmt.Errorf("cannot stage the test-build source: %w", err)
+		}
+		if err := runner.Run(temporary, nil, compiler, source, "--test"); err != nil {
+			return fmt.Errorf("staged test build failed to compile: %w", err)
+		}
+		executable := filepath.Join(temporary, build.name+currentHost.executable)
+		output, err := runner.RunWithInput(temporary, nil, "", executable)
+		if build.passes != (err == nil) {
+			return fmt.Errorf("test build %s exited with %v; output %q", build.name, err, output)
+		}
+		for _, expected := range build.output {
+			if !strings.Contains(output, expected) {
+				return fmt.Errorf("test build %s printed %q; expected %q", build.name, output, expected)
+			}
+		}
+	}
 	return nil
 }

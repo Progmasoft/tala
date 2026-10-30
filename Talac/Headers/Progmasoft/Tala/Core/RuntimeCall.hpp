@@ -70,7 +70,10 @@ namespace tala::core::runtime
         TextFormatChar = 10,    ///< `%c`.
         TextNewline = 11,       ///< The line terminator of the platform.
         ConsoleWrite = 12,      ///< Write a string to a standard stream.
-        TextEquals = 13         ///< Whether two strings hold the same text.
+        TextEquals = 13,        ///< Whether two strings hold the same text.
+        TestFail = 14,          ///< Record and report a failed `#expect`.
+        TestEnd = 15,           ///< Close the current test and report it.
+        TestFinish = 16         ///< Report the totals of a test run.
     };
 
     /// One row of the catalog.
@@ -122,8 +125,9 @@ namespace tala::core::runtime
                                                  Parameter::Count,
                                                  Parameter::Char };
         inline constexpr std::array kWrite{ Parameter::Text, Parameter::Count };
+        inline constexpr std::array kText{ Parameter::Text };
 
-        inline constexpr std::array<Signature, 13U> kCatalog{ {
+        inline constexpr std::array<Signature, 16U> kCatalog{ {
             { Function::TextConcat,
               "tala_text_concat",
               kTwoTexts,
@@ -189,6 +193,21 @@ namespace tala::core::runtime
               kTwoTexts,
               Result::Truth,
               false },
+            { Function::TestFail,
+              "tala_test_fail",
+              kText,
+              Result::Nothing,
+              true },
+            { Function::TestEnd,
+              "tala_test_end",
+              kText,
+              Result::Nothing,
+              true },
+            { Function::TestFinish,
+              "tala_test_finish",
+              {},
+              Result::Nothing,
+              true },
         } };
     } // namespace detail
 

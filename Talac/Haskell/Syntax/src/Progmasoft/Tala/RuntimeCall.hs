@@ -38,10 +38,12 @@ module Progmasoft.Tala.RuntimeCall
     , runtimeFunctionOfName
     , builtinSystemSymbol
     , builtinConsoleSymbol
+    , builtinTestSymbol
     , RuntimeDefect (..)
     , runtimeCallDefect
     , runtimeDefectText
-    -- * Conversion flags
+
+      -- * Conversion flags
     , flagLeft
     , flagZero
     , flagPlus
@@ -50,7 +52,8 @@ module Progmasoft.Tala.RuntimeCall
     , flagGroup
     , flagHexadecimal
     , absent
-    -- * Console targets
+
+      -- * Console targets
     , consoleOutput
     , consoleOutputLine
     , consoleError
@@ -87,6 +90,14 @@ data RuntimeFunction
       ConsoleWrite
     | -- | Whether two strings hold the same characters.
       TextEquals
+    | -- | Record a failed @#expect@ of the current test and write its report.
+      TestFail
+    | -- | Close the current test, named by the argument, and write whether it passed.
+      TestEnd
+    | {- | Write how many tests passed and failed. A failure makes the
+      program end with a nonzero status.
+      -}
+      TestFinish
     deriving (Bounded, Enum, Eq, Ord, Read, Show)
 
 {- | What an argument of a runtime function may be. A function takes a family
@@ -141,6 +152,9 @@ runtimeFunctionIdentity function = case function of
     TextNewline -> 11
     ConsoleWrite -> 12
     TextEquals -> 13
+    TestFail -> 14
+    TestEnd -> 15
+    TestFinish -> 16
 
 -- | The function with the given identity, when there is one.
 runtimeFunctionOf :: Integer -> Maybe RuntimeFunction
@@ -162,6 +176,9 @@ runtimeFunctionSymbol function = case function of
     TextNewline -> "tala_text_newline"
     ConsoleWrite -> "tala_console_write"
     TextEquals -> "tala_text_equals"
+    TestFail -> "tala_test_fail"
+    TestEnd -> "tala_test_end"
+    TestFinish -> "tala_test_finish"
 
 -- | The arguments of the function, in order.
 runtimeParameters :: RuntimeFunction -> [RuntimeParameter]
@@ -179,6 +196,9 @@ runtimeParameters function = case function of
     TextNewline -> []
     ConsoleWrite -> [TextParameter, CountParameter]
     TextEquals -> [TextParameter, TextParameter]
+    TestFail -> [TextParameter]
+    TestEnd -> [TextParameter]
+    TestFinish -> []
     where
         -- Flags, width and precision, and then the value. The value stands
         -- last because that is the order of a format's arguments: a width
@@ -191,6 +211,9 @@ runtimeResult :: RuntimeFunction -> RuntimeResult
 runtimeResult function = case function of
     ConsoleWrite -> NoResult
     TextEquals -> TruthResult
+    TestFail -> NoResult
+    TestEnd -> NoResult
+    TestFinish -> NoResult
     _ -> TextResult
 
 -- | The type a call of the function has.
@@ -205,7 +228,7 @@ result. Such a call is an effect: it happens where it is written, and it is
 never removed, repeated or moved.
 -}
 runtimeObservable :: RuntimeFunction -> Bool
-runtimeObservable function = function == ConsoleWrite
+runtimeObservable function = function `elem` [ConsoleWrite, TestFail, TestEnd, TestFinish]
 
 -- | Whether an argument of the given type may stand where the parameter is.
 runtimeAccepts :: RuntimeParameter -> Type -> Bool
@@ -232,7 +255,9 @@ spelling begins with a character no identifier may contain.
 -}
 runtimeName :: RuntimeFunction -> ResolvedName
 runtimeName function =
-    ResolvedName (SymbolId (negate (runtimeNameBase + fromInteger (runtimeFunctionIdentity function)))) (Identifier ('$' : runtimeFunctionSymbol function))
+    ResolvedName
+        (SymbolId (negate (runtimeNameBase + fromInteger (runtimeFunctionIdentity function))))
+        (Identifier ('$' : runtimeFunctionSymbol function))
 
 -- | The runtime function a name of the typed tree stands for, if it is one.
 runtimeFunctionOfName :: ResolvedName -> Maybe RuntimeFunction
@@ -250,6 +275,12 @@ declaration of the program with one of these names shadows it.
 builtinSystemSymbol, builtinConsoleSymbol :: SymbolId
 builtinSystemSymbol = SymbolId (-2)
 builtinConsoleSymbol = SymbolId (-3)
+
+{- | The symbol of @$Test@, the receiver of the calls @#expect@ and the
+runner of a test build make of the test runtime. No source can spell it.
+-}
+builtinTestSymbol :: SymbolId
+builtinTestSymbol = SymbolId (-4)
 
 -- | Why a runtime call is malformed.
 data RuntimeDefect

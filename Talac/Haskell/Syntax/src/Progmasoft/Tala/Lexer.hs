@@ -66,6 +66,12 @@ lexTala (LexerInput file source) = go 1 1 source []
                                     (column + length text)
                                     remaining
                                     (token IntegerToken text line column line (column + length text) : output)
+            -- A directive is @#@ and a word with no space between them.
+            | character == '#'
+            , (word@(first : _), remaining) <- span (\c -> isAlphaNum c || c == '_') rest
+            , isAlpha first =
+                let text = '#' : word
+                 in go line (column + length text) remaining (token DirectiveToken text line column line (column + length text) : output)
             | character == '"' = lexString line column rest output
             | character == '\'' = case scanCharacterLiteral input of
                 Left issue -> Left [diagnostic "TAL0007" line column (renderCharacterLiteralError issue)]

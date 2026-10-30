@@ -593,6 +593,7 @@ simpleCallingMember symbol name target =
         )
         False
         PublicAccess
+        Nothing
 
 directTargets :: Declaration ResolvedName Type -> [SymbolId]
 directTargets FunctionDeclaration {declarationBody = Block statements} = concatMap statementTargets statements

@@ -199,6 +199,7 @@ rejectsInvalidMemberSymbol = hasProblem isExpected (verifySynthetic declaration)
                 (Block [ReturnStatement spanValue (Just (LiteralExpression spanValue (IntegerLiteral 1) intType))])
                 False
                 DefaultAccess
+                Nothing
         declaration = templateDeclaration 1 [typeParameter 2 "T"] [member]
         isExpected TemplateMemberHasInvalidSymbol {} = True
         isExpected _ = False

@@ -58,34 +58,58 @@ rows =
     , (TextNewline, 11, "tala_text_newline", [], TextResult, False)
     , (ConsoleWrite, 12, "tala_console_write", [TextParameter, CountParameter], NoResult, True)
     , (TextEquals, 13, "tala_text_equals", [TextParameter, TextParameter], TruthResult, False)
+    , (TestFail, 14, "tala_test_fail", [TextParameter], NoResult, True)
+    , (TestEnd, 15, "tala_test_end", [TextParameter], NoResult, True)
+    , (TestFinish, 16, "tala_test_finish", [], NoResult, True)
     ]
     where
         conversion value = [CountParameter, CountParameter, CountParameter, value]
 
 catalogTests :: [(String, Bool)]
 catalogTests =
-    [ ("the runtime catalog has thirteen functions", length runtimeFunctions == 13)
+    [ ("the runtime catalog has sixteen functions", length runtimeFunctions == 16)
     , ("every runtime function has a row in the tests", map (\(function, _, _, _, _, _) -> function) rows == runtimeFunctions)
-    , ("runtime identities are distinct", length (nub (map runtimeFunctionIdentity runtimeFunctions)) == length runtimeFunctions)
+    ,
+        ( "runtime identities are distinct"
+        , length (nub (map runtimeFunctionIdentity runtimeFunctions)) == length runtimeFunctions
+        )
     , ("runtime symbols are distinct", length (nub (map runtimeFunctionSymbol runtimeFunctions)) == length runtimeFunctions)
-    , ("runtime identities are the numbers from one", map runtimeFunctionIdentity runtimeFunctions == [1 .. 13])
+    , ("runtime identities are the numbers from one", map runtimeFunctionIdentity runtimeFunctions == [1 .. 16])
     , ("zero names no runtime function", runtimeFunctionOf 0 == Nothing)
     , ("a negative number names no runtime function", runtimeFunctionOf (-1) == Nothing)
-    , ("the number after the last names no runtime function", runtimeFunctionOf 14 == Nothing)
-    , ("only a console write is observable", filter runtimeObservable runtimeFunctions == [ConsoleWrite])
+    , ("the number after the last names no runtime function", runtimeFunctionOf 17 == Nothing)
+    ,
+        ( "only console writes and the test runtime are observable"
+        , filter runtimeObservable runtimeFunctions == [ConsoleWrite, TestFail, TestEnd, TestFinish]
+        )
     , -- The name of a runtime call in the typed tree: reserved, and
       -- distinct for every function.
       ("runtime names have negative symbols", all ((< 0) . symbolIdValue . resolvedSymbol . runtimeName) runtimeFunctions)
     , ("runtime names are distinct", length (nub (map runtimeName runtimeFunctions)) == length runtimeFunctions)
-    , ("a runtime name is read back as its function", all (\function -> runtimeFunctionOfName (runtimeName function) == Just function) runtimeFunctions)
+    ,
+        ( "a runtime name is read back as its function"
+        , all (\function -> runtimeFunctionOfName (runtimeName function) == Just function) runtimeFunctions
+        )
     , ("a source name is no runtime name", runtimeFunctionOfName (name 5 "Print") == Nothing)
-    , ("the names the language declares are no runtime names", all ((== Nothing) . runtimeFunctionOfName . declared) [builtinSystemSymbol, builtinConsoleSymbol])
+    ,
+        ( "the names the language declares are no runtime names"
+        , all ((== Nothing) . runtimeFunctionOfName . declared) [builtinSystemSymbol, builtinConsoleSymbol]
+        )
     , ("System and Console have symbols of their own", builtinSystemSymbol /= builtinConsoleSymbol)
-    , ("a runtime name begins with a character no identifier has", all ((== "$") . take 1 . identifierText . resolvedSpelling . runtimeName) runtimeFunctions)
+    ,
+        ( "a runtime name begins with a character no identifier has"
+        , all ((== "$") . take 1 . identifierText . resolvedSpelling . runtimeName) runtimeFunctions
+        )
     , -- The values the runtime header gives the flags and the targets.
-      ("the conversion flags are distinct bits", [flagLeft, flagZero, flagPlus, flagSpace, flagAlternate, flagGroup, flagHexadecimal] == [1, 2, 4, 8, 16, 32, 64])
+
+        ( "the conversion flags are distinct bits"
+        , [flagLeft, flagZero, flagPlus, flagSpace, flagAlternate, flagGroup, flagHexadecimal] == [1, 2, 4, 8, 16, 32, 64]
+        )
     , ("an absent width is minus one", absent == -1)
-    , ("the console targets are the four the runtime knows", [consoleOutput, consoleOutputLine, consoleError, consoleErrorLine] == [0, 1, 2, 3])
+    ,
+        ( "the console targets are the four the runtime knows"
+        , [consoleOutput, consoleOutputLine, consoleError, consoleErrorLine] == [0, 1, 2, 3]
+        )
     ]
         ++ concat
             [ [ ("runtime identity of " ++ show function, runtimeFunctionIdentity function == identity)
@@ -105,16 +129,31 @@ written for 64 bits, so the wider types are not taken.
 -}
 acceptanceTests :: [(String, Bool)]
 acceptanceTests =
-    [ ("a signed parameter takes the signed integers up to 64 bits", accepted SignedParameter == ["byte", "short", "long", "int"])
-    , ("an unsigned parameter takes the unsigned integers up to 64 bits", accepted UnsignedParameter == ["ubyte", "ushort", "ulong", "uint"])
-    , ("a floating parameter takes the floating types up to 64 bits", accepted FloatingParameter == ["sfloat", "lfloat", "float"])
+    [
+        ( "a signed parameter takes the signed integers up to 64 bits"
+        , accepted SignedParameter == ["byte", "short", "long", "int"]
+        )
+    ,
+        ( "an unsigned parameter takes the unsigned integers up to 64 bits"
+        , accepted UnsignedParameter == ["ubyte", "ushort", "ulong", "uint"]
+        )
+    ,
+        ( "a floating parameter takes the floating types up to 64 bits"
+        , accepted FloatingParameter == ["sfloat", "lfloat", "float"]
+        )
     , ("a Boolean parameter takes bool", accepted BoolParameter == ["bool"])
     , ("a character parameter takes char", accepted CharParameter == ["char"])
     , ("a text parameter takes String", accepted TextParameter == ["String"])
     , ("a count is an int", accepted CountParameter == ["int"])
     , ("no parameter takes a callable", not (any (`runtimeAccepts` FunctionType [] intType) parameterKinds))
-    , ("no parameter takes a generic type", not (any (`runtimeAccepts` NamedType (QualifiedName [Identifier "int"]) [TypeTemplateArgument intType]) parameterKinds))
-    , ("no parameter takes a qualified name", not (any (`runtimeAccepts` NamedType (QualifiedName [Identifier "System", Identifier "int"]) []) parameterKinds))
+    ,
+        ( "no parameter takes a generic type"
+        , not (any (`runtimeAccepts` NamedType (QualifiedName [Identifier "int"]) [TypeTemplateArgument intType]) parameterKinds)
+        )
+    ,
+        ( "no parameter takes a qualified name"
+        , not (any (`runtimeAccepts` NamedType (QualifiedName [Identifier "System", Identifier "int"]) []) parameterKinds)
+        )
     ]
     where
         parameterKinds =
@@ -213,41 +252,89 @@ rejectsCore moduleValue = case verifyCore moduleValue of
 coreTests :: [(String, Bool)]
 coreTests =
     [ ("Core accepts well-formed runtime calls", verifiesCore writingModule)
-    , ("Core wire carries runtime calls", (encodeCore defaultCoreWireLimits writingModule >>= decodeCore defaultCoreWireLimits) == Right writingModule)
-    , ("the reference evaluator runs the calls", runFunctionWriting 1000 writingModule "Run" [IntegerValue 42] == Just (IntegerValue 42, Written "Count:    42\n" ""))
+    ,
+        ( "Core wire carries runtime calls"
+        , (encodeCore defaultCoreWireLimits writingModule >>= decodeCore defaultCoreWireLimits) == Right writingModule
+        )
+    ,
+        ( "the reference evaluator runs the calls"
+        , runFunctionWriting 1000 writingModule "Run" [IntegerValue 42] == Just (IntegerValue 42, Written "Count:    42\n" "")
+        )
     , -- Every function of the catalog with arguments of its types.
       ("Core accepts a call of every runtime function", all (verifiesCore . wellFormed) runtimeFunctions)
     , -- What the first operand must be.
-      ("Core rejects an identity the catalog does not have", rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [integer 999] unitType)))
+
+        ( "Core rejects an identity the catalog does not have"
+        , rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [integer 999] unitType))
+        )
     , ("Core rejects the identity zero", rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [integer 0] unitType)))
     , ("Core rejects a negative identity", rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [integer (-12)] unitType)))
     , ("Core rejects a runtime call without operands", rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [] unitType)))
     , -- The function is fixed when the program is compiled.
-      ("Core rejects an identity that is computed", rejectsCore (binding stringType (CorePrimitive CoreRuntimeCall [count] stringType)))
-    , ( "Core rejects an identity of another integer type"
-      , rejectsCore (binding stringType (CorePrimitive CoreRuntimeCall [CoreLiteral (CoreInteger 11) (namedType "uint")] stringType))
-      )
-    , ("Core rejects a Boolean as an identity", rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [CoreLiteral (CoreBoolean True) boolType] unitType)))
+
+        ( "Core rejects an identity that is computed"
+        , rejectsCore (binding stringType (CorePrimitive CoreRuntimeCall [count] stringType))
+        )
+    ,
+        ( "Core rejects an identity of another integer type"
+        , rejectsCore
+            (binding stringType (CorePrimitive CoreRuntimeCall [CoreLiteral (CoreInteger 11) (namedType "uint")] stringType))
+        )
+    ,
+        ( "Core rejects a Boolean as an identity"
+        , rejectsCore (evaluating (CorePrimitive CoreRuntimeCall [CoreLiteral (CoreBoolean True) boolType] unitType))
+        )
     , -- The arguments are the ones the function takes.
       ("Core rejects a missing argument", rejectsCore (binding stringType (runtime TextConcat [text "a"] stringType)))
-    , ("Core rejects an extra argument", rejectsCore (binding stringType (runtime TextConcat [text "a", text "b", text "c"] stringType)))
-    , ("Core rejects an argument to a function that takes none", rejectsCore (binding stringType (runtime TextNewline [count] stringType)))
-    , ("Core rejects a number where a string is taken", rejectsCore (binding stringType (runtime TextConcat [text "a", count] stringType)))
-    , ("Core rejects a string where a number is taken", rejectsCore (binding stringType (runtime TextFromSigned [text "a"] stringType)))
-    , ("Core rejects a signed integer where an unsigned one is taken", rejectsCore (binding stringType (runtime TextFromUnsigned [count] stringType)))
-    , ( "Core rejects a width that is not an int"
-      , rejectsCore
+    ,
+        ( "Core rejects an extra argument"
+        , rejectsCore (binding stringType (runtime TextConcat [text "a", text "b", text "c"] stringType))
+        )
+    ,
+        ( "Core rejects an argument to a function that takes none"
+        , rejectsCore (binding stringType (runtime TextNewline [count] stringType))
+        )
+    ,
+        ( "Core rejects a number where a string is taken"
+        , rejectsCore (binding stringType (runtime TextConcat [text "a", count] stringType))
+        )
+    ,
+        ( "Core rejects a string where a number is taken"
+        , rejectsCore (binding stringType (runtime TextFromSigned [text "a"] stringType))
+        )
+    ,
+        ( "Core rejects a signed integer where an unsigned one is taken"
+        , rejectsCore (binding stringType (runtime TextFromUnsigned [count] stringType))
+        )
+    ,
+        ( "Core rejects a width that is not an int"
+        , rejectsCore
             ( binding
                 stringType
                 (runtime TextFormatSigned [integer 0, CoreLiteral (CoreInteger 5) (namedType "long"), integer absent, count] stringType)
             )
-      )
-    , ("Core rejects a write target that is a Boolean", rejectsCore (evaluating (runtime ConsoleWrite [text "a", CoreLiteral (CoreBoolean True) boolType] unitType)))
+        )
+    ,
+        ( "Core rejects a write target that is a Boolean"
+        , rejectsCore (evaluating (runtime ConsoleWrite [text "a", CoreLiteral (CoreBoolean True) boolType] unitType))
+        )
     , -- The call has the type the function returns.
-      ("Core rejects a string result typed as a number", rejectsCore (binding intType (runtime TextConcat [text "a", text "b"] intType)))
-    , ("Core rejects a write that yields a string", rejectsCore (binding stringType (runtime ConsoleWrite [text "a", integer 0] stringType)))
-    , ("Core rejects an equality that yields a string", rejectsCore (binding stringType (runtime TextEquals [text "a", text "b"] stringType)))
-    , ("Core accepts an equality that yields a Boolean", verifiesCore (binding boolType (runtime TextEquals [text "a", text "b"] boolType)))
+
+        ( "Core rejects a string result typed as a number"
+        , rejectsCore (binding intType (runtime TextConcat [text "a", text "b"] intType))
+        )
+    ,
+        ( "Core rejects a write that yields a string"
+        , rejectsCore (binding stringType (runtime ConsoleWrite [text "a", integer 0] stringType))
+        )
+    ,
+        ( "Core rejects an equality that yields a string"
+        , rejectsCore (binding stringType (runtime TextEquals [text "a", text "b"] stringType))
+        )
+    ,
+        ( "Core accepts an equality that yields a Boolean"
+        , verifiesCore (binding boolType (runtime TextEquals [text "a", text "b"] boolType))
+        )
     ]
 
 -- | A call of the function with an argument of a type each parameter takes.
@@ -272,11 +359,12 @@ corePrepTests :: [(String, Bool)]
 corePrepTests =
     [ ("CorePrep accepts well-formed runtime calls", preparedAndVerified writingModule)
     , ("CorePrep accepts a call of every runtime function", all (preparedAndVerified . wellFormed) runtimeFunctions)
-    , ( "CorePrep wire carries runtime calls"
-      , case prepareCore writingModule of
+    ,
+        ( "CorePrep wire carries runtime calls"
+        , case prepareCore writingModule of
             Right prepared -> (encodeCorePrep prepared >>= decodeCorePrep) == Right prepared
             Left _ -> False
-      )
+        )
     , -- The identity stays a literal: it is not bound to a temporary.
       ("CorePrep keeps the identity a literal", identityStaysLiteral)
     , ("CorePrep rejects an unknown identity", rejectsCorePrep stringType [literal 999])
@@ -284,9 +372,15 @@ corePrepTests =
     , ("CorePrep rejects an identity that is a variable", rejectsCorePrep stringType [CorePrepVariable countName intType])
     , ("CorePrep rejects a missing argument", rejectsCorePrep stringType [identity TextConcat, string "a"])
     , ("CorePrep rejects an extra argument", rejectsCorePrep stringType [identity TextNewline, string "a"])
-    , ("CorePrep rejects an argument of another type", rejectsCorePrep stringType [identity TextConcat, string "a", CorePrepVariable countName intType])
+    ,
+        ( "CorePrep rejects an argument of another type"
+        , rejectsCorePrep stringType [identity TextConcat, string "a", CorePrepVariable countName intType]
+        )
     , ("CorePrep rejects a result of another type", rejectsCorePrep intType [identity TextConcat, string "a", string "b"])
-    , ("CorePrep accepts the same call with its own types", acceptsCorePrep stringType [identity TextConcat, string "a", string "b"])
+    ,
+        ( "CorePrep accepts the same call with its own types"
+        , acceptsCorePrep stringType [identity TextConcat, string "a", string "b"]
+        )
     ]
     where
         literal value = CorePrepLiteral (CoreInteger value) intType
@@ -354,7 +448,10 @@ optimizerTests =
     , -- A string that nothing uses is only computed. Whether the optimizer
       -- removes it is its own business; it must not come to be written.
       ("a string that nothing uses is not written", writes (optimized unusedText) == Just "")
-    , ("optimized runtime calls still verify", all (maybe False verifiesCore . optimized) [writingModule, twoWrites, boundWrite, unusedText])
+    ,
+        ( "optimized runtime calls still verify"
+        , all (maybe False verifiesCore . optimized) [writingModule, twoWrites, boundWrite, unusedText]
+        )
     ]
     where
         write value = CoreEvaluate (runtime ConsoleWrite [text value, integer consoleOutputLine] unitType)
@@ -386,8 +483,9 @@ formatTests =
     [ ("a format without a percent sign is one literal", parseFormat "plain text" == Right [LiteralPiece "plain text"])
     , ("an empty format has no pieces", parseFormat "" == Right [])
     , ("a conversion alone is one piece", parseFormat "%d" == Right [ConversionPiece (plain SignedDecimal 1)])
-    , ( "text and conversions keep their order"
-      , parseFormat "a%db%sc"
+    ,
+        ( "text and conversions keep their order"
+        , parseFormat "a%db%sc"
             == Right
                 [ LiteralPiece "a"
                 , ConversionPiece (plain SignedDecimal 2)
@@ -395,9 +493,15 @@ formatTests =
                 , ConversionPiece (plain Text 5)
                 , LiteralPiece "c"
                 ]
-      )
-    , ("every conversion letter is read", map kindOf "duxfscb" == map Just [SignedDecimal, UnsignedDecimal, Hexadecimal, FixedPoint, Text, Character, Truth])
-    , ("a conversion is written with the letter it was read from", all (\letter -> fmap conversionLetter (kindOf letter) == Just letter) "duxfscb")
+        )
+    ,
+        ( "every conversion letter is read"
+        , map kindOf "duxfscb" == map Just [SignedDecimal, UnsignedDecimal, Hexadecimal, FixedPoint, Text, Character, Truth]
+        )
+    ,
+        ( "a conversion is written with the letter it was read from"
+        , all (\letter -> fmap conversionLetter (kindOf letter) == Just letter) "duxfscb"
+        )
     , -- %% and %n are not conversions of an argument.
       ("a doubled percent sign is a percent sign", parseFormat "100%%" == Right [LiteralPiece "100%"])
     , ("percent signs join the text around them", parseFormat "a%%b%%c" == Right [LiteralPiece "a%b%c"])
@@ -405,12 +509,21 @@ formatTests =
     , ("neither takes an argument", argumentCount "%%%n%%" == Just 0)
     , -- Flags, width and precision.
       ("flags are read in the order written", flagsOf "%-'d" == Just [LeftFlag, GroupFlag])
-    , ("a leading zero is a flag and not part of the width", parseFormat "%08d" == Right [ConversionPiece (Conversion SignedDecimal [ZeroFlag] (FixedSize 8) NoSize 1)])
+    ,
+        ( "a leading zero is a flag and not part of the width"
+        , parseFormat "%08d" == Right [ConversionPiece (Conversion SignedDecimal [ZeroFlag] (FixedSize 8) NoSize 1)]
+        )
     , ("a width may have several digits", widthOf "%120s" == Just (FixedSize 120))
     , ("a zero inside a width is a digit", widthOf "%10d" == Just (FixedSize 10))
-    , ("a precision follows a point", parseFormat "%.3f" == Right [ConversionPiece (Conversion FixedPoint [] NoSize (FixedSize 3) 1)])
+    ,
+        ( "a precision follows a point"
+        , parseFormat "%.3f" == Right [ConversionPiece (Conversion FixedPoint [] NoSize (FixedSize 3) 1)]
+        )
     , ("a precision of zero is a precision", precisionOf "%.0f" == Just (FixedSize 0))
-    , ("width and precision may both be written", parseFormat "%10.3f" == Right [ConversionPiece (Conversion FixedPoint [] (FixedSize 10) (FixedSize 3) 1)])
+    ,
+        ( "width and precision may both be written"
+        , parseFormat "%10.3f" == Right [ConversionPiece (Conversion FixedPoint [] (FixedSize 10) (FixedSize 3) 1)]
+        )
     , ("a star is a width from an argument", widthOf "%*d" == Just ArgumentSize)
     , ("a star after a point is a precision from an argument", precisionOf "%.*f" == Just ArgumentSize)
     , ("a conversion takes one argument", argumentCount "%d" == Just 1)

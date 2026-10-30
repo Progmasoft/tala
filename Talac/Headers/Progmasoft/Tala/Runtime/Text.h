@@ -154,6 +154,31 @@ extern "C"
     void
     tala_console_write(void *text, int64_t target) TALA_TEXT_NOEXCEPT;
 
+    /* The test runtime. The runner of a test build calls each [Fact] method
+     * and then `tala_test_end` with its name; a false `#expect` calls
+     * `tala_test_fail` while the method runs. Everything goes to standard
+     * output as it happens. */
+
+    /** Record a failed expectation of the current test and write its
+     * report as a line. */
+    void
+    tala_test_fail(void *report) TALA_TEXT_NOEXCEPT;
+
+    /** Close the current test: write `PASS name`, or `FAIL name` with the
+     * number of its failed expectations. */
+    void
+    tala_test_end(void *name) TALA_TEXT_NOEXCEPT;
+
+    /** Write the number of tests, how many passed and how many failed. */
+    void
+    tala_test_finish(void) TALA_TEXT_NOEXCEPT;
+
+    /** The exit status of a test build: 0 when no test failed, 1 otherwise.
+     * The process entry of an executable that calls the test runtime
+     * returns it. */
+    int32_t
+    tala_test_status(void) TALA_TEXT_NOEXCEPT;
+
 #ifdef __cplusplus
 }
 #endif
