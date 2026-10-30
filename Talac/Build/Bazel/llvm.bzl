@@ -261,8 +261,8 @@ def _lld_imports(repository_ctx, include_dir, library_dir, library_suffix, is_wi
             lld_include = repository_ctx.path(root).get_child("include")
             lld_library = repository_ctx.path(root).get_child("lib")
         if not root or not has_lld(lld_include, lld_library):
-            fail("LLD's libraries and headers were not found beside LLVM. Install LLD's development files " +
-                 "(the lld formula on macOS) or set LLD_ROOT to them.")
+            fail("LLD's static libraries and headers were not found beside LLVM. Set LLD_ROOT to a tree " +
+                 "with lib/ and include/lld built for this LLVM; Homebrew's lld formula has only shared libraries.")
         repository_ctx.symlink(lld_include, "lld-include")
         repository_ctx.symlink(lld_library, "lld-lib")
         header_root = "lld-include"

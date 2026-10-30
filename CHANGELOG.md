@@ -15,9 +15,11 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   talac takes the command line of the linker from `clang -###`, which knows
   where the target's C library is, and runs it with LLD; without `clang`, a
   target of the host is linked by `cc` as before. Building talac needs LLD's
-  libraries and headers: the LLVM release for Windows has them, Homebrew has
-  the `lld` formula (found through `LLD_ROOT` or `brew --prefix lld`), and
-  the Linux toolchain carries them from revision 2.
+  static libraries and headers: the LLVM release for Windows has them, the
+  Linux toolchain carries them from revision 2, and on macOS they are built
+  from the LLVM sources against Homebrew's LLVM, because Homebrew's `lld` has
+  only shared libraries; `LLD_ROOT` names them where they are not beside
+  LLVM.
 
 - An executable is linked for its target rather than for the host: Windows
   executables with `lld-link` from any host, for the machine of the target;
