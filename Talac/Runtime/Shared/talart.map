@@ -1,0 +1,6 @@
+{
+    global:
+        tala_*;
+    local:
+        *;
+};

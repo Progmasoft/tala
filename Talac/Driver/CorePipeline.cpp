@@ -315,7 +315,7 @@ namespace
     [[nodiscard]] auto
     WriteExecutable(const char *inputPath,
                     const Llvm::Artifact &artifact,
-                    const char *sysroot) -> bool
+                    const CompilerSettings &settings) -> bool
     {
         const auto output
             = ArtifactPath(inputPath,
@@ -334,9 +334,11 @@ namespace
             output,
             { temporary.Path() },
             artifact.objectFormat,
-            sysroot != nullptr ? std::optional{ std::filesystem::path(sysroot) }
-                               : std::nullopt,
-            artifact.target_triple
+            settings.sysroot != nullptr
+                ? std::optional{ std::filesystem::path(settings.sysroot) }
+                : std::nullopt,
+            artifact.target_triple,
+            !settings.staticTalartLibrary
         };
         const auto linked = Driver::LinkNativeExecutable(request);
         if (!linked)
@@ -452,7 +454,7 @@ namespace
             if (output == BuildOutput::kExecutable)
                 return WriteExecutable(artifactBasePath,
                                        *result.llvm,
-                                       settings->sysroot);
+                                       *settings);
             return WriteArtifact(artifactBasePath, output, *result.llvm);
         }
         fmt::print(stderr,

@@ -132,11 +132,13 @@ func TestEveryStatementOfTheManifestIsChecked(t *testing.T) {
 		{"the executable extension on Windows", Path, "\"windows\": \".exe\"", "\"windows\": \".com\"", "executable extension on windows"},
 		{"the executable extension on Linux", "Talac/Cli/Arguments/Options.cpp", "#else\n    constexpr const char *kExecutable = \"\";", "#else\n    constexpr const char *kExecutable = \".out\";", "executable extension on linux"},
 		{"the Windows linker", Path, "\"linker\": \"lld-link\"", "\"linker\": \"link\"", "Windows linker"},
-		{"the Windows runtime library", Path, "\"runtime_library\": \"tala-runtime.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
+		{"the Windows runtime library", Path, "\"runtime_library\": \"talart.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
 		{"the linker on Linux", Path, "\"linux\": {\n        \"linker\": \"cc\"", "\"linux\": {\n        \"linker\": \"ld\"", "linker on linux"},
-		{"the runtime library on macOS", Path, "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libtala-runtime.a\"", "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libruntime.a\"", "runtime library on macos"},
+		{"the runtime library on macOS", Path, "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libtalart.a\"", "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libruntime.a\"", "runtime library on macos"},
 		{"the driver the linker starts", "Talac/Linker/LinkPlan.cpp", "kLinkerDriver = \"cc\"", "kLinkerDriver = \"clang\"", "linker on linux"},
 		{"a system import the manifest lacks", Path, "            \"WriteConsoleW\",\n", "", "imported from KERNEL32.dll"},
+		{"the shared runtime on Linux", Path, "\"shared_runtime_library\": \"libtalart.so\"", "\"shared_runtime_library\": \"libtalart.so.1\"", "shared runtime library libtalart.so.1"},
+		{"a runtime import the shared library loses", "Talac/Linker/NativeLinker.cpp", "\"    tala_text_newline\\n\"\n", "", "imported from talart.dll"},
 		{"a system import the linker gains", "Talac/Linker/NativeLinker.cpp", "\"    WriteFile\\n\"", "\"    WriteFile\\n\"\n\"    ExitProcess\\n\"", "ExitProcess"},
 	}
 	for _, test := range cases {

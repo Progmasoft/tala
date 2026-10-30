@@ -35,10 +35,16 @@ namespace Progmasoft::Tala::Driver
         std::string targetTriple;
         std::string hostTriple;
         std::optional<std::filesystem::path> sysroot;
-        /// The Tala runtime library of the target, when one was found.
+        /// Whether the program takes TalaRT from its shared library, which
+        /// stands beside the executable, rather than from the archive.
+        bool sharedRuntime{ true };
+        /// TalaRT of the target, when it was found: the archive, or the
+        /// shared library.
         std::optional<std::filesystem::path> runtimeLibrary;
-        /// For a Windows target: the import library of the kernel32
-        /// functions the runtime calls, which the link writes first.
+        /// For a Windows target: the import library of what the program
+        /// takes from the system. With the archive these are the kernel32
+        /// functions TalaRT calls; with `talart.dll`, the functions of
+        /// TalaRT itself. The link writes it first.
         std::optional<std::filesystem::path> systemImports;
     };
 
@@ -50,6 +56,9 @@ namespace Progmasoft::Tala::Driver
         std::string program;
         std::vector<std::string> arguments;
         std::string machine;
+        /// The shared library of TalaRT, which is copied beside the
+        /// executable after a link that uses it.
+        std::optional<std::filesystem::path> besideExecutable;
     };
 
     /// A plan, or why the target cannot be linked.
@@ -68,9 +77,11 @@ namespace Progmasoft::Tala::Driver
     [[nodiscard]] auto
     IsCrossTarget(std::string_view target, std::string_view host) -> bool;
 
-    /// The file name of the Tala runtime library of a target.
+    /// The file name of TalaRT for a target: the archive, or the shared
+    /// library.
     [[nodiscard]] auto
-    RuntimeLibraryName(std::string_view triple) -> std::string_view;
+    RuntimeLibraryName(std::string_view triple, bool shared)
+        -> std::string_view;
 
     /// Where the runtime of a target that is not the host is installed,
     /// relative to the directory of the compiler: `runtimes/<triple>`.

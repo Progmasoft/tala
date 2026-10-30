@@ -352,7 +352,8 @@ namespace
             options.sysroot
                 ? std::optional{ std::filesystem::path(*options.sysroot) }
                 : std::nullopt,
-            options.target.value_or(std::string())
+            options.target.value_or(std::string()),
+            !options.compiler.staticTalartLibrary
         };
         const auto linked
             = Progmasoft::Tala::Driver::LinkNativeExecutable(request);

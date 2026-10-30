@@ -1,0 +1,81 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("//Talac/Runtime:host.bzl", "RUNTIME_ENTRY_POINTS")
+
+package(default_visibility = ["//visibility:public"])
+
+# TalaRT as a shared library, which an executable links by default and finds
+# beside itself. Each compiles the translation unit of the archive of its
+# system with the same options: the freestanding runtime on Windows, the
+# hosted one elsewhere. Only the C ABI of
+# the runtime is exported, so its allocation functions stay its own and never
+# replace those of the program that loads it.
+
+# The DLL has no entry point and no C runtime, like the executables it
+# serves; it imports kernel32 itself. The memory functions are exported as
+# well, because generated code calls them and an executable that takes
+# TalaRT from the DLL carries no copy of its own.
+cc_binary(
+    name = "talart.dll",
+    srcs = ["//Talac/Runtime/Freestanding:Freestanding.cpp"],
+    copts = [
+        "/GS-",
+        "/Zl",
+        "/Gs1048576",
+    ],
+    linkopts = [
+        "/NOENTRY",
+        "/NODEFAULTLIB",
+        "kernel32.lib",
+    ] + ["/EXPORT:" + name for name in RUNTIME_ENTRY_POINTS + [
+        "memcpy",
+        "memmove",
+        "memset",
+    ]],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = ["//Talac/Runtime/Freestanding:textual_sources"],
+)
+
+# The library links no C++ runtime: the hosted runtime needs none, and the
+# executables that load it are linked by the C compiler.
+cc_binary(
+    name = "libtalart.so",
+    srcs = ["//Talac/Runtime/Hosted:Hosted.cpp"],
+    copts = [
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-fPIC",
+    ],
+    additional_linker_inputs = ["talart.map"],
+    linkopts = [
+        "-nostdlib++",
+        "-Wl,-soname,libtalart.so",
+        "-Wl,--version-script=$(location talart.map)",
+    ],
+    linkshared = True,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["//Talac/Runtime/Hosted:textual_sources"],
+)
+
+cc_binary(
+    name = "libtalart.dylib",
+    srcs = ["//Talac/Runtime/Hosted:Hosted.cpp"],
+    copts = [
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-fPIC",
+    ],
+    additional_linker_inputs = ["talart.exp"],
+    linkopts = [
+        "-nostdlib++",
+        "-Wl,-install_name,@rpath/libtalart.dylib",
+        "-Wl,-exported_symbols_list,$(location talart.exp)",
+    ],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["//Talac/Runtime/Hosted:textual_sources"],
+)

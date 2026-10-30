@@ -26,6 +26,9 @@ namespace Progmasoft::Tala::Driver
         /// The LLVM target triple of the objects; empty for the host. The
         /// target, not the host, decides how the executable is linked.
         std::string targetTriple;
+        /// Whether TalaRT is linked from its shared library, which is then
+        /// copied beside the executable, rather than from its archive.
+        bool sharedRuntime{ true };
     };
 
     struct NativeLinkResult final

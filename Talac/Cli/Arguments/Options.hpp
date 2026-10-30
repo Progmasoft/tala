@@ -109,6 +109,11 @@ struct CompilerSettings
     /// null for the driver's own. It points into the `CliOptions` the
     /// settings were made for.
     const char *sysroot;
+    /// Link TalaRT from its archive into what the build produces, rather
+    /// than from its shared library beside it. It concerns every output
+    /// that links: an executable today, and the library types when they
+    /// are built.
+    bool staticTalartLibrary;
 
     bool
     operator==(const CompilerSettings &) const = default;
