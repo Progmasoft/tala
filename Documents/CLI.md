@@ -47,7 +47,6 @@ Names and values are case-sensitive.
 | `--target=`, `-t` | an LLVM target triple | the target of the host |
 | `--sysroot=` | the system root of the target, for what the build links | the linker's |
 | `--static-talart-library=` | `true`, `false`: link TalaRT into the output instead of beside it | `false` |
-| `--static-tala-frontend-library=` | `true`, `false`: link the Tala frontend into the output statically | `false` |
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
 | `--codegen-backend=` | `llvm` | `llvm` |
@@ -101,18 +100,16 @@ talac Program.tala --entry=Demo.Program --target=aarch64-unknown-linux-gnu --sys
 
 `lld-link`, `cc` and `clang` are found on `PATH`.
 
-### TalaRT and the Tala frontend
+### TalaRT
 
-TalaRT, the Tala runtime, has a shared library and an archive, and so does the Tala frontend. By default what a build
+TalaRT, the Tala runtime, has a shared library and an archive. By default what a build
 links takes TalaRT from the shared library: talac copies it beside the output, a Windows executable imports it from there,
 and a Linux, macOS or BSD executable finds it there through its run path (`$ORIGIN`, `@executable_path`), so the two move
 together. `--static-talart-library=true` links the archive into the output instead, which then needs no file beside it.
 
-`--static-tala-frontend-library` chooses the same for the Tala frontend. No construct of the language calls the frontend
-from a program yet, so nothing links it and `false` changes nothing; `true` is refused as not implemented yet.
-
-Both options concern every output the build links: executables today, and `staticlib`, `cdylib` and `talalib` when they
-are built. A build that links nothing, such as `--emit=metadata`, reads them without effect.
+The option concerns every output the build links: executables today, and `staticlib`, `cdylib` and `talalib` when they
+are built. A build that links nothing, such as `--emit=metadata`, reads it without effect. A program never links the Tala
+frontend: the frontend is part of the compiler, and only talac and tali load it.
 
 A library that carries TalaRT keeps it to itself. `--vipkg-type=staticlib --static-talart-library=true` will make a
 static library whose copy of TalaRT is isolated: its symbols are local to the library, so the library links beside TalaRT

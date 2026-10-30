@@ -47,7 +47,6 @@ namespace
         Test,
         Sysroot,
         StaticTalartLibrary,
-        StaticTalaFrontendLibrary,
         Count,
     };
 
@@ -187,12 +186,6 @@ namespace
           "true|false",
           "link TalaRT into the output instead of beside it",
           "false" },
-        { Option::StaticTalaFrontendLibrary,
-          "static-tala-frontend-library",
-          '\0',
-          "true|false",
-          "link the Tala frontend into the output statically",
-          "false" },
     } };
 
     template<typename Value>
@@ -260,7 +253,6 @@ namespace
         .llvmLto = LlvmLto::kNone,
         .sysroot = nullptr,
         .staticTalartLibrary = false,
-        .staticTalaFrontendLibrary = false,
     };
 
     template<typename Value, std::size_t Size>
@@ -530,13 +522,6 @@ namespace
                 if (const auto parsed = Boolean(value))
                 {
                     options.compiler.staticTalartLibrary = *parsed;
-                    return true;
-                }
-                return false;
-            case Option::StaticTalaFrontendLibrary:
-                if (const auto parsed = Boolean(value))
-                {
-                    options.compiler.staticTalaFrontendLibrary = *parsed;
                     return true;
                 }
                 return false;

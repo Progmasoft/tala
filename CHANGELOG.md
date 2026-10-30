@@ -23,8 +23,7 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   By default a program takes TalaRT from the shared library, which talac
   copies beside it and which it finds there through its run path or the
   Windows loader. `--static-talart-library=true` links the archive in
-  instead. `--static-tala-frontend-library` makes the same choice for the
-  Tala frontend; `true` is refused until a program can call the frontend.
+  instead.
 - A Windows executable defines `_fltused` itself, so code that uses floating
   point links without TalaRT's archive.
 

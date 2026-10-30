@@ -112,9 +112,6 @@ struct CompilerSettings
     /// that links: an executable today, and the library types when they
     /// are built.
     bool staticTalartLibrary;
-    /// Link the Tala frontend statically into what the build produces,
-    /// rather than from its shared library.
-    bool staticTalaFrontendLibrary;
 
     bool
     operator==(const CompilerSettings &) const = default;
