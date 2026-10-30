@@ -67,6 +67,9 @@ Names and values are case-sensitive.
 anything is built from Tala sources, and it cannot be written for a library type. An artifact input (`.core`, `.xpp`,
 `.xmm`, `.o`) already carries its entry, so `--entry` is rejected there.
 
+Another class of the program may have a `Main` as well; it is an ordinary method. That also holds in a test build, so a
+program is tested together with its own `Main`.
+
 A check is the exception. `--emit=metadata` builds nothing, so one source is checked as it stands, with or without a
 class that has `Main`:
 
