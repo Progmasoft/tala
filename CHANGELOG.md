@@ -60,6 +60,15 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   `tala_test_finish` (identities 14 to 16), and the runtime exports
   `tala_test_status`, which the process entry of a test build returns.
 
+### Optimization levels
+
+- `--opt-level=s` and `-Os` optimize without growing the code, and
+  `--opt-level=z` and `-Oz` make it as small as LLVM can. As in Clang, both
+  run the default pipeline over functions marked `optsize`, and `z` also
+  `minsize`.
+- `--opt-level=g` runs the optimizations of level `1`, which keep a program
+  easy to debug, as Clang's `-Og` does. It ran none before, like `0`.
+
 ## 0.1.0 - 2026-10-18
 
 ### The numbering starts again

@@ -50,7 +50,7 @@ Names and values are case-sensitive.
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
 | `--codegen-backend=` | `llvm` | `llvm` |
-| `--opt-level=`, `-O` | `0`, `1`, `2`, `3`, `g` | `2` |
+| `--opt-level=`, `-O` | `0`, `1`, `2`, `3`, `g`, `s`, `z` | `2` |
 | `--llvm-compiler=` | `aot`, `orc` | `aot` |
 | `--llvm-lto=` | `fat`, `thin`, `none` | `none` |
 | `--llvm-args=` | arguments for LLVM, separated by commas | none |
