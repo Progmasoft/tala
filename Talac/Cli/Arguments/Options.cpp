@@ -109,7 +109,7 @@ namespace
         { Option::OptLevel,
           "opt-level",
           'O',
-          "0|1|2|3|g",
+          "0|1|2|3|g|s|z",
           "optimization level",
           "2" },
         { Option::LlvmCompiler,
@@ -204,7 +204,8 @@ namespace
     constexpr std::array kOptLevelValues{
         Choice{ "0"sv, LlvmOptLevel::kO0 }, Choice{ "1"sv, LlvmOptLevel::kO1 },
         Choice{ "2"sv, LlvmOptLevel::kO2 }, Choice{ "3"sv, LlvmOptLevel::kO3 },
-        Choice{ "g"sv, LlvmOptLevel::kOg },
+        Choice{ "g"sv, LlvmOptLevel::kOg }, Choice{ "s"sv, LlvmOptLevel::kOs },
+        Choice{ "z"sv, LlvmOptLevel::kOz },
     };
     constexpr std::array kLlvmCompilerValues{
         Choice{ "aot"sv, LlvmCompiler::kAot },

@@ -95,14 +95,20 @@ namespace
         switch (settings.llvmOptLevel)
         {
             case LlvmOptLevel::kO0:
-            case LlvmOptLevel::kOg:
                 return Llvm::OptimizationLevel::Debug;
+            // As in Clang, g keeps the optimizations that leave a program
+            // easy to debug: those of level 1.
             case LlvmOptLevel::kO1:
+            case LlvmOptLevel::kOg:
                 return Llvm::OptimizationLevel::Less;
             case LlvmOptLevel::kO2:
                 return Llvm::OptimizationLevel::Default;
             case LlvmOptLevel::kO3:
                 return Llvm::OptimizationLevel::Aggressive;
+            case LlvmOptLevel::kOs:
+                return Llvm::OptimizationLevel::Size;
+            case LlvmOptLevel::kOz:
+                return Llvm::OptimizationLevel::MinimumSize;
         }
         return Llvm::OptimizationLevel::Default;
     }

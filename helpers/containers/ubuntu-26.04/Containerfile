@@ -41,8 +41,8 @@ RUN set -eu; \
         *) echo "no LLVM toolchain archive with libc++ for ${TARGETARCH} yet" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /tmp/llvm.tar.zst \
-        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-1/llvm-22.1.6-libcxx-ubuntu-26.04-x86_64.tar.zst"; \
-    echo "5e8a4c1f52b7d7eedf155b76bd057cec079e11daa66822d1f6af1109c551694b  /tmp/llvm.tar.zst" | sha256sum -c -; \
+        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-2/llvm-22.1.6-libcxx-ubuntu-26.04-x86_64.tar.zst"; \
+    echo "ed9bbc64f7230a2f5955b8b433559711ff3fe34499d8aba453425b56c69d4604  /tmp/llvm.tar.zst" | sha256sum -c -; \
     tar --zstd -xf /tmp/llvm.tar.zst -C /opt; \
     mv /opt/llvm-22.1.6-libcxx-ubuntu-26.04-x86_64 /opt/llvm-libcxx; \
     rm /tmp/llvm.tar.zst; \
