@@ -56,6 +56,11 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
                     return llvm::OptimizationLevel::O2;
                 case OptimizationLevel::Aggressive:
                     return llvm::OptimizationLevel::O3;
+                // LLVM has no size pipelines: the default one honors the
+                // size attributes 'Optimize' puts on each function.
+                case OptimizationLevel::Size:
+                case OptimizationLevel::MinimumSize:
+                    return llvm::OptimizationLevel::O2;
             }
             return llvm::OptimizationLevel::O2;
         }
@@ -69,7 +74,11 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
                     return llvm::CodeGenOptLevel::None;
                 case OptimizationLevel::Less:
                     return llvm::CodeGenOptLevel::Less;
+                // Code generation has no size levels; Clang generates
+                // code for -Os and -Oz at the default level too.
                 case OptimizationLevel::Default:
+                case OptimizationLevel::Size:
+                case OptimizationLevel::MinimumSize:
                     return llvm::CodeGenOptLevel::Default;
                 case OptimizationLevel::Aggressive:
                     return llvm::CodeGenOptLevel::Aggressive;
@@ -113,6 +122,18 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
                                          functionAnalyses,
                                          cgsccAnalyses,
                                          moduleAnalyses);
+        // Optimizing for size is a property of each function, as Clang
+        // gives it for -Os and -Oz.
+        if (level == OptimizationLevel::Size
+            || level == OptimizationLevel::MinimumSize)
+            for (auto &function : module)
+            {
+                if (function.isDeclaration())
+                    continue;
+                function.addFnAttr(llvm::Attribute::OptimizeForSize);
+                if (level == OptimizationLevel::MinimumSize)
+                    function.addFnAttr(llvm::Attribute::MinSize);
+            }
         auto pipeline = passBuilder.buildPerModuleDefaultPipeline(
             PassOptimizationLevel(level));
         pipeline.run(module, moduleAnalyses);

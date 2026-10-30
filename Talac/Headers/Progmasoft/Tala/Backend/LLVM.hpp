@@ -24,10 +24,12 @@ namespace Progmasoft::Tala::Backend::LLVM
     /// Requested optimization effort passed to LLVM's target pipeline.
     enum class OptimizationLevel : std::uint8_t
     {
-        Debug,     ///< Prioritize debuggability and compilation speed.
-        Less,      ///< Apply a small set of inexpensive optimizations.
-        Default,   ///< Use LLVM's balanced optimization pipeline.
-        Aggressive ///< Apply the target's strongest supported optimizations.
+        Debug,      ///< Prioritize debuggability and compilation speed.
+        Less,       ///< Apply a small set of inexpensive optimizations.
+        Default,    ///< Use LLVM's balanced optimization pipeline.
+        Aggressive, ///< Apply the target's strongest supported optimizations.
+        Size,       ///< Optimize like Default without growing the code.
+        MinimumSize ///< Make the code as small as LLVM can.
     };
 
     /// Native machine-code artifact kinds requested from the backend.
