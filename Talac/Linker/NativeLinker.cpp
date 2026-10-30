@@ -407,8 +407,19 @@ namespace Progmasoft::Tala::Driver
         // from a library that is not called. When the library is not
         // installed, such a program still links; any other fails at an
         // unresolved runtime symbol, which the diagnostic below explains.
-        const auto runtime
-            = RuntimeLocation(target, host, request.sharedRuntime);
+        auto runtime = RuntimeLocation(target, host, request.sharedRuntime);
+        // An installation without the shared library, such as a sanitizer
+        // build of the compiler, has the archive, and a program links with
+        // that.
+        if (request.sharedRuntime && !IsFile(runtime))
+        {
+            auto archive = RuntimeLocation(target, host, false);
+            if (IsFile(archive))
+            {
+                runtime = std::move(archive);
+                planRequest.sharedRuntime = false;
+            }
+        }
         if (IsFile(runtime))
             planRequest.runtimeLibrary = runtime;
         // The plan is made once without the import library to learn the
@@ -434,7 +445,7 @@ namespace Progmasoft::Tala::Driver
             std::string importDiagnostic;
             const auto imports = WriteSystemImports(
                 request.outputPath,
-                request.sharedRuntime ? kRuntimeImports : kSystemImports,
+                planRequest.sharedRuntime ? kRuntimeImports : kSystemImports,
                 planned.plan->program,
                 planned.plan->machine,
                 scratch,

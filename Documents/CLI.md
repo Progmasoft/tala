@@ -106,6 +106,7 @@ TalaRT, the Tala runtime, has a shared library and an archive. By default what a
 links takes TalaRT from the shared library: talac copies it beside the output, a Windows executable imports it from there,
 and a Linux, macOS or BSD executable finds it there through its run path (`$ORIGIN`, `@executable_path`), so the two move
 together. `--static-talart-library=true` links the archive into the output instead, which then needs no file beside it.
+An installation that has only the archive links the archive either way.
 
 The option concerns every output the build links: executables today, and `staticlib`, `cdylib` and `talalib` when they
 are built. A build that links nothing, such as `--emit=metadata`, reads it without effect. A program never links the Tala
