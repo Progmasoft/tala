@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstdlib>
 #include <filesystem>
+#include <llvm/ADT/SmallString.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>
@@ -41,10 +42,9 @@ namespace
 
         Directory()
         {
-            std::error_code error;
-            path = std::filesystem::temp_directory_path(error)
-                   / ("talac-lld-" + std::to_string(std::rand()));
-            std::filesystem::create_directories(path, error);
+            llvm::SmallString<128> created;
+            if (!llvm::sys::fs::createUniqueDirectory("talac-lld", created))
+                path = created.str().str();
         }
         Directory(const Directory &) = delete;
         Directory(Directory &&) = delete;
