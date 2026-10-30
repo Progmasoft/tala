@@ -10,8 +10,10 @@ name: LLVM with libc++
 # so code built with libc++ has to link an LLVM built with libc++ as well.
 #
 # Each distribution gets its own build against its own libc++ and C library.
-# Only what the backend needs is installed: llvm-config, the headers, the
-# static libraries for the host target and the CMake exports. A pull request
+# Only what the compiler needs is installed: llvm-config, the headers, the
+# static libraries for the host target and the CMake exports of LLVM, and
+# the headers and static libraries of LLD's COFF, ELF and Mach-O linkers,
+# which talac links in to link executables itself. A pull request
 # that changes this file builds both archives without publishing them; a run
 # started by hand on main publishes them under a new, immutable tag, and the
 # Linux jobs check the SHA-256 digests recorded in the repository.
@@ -34,7 +36,7 @@ env:
   LLVM_SOURCE_SHA256: 6e0b376a1f6d9873e7dfb09ae6e04b9c7024400f01733fa4c29be69d5c138bc2
   # Raised when the same LLVM version is built again with other settings;
   # a published tag is never replaced.
-  TOOLCHAIN_REVISION: 1
+  TOOLCHAIN_REVISION: 2
 
 jobs:
   build:
@@ -92,7 +94,7 @@ jobs:
             -DLLVM_USE_LINKER=lld \
             -DLLVM_ENABLE_LIBCXX=ON \
             -DLLVM_TARGETS_TO_BUILD=host \
-            -DLLVM_ENABLE_PROJECTS= \
+            -DLLVM_ENABLE_PROJECTS=lld \
             -DLLVM_ENABLE_RUNTIMES= \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_ENABLE_ASSERTIONS=OFF \
@@ -104,7 +106,7 @@ jobs:
             -DLLVM_INCLUDE_BENCHMARKS=OFF \
             -DLLVM_INCLUDE_EXAMPLES=OFF \
             -DLLVM_INCLUDE_DOCS=OFF \
-            -DLLVM_DISTRIBUTION_COMPONENTS="llvm-config;llvm-headers;llvm-libraries;cmake-exports"
+            -DLLVM_DISTRIBUTION_COMPONENTS="llvm-config;llvm-headers;llvm-libraries;cmake-exports;lld-headers;lldCommon;lldCOFF;lldELF;lldMachO"
           cmake --build build --target install-distribution
 
       - name: Check that the libraries use libc++
@@ -123,6 +125,11 @@ jobs:
             echo "::error::libLLVMSupport.a references libstdc++ types"
             exit 1
           fi
+          # The linkers talac links in, and their headers.
+          for library in lldCommon lldCOFF lldELF lldMachO; do
+            test -f "$("$config" --libdir)/lib$library.a"
+          done
+          test -f "$("$config" --includedir)/lld/Common/Driver.h"
 
       - name: Package the toolchain
         shell: bash
@@ -169,7 +176,8 @@ jobs:
           {
             echo "LLVM ${LLVM_VERSION} built with libc++ for the Linux hosts of Tala's compiler."
             echo
-            echo "Only llvm-config, the headers, the static libraries for x86-64 and the CMake exports are included."
+            echo "Only llvm-config, the headers, the static libraries for x86-64 and the CMake exports are included,"
+            echo "with the headers and static libraries of LLD's COFF, ELF and Mach-O linkers."
             echo "These archives are build inputs for contributors, not a Tala release."
             echo
             echo '```'
