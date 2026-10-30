@@ -165,7 +165,13 @@ namespace Progmasoft::Tala::Driver
             }
             if (!wellFormed || words.empty())
                 continue;
-            auto program = std::filesystem::path(words.front()).stem().string();
+            // The name of the program, on whichever host wrote the path.
+            std::string_view program = words.front();
+            if (const auto slash = program.find_last_of("/\\");
+                slash != std::string_view::npos)
+                program.remove_prefix(slash + 1U);
+            if (program.ends_with(".exe"))
+                program.remove_suffix(4U);
             if (program == "ld" || program == "ld.lld" || program == "ld64.lld"
                 || program == "ld64" || program == "ld.bfd"
                 || program == "ld.gold")

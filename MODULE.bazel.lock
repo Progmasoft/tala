@@ -179,7 +179,7 @@
   "moduleExtensions": {
     "//Talac/Build/Bazel:llvm.bzl%llvm": {
       "general": {
-        "bzlTransitiveDigest": "Z9vZkwPOK1+Mf6bh3K0MdcMjvFl294LSBpQZKDjLItM=",
+        "bzlTransitiveDigest": "pXjfxANmpVqVW75gxVWeJf+0IhcHlXqxxjnrzDnojzI=",
         "usagesDigest": "O/jeFWGvuHqLFMYOMQcKWaWbSTSNRerFOnpKxqeK+Hw=",
         "recordedInputs": [],
         "generatedRepoSpecs": {

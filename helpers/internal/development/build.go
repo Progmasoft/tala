@@ -84,7 +84,8 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 	arguments = append(arguments, "//Talac/Cli:talac")
 	arguments = append(arguments, "//Interactive:tali")
 	arguments = append(arguments, nativeTargets...)
-	for _, library := range runtimeLibraries {
+	libraries := runtimeLibrariesOf(config)
+	for _, library := range libraries {
 		arguments = append(arguments, library.target)
 	}
 	arguments = append(arguments, extra...)
@@ -95,7 +96,7 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 	if err := stageFrontendForBuildOutputs(repository, frontendLibrary); err != nil {
 		return err
 	}
-	return stageRuntimeForBuildOutputs(repository)
+	return stageRuntimeForBuildOutputs(repository, libraries)
 }
 
 // TalaRT, which a native executable is linked with: the archive, which
@@ -137,6 +138,18 @@ func runtimeLibrariesFor(goos string) []runtimeLibrary {
 	return []runtimeLibrary{{name, target, output}, {sharedName, sharedTarget, sharedOutput}}
 }
 
+// runtimeLibrariesOf gives what a build configuration makes of TalaRT. A
+// configuration such as a sanitizer's adds its link options to every program
+// it links, and TalaRT is deliberately not instrumented: the programs it
+// serves are not sanitizer builds. Such a build makes the archive alone, and
+// the compiler links the archive where no shared library is installed.
+func runtimeLibrariesOf(config string) []runtimeLibrary {
+	if config != "" {
+		return runtimeLibraries[:1]
+	}
+	return runtimeLibraries
+}
+
 // built is where Bazel leaves a runtime library.
 func (library runtimeLibrary) built(repository string) string {
 	return filepath.Join(repository, "bazel-bin", filepath.FromSlash(library.output))
@@ -145,9 +158,9 @@ func (library runtimeLibrary) built(repository string) string {
 // stageRuntimeForBuildOutputs puts the runtime library beside every program
 // that may link a native executable: the compiler, and the suites that drive
 // it in their own process.
-func stageRuntimeForBuildOutputs(repository string) error {
+func stageRuntimeForBuildOutputs(repository string, libraries []runtimeLibrary) error {
 	executablePaths := append([]string{"Talac/Cli/talac", "Interactive/tali"}, nativePrograms...)
-	for _, library := range runtimeLibraries {
+	for _, library := range libraries {
 		built := library.built(repository)
 		if _, err := os.Stat(built); err != nil {
 			return fmt.Errorf("Bazel did not produce %s: %w", library.name, err)
