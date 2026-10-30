@@ -357,7 +357,10 @@ namespace
         const Progmasoft::Tala::Driver::NativeLinkRequest request{
             executable,
             options.inputs,
-            hostFormat
+            hostFormat,
+            options.sysroot
+                ? std::optional{ std::filesystem::path(*options.sysroot) }
+                : std::nullopt
         };
         const auto linked
             = Progmasoft::Tala::Driver::LinkNativeExecutable(request);
@@ -374,6 +377,16 @@ namespace
         return 0;
     }
 
+    /// The settings the pipeline reads, with the system root of the
+    /// command line, which they point into.
+    [[nodiscard]] CompilerSettings
+    Settings(const CliOptions &options)
+    {
+        auto settings = options.compiler;
+        settings.sysroot = options.sysroot ? options.sysroot->c_str() : nullptr;
+        return settings;
+    }
+
     [[nodiscard]] int
     CompileSources(const CliOptions &options)
     {
@@ -386,6 +399,7 @@ namespace
         if (options.output == BuildOutput::kCore)
             return WriteCore(OutputPath(first, ".core"), core.bytes) ? 0 : 1;
         const auto sourceText = PathText(first);
+        const auto settings = Settings(options);
         // Every source crosses the same verified Core consumer as a `.core`
         // input does, so the two cannot drift into separate validation paths.
         return ProcessCoreBytesAs(core.bytes,
@@ -393,7 +407,7 @@ namespace
                                   sourceText.c_str(),
                                   Action(options),
                                   PipelineOutput(options),
-                                  &options.compiler,
+                                  &settings,
                                   options.target ? options.target->c_str()
                                                  : nullptr)
                    ? 0
@@ -412,26 +426,27 @@ namespace
         }
         const auto fileText = PathText(options.inputs.front());
         const char *target = options.target ? options.target->c_str() : nullptr;
+        const auto settings = Settings(options);
         bool built{};
         if (options.input == BuildInput::kCore)
             built = ProcessCoreArtifact(fileText.c_str(),
                                         Action(options),
                                         PipelineOutput(options),
-                                        &options.compiler,
+                                        &settings,
                                         target);
         else if (options.input == BuildInput::kXpp)
             built = ProcessXppArtifactAs(fileText.c_str(),
                                          fileText.c_str(),
                                          Action(options),
                                          PipelineOutput(options),
-                                         &options.compiler,
+                                         &settings,
                                          target);
         else
             built = ProcessXmmArtifactAs(fileText.c_str(),
                                          fileText.c_str(),
                                          Action(options),
                                          PipelineOutput(options),
-                                         &options.compiler,
+                                         &settings,
                                          target);
         return built ? 0 : 1;
     }
@@ -442,6 +457,15 @@ namespace
         if (const auto missing = Unimplemented(options))
         {
             fmt::print(stderr, "talac: {} is not implemented yet\n", *missing);
+            return kUsageError;
+        }
+        // Refused before anything is compiled: the target, not the host,
+        // decides whether a system root means anything.
+        if (options.sysroot && TargetSystem(options.target) == "Windows")
+        {
+            fmt::print(stderr,
+                       "talac: --sysroot has nothing to name for a Windows "
+                       "target, whose executables link no system library\n");
             return kUsageError;
         }
         const auto extension = InputExtension(options.input);
