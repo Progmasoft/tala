@@ -69,9 +69,10 @@ type WireFormat struct {
 
 // NativeLinking is how an executable is linked on one platform.
 type NativeLinking struct {
-	Linker         string              `json:"linker"`
-	RuntimeLibrary string              `json:"runtime_library"`
-	SystemImports  map[string][]string `json:"system_imports,omitempty"`
+	Linker               string              `json:"linker"`
+	RuntimeLibrary       string              `json:"runtime_library"`
+	SharedRuntimeLibrary string              `json:"shared_runtime_library"`
+	SystemImports        map[string][]string `json:"system_imports,omitempty"`
 }
 
 // Path is where the manifest lives in the repository.
@@ -417,6 +418,22 @@ func Verify(repository string) ([]string, error) {
 		if !strings.Contains(linker, `kWindowsRuntimeLibrary = "`+windows.RuntimeLibrary+`"`) {
 			source.problems = append(source.problems, "the Windows runtime library "+windows.RuntimeLibrary+" is not what the native linker looks for")
 		}
+		if !strings.Contains(linker, `kWindowsSharedRuntime = "`+windows.SharedRuntimeLibrary+`"`) {
+			source.problems = append(source.problems, "the Windows shared runtime library "+windows.SharedRuntimeLibrary+" is not what the native linker looks for")
+		}
+		// What an executable imports from the shared library is the C ABI
+		// of the runtime and the memory functions generated code calls; the
+		// DLL exports the same.
+		runtimeImports := between(linker, "std::string_view kRuntimeImports", ";")
+		if !strings.Contains(runtimeImports, "LIBRARY "+windows.SharedRuntimeLibrary+`\n`) {
+			source.problems = append(source.problems, "the import library of the shared runtime does not name "+windows.SharedRuntimeLibrary)
+		}
+		var imported []string
+		for _, match := range regexp.MustCompile(`"\s+([A-Za-z0-9_]+)\\n"`).FindAllStringSubmatch(runtimeImports, -1) {
+			imported = append(imported, match[1])
+		}
+		wanted := append(append(append([]string(nil), ownership.Symbols...), text.Symbols...), "memcpy", "memmove", "memset")
+		source.sameSet("functions imported from "+windows.SharedRuntimeLibrary, wanted, imported)
 		imports := between(linker, "kSystemImports = ", ";")
 		library := regexp.MustCompile(`LIBRARY ([A-Za-z0-9_.]+)`).FindStringSubmatch(imports)
 		var names []string
@@ -434,6 +451,7 @@ func Verify(repository string) ([]string, error) {
 	// Linux and macOS share one branch of the linker: the C compiler of the
 	// system as the driver, and one name for the runtime library.
 	driver := regexp.MustCompile(`kLinkerDriver = "([A-Za-z0-9_+-]+)"`).FindStringSubmatch(linker)
+	shared := map[string]string{"linux": "kElfSharedRuntime", "macos": "kMachOSharedRuntime"}
 	library := regexp.MustCompile(`kRuntimeLibraryName = "([A-Za-z0-9_.+-]+)"`).FindStringSubmatch(linker)
 	for _, platform := range []string{"linux", "macos"} {
 		stated, linked := executable.NativeLinking[platform]
@@ -448,6 +466,9 @@ func Verify(repository string) ([]string, error) {
 			}
 			if stated.RuntimeLibrary != library[1] {
 				source.differ("runtime library on "+platform, stated.RuntimeLibrary, library[1])
+			}
+			if !strings.Contains(linker, shared[platform]+` = "`+stated.SharedRuntimeLibrary+`"`) {
+				source.problems = append(source.problems, "the shared runtime library "+stated.SharedRuntimeLibrary+" on "+platform+" is not what the native linker looks for")
 			}
 			if len(stated.SystemImports) != 0 {
 				source.problems = append(source.problems, "system imports are stated for "+platform+", where the C library is linked whole and none are listed")

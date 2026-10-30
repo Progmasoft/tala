@@ -45,7 +45,9 @@ Names and values are case-sensitive.
 | `--entry=` | a namespace-qualified class, `Namespace.Program` | none |
 | `--standard=` | `26` | `26` |
 | `--target=`, `-t` | an LLVM target triple | the target of the host |
-| `--sysroot=` | the system root an executable is linked against | the linker's |
+| `--sysroot=` | the system root of the target, for what the build links | the linker's |
+| `--static-talart-library=` | `true`, `false`: link TalaRT into the output instead of beside it | `false` |
+| `--static-tala-frontend-library=` | `true`, `false`: link the Tala frontend into the output statically | `false` |
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
 | `--codegen-backend=` | `llvm` | `llvm` |
@@ -81,16 +83,16 @@ Several sources are one program, and a program is lowered from its entry, so a c
 
 The target, not the host, decides how an executable is linked:
 
-| Target | Linker | Tala runtime |
-| --- | --- | --- |
-| Windows (`x86_64`, `aarch64`) | `lld-link`, on every host | `tala-runtime.lib` |
-| the host's own system, architecture and C library | `cc`, the C compiler of the host | `libtala-runtime.a` |
-| another Linux, macOS or BSD target | `clang --target=<triple> -fuse-ld=lld` | `libtala-runtime.a` |
+| Target | Linker | TalaRT, shared | TalaRT, archive |
+| --- | --- | --- | --- |
+| Windows (`x86_64`, `aarch64`) | `lld-link`, on every host | `talart.dll` | `talart.lib` |
+| the host's own system, architecture and C library | `cc`, the C compiler of the host | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
+| another Linux, macOS or BSD target | `clang --target=<triple> -fuse-ld=lld` | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
 
-The runtime of the host stands beside talac. The runtime of another target stands in `runtimes/<triple>/` beside it, under
-the normalized triple, for example `runtimes/aarch64-unknown-linux-gnu/libtala-runtime.a`; a program that calls nothing of
-the runtime links without it. A Windows executable needs nothing else: it imports only kernel32, through an import library
-talac writes for the target's machine. A Linux, macOS or BSD target also needs its C library, which `--sysroot` names.
+TalaRT of the host stands beside talac. TalaRT of another target stands in `runtimes/<triple>/` beside it, under the
+normalized triple, for example `runtimes/aarch64-unknown-linux-gnu/libtalart.so`; a program that calls nothing of TalaRT
+links without it. A Windows executable needs nothing else: it imports kernel32, or TalaRT, through an import library talac
+writes for the target's machine. A Linux, macOS or BSD target also needs its C library, which `--sysroot` names.
 
 ```text
 talac Program.tala --entry=Demo.Program --target=x86_64-pc-windows-msvc
@@ -99,13 +101,32 @@ talac Program.tala --entry=Demo.Program --target=aarch64-unknown-linux-gnu --sys
 
 `lld-link`, `cc` and `clang` are found on `PATH`.
 
+### TalaRT and the Tala frontend
+
+TalaRT, the Tala runtime, has a shared library and an archive, and so does the Tala frontend. By default what a build
+links takes TalaRT from the shared library: talac copies it beside the output, a Windows executable imports it from there,
+and a Linux, macOS or BSD executable finds it there through its run path (`$ORIGIN`, `@executable_path`), so the two move
+together. `--static-talart-library=true` links the archive into the output instead, which then needs no file beside it.
+
+`--static-tala-frontend-library` chooses the same for the Tala frontend. No construct of the language calls the frontend
+from a program yet, so nothing links it and `false` changes nothing; `true` is refused as not implemented yet.
+
+Both options concern every output the build links: executables today, and `staticlib`, `cdylib` and `talalib` when they
+are built. A build that links nothing, such as `--emit=metadata`, reads them without effect.
+
+A library that carries TalaRT keeps it to itself. `--vipkg-type=staticlib --static-talart-library=true` will make a
+static library whose copy of TalaRT is isolated: its symbols are local to the library, so the library links beside TalaRT
+or beside another such library without a clash, and each copy keeps its own state. A `cdylib` with TalaRT's archive exports
+only its own C interface. Without `--static-talart-library=true`, a library refers to the one shared TalaRT and needs no
+isolation.
+
 ### System root
 
 `--sysroot=<path>` hands the linker driver a system root: the directory that holds the C library, its start-up objects
 and, for macOS, the SDK of the target. It is written as `--sysroot=<path>` on the command line of `cc`, which clang and GCC
-both read. Talac reads it only when it links, so it needs `--emit=executable`, and the path must be a directory. A Windows
-executable links no system library, only the Tala runtime and an import library Talac writes for the kernel32 functions it
-uses, so `--sysroot` is refused when the target is Windows, whichever host talac runs on.
+both read. It concerns whatever the build links; a build that links nothing reads it without effect. The path must be a
+directory. A Windows output links no system library, only TalaRT and an import library talac writes, so `--sysroot` is
+refused when the target is Windows, whichever host talac runs on.
 
 ```text
 talac Program.tala --entry=Demo.Program --sysroot=/opt/sysroots/ubuntu-26.04-arm64

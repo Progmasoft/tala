@@ -83,8 +83,8 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 	arguments = append(arguments, "//Talac/Cli:talac")
 	arguments = append(arguments, "//Interactive:tali")
 	arguments = append(arguments, nativeTargets...)
-	if runtimeLibraryTarget != "" {
-		arguments = append(arguments, runtimeLibraryTarget)
+	for _, library := range runtimeLibraries {
+		arguments = append(arguments, library.target)
 	}
 	arguments = append(arguments, extra...)
 	fmt.Printf("Building compiler and %d native suites...\n", len(nativeTargets))
@@ -97,42 +97,65 @@ func buildTargets(repository string, runner commandRunner, config string, extra 
 	return stageRuntimeForBuildOutputs(repository)
 }
 
-// The runtime library a native executable is linked with. The compiler looks
-// for it beside its own executable under the name it is installed by. On
-// Windows an executable carries no C runtime and the library is built for
-// that; on Linux and macOS it is linked with the C library of the system.
-var runtimeLibraryName, runtimeLibraryTarget, runtimeLibraryOutput = runtimeLibraryFor(runtime.GOOS)
-
-// runtimeLibraryFor names, for a host, the file the compiler looks for, the
-// Bazel target that builds it, and where Bazel leaves it below bazel-bin.
-func runtimeLibraryFor(goos string) (name string, target string, output string) {
-	if goos == "windows" {
-		return "tala-runtime.lib", "//Talac/Runtime/Freestanding:tala_runtime", "Talac/Runtime/Freestanding/tala_runtime.lib"
-	}
-	return "libtala-runtime.a", "//Talac/Runtime/Hosted:tala_runtime", "Talac/Runtime/Hosted/libtala_runtime.a"
+// TalaRT, which a native executable is linked with: the archive, which
+// --static-talart-library=true links into it, and the shared library, which
+// it is linked against by default and which is copied beside it. The
+// compiler looks for both beside its own executable under the names they are
+// installed by. On Windows an executable carries no C runtime and TalaRT is
+// built for that; on Linux and macOS it is linked with the C library of the
+// system.
+type runtimeLibrary struct {
+	name, target, output string
 }
 
-// builtRuntimeLibrary is where Bazel leaves the archive of runtimeLibraryTarget.
-func builtRuntimeLibrary(repository string) string {
-	return filepath.Join(repository, "bazel-bin", filepath.FromSlash(runtimeLibraryOutput))
+var runtimeLibraries = runtimeLibrariesFor(runtime.GOOS)
+
+// runtimeLibraryFor names, for a host, the archive the compiler looks for,
+// the Bazel target that builds it, and where Bazel leaves it below bazel-bin.
+func runtimeLibraryFor(goos string) (name string, target string, output string) {
+	if goos == "windows" {
+		return "talart.lib", "//Talac/Runtime/Freestanding:tala_runtime", "Talac/Runtime/Freestanding/tala_runtime.lib"
+	}
+	return "libtalart.a", "//Talac/Runtime/Hosted:tala_runtime", "Talac/Runtime/Hosted/libtala_runtime.a"
+}
+
+// sharedRuntimeLibraryFor names the same for the shared library of TalaRT.
+func sharedRuntimeLibraryFor(goos string) (name string, target string, output string) {
+	switch goos {
+	case "windows":
+		return "talart.dll", "//Talac/Runtime/Shared:talart.dll", "Talac/Runtime/Shared/talart.dll"
+	case "darwin":
+		return "libtalart.dylib", "//Talac/Runtime/Shared:libtalart.dylib", "Talac/Runtime/Shared/libtalart.dylib"
+	}
+	return "libtalart.so", "//Talac/Runtime/Shared:libtalart.so", "Talac/Runtime/Shared/libtalart.so"
+}
+
+func runtimeLibrariesFor(goos string) []runtimeLibrary {
+	name, target, output := runtimeLibraryFor(goos)
+	sharedName, sharedTarget, sharedOutput := sharedRuntimeLibraryFor(goos)
+	return []runtimeLibrary{{name, target, output}, {sharedName, sharedTarget, sharedOutput}}
+}
+
+// built is where Bazel leaves a runtime library.
+func (library runtimeLibrary) built(repository string) string {
+	return filepath.Join(repository, "bazel-bin", filepath.FromSlash(library.output))
 }
 
 // stageRuntimeForBuildOutputs puts the runtime library beside every program
 // that may link a native executable: the compiler, and the suites that drive
 // it in their own process.
 func stageRuntimeForBuildOutputs(repository string) error {
-	if runtimeLibraryTarget == "" {
-		return nil
-	}
-	library := builtRuntimeLibrary(repository)
-	if _, err := os.Stat(library); err != nil {
-		return fmt.Errorf("Bazel did not produce the runtime library: %w", err)
-	}
 	executablePaths := append([]string{"Talac/Cli/talac", "Interactive/tali"}, nativePrograms...)
-	for _, relative := range executablePaths {
-		directory := filepath.Dir(filepath.Join(repository, "bazel-bin", filepath.FromSlash(relative)))
-		if err := copyFile(library, filepath.Join(directory, runtimeLibraryName), 0o644); err != nil {
-			return fmt.Errorf("cannot stage the runtime library beside %s: %w", relative, err)
+	for _, library := range runtimeLibraries {
+		built := library.built(repository)
+		if _, err := os.Stat(built); err != nil {
+			return fmt.Errorf("Bazel did not produce %s: %w", library.name, err)
+		}
+		for _, relative := range executablePaths {
+			directory := filepath.Dir(filepath.Join(repository, "bazel-bin", filepath.FromSlash(relative)))
+			if err := copyFile(built, filepath.Join(directory, library.name), 0o755); err != nil {
+				return fmt.Errorf("cannot stage %s beside %s: %w", library.name, relative, err)
+			}
 		}
 	}
 	return nil

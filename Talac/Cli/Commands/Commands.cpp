@@ -246,6 +246,10 @@ namespace
             return "--llvm-lto other than none";
         if (!options.llvmArguments.empty())
             return "--llvm-args";
+        // No construct of the language calls the frontend from a program
+        // yet, so there is nothing to link it into an executable for.
+        if (options.compiler.staticTalaFrontendLibrary)
+            return "--static-tala-frontend-library=true";
         if (options.input == BuildInput::kLlvmIr
             || options.input == BuildInput::kLlvmBitcode)
             return "--build=llvm-ir and --build=llvm-bitcode";
@@ -352,7 +356,8 @@ namespace
             options.sysroot
                 ? std::optional{ std::filesystem::path(*options.sysroot) }
                 : std::nullopt,
-            options.target.value_or(std::string())
+            options.target.value_or(std::string()),
+            !options.compiler.staticTalartLibrary
         };
         const auto linked
             = Progmasoft::Tala::Driver::LinkNativeExecutable(request);

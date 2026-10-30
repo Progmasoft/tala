@@ -127,7 +127,8 @@
     "native_linking": {
       "windows": {
         "linker": "lld-link",
-        "runtime_library": "tala-runtime.lib",
+        "runtime_library": "talart.lib",
+        "shared_runtime_library": "talart.dll",
         "system_imports": {
           "KERNEL32.dll": [
             "GetConsoleMode",
@@ -142,11 +143,13 @@
       },
       "linux": {
         "linker": "cc",
-        "runtime_library": "libtala-runtime.a"
+        "runtime_library": "libtalart.a",
+        "shared_runtime_library": "libtalart.so"
       },
       "macos": {
         "linker": "cc",
-        "runtime_library": "libtala-runtime.a"
+        "runtime_library": "libtalart.a",
+        "shared_runtime_library": "libtalart.dylib"
       }
     }
   }

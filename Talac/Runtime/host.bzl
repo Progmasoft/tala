@@ -19,7 +19,7 @@ RUNTIME_HOST_DEPS = [
     "//Talac/Runtime/Text:text",
 ]
 
-_ENTRY_POINTS = [
+RUNTIME_ENTRY_POINTS = [
     "tala_aarc_abi_version",
     "tala_aarc_allocate",
     "tala_aarc_copy_unowned",
@@ -54,7 +54,7 @@ _ENTRY_POINTS = [
 ]
 
 RUNTIME_HOST_LINKOPTS = select({
-    "@platforms//os:windows": ["/EXPORT:" + name for name in _ENTRY_POINTS],
+    "@platforms//os:windows": ["/EXPORT:" + name for name in RUNTIME_ENTRY_POINTS],
     "@platforms//os:macos": [],
     "//conditions:default": ["-rdynamic"],
 })

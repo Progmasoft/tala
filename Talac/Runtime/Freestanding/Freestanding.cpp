@@ -39,9 +39,12 @@ extern "C"
     HeapFree(void *heap, unsigned long flags, void *block);
 
     // The linker looks for this symbol in any program that uses
-    // floating-point arithmetic; a C runtime defines it.
+    // floating-point arithmetic; a C runtime defines it. The process entry of
+    // every executable defines it too, because an executable that takes
+    // TalaRT from talart.dll carries none of this file; any one of the
+    // definitions may be kept.
     // NOLINTNEXTLINE(bugprone-reserved-identifier,cppcoreguidelines-avoid-non-const-global-variables)
-    int _fltused = 0x9875;
+    __declspec(selectany) int _fltused = 0x9875;
 
     // The compiler may turn a loop or an initialization into a call of
     // these, and each is told not to turn its own loop into a call of

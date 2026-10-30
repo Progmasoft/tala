@@ -15,10 +15,18 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   -fuse-ld=lld`; the host's own target with `cc` as before. The runtime of
   another target is looked up in `runtimes/<triple>/` beside talac.
 
-- `--sysroot=<path>` names the system root the linker driver links an
-  executable against on Linux, macOS and the BSDs. It needs
-  `--emit=executable` and a directory. A Windows target links no system
-  library and refuses it, whatever the host.
+- `--sysroot=<path>` names the system root the linker driver links against
+  on Linux, macOS and the BSDs; it must be a directory. A Windows target
+  links no system library and refuses it, whatever the host.
+- The Tala runtime is TalaRT: `talart.lib` and `libtalart.a` as archives,
+  `talart.dll`, `libtalart.so` and `libtalart.dylib` as shared libraries.
+  By default a program takes TalaRT from the shared library, which talac
+  copies beside it and which it finds there through its run path or the
+  Windows loader. `--static-talart-library=true` links the archive in
+  instead. `--static-tala-frontend-library` makes the same choice for the
+  Tala frontend; `true` is refused until a program can call the frontend.
+- A Windows executable defines `_fltused` itself, so code that uses floating
+  point links without TalaRT's archive.
 
 ### Tests
 

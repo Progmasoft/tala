@@ -20,6 +20,7 @@ cc_library(
         "/Zl",
         "/Gs1048576",
     ],
+    alwayslink = True,
     linkstatic = True,
     target_compatible_with = ["@platforms//os:windows"],
     textual_hdrs = [
