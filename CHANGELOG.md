@@ -21,11 +21,10 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
   only shared libraries; `LLD_ROOT` names them where they are not beside
   LLVM.
 
-- An executable is linked for its target rather than for the host: Windows
-  executables with `lld-link` from any host, for the machine of the target;
-  another Linux, macOS or BSD target with `clang --target=<triple>
-  -fuse-ld=lld`; the host's own target with `cc` as before. The runtime of
-  another target is looked up in `runtimes/<triple>/` beside talac.
+- An executable is linked for its target rather than for the host: a Windows
+  executable for the machine of the target from any host, and another Linux,
+  macOS or BSD target through `clang --target=<triple>`. The runtime of another
+  target is looked up in `runtimes/<triple>/` beside talac.
 
 - `--sysroot=<path>` names the system root the linker driver links against
   on Linux, macOS and the BSDs; it must be a directory. A Windows target
