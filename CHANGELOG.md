@@ -9,6 +9,16 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Linking
 
+- LLD's COFF, ELF and Mach-O linkers are linked into talac, which links
+  executables itself. A Windows executable needs nothing from the host, and
+  its import libraries are written by LLVM. For Linux, macOS and the BSDs
+  talac takes the command line of the linker from `clang -###`, which knows
+  where the target's C library is, and runs it with LLD; without `clang`, a
+  target of the host is linked by `cc` as before. Building talac needs LLD's
+  libraries and headers: the LLVM release for Windows has them, Homebrew has
+  the `lld` formula (found through `LLD_ROOT` or `brew --prefix lld`), and
+  the Linux toolchain carries them from revision 2.
+
 - An executable is linked for its target rather than for the host: Windows
   executables with `lld-link` from any host, for the machine of the target;
   another Linux, macOS or BSD target with `clang --target=<triple>

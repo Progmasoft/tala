@@ -202,6 +202,9 @@ jobs:
           llvm_root="$(brew --prefix llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
+          # LLD, which talac links in, is a formula of its own.
+          brew list lld >/dev/null 2>&1 || brew install lld
+          echo "LLD_ROOT=$(brew --prefix lld)" >> "$GITHUB_ENV"
 
       - name: Install GHC and Cabal
         uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3

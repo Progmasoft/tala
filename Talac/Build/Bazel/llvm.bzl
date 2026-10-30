@@ -1,4 +1,28 @@
-"""Discovers an installed LLVM development tree for the C++20 backend."""
+"""Discovers an installed LLVM development tree for the C++20 backend and LLD."""
+
+# The components of LLVM that LLD's COFF, ELF and Mach-O linkers use, beside
+# those of the backend. They are linked into talac with LLD.
+_LLD_COMPONENTS = [
+    # LLD initializes every target LLVM was built for, for link-time
+    # optimization.
+    "all-targets",
+    "debuginfocodeview",
+    "debuginfodwarf",
+    "debuginfomsf",
+    "debuginfopdb",
+    "demangle",
+    "libdriver",
+    "lto",
+    "objcarcopts",
+    "option",
+    "textapi",
+    "windowsdriver",
+    "windowsmanifest",
+]
+
+# LLD's libraries, in the order a static link needs them: the linkers before
+# what they share.
+_LLD_LIBRARIES = ["lldCOFF", "lldELF", "lldMachO", "lldCommon"]
 
 _COMPONENTS = [
     "core",
@@ -101,8 +125,15 @@ def _llvm_repository_impl(repository_ctx):
             library_dir,
         ))
 
+    # Distributed ThinLTO is a component of its own since LLVM 21; LLD uses
+    # it where LLVM has it.
+    available = repository_ctx.execute([config, "--components"], quiet = True)
+    lld_components = list(_LLD_COMPONENTS)
+    if available.return_code == 0 and "dtlto" in available.stdout.split(" "):
+        lld_components.append("dtlto")
+
     libraries = repository_ctx.execute(
-        [config, "--link-static", "--libnames"] + _COMPONENTS,
+        [config, "--link-static", "--libnames"] + _COMPONENTS + lld_components,
         quiet = True,
     )
     if libraries.return_code != 0:
@@ -132,7 +163,7 @@ def _llvm_repository_impl(repository_ctx):
         ]
     else:
         system_libraries = repository_ctx.execute(
-            [config, "--link-static", "--system-libs"] + _COMPONENTS,
+            [config, "--link-static", "--system-libs"] + _COMPONENTS + lld_components,
             quiet = True,
         )
         if system_libraries.return_code != 0:
@@ -161,6 +192,8 @@ def _llvm_repository_impl(repository_ctx):
 
     repository_ctx.symlink(include_dir, "include")
     repository_ctx.symlink(library_dir, "lib")
+
+    lld_imports = _lld_imports(repository_ctx, include_dir, library_dir, library_suffix, is_windows)
 
     support_archive = "lib/LLVMSupport.lib"
     if is_windows and repository_ctx.os.environ.get("TALA_LLVM_SYSTEM_ALLOCATOR") == "1":
@@ -194,12 +227,76 @@ cc_library(
     deps = {},
     linkopts = {},
 )
-""".format("\n".join(imports), repr(dependencies), repr(system_linkopts))
+
+{}
+""".format("\n".join(imports), repr(dependencies), repr(system_linkopts), lld_imports)
     repository_ctx.file("BUILD.bazel", build)
+
+def _lld_imports(repository_ctx, include_dir, library_dir, library_suffix, is_windows):
+    """The BUILD text of the `lld` target: LLD's linkers and their headers.
+
+    The Windows release of LLVM and the libc++ toolchain of the Linux hosts
+    keep LLD beside LLVM. Homebrew keeps it in a formula of its own, which
+    LLD_ROOT names or `brew --prefix lld` finds.
+    """
+    prefix = "" if is_windows else "lib"
+
+    def has_lld(include, library):
+        return include.get_child("lld").get_child("Common").get_child("Driver.h").exists and all([
+            library.get_child("{}{}{}".format(prefix, name, library_suffix)).exists
+            for name in _LLD_LIBRARIES
+        ])
+
+    lld_include = include_dir
+    lld_library = library_dir
+    if not has_lld(lld_include, lld_library):
+        root = repository_ctx.os.environ.get("LLD_ROOT")
+        if not root:
+            brew = repository_ctx.which("brew")
+            if brew:
+                found = repository_ctx.execute([brew, "--prefix", "lld"], quiet = True)
+                if found.return_code == 0:
+                    root = found.stdout.strip()
+        if root:
+            lld_include = repository_ctx.path(root).get_child("include")
+            lld_library = repository_ctx.path(root).get_child("lib")
+        if not root or not has_lld(lld_include, lld_library):
+            fail("LLD's libraries and headers were not found beside LLVM. Install LLD's development files " +
+                 "(the lld formula on macOS) or set LLD_ROOT to them.")
+        repository_ctx.symlink(lld_include, "lld-include")
+        repository_ctx.symlink(lld_library, "lld-lib")
+        header_root = "lld-include"
+        library_root = "lld-lib"
+    else:
+        header_root = "include"
+        library_root = "lib"
+
+    text = ["""cc_library(
+    name = \"lld_headers\",
+    hdrs = glob([\"{root}/lld/**/*.h\"]),
+    includes = [\"{root}\"],
+)""".format(root = header_root)]
+    previous = ":llvm"
+    for name in reversed(_LLD_LIBRARIES):
+        text.append("""cc_import(
+    name = {target},
+    static_library = {library},
+    deps = [{previous}, \":lld_headers\"],
+)""".format(
+            target = _quote(name),
+            library = _quote("{}/{}{}{}".format(library_root, prefix, name, library_suffix)),
+            previous = _quote(previous),
+        ))
+        previous = ":" + name
+    text.append("""cc_library(
+    name = \"lld\",
+    deps = [{}],
+)""".format(", ".join([_quote(":" + name) for name in _LLD_LIBRARIES[:-1]])))
+    return "\n\n".join(text)
 
 _llvm_repository = repository_rule(
     implementation = _llvm_repository_impl,
-    environ = ["LLVM_ROOT", "PATH", "TALA_LLVM_SYSTEM_ALLOCATOR"],
+    environ = ["LLD_ROOT", "LLVM_ROOT", "PATH", "TALA_LLVM_SYSTEM_ALLOCATOR"],
     local = True,
 )
 

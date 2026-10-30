@@ -186,3 +186,42 @@ TEST_CASE("a link that cannot be planned says why")
     CHECK_FALSE(
         Driver::PlanLink(Request("wasm32-unknown-unknown", kLinux)).plan);
 }
+
+TEST_CASE("the linker's command line is read from what clang prints for -###")
+{
+    // clang prints its version, then each command as quoted words; a
+    // backslash escapes a quote or a backslash inside one.
+    constexpr std::string_view kLinuxOutput
+        = "clang version 22.1.6\n"
+          "Target: x86_64-unknown-linux-gnu\n"
+          "Thread model: posix\n"
+          " \"/usr/bin/ld\" \"-pie\" \"-m\" \"elf_x86_64\" \"-o\" "
+          "\"out/Program\" "
+          "\"/usr/lib/x86_64-linux-gnu/Scrt1.o\" \"out/Program.o\" \"-lc\"\n";
+    const auto elf = Driver::LinkerCommandOf(kLinuxOutput);
+    REQUIRE(elf);
+    CHECK(elf->front() == "/usr/bin/ld");
+    CHECK(elf->size() == 9U);
+    CHECK(elf->back() == "-lc");
+
+    constexpr std::string_view kWindowsHost
+        = " \"C:\\\\LLVM\\\\bin\\\\clang.exe\" \"-cc1\" \"-triple\" \"x\"\n"
+          " \"C:\\\\LLVM\\\\bin\\\\ld.lld.exe\" \"--sysroot=C:\\\\roots\\\\arm\" "
+          "\"-o\" \"a b\" \"q\\\"uote\"\n";
+    const auto cross = Driver::LinkerCommandOf(kWindowsHost);
+    REQUIRE(cross);
+    CHECK(cross->front() == "C:\\LLVM\\bin\\ld.lld.exe");
+    CHECK((*cross)[1] == "--sysroot=C:\\roots\\arm");
+    CHECK((*cross)[3] == "a b");
+    CHECK((*cross)[4] == "q\"uote");
+
+    constexpr std::string_view kMacOutput
+        = " \"/usr/bin/ld\" \"-demangle\" \"-dynamic\" \"-arch\" \"arm64\" "
+          "\"-platform_version\" \"macos\" \"26.0.0\" \"26.0\" \"-o\" \"P\"\n";
+    REQUIRE(Driver::LinkerCommandOf(kMacOutput));
+
+    // No linker, or a line that is not a command, gives nothing.
+    CHECK_FALSE(Driver::LinkerCommandOf("clang version 22.1.6\n"));
+    CHECK_FALSE(Driver::LinkerCommandOf(" \"/usr/bin/as\" \"-o\" \"x.o\"\n"));
+    CHECK_FALSE(Driver::LinkerCommandOf(" \"/usr/bin/ld\" \"unterminated\n"));
+}
