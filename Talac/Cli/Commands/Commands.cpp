@@ -342,25 +342,17 @@ namespace
         const auto executable
             = OutputPath(options.inputs.front(),
                          OutputExtension(BuildOutput::kExecutable));
-        // An object given on the command line is taken to be one of this
-        // host: nothing else can be linked here.
-#if defined(_WIN32)
-        const auto hostFormat
-            = Progmasoft::Tala::Backend::LLVM::ObjectFormat::Coff;
-#elif defined(__APPLE__)
-        const auto hostFormat
-            = Progmasoft::Tala::Backend::LLVM::ObjectFormat::MachO;
-#else
-        const auto hostFormat
-            = Progmasoft::Tala::Backend::LLVM::ObjectFormat::Elf;
-#endif
+        // An object given on the command line is one of the target: of
+        // --target, or of the host when none is given. Its format is the
+        // one the target's triple names, which the linker checks.
         const Progmasoft::Tala::Driver::NativeLinkRequest request{
             executable,
             options.inputs,
-            hostFormat,
+            Progmasoft::Tala::Backend::LLVM::ObjectFormat::Unknown,
             options.sysroot
                 ? std::optional{ std::filesystem::path(*options.sysroot) }
-                : std::nullopt
+                : std::nullopt,
+            options.target.value_or(std::string())
         };
         const auto linked
             = Progmasoft::Tala::Driver::LinkNativeExecutable(request);

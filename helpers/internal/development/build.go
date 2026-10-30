@@ -24,6 +24,7 @@ var nativeTargets = []string{
 	"//Talac/Core/Tests:callable_contract_tests",
 	"//Talac/Core/Tests:core_pipeline_tests",
 	"//Talac/Diagnostic/Tests:diagnostic_protocol_tests",
+	"//Talac/Linker/Tests:link_plan_tests",
 	"//Talac/Driver/Tests:artifact_wire_tests",
 	"//Talac/Driver/Tests:closure_pipeline_tests",
 	"//Talac/Driver/Tests:project_artifact_tests",

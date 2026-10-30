@@ -2,9 +2,24 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
+# What a link runs, decided by the target alone. It touches no file and
+# starts no process, so its tests plan every target on every host.
+cc_library(
+    name = "link_plan",
+    srcs = ["LinkPlan.cpp"],
+    hdrs = ["LinkPlan.hpp"],
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Backend:llvm_api",
+        "@llvm//:llvm",
+    ],
+)
+
 cc_library(
     name = "native_linker",
     srcs = ["NativeLinker.cpp"],
     hdrs = ["NativeLinker.hpp"],
-    deps = ["//Talac/Backend/LLVM:llvm_backend"],
+    deps = [
+        ":link_plan",
+        "//Talac/Backend/LLVM:llvm_backend",
+    ],
 )
