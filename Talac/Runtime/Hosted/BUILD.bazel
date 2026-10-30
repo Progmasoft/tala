@@ -14,12 +14,26 @@ cc_library(
         "-fno-threadsafe-statics",
         "-fPIC",
     ],
-    alwayslink = True,
     linkstatic = True,
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+    textual_hdrs = [
+        "//Talac/Runtime/AARC:sources",
+        "//Talac/Runtime/Text:sources",
+    ],
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api",
+        "//Talac/Headers/Progmasoft/Tala/Runtime:text_api",
+    ],
+)
+
+# The sources the shared library of TalaRT compiles as this archive does.
+exports_files(["Hosted.cpp"])
+
+cc_library(
+    name = "textual_sources",
     textual_hdrs = [
         "//Talac/Runtime/AARC:sources",
         "//Talac/Runtime/Text:sources",

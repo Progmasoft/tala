@@ -20,9 +20,23 @@ cc_library(
         "/Zl",
         "/Gs1048576",
     ],
-    alwayslink = True,
     linkstatic = True,
     target_compatible_with = ["@platforms//os:windows"],
+    textual_hdrs = [
+        "//Talac/Runtime/AARC:sources",
+        "//Talac/Runtime/Text:sources",
+    ],
+    deps = [
+        "//Talac/Headers/Progmasoft/Tala/Runtime:aarc_api",
+        "//Talac/Headers/Progmasoft/Tala/Runtime:text_api",
+    ],
+)
+
+# The sources the shared library of TalaRT compiles as this archive does.
+exports_files(["Freestanding.cpp"])
+
+cc_library(
+    name = "textual_sources",
     textual_hdrs = [
         "//Talac/Runtime/AARC:sources",
         "//Talac/Runtime/Text:sources",
