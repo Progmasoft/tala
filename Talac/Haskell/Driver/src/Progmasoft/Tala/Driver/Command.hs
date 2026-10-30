@@ -21,6 +21,7 @@ import Progmasoft.Tala.Compiler
 import Progmasoft.Tala.Core (CoreModule)
 import Progmasoft.Tala.Core.Wire
 import Progmasoft.Tala.Diagnostic
+import Progmasoft.Tala.Directives
 import Progmasoft.Tala.SourceSet
 import Progmasoft.Tala.SourceWarnings
 
@@ -46,9 +47,10 @@ data FrontendOutcome
     | FrontendFailure String
 
 data FrontendCommand
-    = CompileFile FilePath
-    | CompileFiles QualifiedName [FilePath]
-    | CompileProject FilePath QualifiedName [FilePath] [FilePath]
+    = CompileFile DirectiveEnvironment FilePath
+    | CompileFiles DirectiveEnvironment QualifiedName [FilePath]
+    | CompileTests DirectiveEnvironment [FilePath]
+    | CompileProject DirectiveEnvironment FilePath QualifiedName [FilePath] [FilePath]
     | ListProjectSources FilePath [FilePath] [FilePath]
 
 data CommandOptions = CommandOptions
@@ -58,10 +60,12 @@ data CommandOptions = CommandOptions
     , optionSourceRoots :: [FilePath]
     , optionExcludes :: [FilePath]
     , optionListSources :: Bool
+    , optionTest :: Bool
+    , optionTargetSystem :: Maybe String
     }
 
 emptyOptions :: CommandOptions
-emptyOptions = CommandOptions [] Nothing Nothing [] [] False
+emptyOptions = CommandOptions [] Nothing Nothing [] [] False False Nothing
 
 {- | Parse the deliberately narrow private argument vocabulary. Values remain
 separate from option names so file names and glob patterns cannot be
@@ -86,6 +90,10 @@ parseOptions options (name : remaining) = case name of
     "--list-sources"
         | optionListSources options -> Left "--list-sources may be specified only once"
         | otherwise -> parseOptions options {optionListSources = True} remaining
+    "--test"
+        | optionTest options -> Left "--test may be specified only once"
+        | otherwise -> parseOptions options {optionTest = True} remaining
+    "--target-os" -> uniqueValue name optionTargetSystem setTargetSystem options remaining
     _ -> Left ("unknown private frontend option: " ++ name)
 
 uniqueValue ::
@@ -114,9 +122,21 @@ repeatedValue name setter options remaining = case remaining of
         | null value -> Left (name ++ " value is empty")
         | otherwise -> parseOptions (setter value options) rest
 
-setProjectRoot, setEntry :: String -> CommandOptions -> CommandOptions
+setProjectRoot, setEntry, setTargetSystem :: String -> CommandOptions -> CommandOptions
 setProjectRoot value options = options {optionProjectRoot = Just value}
 setEntry value options = options {optionEntry = Just value}
+setTargetSystem value options = options {optionTargetSystem = Just value}
+
+{- | The environment of the conditional directives: the target's system,
+which the native driver names after the target triple, and whether tests are
+compiled. Without a system the host's is used.
+-}
+directiveEnvironment :: CommandOptions -> Either String DirectiveEnvironment
+directiveEnvironment options = do
+    system <- case optionTargetSystem options of
+        Nothing -> Right (directiveSystem hostDirectiveEnvironment)
+        Just name -> maybe (Left ("--target-os names no known system: " ++ name)) Right (operatingSystemNamed name)
+    Right (DirectiveEnvironment system (optionTest options))
 
 addSourceFile, addSourceRoot, addExclude :: String -> CommandOptions -> CommandOptions
 addSourceFile value options = options {optionSourceFiles = optionSourceFiles options ++ [value]}
@@ -124,28 +144,34 @@ addSourceRoot value options = options {optionSourceRoots = optionSourceRoots opt
 addExclude value options = options {optionExcludes = optionExcludes options ++ [value]}
 
 finishCommand :: CommandOptions -> Either String FrontendCommand
-finishCommand options = case ( optionSourceFiles options
-                             , optionProjectRoot options
-                             , optionEntry options
-                             , optionListSources options
-                             ) of
-    (sources@(_ : _), Nothing, entryText, False)
-        | not (null (optionSourceRoots options) && null (optionExcludes options)) ->
-            Left "file compilation cannot declare project roots or exclusions"
-        | otherwise -> case (entryText, sources) of
-            (Just written, _) -> fmap (`CompileFiles` sources) (parseQualifiedName written)
-            (Nothing, [source]) -> Right (CompileFile source)
-            (Nothing, _) -> Left "several source files require --entry"
-    ([], Just root, Just entryText, False) -> do
-        entry <- parseQualifiedName entryText
-        if null (optionSourceRoots options)
-            then Left "project compilation requires at least one --source-root"
-            else Right (CompileProject root entry (optionSourceRoots options) (optionExcludes options))
-    ([], Just root, Nothing, True)
-        | not (null (optionSourceRoots options)) ->
-            Right (ListProjectSources root (optionSourceRoots options) (optionExcludes options))
-        | otherwise -> Left "project source listing requires at least one --source-root"
-    _ -> Left "arguments must describe exactly one file compile, project compile, or project source listing"
+finishCommand options =
+    directiveEnvironment options >>= \environment -> case ( optionSourceFiles options
+                                                          , optionProjectRoot options
+                                                          , optionEntry options
+                                                          , optionListSources options
+                                                          ) of
+        (sources@(_ : _), Nothing, entryText, False)
+            | not (null (optionSourceRoots options) && null (optionExcludes options)) ->
+                Left "file compilation cannot declare project roots or exclusions"
+            | optionTest options -> case entryText of
+                Nothing -> Right (CompileTests environment sources)
+                Just _ -> Left "a test build has its own entry and takes no --entry"
+            | otherwise -> case (entryText, sources) of
+                (Just written, _) -> fmap (\entry -> CompileFiles environment entry sources) (parseQualifiedName written)
+                (Nothing, [source]) -> Right (CompileFile environment source)
+                (Nothing, _) -> Left "several source files require --entry"
+        ([], Just root, Just entryText, False)
+            | optionTest options -> Left "a test build names its source files"
+            | otherwise -> do
+                entry <- parseQualifiedName entryText
+                if null (optionSourceRoots options)
+                    then Left "project compilation requires at least one --source-root"
+                    else Right (CompileProject environment root entry (optionSourceRoots options) (optionExcludes options))
+        ([], Just root, Nothing, True)
+            | not (null (optionSourceRoots options)) ->
+                Right (ListProjectSources root (optionSourceRoots options) (optionExcludes options))
+            | otherwise -> Left "project source listing requires at least one --source-root"
+        _ -> Left "arguments must describe exactly one file compile, project compile, or project source listing"
 
 {- | Load every explicitly named source. A file named twice is one source;
 the first failure of any file rejects the whole set, as project loading does.
@@ -185,16 +211,25 @@ splitDot (value : remaining) = case splitDot remaining of
 
 executeCommand :: FrontendCommand -> IO FrontendOutcome
 executeCommand command = case command of
-    CompileFile source -> do
+    CompileFile environment source -> do
         loaded <- loadSourceFile source
         case loaded of
             Left diagnostics -> pure (FrontendDiagnostics diagnostics)
             Right document ->
                 let warnings = loadedSourceWarnings document
-                 in case compileToCorePrep (CompilerInput (loadedSourceRelativePath document) (loadedSourceText document)) of
+                 in case compileToCorePrepWith environment (CompilerInput (loadedSourceRelativePath document) (loadedSourceText document)) of
                         Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
                         Right artifacts -> encodeCoreOutcome warnings (artifactOptimizedCore artifacts)
-    CompileFiles entry sources -> do
+    CompileTests environment sources -> do
+        loaded <- loadSourceFiles sources
+        case loaded of
+            Left diagnostics -> pure (FrontendDiagnostics diagnostics)
+            Right documents ->
+                let warnings = concatMap loadedSourceWarnings documents
+                 in case compileTestsToCorePrep environment (map toProjectCompilerInput documents) of
+                        Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
+                        Right artifacts -> encodeCoreOutcome warnings (projectEntryCore artifacts)
+    CompileFiles environment entry sources -> do
         loaded <- loadSourceFiles sources
         case loaded of
             Left diagnostics -> pure (FrontendDiagnostics diagnostics)
@@ -204,18 +239,18 @@ executeCommand command = case command of
                     -- One source keeps the single-file pipeline, whose Core
                     -- carries no source catalog; several are one program.
                     compiled = case inputs of
-                        [input] -> fmap artifactOptimizedCore (compileEntryToCorePrep entry input)
-                        _ -> fmap projectEntryCore (compileProjectToCorePrep entry inputs)
+                        [input] -> fmap artifactOptimizedCore (compileEntryToCorePrepWith environment entry input)
+                        _ -> fmap projectEntryCore (compileProjectToCorePrepWith environment entry inputs)
                  in case compiled of
                         Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
                         Right core -> encodeCoreOutcome warnings core
-    CompileProject root entry roots excludes -> do
+    CompileProject environment root entry roots excludes -> do
         loaded <- loadSourceSet (SourceSetRequest root roots excludes)
         case loaded of
             Left diagnostics -> pure (FrontendDiagnostics diagnostics)
             Right documents ->
                 let warnings = concatMap loadedSourceWarnings documents
-                 in case compileProjectToCorePrep entry (map toProjectCompilerInput documents) of
+                 in case compileProjectToCorePrepWith environment entry (map toProjectCompilerInput documents) of
                         Left diagnostics -> pure (FrontendDiagnostics (diagnostics ++ warnings))
                         Right artifacts -> encodeCoreOutcome warnings (projectEntryCore artifacts)
     ListProjectSources root roots excludes -> do

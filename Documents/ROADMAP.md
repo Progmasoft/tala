@@ -93,7 +93,7 @@ before reclamation. Neither half is an optional alias for the other.
 The intended project/CLI setting is:
 
 ```text
--Cycle-Collector true
+--cycle-collector=true
 ```
 
 The default is `false`. A program therefore continues to use normal AARC

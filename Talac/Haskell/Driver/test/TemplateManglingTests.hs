@@ -93,6 +93,7 @@ functionMember unique name signature isStatic access =
         (Block [])
         isStatic
         access
+        Nothing
 
 nestedMember :: Int -> String -> Type -> Declaration ResolvedName Type
 nestedMember unique name annotation = TypeDeclaration spanValue (resolved unique name) annotation []

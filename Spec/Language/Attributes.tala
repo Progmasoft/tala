@@ -496,7 +496,8 @@ class Child : Base {
 
 -- ============================================================================
 -- Example 59: 26. AttributeTargets
--- Demonstrates: Example:
+-- Demonstrates: AttributeTargets names the kinds of declaration an attribute may be applied to:
+--   Class, DataClass, Data, Enum, EnumClass, Object, Method and Constructor. They combine with |.
 
 using System.Reflection;
 
@@ -573,13 +574,109 @@ void TestHelper() {
 #endif
 
 -- ============================================================================
--- Example 67: 31. extern
+-- Example 67: 30. #expect
+-- Demonstrates: #expect is a built-in statement of test code. It checks a condition and records a
+--   failure of the current [Fact] when the condition is false.
+
+[Fact]
+void Addition() {
+    int sum = 2 + 3;
+    #expect sum == 5;
+}
+
+-- ============================================================================
+-- Example 68: 30. #expect
+-- Demonstrates: The condition follows the condition rules of if. #expect is a statement and ends
+--   with a semicolon; it has no value.
+
+[Fact("Four is even and three is not")]
+void Parity() {
+    #expect IsEven(4);
+    #expect not IsEven(3);
+}
+
+-- ============================================================================
+-- Example 69: 30. #expect
+-- Demonstrates: A false #expect does not stop the test. The statements after it still run, so one
+--   run reports every failed expectation; the test fails when any expectation failed.
+
+[Fact]
+void Limits() {
+    int low = Clamp(-5, 0, 10);
+    int high = Clamp(50, 0, 10);
+    #expect low == 0;
+    #expect high == 10; -- still checked when the line above fails
+}
+
+-- ============================================================================
+-- Example 70: 30. #expect
+-- Demonstrates: A failure names the source location and the text of the condition. When the
+--   condition is a comparison, the report also shows the value of each operand.
+
+[Fact]
+void Count() {
+    int count = CountWords("one two");
+    #expect count == 3; -- reports: count == 3, count is 2
+}
+
+-- ============================================================================
+-- Example 71: 30. #expect
+-- Demonstrates: Tala evaluates by need: #expect demands its condition when the statement runs, and
+--   the condition is evaluated exactly once, also for the failure report.
+
+[Fact]
+void PositiveTotal() {
+    int total = Sum(ReadNumbers()); -- not computed yet
+    #expect total > 0;              -- total is computed here, once
+}
+
+-- ============================================================================
+-- Example 72: 30. #expect
+-- Demonstrates: #expect may also appear in code that is compiled only for tests, such as a helper
+--   under #if Fact. A failure there is recorded for the [Fact] that called the helper.
+
+#if Fact
+
+void ExpectPositive(_ int value) {
+    #expect value > 0;
+}
+
+[Fact]
+void Totals() {
+    ExpectPositive(Total(1, 2));
+}
+
+#endif
+
+-- ============================================================================
+-- Example 73: 30. #expect
+-- Demonstrates: INVALID: #expect belongs to test code. Outside a [Fact] method and outside #if Fact
+--   it is rejected.
+
+class Calculator {
+    public int Add(_ int a, _ int b) {
+        #expect a >= 0; -- INVALID
+        a + b
+    }
+}
+
+-- ============================================================================
+-- Example 74: 30. #expect
+-- Demonstrates: INVALID: #expect is a statement, not an expression.
+
+[Fact]
+void Value() {
+    bool result = #expect 1 == 1; -- INVALID
+}
+
+-- ============================================================================
+-- Example 75: 31. extern
 -- Demonstrates: External method declarations use extern.
 
 public static extern int Add(_ int a, _ int b);
 
 -- ============================================================================
--- Example 68: 31. extern
+-- Example 76: 31. extern
 -- Demonstrates: INVALID:
 
 public static extern int Add(_ int a, _ int b) {
@@ -587,7 +684,7 @@ public static extern int Add(_ int a, _ int b) {
 }
 
 -- ============================================================================
--- Example 69: 32. [DllImport(...)]
+-- Example 77: 32. [DllImport(...)]
 -- Demonstrates: DllImport binds an external method to a dynamic library.
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -597,7 +694,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 70: 32. [DllImport(...)]
+-- Example 78: 32. [DllImport(...)]
 -- Demonstrates: INVALID:
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -609,7 +706,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 71: 33. [DylibImport(...)]
+-- Example 79: 33. [DylibImport(...)]
 -- Demonstrates: DylibImport binds an external method through the corresponding dylib/native-library
 
 class Native {
@@ -618,7 +715,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 72: 34. [C]
+-- Example 80: 34. [C]
 -- Demonstrates: [C] is a compiler-known attribute for the C ABI/interoperability surface.
 
 class Math {
@@ -629,7 +726,7 @@ class Math {
 }
 
 -- ============================================================================
--- Example 73: 34. [C]
+-- Example 81: 34. [C]
 -- Demonstrates: C-compatible value declarations may also participate where Ffi.md permits them.
 
 [C]
@@ -639,7 +736,7 @@ data Point {
 }
 
 -- ============================================================================
--- Example 74: 35. [ObjectiveC]
+-- Example 82: 35. [ObjectiveC]
 -- Demonstrates: [ObjectiveC] exposes an eligible declaration to the Objective-C
 --   runtime/interoperability surface.
 
@@ -648,7 +745,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 75: 35. [ObjectiveC]
+-- Example 83: 35. [ObjectiveC]
 -- Demonstrates: Members may be exposed explicitly:
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -660,14 +757,14 @@ class User {
 }
 
 -- ============================================================================
--- Example 76: 36. [Swift]
+-- Example 84: 36. [Swift]
 -- Demonstrates: [Swift] exposes an eligible declaration to the Swift interoperability surface.
 
 [Swift]
 data class User(String name, int age);
 
 -- ============================================================================
--- Example 77: 36. [Swift]
+-- Example 85: 36. [Swift]
 -- Demonstrates: Members may be exposed explicitly:
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -679,7 +776,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 78: 37. [NoMangle]
+-- Example 86: 37. [NoMangle]
 -- Demonstrates: [NoMangle] is a compiler-known special attribute controlling linker-symbol naming.
 
 [C]
@@ -689,7 +786,7 @@ public static int Add(_ int a, _ int b) {
 }
 
 -- ============================================================================
--- Example 79: 37. [NoMangle]
+-- Example 87: 37. [NoMangle]
 -- Demonstrates: It may also participate in external FFI symbol matching where Ffi.md permits it.
 
 class Native {
@@ -699,7 +796,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 80: 40. System.Worlds.ObjectiveC
+-- Example 88: 40. System.Worlds.ObjectiveC
 -- Demonstrates: System.Worlds.ObjectiveC is a compiler-known special interop surface, not a built-in language namespace.
 
 using System.Worlds.ObjectiveC;
@@ -709,7 +806,7 @@ NSURL url;
 NSProcessInfo processInfo;
 
 -- ============================================================================
--- Example 81: 41. System.Worlds.Swift
+-- Example 89: 41. System.Worlds.Swift
 -- Demonstrates: System.Worlds.Swift is a compiler-known special interop surface, not a built-in language namespace.
 
 using System.Worlds.Swift;
@@ -719,20 +816,20 @@ SwiftString name;
 SwiftBool enabled;
 
 -- ============================================================================
--- Example 82: 43. using a C module
+-- Example 90: 43. using a C module
 -- Demonstrates: A C module defined by module.modulemap is imported with:
 
 using MyLibrary;
 
 -- ============================================================================
--- Example 83: 43. using a C module
+-- Example 91: 43. using a C module
 -- Demonstrates: Tala source:
 
 -- Foo.tala
 using MyLibrary;
 
 -- ============================================================================
--- Example 84: 44. Ordinary repeatable attribute
+-- Example 92: 44. Ordinary repeatable attribute
 -- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
 
 public data class Tag(String name) : Attribute;
@@ -743,7 +840,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 85: 45. Restricted attribute
+-- Example 93: 45. Restricted attribute
 -- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
 
 using System.Reflection;
@@ -762,7 +859,7 @@ class Tests {
 }
 
 -- ============================================================================
--- Example 86: 46. Documentation comments
+-- Example 94: 46. Documentation comments
 -- Demonstrates: Detailed C declaration import and ABI conversion are defined in Ffi.md.
 
 --| A
@@ -771,7 +868,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 87: 46. Documentation comments
+-- Example 95: 46. Documentation comments
 -- Demonstrates: Equivalent:
 
 [Document("A")]
@@ -780,7 +877,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 88: 47. Reflection
+-- Example 96: 47. Reflection
 -- Demonstrates: Equivalent:
 
 using System.Reflection;
@@ -794,7 +891,7 @@ Array<Document> all =
     type.GetCustomAttributes<Document>();
 
 -- ============================================================================
--- Example 89: 48. Test
+-- Example 97: 48. Test
 -- Demonstrates: Equivalent:
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -808,7 +905,7 @@ void ParseInteger() {
 #endif
 
 -- ============================================================================
--- Example 90: 49. Dynamic-library import
+-- Example 98: 49. Dynamic-library import
 -- Demonstrates: Equivalent:
 -- Context note: ellipses denote declarations intentionally omitted from this focused fragment.
 
@@ -818,7 +915,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 91: 50. C export
+-- Example 99: 50. C export
 -- Demonstrates: Equivalent:
 
 class Math {
@@ -830,13 +927,13 @@ class Math {
 }
 
 -- ============================================================================
--- Example 92: 51. Old ordinary attribute declaration form
+-- Example 100: 51. Old ordinary attribute declaration form
 -- Demonstrates: Equivalent:
 
 attribute Serializable;
 
 -- ============================================================================
--- Example 93: 52. Runtime attribute argument
+-- Example 101: 52. Runtime attribute argument
 -- Demonstrates: Use a real System.Attribute-derived class, data class, enum class, or object.
 
 int maximum = ReadMaximum();
@@ -845,7 +942,7 @@ int maximum = ReadMaximum();
 int volume;
 
 -- ============================================================================
--- Example 94: 53. Non-repeatable duplicate
+-- Example 102: 53. Non-repeatable duplicate
 -- Demonstrates: Given:
 
 using System.Reflection;
@@ -857,7 +954,7 @@ using System.Reflection;
 public data class EntryPoint() : Attribute;
 
 -- ============================================================================
--- Example 95: 53. Non-repeatable duplicate
+-- Example 103: 53. Non-repeatable duplicate
 -- Demonstrates: this is INVALID:
 
 [EntryPoint]
@@ -866,7 +963,7 @@ void Run() {
 }
 
 -- ============================================================================
--- Example 96: 54. Wrong AttributeUsage target
+-- Example 104: 54. Wrong AttributeUsage target
 -- Demonstrates: this is INVALID:
 
 using System.Reflection;
@@ -876,7 +973,7 @@ class User {
 }
 
 -- ============================================================================
--- Example 97: 55. DllImport without extern
+-- Example 105: 55. DllImport without extern
 -- Demonstrates: INVALID because User is not an ordinary attribute type.
 
 class Native {
@@ -887,7 +984,7 @@ class Native {
 }
 
 -- ============================================================================
--- Example 98: 56. extern with body
+-- Example 106: 56. extern with body
 -- Demonstrates: INVALID.
 
 public static extern int Add(_ int a, _ int b) {
@@ -895,7 +992,7 @@ public static extern int Add(_ int a, _ int b) {
 }
 
 -- ============================================================================
--- Example 99: 57. Invalid NoMangle target
+-- Example 107: 57. Invalid NoMangle target
 -- Demonstrates: Applying:
 
 [NoMangle]

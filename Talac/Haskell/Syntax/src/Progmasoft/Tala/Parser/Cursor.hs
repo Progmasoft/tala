@@ -21,6 +21,7 @@ module Progmasoft.Tala.Parser.Cursor
     , failAt
     , problemAt
     , withSpan
+    , withTokens
     , endOfInput
     ) where
 
@@ -183,6 +184,13 @@ withSpan parser = P $ \cursor -> case currentSpan cursor of
             let finish = maybe start id (previousSpan next)
                 spanValue = start {sourceEnd = sourceEnd finish}
              in Accepted (value, spanValue) next
+
+-- | The value of a parser and the tokens it consumed, in order.
+withTokens :: P a -> P (a, [Token])
+withTokens parser = P $ \cursor -> case step parser cursor of
+    Rejected problem offset -> Rejected problem offset
+    Accepted value next ->
+        Accepted (value, take (consumedTokens next - consumedTokens cursor) (remainingTokens cursor)) next
 
 -- The public Parser accepts token streams as well as lexer output. An EOF in
 -- the middle must never hide the suffix of a malformed supplied stream.

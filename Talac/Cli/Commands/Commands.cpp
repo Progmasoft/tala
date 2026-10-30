@@ -9,6 +9,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "Talac/Cli/Arguments/Options.hpp"
@@ -38,25 +39,65 @@ namespace
 #endif
     }
 
+    /// The operating system `os(...)` tests in the conditions of the
+    /// sources: the one the target triple names, or the host's.
+    [[nodiscard]] std::string_view
+    TargetSystem(const std::optional<std::string> &target)
+    {
+        if (!target)
+        {
+#if defined(_WIN32)
+            return "Windows";
+#elif defined(__APPLE__)
+            return "macOS";
+#elif defined(__linux__)
+            return "Linux";
+#elif defined(__FreeBSD__)
+            return "FreeBSD";
+#elif defined(__OpenBSD__)
+            return "OpenBSD";
+#elif defined(__NetBSD__)
+            return "NetBSD";
+#else
+            return "other";
+#endif
+        }
+        // The system is the third component of a triple; the vendor
+        // before it never names one of these.
+        constexpr std::pair<std::string_view, std::string_view> kSystems[]
+            = { { "windows", "Windows" }, { "win32", "Windows" },
+                { "darwin", "macOS" },    { "macos", "macOS" },
+                { "linux", "Linux" },     { "freebsd", "FreeBSD" },
+                { "openbsd", "OpenBSD" }, { "netbsd", "NetBSD" } };
+        for (const auto &[word, system] : kSystems)
+            if (target->find(word) != std::string::npos)
+                return system;
+        return "other";
+    }
+
     /// Compile the Tala sources of one invocation to verified Core. Several
     /// sources are one program: they are resolved together and the entry
-    /// selects the namespace that is lowered.
+    /// selects the namespace that is lowered. A test build has no entry of
+    /// its own: the frontend adds the runner of its tests.
     [[nodiscard]] auto
-    RunFrontend(std::span<const std::filesystem::path> sources,
-                const std::optional<std::string> &entry) -> Frontend::Result
+    RunFrontend(const CliOptions &options) -> Frontend::Result
     {
         std::vector<std::string> arguments;
-        arguments.reserve(sources.size() * 2U + 2U);
-        for (const auto &source : sources)
+        arguments.reserve(options.inputs.size() * 2U + 5U);
+        for (const auto &source : options.inputs)
         {
             arguments.emplace_back("--source-file");
             arguments.push_back(PathText(source));
         }
-        if (entry)
+        if (options.entry)
         {
             arguments.emplace_back("--entry");
-            arguments.push_back(*entry);
+            arguments.push_back(*options.entry);
         }
+        if (options.test)
+            arguments.emplace_back("--test");
+        arguments.emplace_back("--target-os");
+        arguments.emplace_back(TargetSystem(options.target));
         return Frontend::Execute(arguments);
     }
 
@@ -336,7 +377,7 @@ namespace
     [[nodiscard]] int
     CompileSources(const CliOptions &options)
     {
-        const auto core = RunFrontend(options.inputs, options.entry);
+        const auto core = RunFrontend(options);
         if (!FrontendSucceeded(core)
             || core.kind != Frontend::OutputKind::CoreWire
             || !FrontendWarningsAllowed(core, options.compiler))

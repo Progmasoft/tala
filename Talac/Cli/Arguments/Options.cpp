@@ -44,6 +44,7 @@ namespace
         Build,
         ViPkgType,
         Header,
+        Test,
         Count,
     };
 
@@ -164,6 +165,12 @@ namespace
           '\0',
           "",
           "write a C header; with --vipkg-type=staticlib or cdylib",
+          "" },
+        { Option::Test,
+          "test",
+          '\0',
+          "",
+          "build the runner of the [Fact] methods; Fact holds in #if",
           "" },
     } };
 
@@ -493,6 +500,9 @@ namespace
             case Option::Header:
                 options.emitHeader = true;
                 return true;
+            case Option::Test:
+                options.test = true;
+                return true;
             case Option::Version:
             case Option::Help:
             case Option::Count:
@@ -560,6 +570,18 @@ namespace
             && options.compiler.warningLevel == WarningLevel::kNone)
             return "--warnings=none reports nothing; it cannot be combined "
                    "with shadow";
+        if (options.test)
+        {
+            if (options.entry)
+                return "--test builds the runner of the [Fact] methods, "
+                       "which is the entry; it takes no --entry";
+            if (options.input != BuildInput::kTala)
+                return "--test compiles Tala sources; write --build=tala";
+            if (options.viPkgType != ViPkgType::kExecutable)
+                return "--test builds an executable; it cannot be combined "
+                       "with another --vipkg-type";
+            return std::nullopt;
+        }
         if (options.viPkgType == ViPkgType::kExecutable)
         {
             if (options.emitHeader)

@@ -513,7 +513,7 @@ memberCount specialization = case templateSpecializationDeclaration specializati
 declarationTypes :: Declaration ResolvedName Type -> [Type]
 declarationTypes declaration = case declaration of
     TypeDeclaration _ _ annotation members -> annotation : concatMap declarationTypes members
-    FunctionDeclaration _ _ annotation _ parameters body _ _ ->
+    FunctionDeclaration _ _ annotation _ parameters body _ _ _ ->
         annotation : concatMap parameterTypes parameters ++ blockTypes body
     TemplateTypeDeclaration {} -> []
     EnumDeclaration {} -> []

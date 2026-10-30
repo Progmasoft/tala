@@ -15,6 +15,11 @@ data TokenKind
     | FloatingToken
     | CharacterToken
     | StringToken
+    | {- | A compiler directive: @#@ and the word after it, as @#if@ or
+      @#expect@. The directive pass consumes the conditional and region
+      directives; @#expect@ reaches the parser.
+      -}
+      DirectiveToken
     | EndOfFileToken
     deriving stock (Bounded, Enum, Eq, Ord, Read, Show)
 

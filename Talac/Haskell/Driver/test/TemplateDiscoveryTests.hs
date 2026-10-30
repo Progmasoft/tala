@@ -233,7 +233,7 @@ renameBoxApplication replacement (TypedAST tree) = TypedAST tree {syntaxDeclarat
         rewriteDeclaration declaration = case declaration of
             TypeDeclaration spanValue name annotation members ->
                 TypeDeclaration spanValue name (rewriteType annotation) (map rewriteDeclaration members)
-            FunctionDeclaration spanValue name annotation syntax parameters body isStatic access ->
+            FunctionDeclaration spanValue name annotation syntax parameters body isStatic access fact ->
                 FunctionDeclaration
                     spanValue
                     name
@@ -243,6 +243,7 @@ renameBoxApplication replacement (TypedAST tree) = TypedAST tree {syntaxDeclarat
                     (rewriteBlock body)
                     isStatic
                     access
+                    fact
             TemplateTypeDeclaration {} -> declaration
             EnumDeclaration {} -> declaration
         rewriteParameter parameter = parameter {parameterAnnotation = rewriteType (parameterAnnotation parameter)}

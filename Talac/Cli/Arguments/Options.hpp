@@ -126,6 +126,8 @@ struct CliOptions
     ViPkgType viPkgType;
     CompilerSettings compiler;
     bool emitHeader;
+    /// Whether the program is the runner of the sources' [Fact] methods.
+    bool test;
 
     bool
     operator==(const CliOptions &) const = default;

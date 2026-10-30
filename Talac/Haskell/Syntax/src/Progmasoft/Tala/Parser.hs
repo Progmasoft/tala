@@ -16,6 +16,7 @@ import Progmasoft.Tala.FloatingLiteral
 import Progmasoft.Tala.NumericLiteral
 import Progmasoft.Tala.Parser.Cursor
 import Progmasoft.Tala.Parser.Match
+import Progmasoft.Tala.Parser.Testing
 import Progmasoft.Tala.Parser.Token
 
 -- | Tokens and diagnostic source identity for one physical input file.
@@ -248,6 +249,7 @@ parseMember = do
 
 parseMemberBody :: P (Declaration Identifier ())
 parseMemberBody = do
+    fact <- parseFactAttribute
     access <- parseAccess
     isStatic <- maybe False (const True) <$> optionalParser (keyword "static")
     returnType <- parseTypeSyntax
@@ -260,7 +262,17 @@ parseMemberBody = do
     -- therefore admit that form; nested control-flow blocks may not.
     body <- parseBlock (returnType /= ExplicitType (Identifier "void"))
     pure
-        (FunctionDeclaration (mergeSpan nameSpan (blockSpan body nameSpan)) name () returnType parameters body isStatic access)
+        ( FunctionDeclaration
+            (mergeSpan nameSpan (blockSpan body nameSpan))
+            name
+            ()
+            returnType
+            parameters
+            body
+            isStatic
+            access
+            fact
+        )
 
 parseAccess :: P Access
 parseAccess = do
@@ -510,6 +522,9 @@ parseStatementIn mode =
             first : _ | tokenKind first == KeywordToken && tokenText first == "break" -> parseBreak
             first : _ | tokenKind first == KeywordToken && tokenText first == "continue" -> parseContinue
             first : _ | tokenKind first == KeywordToken && tokenText first == "guard" -> parseGuardStatement branchGrammar
+            first : _
+                | tokenKind first == DirectiveToken && tokenText first == "#expect" ->
+                    parseExpectStatement (parseCondition branchGrammar "an #expect")
             -- No expression starts with a brace, so a brace that starts a
             -- statement opens a nested block.
             first : _ | tokenKind first == SymbolToken && tokenText first == "{" -> do
@@ -1238,6 +1253,9 @@ parsePrimary = do
             value <- parseExpression
             _ <- symbol ")"
             pure value
+        Just token
+            | tokenKind token == DirectiveToken && tokenText token == "#expect" ->
+                failAt (tokenSpan token) "TAP0055" "#expect is a statement and has no value"
         Just token -> failAt (tokenSpan token) "TAP0004" ("expected expression, found " ++ show (tokenText token))
         Nothing -> failCurrent "TAP0005" "expected expression at end of input"
 

@@ -58,6 +58,7 @@ Names and values are case-sensitive.
 | `--build=` | `tala`, `object`, `core`, `xpp`, `xmm`, `llvm-ir`, `llvm-bitcode` | `tala` |
 | `--vipkg-type=` | `executable`, `staticlib`, `cdylib`, `talalib` | `executable` |
 | `--header` | with `--vipkg-type=staticlib` or `cdylib`: also write a C header | off |
+| `--test` | build the runner of the `[Fact]` methods instead of a program | off |
 
 ### Entry
 
@@ -74,6 +75,29 @@ talac Helper.tala --emit=metadata
 
 Several sources are one program, and a program is lowered from its entry, so a check of several sources still needs
 `--entry`.
+
+### Tests
+
+`--test` builds the sources as tests. `Fact` holds in their `#if` conditions, and the executable is a runner the compiler
+writes: its entry calls every static `[Fact]` method in source order, prints `PASS` or `FAIL` and the name of each, and
+ends with the totals. A false `#expect` prints its place and condition, and for a comparison the value of each operand, and
+the test goes on. The runner exits with `1` when a test failed and `0` otherwise.
+
+```text
+talac Sources/Math.tala Tests/MathTests.tala --test
+```
+
+```text
+PASS Math.Adds
+Tests/MathTests.tala:9:9: expectation failed: Math.Clamp(50, 0, 10) == 9
+    Math.Clamp(50, 0, 10) is 10
+FAIL Math.Clamps (1 failed expectation)
+2 tests, 1 passed, 1 failed
+```
+
+A test build has no `--entry`: the runner is its entry. A `[Fact]` method is static, takes no parameters and returns
+`void`; a fact of an instance method, of a template class, or facts in more than one namespace are not compiled yet. A
+build without `--test` compiles a `[Fact]` method as an ordinary method and leaves out what only `#if Fact` selects.
 
 ### Warnings
 

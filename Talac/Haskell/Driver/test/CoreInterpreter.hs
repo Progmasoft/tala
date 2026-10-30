@@ -30,10 +30,10 @@ module CoreInterpreter
 import Data.Bits (complement, shiftL, shiftR, xor, (.&.), (.|.))
 import Data.Char (chr, isDigit)
 import Data.Ratio ((%))
-import RuntimeText
 import Progmasoft.Tala.AST
 import Progmasoft.Tala.Core
 import Progmasoft.Tala.RuntimeCall
+import RuntimeText
 
 -- | A runtime value of the supported subset.
 data Value
@@ -84,8 +84,13 @@ data Budget = Budget
     , cells :: [(Int, Value)]
     , nextCell :: Int
     , writes :: [(Bool, String)]
-    -- ^ Every console write, latest first: whether it went to standard
-    -- error, and the text.
+    {- ^ Every console write, latest first: whether it went to standard
+    error, and the text.
+    -}
+    , tests :: (Integer, Integer, Integer)
+    {- ^ The test runtime: failed expectations of the current test, and the
+    tests that passed and failed.
+    -}
     }
 
 -- | Whether no step is left.
@@ -119,7 +124,7 @@ wrote before it stopped is not a result a test may rely on here.
 runFunctionWriting :: Int -> CoreModule -> String -> [Value] -> Maybe (Value, Written)
 runFunctionWriting steps moduleValue name arguments = do
     function <- firstJust [function | function <- coreModuleFunctions moduleValue, functionSpelling function == name]
-    (value, budget) <- call moduleValue (Budget steps [] 0 []) function arguments
+    (value, budget) <- call moduleValue (Budget steps [] 0 [] (0, 0, 0)) function arguments
     let inOrder = reverse (writes budget)
     Just
         ( value
@@ -435,9 +440,35 @@ applyRuntime function values budget = case (function, values) of
             let toError = target `elem` [consoleError, consoleErrorLine]
                 ended = if target `elem` [consoleOutputLine, consoleErrorLine] then value ++ lineTerminator else value
              in Just (UnitValue, budget {writes = (toError, ended) : writes budget})
+    -- The test runtime writes what "Talac/Runtime/Text/Testing.cpp" writes.
+    (TestFail, [TextValue report]) ->
+        let (current, passed, failed) = tests budget
+         in written (report ++ lineTerminator) budget {tests = (current + 1, passed, failed)}
+    (TestEnd, [TextValue name]) ->
+        let (current, passed, failed) = tests budget
+            verdict
+                | current == 0 = "PASS " ++ name
+                | otherwise =
+                    "FAIL " ++ name ++ " (" ++ show current ++ (if current == 1 then " failed expectation)" else " failed expectations)")
+            counts = if current == 0 then (0, passed + 1, failed) else (0, passed, failed + 1)
+         in written (verdict ++ lineTerminator) budget {tests = counts}
+    (TestFinish, []) ->
+        let (_, passed, failed) = tests budget
+            total = passed + failed
+         in written
+                ( show total
+                    ++ (if total == 1 then " test, " else " tests, ")
+                    ++ show passed
+                    ++ " passed, "
+                    ++ show failed
+                    ++ " failed"
+                    ++ lineTerminator
+                )
+                budget
     _ -> Nothing
     where
         text value = Just (TextValue value, budget)
+        written value after = Just (UnitValue, after {writes = (False, value) : writes after})
 
 applyPrimitive :: CorePrimitive -> Type -> [Value] -> Maybe Value
 applyPrimitive primitive valueType values = case (primitive, values) of

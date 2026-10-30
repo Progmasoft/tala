@@ -15,8 +15,12 @@ module Progmasoft.Tala.Compiler
     , NamespaceArtifacts (..)
     , ProjectFrontendArtifacts (..)
     , compileToCorePrep
+    , compileToCorePrepWith
     , compileEntryToCorePrep
+    , compileEntryToCorePrepWith
     , compileProjectToCorePrep
+    , compileProjectToCorePrepWith
+    , compileTestsToCorePrep
     , compileTemplateSpecializations
     , projectEntryCore
     , validateEntryPoint
@@ -33,10 +37,12 @@ import Progmasoft.Tala.Core.Optimizer
 import Progmasoft.Tala.Core.Verifier
 import Progmasoft.Tala.Desugarer
 import Progmasoft.Tala.Diagnostic
+import Progmasoft.Tala.Directives
 import Progmasoft.Tala.Frontend
 import Progmasoft.Tala.Template.Discovery
 import Progmasoft.Tala.Template.Specialization
 import Progmasoft.Tala.Template.Specialization.Verifier
+import Progmasoft.Tala.TestRunner
 
 {- | Artifacts for one semantic namespace after all of its physical source
 units have been merged. Keeping every stage visible makes stage ownership and
@@ -78,12 +84,22 @@ data ProjectFrontendArtifacts = ProjectFrontendArtifacts
 
 -- | Run the source pipeline through verified, optimized CorePrep for one file.
 compileToCorePrep :: CompilerInput -> Either [Diagnostic] FrontendArtifacts
-compileToCorePrep input = analyzeSemantics input >>= compileSemanticToCorePrep
+compileToCorePrep = compileToCorePrepWith hostDirectiveEnvironment
+
+-- | 'compileToCorePrep' with the conditional directives decided for a target.
+compileToCorePrepWith :: DirectiveEnvironment -> CompilerInput -> Either [Diagnostic] FrontendArtifacts
+compileToCorePrepWith environment input =
+    analyzeSyntaxWith environment input >>= compileParsedToCorePrep . syntaxParsedAST
 
 -- | Compile one source file and validate its namespace-qualified entry class.
 compileEntryToCorePrep :: QualifiedName -> CompilerInput -> Either [Diagnostic] FrontendArtifacts
-compileEntryToCorePrep entry input = do
-    artifacts <- compileToCorePrep input
+compileEntryToCorePrep = compileEntryToCorePrepWith hostDirectiveEnvironment
+
+-- | 'compileEntryToCorePrep' with the conditional directives decided for a target.
+compileEntryToCorePrepWith ::
+    DirectiveEnvironment -> QualifiedName -> CompilerInput -> Either [Diagnostic] FrontendArtifacts
+compileEntryToCorePrepWith environment entry input = do
+    artifacts <- compileToCorePrepWith environment input
     validateEntryPoint entry (artifactTypedAST artifacts)
     pure artifacts
 
@@ -110,9 +126,36 @@ stopping at the first bad file, which makes project output useful without
 weakening any stage boundary.
 -}
 compileProjectToCorePrep :: QualifiedName -> [CompilerInput] -> Either [Diagnostic] ProjectFrontendArtifacts
-compileProjectToCorePrep entry inputs = do
+compileProjectToCorePrep = compileProjectToCorePrepWith hostDirectiveEnvironment
+
+-- | 'compileProjectToCorePrep' with the conditional directives decided for a target.
+compileProjectToCorePrepWith ::
+    DirectiveEnvironment -> QualifiedName -> [CompilerInput] -> Either [Diagnostic] ProjectFrontendArtifacts
+compileProjectToCorePrepWith environment entry inputs =
+    collectResults (map (parseUnit environment) inputs) >>= compileParsedProject entry
+
+{- | Compile the sources as a test build: @Fact@ holds in their conditions,
+and the entry is the runner of their @[Fact]@ methods, which the driver adds
+to the namespace of the tests.
+-}
+compileTestsToCorePrep :: DirectiveEnvironment -> [CompilerInput] -> Either [Diagnostic] ProjectFrontendArtifacts
+compileTestsToCorePrep environment inputs = do
+    parsedUnits <- collectResults (map (parseUnit environment {directiveTesting = True}) inputs)
+    cases <- findTestCases [(syntaxNamespace tree, syntaxDeclarations tree) | (_, ParsedAST tree) <- parsedUnits]
+    (namespace, entry, runner) <- testRunner cases
+    -- The runner belongs to the file of the first test, so the source
+    -- catalog names no file that does not exist.
+    let runnerUnit = (sourceFile (declarationSpan runner), ParsedAST (SyntaxTree (Just namespace) [runner]))
+    compileParsedProject entry (parsedUnits ++ [runnerUnit])
+
+parseUnit :: DirectiveEnvironment -> CompilerInput -> Either [Diagnostic] (FilePath, ParsedAST)
+parseUnit environment input = do
+    syntax <- analyzeSyntaxWith environment input
+    pure (compilerSourceFile input, syntaxParsedAST syntax)
+
+compileParsedProject :: QualifiedName -> [(FilePath, ParsedAST)] -> Either [Diagnostic] ProjectFrontendArtifacts
+compileParsedProject entry parsedUnits = do
     namespaceName <- entryNamespaceName entry
-    parsedUnits <- collectResults (map parseUnit inputs)
     if null parsedUnits
         then Left [compilerProblem "TAE0010" Nothing "project source set is empty"]
         else do
@@ -120,10 +163,6 @@ compileProjectToCorePrep entry inputs = do
             selected <- selectNamespace namespaceName compiled
             validateEntryPoint entry (artifactTypedAST (artifactFrontend selected))
             pure (ProjectFrontendArtifacts entry compiled selected)
-    where
-        parseUnit input = do
-            syntax <- analyzeSyntax input
-            pure (compilerSourceFile input, syntaxParsedAST syntax)
 
 -- | Retrieve the selected namespace's optimized Core module for native lowering.
 projectEntryCore :: ProjectFrontendArtifacts -> CoreModule

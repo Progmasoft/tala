@@ -68,6 +68,10 @@
       "header": "Talac/Headers/Progmasoft/Tala/Runtime/Text.h",
       "symbols": [
         "tala_console_write",
+        "tala_test_end",
+        "tala_test_fail",
+        "tala_test_finish",
+        "tala_test_status",
         "tala_text_concat",
         "tala_text_equals",
         "tala_text_format_char",

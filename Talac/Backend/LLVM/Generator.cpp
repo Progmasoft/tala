@@ -324,8 +324,17 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
         auto *block = llvm::BasicBlock::Create(context, "entry", bridge);
         llvm::IRBuilder<> builder(block);
         builder.CreateCall(entry->type, entry->value);
-        builder.CreateRet(
-            llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0));
+        // A test build ends with the status of its tests; any other
+        // program with zero.
+        if (module.getFunction("tala_test_end") != nullptr)
+        {
+            auto status
+                = module.getOrInsertFunction("tala_test_status", entryType);
+            builder.CreateRet(builder.CreateCall(status));
+        }
+        else
+            builder.CreateRet(
+                llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0));
         // What the program calls of the runtime, it finds in the
         // runtime library the executable is linked with.
         return true;

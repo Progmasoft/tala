@@ -97,7 +97,7 @@ freshDeclaration declaration = case declaration of
         traverse_ reserveDeclarationName members
         closedMembers <- traverse freshDeclaration members
         pure (TypeDeclaration spanValue closedName closedAnnotation closedMembers)
-    FunctionDeclaration spanValue name annotation returnSyntax parameters body isStatic access -> do
+    FunctionDeclaration spanValue name annotation returnSyntax parameters body isStatic access fact -> do
         closedName <- freshDefinition name
         -- Parameters are definitions and must be allocated before the body is
         -- walked, otherwise references in the body retain the template copy's
@@ -115,6 +115,7 @@ freshDeclaration declaration = case declaration of
                 closedBody
                 isStatic
                 access
+                fact
             )
     TemplateTypeDeclaration {} ->
         -- A nested template introduces a separate substitution/freshening
@@ -126,7 +127,7 @@ freshDeclaration declaration = case declaration of
 reserveDeclarationName :: Declaration ResolvedName Type -> Fresh ()
 reserveDeclarationName declaration = case declaration of
     TypeDeclaration _ name _ _ -> freshDefinition name >> pure ()
-    FunctionDeclaration _ name _ _ _ _ _ _ -> freshDefinition name >> pure ()
+    FunctionDeclaration _ name _ _ _ _ _ _ _ -> freshDefinition name >> pure ()
     TemplateTypeDeclaration {} ->
         -- Nested templates own a separate specialization environment and must
         -- not leak definitions into the enclosing concrete type's map.
@@ -316,7 +317,7 @@ declarationSymbols :: Declaration ResolvedName Type -> [Int]
 declarationSymbols declaration = case declaration of
     TypeDeclaration _ name annotation members ->
         nameSymbol name : typeSymbols annotation ++ concatMap declarationSymbols members
-    FunctionDeclaration _ name annotation _ parameters body _ _ ->
+    FunctionDeclaration _ name annotation _ parameters body _ _ _ ->
         nameSymbol name
             : typeSymbols annotation
             ++ concatMap parameterSymbols parameters

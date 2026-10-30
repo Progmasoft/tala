@@ -32,6 +32,7 @@ library
         Progmasoft.Tala.CharacterLiteral
         Progmasoft.Tala.Diagnostic
         Progmasoft.Tala.Diagnostic.Protocol
+        Progmasoft.Tala.Directives
         Progmasoft.Tala.FloatingLiteral
         Progmasoft.Tala.Lexer
         Progmasoft.Tala.Completion
@@ -44,6 +45,7 @@ library
     other-modules:
         Progmasoft.Tala.Parser.Cursor
         Progmasoft.Tala.Parser.Match
+        Progmasoft.Tala.Parser.Testing
         Progmasoft.Tala.Parser.Token
     hs-source-dirs: src
     build-depends:

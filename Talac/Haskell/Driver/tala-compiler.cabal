@@ -32,11 +32,13 @@ library
         Progmasoft.Tala.Driver.Command
         Progmasoft.Tala.Diagnostic.SideChannel
         Progmasoft.Tala.Pipeline.Stage
+        Progmasoft.Tala.TestRunner
     reexported-modules:
         tala-syntax:Progmasoft.Tala.AST,
         tala-syntax:Progmasoft.Tala.CharacterLiteral,
         tala-syntax:Progmasoft.Tala.Diagnostic,
         tala-syntax:Progmasoft.Tala.Diagnostic.Protocol,
+        tala-syntax:Progmasoft.Tala.Directives,
         tala-syntax:Progmasoft.Tala.FloatingLiteral,
         tala-syntax:Progmasoft.Tala.Lexer,
         tala-syntax:Progmasoft.Tala.NestingLimits,
@@ -119,6 +121,7 @@ test-suite tala-compiler-tests
         BranchingTests
         LazyEvaluationTests
         ConsoleTests
+        TestBuildTests
         EffectTests
         QualifiedNameTests
         FormatSweepTests

@@ -9,6 +9,7 @@ import BranchingTests (branchingTests)
 import ClosureTests (closureTests)
 import CompileTimeParityTests (compileTimeParityTests)
 import ConditionalExpressionTests (conditionalExpressionTests)
+import ConsoleTests (consoleTests)
 import Control.Exception (finally)
 import CoreInliningTests (coreInliningTests)
 import CoreLinearInliningTests (coreLinearInliningTests)
@@ -19,29 +20,42 @@ import Data.List (isInfixOf)
 import Data.Word (Word8)
 import DiagnosticProtocolTests (diagnosticProtocolTests)
 import DiagnosticSideChannelTests (diagnosticSideChannelTests)
+import EffectTests (effectTests)
 import EnumTests (enumTests)
+import FallThroughTests (fallThroughTests)
 import FloatingOptimizerTests (floatingOptimizerTests)
-import IntegerEvaluationTests (integerEvaluationTests)
+import FormatSweepTests (formatSweepTests)
 import InferredReturnTests (inferredReturnTests)
+import IntegerEvaluationTests (integerEvaluationTests)
 import IntegerFlowTests (integerFlowTests)
 import IterationTests (iterationTests)
 import LazyEvaluationTests (lazyEvaluationTests)
-import ConsoleTests (consoleTests)
-import EffectTests (effectTests)
-import FormatSweepTests (formatSweepTests)
-import RuntimeCallTests (runtimeCallTests)
-import FallThroughTests (fallThroughTests)
-import MemoizeTests (memoizeTests)
 import LoopExpressionTests (loopExpressionTests)
 import LoopFlowOracleTests (loopFlowOracleTests)
 import LoopFlowTests (loopFlowTests)
+import MemoizeTests (memoizeTests)
 import MonomorphizationTests (monomorphizationTests)
 import NestingLimitTests (nestingLimitTests)
 import Numeric (readHex)
 import NumericTests (numericTests)
 import ParserContractTests (parserContractTests)
 import PatternTests (patternTests)
+import Progmasoft.Tala.AST
+import Progmasoft.Tala.Compiler
+import Progmasoft.Tala.Core
+import Progmasoft.Tala.Core.Artifact
+import Progmasoft.Tala.Core.CorePrep
+import Progmasoft.Tala.Core.CorePrep.Verifier
+import Progmasoft.Tala.Core.CorePrep.Wire
+import Progmasoft.Tala.Core.Verifier
+import Progmasoft.Tala.Core.Wire
+import Progmasoft.Tala.Diagnostic
+import Progmasoft.Tala.Lexer
+import Progmasoft.Tala.Parser (Token (..), TokenKind (..))
+import Progmasoft.Tala.Pipeline.Stage
+import Progmasoft.Tala.Resolver.NameResolution
 import QualifiedNameTests (qualifiedNameTests)
+import RuntimeCallTests (runtimeCallTests)
 import ScalarWireTests (scalarWireTests)
 import ShortCircuitTests (shortCircuitTests)
 import SourceSetTests (sourceSetTests)
@@ -66,21 +80,8 @@ import TemplatePlanVerifierTests (templatePlanVerifierTests)
 import TemplateSpecializationPlannerTests (templateSpecializationPlannerTests)
 import TemplateTests (templateTests)
 import TemplateVerifierTests (templateVerifierTests)
+import TestBuildTests (testBuildTests)
 import TypeClassificationTests (typeClassificationTests)
-import Progmasoft.Tala.AST
-import Progmasoft.Tala.Compiler
-import Progmasoft.Tala.Core
-import Progmasoft.Tala.Core.Artifact
-import Progmasoft.Tala.Core.CorePrep
-import Progmasoft.Tala.Core.CorePrep.Verifier
-import Progmasoft.Tala.Core.CorePrep.Wire
-import Progmasoft.Tala.Core.Verifier
-import Progmasoft.Tala.Core.Wire
-import Progmasoft.Tala.Diagnostic
-import Progmasoft.Tala.Lexer
-import Progmasoft.Tala.Parser (Token (..), TokenKind (..))
-import Progmasoft.Tala.Pipeline.Stage
-import Progmasoft.Tala.Resolver.NameResolution
 import VoidTests (voidTests)
 
 main :: IO ()
@@ -193,6 +194,7 @@ main = do
     mapM_ (uncurry check) fallThroughTests
     mapM_ (uncurry check) runtimeCallTests
     mapM_ (uncurry check) consoleTests
+    mapM_ (uncurry check) testBuildTests
     mapM_ (uncurry check) effectTests
     mapM_ (uncurry check) qualifiedNameTests
     mapM_ (uncurry check) formatSweepTests
