@@ -55,6 +55,18 @@ namespace Progmasoft::Tala::Driver
                     return "native executable output would overwrite one of "
                            "its object files";
             }
+            if (request.sysroot)
+            {
+#if defined(_WIN32)
+                return "--sysroot has nothing to name for a Windows "
+                       "executable, which links no system library";
+#else
+                std::error_code error;
+                if (!std::filesystem::is_directory(*request.sysroot, error))
+                    return "the system root '" + request.sysroot->string()
+                           + "' is not a directory";
+#endif
+            }
 #if defined(_WIN32)
             if (request.objectFormat != Backend::LLVM::ObjectFormat::Coff)
                 return "the Windows native linker requires COFF object input";
@@ -395,7 +407,12 @@ namespace Progmasoft::Tala::Driver
         // C library calls. What a program needs beyond its own code is the
         // Tala runtime library and, through it, the C library.
         std::vector<std::string> options{ "-o", request.outputPath.string() };
-        options.reserve(options.size() + request.objectPaths.size() + 1U);
+        options.reserve(options.size() + request.objectPaths.size() + 2U);
+        // The driver finds the C library and its start-up objects under the
+        // system root; clang and GCC spell it the same way, and on macOS it
+        // names the SDK.
+        if (request.sysroot)
+            options.push_back("--sysroot=" + request.sysroot->string());
         for (const auto &object : request.objectPaths)
             options.push_back(object.string());
 

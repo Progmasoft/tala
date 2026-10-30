@@ -45,6 +45,7 @@ Names and values are case-sensitive.
 | `--entry=` | a namespace-qualified class, `Namespace.Program` | none |
 | `--standard=` | `26` | `26` |
 | `--target=`, `-t` | an LLVM target triple | the target of the host |
+| `--sysroot=` | the system root an executable is linked against | the linker's |
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
 | `--codegen-backend=` | `llvm` | `llvm` |
@@ -75,6 +76,18 @@ talac Helper.tala --emit=metadata
 
 Several sources are one program, and a program is lowered from its entry, so a check of several sources still needs
 `--entry`.
+
+### System root
+
+`--sysroot=<path>` hands the linker driver a system root: the directory that holds the C library, its start-up objects
+and, for macOS, the SDK of the target. It is written as `--sysroot=<path>` on the command line of `cc`, which clang and GCC
+both read. Talac reads it only when it links, so it needs `--emit=executable`, and the path must be a directory. A Windows
+executable links no system library, only the Tala runtime and an import library Talac writes for the kernel32 functions it
+uses, so `--sysroot` is refused there.
+
+```text
+talac Program.tala --entry=Demo.Program --sysroot=/opt/sysroots/ubuntu-26.04-arm64
+```
 
 ### Tests
 

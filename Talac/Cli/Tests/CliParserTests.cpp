@@ -366,6 +366,23 @@ TEST_CASE("a header is written only for a C library")
                    "does not take a value"));
 }
 
+TEST_CASE("a system root is read for an executable")
+{
+    const auto options
+        = Ready({ "P.tala", "--entry=A.B", "--sysroot=/opt/sysroots/arm64" });
+    REQUIRE(options.sysroot);
+    CHECK(*options.sysroot == "/opt/sysroots/arm64");
+    CHECK_FALSE(options.compiler.sysroot);
+    CHECK_FALSE(Ready({ "P.tala", "--entry=A.B" }).sysroot);
+    CHECK(Mentions(
+        Rejected({ "P.tala", "--entry=A.B", "--emit=object", "--sysroot=/s" }),
+        "--sysroot is read when an executable is linked"));
+    CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--sysroot=" }),
+                   "--sysroot"));
+    CHECK(Mentions(Rejected({ "P.tala", "--entry=A.B", "--sysroot" }),
+                   "requires a value"));
+}
+
 TEST_CASE("a test build names no entry")
 {
     const auto options = Ready({ "Math.tala", "Tests.tala", "--test" });

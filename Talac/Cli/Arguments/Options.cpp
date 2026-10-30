@@ -45,6 +45,7 @@ namespace
         ViPkgType,
         Header,
         Test,
+        Sysroot,
         Count,
     };
 
@@ -172,6 +173,12 @@ namespace
           "",
           "build the runner of the [Fact] methods; Fact holds in #if",
           "" },
+        { Option::Sysroot,
+          "sysroot",
+          '\0',
+          "<path>",
+          "system root the linker links an executable against",
+          "the linker's" },
     } };
 
     template<typename Value>
@@ -237,6 +244,7 @@ namespace
         .llvmOptLevel = LlvmOptLevel::kO2,
         .llvmCompiler = LlvmCompiler::kAot,
         .llvmLto = LlvmLto::kNone,
+        .sysroot = nullptr,
     };
 
     template<typename Value, std::size_t Size>
@@ -502,6 +510,11 @@ namespace
             case Option::Test:
                 options.test = true;
                 return true;
+            case Option::Sysroot:
+                if (value.empty())
+                    return false;
+                options.sysroot = std::string(value);
+                return true;
             case Option::Version:
             case Option::Help:
             case Option::Count:
@@ -565,6 +578,9 @@ namespace
     {
         if (options.inputs.empty())
             return "an input file is required; use --help for usage";
+        if (options.sysroot && options.output != BuildOutput::kExecutable)
+            return "--sysroot is read when an executable is linked; it "
+                   "cannot be combined with another --emit";
         if (options.compiler.shadowWarnings
             && options.compiler.warningLevel == WarningLevel::kNone)
             return "--warnings=none reports nothing; it cannot be combined "

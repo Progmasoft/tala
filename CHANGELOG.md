@@ -7,6 +7,13 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Linking
+
+- `--sysroot=<path>` names the system root the linker driver links an
+  executable against on Linux, macOS and the BSDs. It needs
+  `--emit=executable` and a directory; a Windows executable links no system
+  library and refuses it.
+
 ### Tests
 
 - `talac --test` builds the runner of the `[Fact]` methods of its sources. The
