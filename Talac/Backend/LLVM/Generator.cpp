@@ -318,7 +318,9 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
         // `_fltused`, which a C runtime defines. A Tala executable has none,
         // and with TalaRT in talart.dll none of the runtime either, so the
         // executable defines it. TalaRT's archive defines it as well; the
-        // linker keeps any one of them.
+        // linker keeps any one of them. The definition is external, not one
+        // the optimizer may drop: nothing in the IR refers to it, because
+        // the reference is added only when the object is written.
         if (triple.isOSWindows()
             && module.getNamedGlobal("_fltused") == nullptr)
         {
@@ -327,7 +329,7 @@ namespace Progmasoft::Tala::Backend::LLVM::Generation
                 module,
                 int32,
                 false,
-                llvm::GlobalValue::LinkOnceODRLinkage,
+                llvm::GlobalValue::ExternalLinkage,
                 llvm::ConstantInt::get(int32, 0x9875),
                 "_fltused");
             fltused->setComdat(module.getOrInsertComdat("_fltused"));
