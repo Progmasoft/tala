@@ -23,6 +23,9 @@ namespace Progmasoft::Tala::Driver
         /// the driver's own. A Windows executable links no system library
         /// and refuses one.
         std::optional<std::filesystem::path> sysroot;
+        /// The LLVM target triple of the objects; empty for the host. The
+        /// target, not the host, decides how the executable is linked.
+        std::string targetTriple;
     };
 
     struct NativeLinkResult final
@@ -37,9 +40,12 @@ namespace Progmasoft::Tala::Driver
         }
     };
 
-    // LinkNativeExecutable invokes the platform linker directly with a typed
-    // argv. No command shell, response-file parser, or user-controlled command
-    // string sits between the compiler model and LLD.
+    // LinkNativeExecutable links the objects for their target: lld-link for
+    // Windows from any host, the host's C compiler for a target of the host,
+    // and clang with LLD for another Linux, macOS or BSD target. It runs the
+    // linker with a typed argv; no command shell, response-file parser, or
+    // user-controlled command string sits between the compiler model and the
+    // linker.
     [[nodiscard]] auto
     LinkNativeExecutable(const NativeLinkRequest &request) -> NativeLinkResult;
 } // namespace Progmasoft::Tala::Driver

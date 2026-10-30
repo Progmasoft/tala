@@ -384,7 +384,9 @@ func Verify(repository string) ([]string, error) {
 			}
 		}
 	}
-	linker := source.read("Talac/Linker/NativeLinker.cpp")
+	// The plan of a link names the programs and libraries; the linker
+	// that runs it lists the system imports of Windows.
+	linker := source.read("Talac/Linker/NativeLinker.cpp") + "\n" + source.read("Talac/Linker/LinkPlan.cpp")
 	// An executable takes the extension the host gives its programs: the one
 	// the command line names for Windows, and none elsewhere.
 	options := source.read("Talac/Cli/Arguments/Options.cpp")
@@ -409,10 +411,10 @@ func Verify(repository string) ([]string, error) {
 		}
 	}
 	if windows, linked := executable.NativeLinking["windows"]; linked {
-		if !strings.Contains(linker, `L"`+windows.Linker+`.exe"`) {
+		if !strings.Contains(linker, `kWindowsLinker = "`+windows.Linker+`"`) {
 			source.problems = append(source.problems, "the Windows linker "+windows.Linker+" is not what the native linker starts")
 		}
-		if !strings.Contains(linker, `L"`+windows.RuntimeLibrary+`"`) {
+		if !strings.Contains(linker, `kWindowsRuntimeLibrary = "`+windows.RuntimeLibrary+`"`) {
 			source.problems = append(source.problems, "the Windows runtime library "+windows.RuntimeLibrary+" is not what the native linker looks for")
 		}
 		imports := between(linker, "kSystemImports = ", ";")

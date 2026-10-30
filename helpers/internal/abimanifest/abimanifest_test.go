@@ -28,6 +28,7 @@ var described = []string{
 	"Talac/Codegen/Xpp/Wire.cpp",
 	"Talac/Headers/Progmasoft/Tala/Xmm/Wire.hpp",
 	"Talac/Codegen/Xmm/Wire.cpp",
+	"Talac/Linker/LinkPlan.cpp",
 	"Talac/Linker/NativeLinker.cpp",
 	"Talac/Cli/Arguments/Options.cpp",
 }
@@ -134,7 +135,7 @@ func TestEveryStatementOfTheManifestIsChecked(t *testing.T) {
 		{"the Windows runtime library", Path, "\"runtime_library\": \"tala-runtime.lib\"", "\"runtime_library\": \"runtime.lib\"", "runtime library"},
 		{"the linker on Linux", Path, "\"linux\": {\n        \"linker\": \"cc\"", "\"linux\": {\n        \"linker\": \"ld\"", "linker on linux"},
 		{"the runtime library on macOS", Path, "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libtala-runtime.a\"", "\"macos\": {\n        \"linker\": \"cc\",\n        \"runtime_library\": \"libruntime.a\"", "runtime library on macos"},
-		{"the driver the linker starts", "Talac/Linker/NativeLinker.cpp", "kLinkerDriver = \"cc\"", "kLinkerDriver = \"clang\"", "linker on linux"},
+		{"the driver the linker starts", "Talac/Linker/LinkPlan.cpp", "kLinkerDriver = \"cc\"", "kLinkerDriver = \"clang\"", "linker on linux"},
 		{"a system import the manifest lacks", Path, "            \"WriteConsoleW\",\n", "", "imported from KERNEL32.dll"},
 		{"a system import the linker gains", "Talac/Linker/NativeLinker.cpp", "\"    WriteFile\\n\"", "\"    WriteFile\\n\"\n\"    ExitProcess\\n\"", "ExitProcess"},
 	}

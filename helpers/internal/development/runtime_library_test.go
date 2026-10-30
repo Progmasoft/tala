@@ -15,7 +15,8 @@ func TestEveryHostHasARuntimeLibraryTheLinkerLooksFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	linker, err := os.ReadFile(filepath.Join(root, "Talac", "Linker", "NativeLinker.cpp"))
+	// The plan of a link names the runtime library of each kind of target.
+	linker, err := os.ReadFile(filepath.Join(root, "Talac", "Linker", "LinkPlan.cpp"))
 	if err != nil {
 		t.Fatal(err)
 	}
