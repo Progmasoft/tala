@@ -52,10 +52,15 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
         llvm::report_fatal_error("CLI accepted shadow warnings with none");
     if (first.result == CliParseResult::kReady && first.options.inputs.empty())
         llvm::report_fatal_error("CLI accepted a command line without input");
+    // A test build has the runner of its facts for an entry and may name
+    // none of its own.
+    if (first.result == CliParseResult::kReady && first.options.test
+        && first.options.entry.has_value())
+        llvm::report_fatal_error("CLI accepted an entry for a test build");
     // An executable made from Tala sources needs an entry and nothing else
     // may carry one; the parser is the only place that rule is enforced. A
     // check of one source is the exception: it may name an entry or not.
-    if (first.result == CliParseResult::kReady)
+    if (first.result == CliParseResult::kReady && !first.options.test)
     {
         const bool takesEntry
             = first.options.viPkgType == ViPkgType::kExecutable

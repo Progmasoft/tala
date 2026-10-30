@@ -313,8 +313,9 @@ namespace
     }
 
     [[nodiscard]] auto
-    WriteExecutable(const char *inputPath, const Llvm::Artifact &artifact)
-        -> bool
+    WriteExecutable(const char *inputPath,
+                    const Llvm::Artifact &artifact,
+                    const char *sysroot) -> bool
     {
         const auto output
             = ArtifactPath(inputPath,
@@ -329,9 +330,13 @@ namespace
             fmt::print(stderr, "talac: {}: {}\n", error->code, error->message);
             return false;
         }
-        const Driver::NativeLinkRequest request{ output,
-                                                 { temporary.Path() },
-                                                 artifact.objectFormat };
+        const Driver::NativeLinkRequest request{
+            output,
+            { temporary.Path() },
+            artifact.objectFormat,
+            sysroot != nullptr ? std::optional{ std::filesystem::path(sysroot) }
+                               : std::nullopt
+        };
         const auto linked = Driver::LinkNativeExecutable(request);
         if (!linked)
         {
@@ -444,7 +449,9 @@ namespace
                 return false;
             }
             if (output == BuildOutput::kExecutable)
-                return WriteExecutable(artifactBasePath, *result.llvm);
+                return WriteExecutable(artifactBasePath,
+                                       *result.llvm,
+                                       settings->sysroot);
             return WriteArtifact(artifactBasePath, output, *result.llvm);
         }
         fmt::print(stderr,

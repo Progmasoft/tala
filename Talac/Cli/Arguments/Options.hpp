@@ -105,6 +105,10 @@ struct CompilerSettings
     LlvmOptLevel llvmOptLevel;
     LlvmCompiler llvmCompiler;
     LlvmLto llvmLto;
+    /// The system root the linker driver links an executable against, or
+    /// null for the driver's own. It points into the `CliOptions` the
+    /// settings were made for.
+    const char *sysroot;
 
     bool
     operator==(const CompilerSettings &) const = default;
@@ -118,6 +122,8 @@ struct CliOptions
     std::optional<std::string> entry;
     /// LLVM target triple; the host when absent.
     std::optional<std::string> target;
+    /// The system root of the target, for the linker driver.
+    std::optional<std::string> sysroot;
     /// Arguments handed to LLVM as they were written.
     std::vector<std::string> llvmArguments;
     std::string standard;

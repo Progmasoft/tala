@@ -19,6 +19,10 @@ namespace Progmasoft::Tala::Driver
         Backend::LLVM::ObjectFormat objectFormat{
             Backend::LLVM::ObjectFormat::Unknown
         };
+        /// The system root the linker driver links against, or none for
+        /// the driver's own. A Windows executable links no system library
+        /// and refuses one.
+        std::optional<std::filesystem::path> sysroot;
     };
 
     struct NativeLinkResult final
