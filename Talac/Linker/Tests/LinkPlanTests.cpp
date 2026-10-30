@@ -206,7 +206,8 @@ TEST_CASE("the linker's command line is read from what clang prints for -###")
 
     constexpr std::string_view kWindowsHost
         = " \"C:\\\\LLVM\\\\bin\\\\clang.exe\" \"-cc1\" \"-triple\" \"x\"\n"
-          " \"C:\\\\LLVM\\\\bin\\\\ld.lld.exe\" \"--sysroot=C:\\\\roots\\\\arm\" "
+          " \"C:\\\\LLVM\\\\bin\\\\ld.lld.exe\" "
+          "\"--sysroot=C:\\\\roots\\\\arm\" "
           "\"-o\" \"a b\" \"q\\\"uote\"\n";
     const auto cross = Driver::LinkerCommandOf(kWindowsHost);
     REQUIRE(cross);
