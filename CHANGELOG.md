@@ -11,8 +11,8 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 - `--sysroot=<path>` names the system root the linker driver links an
   executable against on Linux, macOS and the BSDs. It needs
-  `--emit=executable` and a directory; a Windows executable links no system
-  library and refuses it.
+  `--emit=executable` and a directory. A Windows target links no system
+  library and refuses it, whatever the host.
 
 ### Tests
 

@@ -55,17 +55,17 @@ namespace Progmasoft::Tala::Driver
                     return "native executable output would overwrite one of "
                            "its object files";
             }
+            // A system root belongs to the target, whose object format the
+            // request carries; the host that links does not decide it.
             if (request.sysroot)
             {
-#if defined(_WIN32)
-                return "--sysroot has nothing to name for a Windows "
-                       "executable, which links no system library";
-#else
+                if (request.objectFormat == Backend::LLVM::ObjectFormat::Coff)
+                    return "--sysroot has nothing to name for a Windows "
+                           "executable, which links no system library";
                 std::error_code error;
                 if (!std::filesystem::is_directory(*request.sysroot, error))
                     return "the system root '" + request.sysroot->string()
                            + "' is not a directory";
-#endif
             }
 #if defined(_WIN32)
             if (request.objectFormat != Backend::LLVM::ObjectFormat::Coff)

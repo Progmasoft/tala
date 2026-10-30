@@ -83,7 +83,7 @@ Several sources are one program, and a program is lowered from its entry, so a c
 and, for macOS, the SDK of the target. It is written as `--sysroot=<path>` on the command line of `cc`, which clang and GCC
 both read. Talac reads it only when it links, so it needs `--emit=executable`, and the path must be a directory. A Windows
 executable links no system library, only the Tala runtime and an import library Talac writes for the kernel32 functions it
-uses, so `--sysroot` is refused there.
+uses, so `--sysroot` is refused when the target is Windows, whichever host talac runs on.
 
 ```text
 talac Program.tala --entry=Demo.Program --sysroot=/opt/sysroots/ubuntu-26.04-arm64

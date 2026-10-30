@@ -459,6 +459,15 @@ namespace
             fmt::print(stderr, "talac: {} is not implemented yet\n", *missing);
             return kUsageError;
         }
+        // Refused before anything is compiled: the target, not the host,
+        // decides whether a system root means anything.
+        if (options.sysroot && TargetSystem(options.target) == "Windows")
+        {
+            fmt::print(stderr,
+                       "talac: --sysroot has nothing to name for a Windows "
+                       "target, whose executables link no system library\n");
+            return kUsageError;
+        }
         const auto extension = InputExtension(options.input);
         for (const auto &input : options.inputs)
         {
