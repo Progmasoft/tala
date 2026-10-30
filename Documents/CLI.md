@@ -80,6 +80,28 @@ talac Helper.tala --emit=metadata
 Several sources are one program, and a program is lowered from its entry, so a check of several sources still needs
 `--entry`.
 
+### Linking for another target
+
+The target, not the host, decides how an executable is linked:
+
+| Target | Linker | Tala runtime |
+| --- | --- | --- |
+| Windows (`x86_64`, `aarch64`) | `lld-link`, on every host | `tala-runtime.lib` |
+| the host's own system, architecture and C library | `cc`, the C compiler of the host | `libtala-runtime.a` |
+| another Linux, macOS or BSD target | `clang --target=<triple> -fuse-ld=lld` | `libtala-runtime.a` |
+
+The runtime of the host stands beside talac. The runtime of another target stands in `runtimes/<triple>/` beside it, under
+the normalized triple, for example `runtimes/aarch64-unknown-linux-gnu/libtala-runtime.a`; a program that calls nothing of
+the runtime links without it. A Windows executable needs nothing else: it imports only kernel32, through an import library
+talac writes for the target's machine. A Linux, macOS or BSD target also needs its C library, which `--sysroot` names.
+
+```text
+talac Program.tala --entry=Demo.Program --target=x86_64-pc-windows-msvc
+talac Program.tala --entry=Demo.Program --target=aarch64-unknown-linux-gnu --sysroot=/opt/sysroots/arm64
+```
+
+`lld-link`, `cc` and `clang` are found on `PATH`.
+
 ### System root
 
 `--sysroot=<path>` hands the linker driver a system root: the directory that holds the C library, its start-up objects

@@ -335,7 +335,8 @@ namespace
             { temporary.Path() },
             artifact.objectFormat,
             sysroot != nullptr ? std::optional{ std::filesystem::path(sysroot) }
-                               : std::nullopt
+                               : std::nullopt,
+            artifact.target_triple
         };
         const auto linked = Driver::LinkNativeExecutable(request);
         if (!linked)

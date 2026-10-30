@@ -9,6 +9,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Linking
 
+- An executable is linked for its target rather than for the host: Windows
+  executables with `lld-link` from any host, for the machine of the target;
+  another Linux, macOS or BSD target with `clang --target=<triple>
+  -fuse-ld=lld`; the host's own target with `cc` as before. The runtime of
+  another target is looked up in `runtimes/<triple>/` beside talac.
+
 - `--sysroot=<path>` names the system root the linker driver links an
   executable against on Linux, macOS and the BSDs. It needs
   `--emit=executable` and a directory. A Windows target links no system
