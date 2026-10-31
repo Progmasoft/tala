@@ -7,6 +7,11 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 ## Unreleased
 
+### Compile times
+
+- The frontend spends about half as long in garbage collection, with no more
+  memory.
+
 ### Licensing
 
 - Project files move to the Progmasoft Linking Exception, Version 2.0. Code talac
