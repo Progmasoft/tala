@@ -101,7 +101,7 @@ compileEntryToCorePrepWith ::
 compileEntryToCorePrepWith environment entry input = do
     artifacts <- compileToCorePrepWith environment input
     validateEntryPoint entry (artifactTypedAST artifacts)
-    pure artifacts
+    pure (keepEntryMain entry artifacts)
 
 {- | Materialize an explicit batch of resolved template demands and lower the
 resulting closed declaration view to verified Core. Demand discovery and
@@ -162,7 +162,12 @@ compileParsedProject entry parsedUnits = do
             compiled <- collectResults (map compileNamespace (groupParsedUnits parsedUnits))
             selected <- selectNamespace namespaceName compiled
             validateEntryPoint entry (artifactTypedAST (artifactFrontend selected))
-            pure (ProjectFrontendArtifacts entry compiled selected)
+            pure
+                ( ProjectFrontendArtifacts
+                    entry
+                    compiled
+                    selected {artifactFrontend = keepEntryMain entry (artifactFrontend selected)}
+                )
 
 -- | Retrieve the selected namespace's optimized Core module for native lowering.
 projectEntryCore :: ProjectFrontendArtifacts -> CoreModule
@@ -335,6 +340,39 @@ validateEntryPoint entry (TypedAST (SyntaxTree namespace declarations)) = do
             [] -> Left [entryProblem "TAE0003" Nothing ("entry class was not found: " ++ identifierText className)]
             [declaration] -> validateEntryMethod declaration
             _ -> Left [entryProblem "TAE0013" Nothing ("entry class is ambiguous: " ++ identifierText className)]
+
+{- | The native stages know the entry of a process as the function spelled
+@Main@ of the module, and a class other than the entry may have a method of
+that name, such as the program a test build tests. Such a method is ordinary,
+so it gives up the spelling. A spelling is not identity: its calls name its
+symbol, and they keep working.
+-}
+keepEntryMain :: QualifiedName -> FrontendArtifacts -> FrontendArtifacts
+keepEntryMain entry artifacts =
+    artifacts
+        { artifactCore = respell (artifactCore artifacts)
+        , artifactOptimizedCore = respell (artifactOptimizedCore artifacts)
+        }
+    where
+        respell core = core {coreModuleFunctions = map ordinary (coreModuleFunctions core)}
+        ordinary function
+            | isOtherMain (coreFunctionName function) =
+                function {coreFunctionName = (coreFunctionName function) {resolvedSpelling = Identifier "$Main"}}
+            | otherwise = function
+        isOtherMain name =
+            resolvedSpelling name == Identifier "Main" && Just (resolvedSymbol name) /= entrySymbol
+        entrySymbol = case (entryClassName entry, artifactTypedAST artifacts) of
+            (Right className, TypedAST (SyntaxTree _ declarations)) ->
+                case matchingTypes className declarations of
+                    [TypeDeclaration {typeMembers = members}] ->
+                        case [ resolvedSymbol (declarationName member)
+                             | member@FunctionDeclaration {} <- members
+                             , resolvedSpelling (declarationName member) == Identifier "Main"
+                             ] of
+                            [symbol] -> Just symbol
+                            _ -> Nothing
+                    _ -> Nothing
+            _ -> Nothing
 
 matchingTypes :: Identifier -> [Declaration ResolvedName Type] -> [Declaration ResolvedName Type]
 matchingTypes className declarations =
