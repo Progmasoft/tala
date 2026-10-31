@@ -7,6 +7,11 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Compile times
+
+- The frontend spends about half as long in garbage collection, with no more
+  memory.
+
 ### Incremental builds
 
 - `--incremental=<directory>` keeps an object per source and lowers only the

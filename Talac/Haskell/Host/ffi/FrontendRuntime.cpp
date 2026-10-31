@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
-#include <HsFFI.h>
+#include <RtsAPI.h>
 #include <cstdint>
 
 #ifdef _WIN32
@@ -73,7 +73,13 @@ tala_frontend_initialize() noexcept
         char executableName[] = "talac";
         char *arguments[] = { executableName, nullptr };
         char **argumentPointer = arguments;
-        hs_init(&argumentCount, &argumentPointer);
+        RtsConfig config = defaultRtsConfig;
+        // The frontend builds a large AST it holds on to, so the default
+        // nursery of 4 MiB collects, and copies it, far too often. Chunks keep
+        // the large nursery from raising what the process touches: on a
+        // program of 4800 methods GC took half the time, at the same memory.
+        config.rts_opts = "-A64m -n4m";
+        hs_init_ghc(&argumentCount, &argumentPointer, config);
         StoreRuntimeState(2);
     }
     else
