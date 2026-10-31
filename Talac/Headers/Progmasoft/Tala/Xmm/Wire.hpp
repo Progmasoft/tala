@@ -60,6 +60,15 @@ namespace Progmasoft::Tala::Xmm::Wire
     [[nodiscard]] auto
     Encode(const ::tala::xmm::Module &module, const Limits &limits = {})
         -> EncodeResult;
+    /// Serialize functions without a document around them, for comparing
+    /// them. They need not form a verifiable module, and what comes out
+    /// cannot be decoded.
+    /// @param functions Functions to encode, in order.
+    /// @param limits Resource ceilings applied before traversal.
+    /// @return Bytes or the first structured serialization error.
+    [[nodiscard]] auto
+    EncodeFunctions(std::span<const ::tala::xmm::Function> functions,
+                    const Limits &limits = {}) -> EncodeResult;
     /// Decode bounded wire bytes into a structural Xmm module.
     /// Decoding does not replace semantic Xmm verification.
     /// @param bytes Complete encoded document.

@@ -7,6 +7,12 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ## Unreleased
 
+### Incremental builds
+
+- `--incremental=<directory>` keeps an object per source and lowers only the
+  sources whose code, or the signature of what they call, changed. The sources
+  that do change are lowered on several threads.
+
 ### Linking
 
 - LLD's COFF, ELF and Mach-O linkers are linked into talac, which links

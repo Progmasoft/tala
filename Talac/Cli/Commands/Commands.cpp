@@ -377,6 +377,8 @@ namespace
     {
         auto settings = options.compiler;
         settings.sysroot = options.sysroot ? options.sysroot->c_str() : nullptr;
+        settings.incrementalDirectory
+            = options.incremental ? options.incremental->c_str() : nullptr;
         return settings;
     }
 

@@ -16,8 +16,8 @@ cc_library(
 
 cc_library(
     name = "core_pipeline",
-    srcs = ["CorePipeline.cpp", "ProjectArtifacts.cpp"],
-    hdrs = ["CorePipeline.hpp", "ProjectArtifacts.hpp"],
+    srcs = ["CorePipeline.cpp", "IncrementalBuild.cpp", "ProjectArtifacts.cpp"],
+    hdrs = ["CorePipeline.hpp", "IncrementalBuild.hpp", "ProjectArtifacts.hpp"],
     deps = [
         "//Talac/Artifact:source_path",
         "//Talac/Cli/Arguments:arguments",

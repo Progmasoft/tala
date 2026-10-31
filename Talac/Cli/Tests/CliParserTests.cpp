@@ -483,3 +483,18 @@ TEST_CASE("extensions follow the kind and the host")
     CHECK(InputExtension(BuildInput::kLlvmBitcode) == ".bc");
     CHECK(std::string_view(WarningLevelName(WarningLevel::kLow)) == "low");
 }
+
+TEST_CASE("--incremental names where an executable keeps its objects")
+{
+    const auto options
+        = Ready({ "P.tala", "--entry=A.B", "--incremental=.objects" });
+    REQUIRE(options.incremental);
+    CHECK(*options.incremental == ".objects");
+    CHECK(Parse({ "P.tala", "--entry=A.B", "--incremental=" }).result
+          != CliParseResult::kReady);
+    CHECK(Parse({ "P.tala", "--emit=core", "--entry=A.B", "--incremental=o" })
+              .result
+          != CliParseResult::kReady);
+    CHECK(Parse({ "P.tala", "--emit=metadata", "--incremental=o" }).result
+          != CliParseResult::kReady);
+}

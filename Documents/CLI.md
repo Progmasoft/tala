@@ -46,6 +46,7 @@ Names and values are case-sensitive.
 | `--standard=` | `26` | `26` |
 | `--target=`, `-t` | an LLVM target triple | the target of the host |
 | `--sysroot=` | the system root of the target, for what the build links | the linker's |
+| `--incremental=` | a directory that keeps an object per source between builds | off |
 | `--static-talart-library=` | `true`, `false`: link TalaRT into the output instead of beside it | `false` |
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
@@ -126,6 +127,27 @@ static library whose copy of TalaRT is isolated: its symbols are local to the li
 or beside another such library without a clash, and each copy keeps its own state. A `cdylib` with TalaRT's archive exports
 only its own C interface. Without `--static-talart-library=true`, a library refers to the one shared TalaRT and needs no
 isolation.
+
+### Incremental builds
+
+`--incremental=<directory>` builds an executable from one object per source and keeps the objects in the directory. The next
+build lowers only the sources whose object would differ:
+
+```text
+talac Sources/*.tala --entry=Demo.Program --incremental=.objects
+talac: linked native executable 'Sources/Main.exe', 1 of 13 sources recompiled
+```
+
+An object is known by a key made of the code of the source, after the frontend and the Xpp and Xmm passes, the signatures of
+the functions it calls in other sources, the target, the optimization level and the compiler itself. So a comment or a blank
+line recompiles nothing, a changed body recompiles its source alone, and a changed signature also recompiles the sources
+that call it. The objects of earlier builds are removed, so one directory serves one program.
+
+The frontend still reads all sources, and symbols are numbered across the program, so a new function can recompile the
+sources after it. LLVM optimizes each source alone: calls between sources are not inlined, so use it for development
+builds rather than for releases.
+
+`--incremental` needs `--emit=executable` and Tala sources.
 
 ### System root
 

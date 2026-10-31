@@ -52,6 +52,10 @@ LLVMFuzzerTestOneInput(const std::uint8_t *data, std::size_t size)
         llvm::report_fatal_error("CLI accepted shadow warnings with none");
     if (first.result == CliParseResult::kReady && first.options.inputs.empty())
         llvm::report_fatal_error("CLI accepted a command line without input");
+    if (first.result == CliParseResult::kReady
+        && first.options.incremental.has_value()
+        && first.options.output != BuildOutput::kExecutable)
+        llvm::report_fatal_error("CLI accepted --incremental without objects");
     // A test build has the runner of its facts for an entry and may name
     // none of its own.
     if (first.result == CliParseResult::kReady && first.options.test

@@ -67,6 +67,9 @@ namespace Progmasoft::Tala::Backend::LLVM
         /// When set, define only functions owned by this project-relative file.
         /// Declarations for the other functions remain available for linking.
         std::optional<std::u32string> definition_source_file;
+        /// Define no function of the module, only the entry bridge, for a
+        /// build whose functions are in objects of their own.
+        bool entry_only{};
     };
 
     /// Xmm verifier diagnostic category reused by the backend.

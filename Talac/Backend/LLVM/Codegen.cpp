@@ -117,6 +117,8 @@ namespace Progmasoft::Tala::Backend::LLVM
         std::size_t definitionCount{};
         for (auto &[_, function] : generator.functions)
         {
+            if (options.entry_only)
+                continue;
             if (options.definition_source_file
                 && function.source->source_file
                        != *options.definition_source_file)
