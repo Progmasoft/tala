@@ -23,7 +23,7 @@ cc_binary(
         "//Talac/Analysis:liveness",
         "//Talac/Analysis:ownership_flow",
         "//Talac/Analysis:worklist",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )

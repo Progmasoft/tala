@@ -15,8 +15,8 @@ cc_binary(
         "//Talac/Codegen/Xpp:xpp",
         "//Talac/Core:core",
         "//Talac/Headers/Progmasoft/Tala/Core:scalar",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 
@@ -25,8 +25,8 @@ cc_binary(
     srcs = ["IncrementalBuildTests.cpp"],
     deps = [
         "//Talac/Driver:core_pipeline",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 
@@ -38,8 +38,8 @@ cc_binary(
         "//Talac/Codegen/Xpp:xpp",
         "//Talac/Core:core",
         "//Talac/Headers/Progmasoft/Tala/Core:scalar",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 
@@ -57,8 +57,8 @@ cc_binary(
         "//Talac/Driver:pipeline",
         "//Talac/Headers/Progmasoft/Tala:pipeline_api",
         "//Talac/Headers/Progmasoft/Tala/Core:scalar",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 
@@ -67,7 +67,7 @@ cc_binary(
     srcs = ["ProjectArtifactTests.cpp"],
     deps = [
         "//Talac/Driver:core_pipeline",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )

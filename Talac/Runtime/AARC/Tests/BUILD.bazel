@@ -8,8 +8,8 @@ cc_binary(
     deps = [
         "//Talac/Core/Ownership:ownership",
         "//Talac/Runtime/AARC:aarc",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 

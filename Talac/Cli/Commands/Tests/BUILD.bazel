@@ -9,8 +9,8 @@ cc_binary(
     deps = [
         ":frontend_header_c11_compile",
         "//Talac/Cli/Commands:commands",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 
@@ -22,8 +22,8 @@ cc_binary(
     srcs = ["ExecutableRunTests.cpp"],
     deps = [
         "//Talac/Cli/Commands:commands",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
 

@@ -15,7 +15,7 @@ cc_binary(
         "//Talac/Headers/Progmasoft/Tala/Xmm:control_flow_api",
         "//Talac/Headers/Progmasoft/Tala/Xpp:control_flow_api",
         "//Talac/Headers/Progmasoft/Tala/Core:scalar",
-        "@catch3//:catch2_main",
-        "@catch3//src/Progmasoft:catch3",
+        "@catch3//:catch3_main",
+        "@catch3//:catch3",
     ],
 )
