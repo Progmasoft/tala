@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 name: tala-tooling
-version: 0.1.0
+version: 0.2.0
 synopsis: The part of the Tala compiler that tools build on
 description:
     The modules of the Tala compiler that a formatter, a linter or a
@@ -35,9 +35,9 @@ library
         tala-frontend:Progmasoft.Tala.Frontend,
         tala-compiler:Progmasoft.Tala.Compiler
     build-depends:
-        tala-compiler >=0.1.0 && <0.2,
-        tala-frontend >=0.1.0 && <0.2,
-        tala-syntax >=0.1.0 && <0.2
+        tala-compiler >=0.2.0 && <0.3,
+        tala-frontend >=0.2.0 && <0.3,
+        tala-syntax >=0.2.0 && <0.3
     default-language: GHC2024
 
 source-repository head

@@ -222,7 +222,7 @@ rejected leaves no file, and an object input cannot be checked. The record is UT
 
 ```text
 talameta 1
-compiler 0.1.0
+compiler 0.2.0
 entry Demo.Program
 input Sources/Main.tala
 input Sources/Helper.tala

@@ -44,7 +44,7 @@ body:
     attributes:
       label: Environment
       description: OS/version, Tala version, and relevant compiler or toolchain versions.
-      placeholder: Windows 11; talac 0.1.0; Clang 22; GHC 9.10
+      placeholder: Windows 11; talac 0.2.0; Clang 22; GHC 9.10
     validations:
       required: true
   - type: textarea
