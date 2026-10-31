@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 package development
 
@@ -18,7 +18,7 @@ import (
 var bundleFiles = []string{
 	"LICENSE.txt",
 	"PATENTS",
-	"LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt",
+	"LICENSES/AdditionRef-Progmasoft-Exception-2.0.txt",
 	"LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt",
 }
 
