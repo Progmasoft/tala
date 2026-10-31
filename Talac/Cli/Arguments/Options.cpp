@@ -46,6 +46,7 @@ namespace
         Header,
         Test,
         Sysroot,
+        Incremental,
         StaticTalartLibrary,
         Count,
     };
@@ -180,6 +181,12 @@ namespace
           "<path>",
           "system root of the target, for what the build links",
           "the linker's" },
+        { Option::Incremental,
+          "incremental",
+          '\0',
+          "<path>",
+          "keep an object per source here and lower only what changed",
+          "off" },
         { Option::StaticTalartLibrary,
           "static-talart-library",
           '\0',
@@ -253,6 +260,7 @@ namespace
         .llvmCompiler = LlvmCompiler::kAot,
         .llvmLto = LlvmLto::kNone,
         .sysroot = nullptr,
+        .incrementalDirectory = nullptr,
         .staticTalartLibrary = false,
     };
 
@@ -531,6 +539,11 @@ namespace
                     return false;
                 options.sysroot = std::string(value);
                 return true;
+            case Option::Incremental:
+                if (value.empty())
+                    return false;
+                options.incremental = std::string(value);
+                return true;
             case Option::Version:
             case Option::Help:
             case Option::Count:
@@ -598,6 +611,12 @@ namespace
             && options.compiler.warningLevel == WarningLevel::kNone)
             return "--warnings=none reports nothing; it cannot be combined "
                    "with shadow";
+        if (options.incremental
+            && (options.output != BuildOutput::kExecutable
+                || options.viPkgType != ViPkgType::kExecutable
+                || options.input != BuildInput::kTala))
+            return "--incremental keeps the objects of an executable built "
+                   "from Tala sources; this build writes none";
         if (options.test)
         {
             if (options.entry)

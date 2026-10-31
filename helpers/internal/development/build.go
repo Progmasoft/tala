@@ -28,6 +28,7 @@ var nativeTargets = []string{
 	"//Talac/Linker/Tests:lld_tests",
 	"//Talac/Driver/Tests:artifact_wire_tests",
 	"//Talac/Driver/Tests:closure_pipeline_tests",
+	"//Talac/Driver/Tests:incremental_build_tests",
 	"//Talac/Driver/Tests:project_artifact_tests",
 	"//Talac/Driver/Tests:scalar_pipeline_tests",
 	"//Talac/Codegen/Xmm/Tests:xmm_verifier_tests",

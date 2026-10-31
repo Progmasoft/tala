@@ -8,14 +8,17 @@
 #include <fmt/format.h>
 #include <fstream>
 #include <iterator>
+#include <llvm/Support/FileSystem.h>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 #include "Progmasoft/Tala/Pipeline.hpp"
 #include "Progmasoft/Tala/Xmm/IR.hpp"
 #include "Talac/Driver/CorePipeline.hpp"
+#include "Talac/Driver/IncrementalBuild.hpp"
 #include "Talac/Driver/ProjectArtifacts.hpp"
 #include "Talac/Linker/NativeLinker.hpp"
 
@@ -312,6 +315,94 @@ namespace
         return false;
     }
 
+    /// Links [objects] into the executable of [inputPath].
+    [[nodiscard]] auto
+    LinkExecutable(const std::filesystem::path &output,
+                   std::vector<std::filesystem::path> objects,
+                   const Llvm::ObjectFormat objectFormat,
+                   const std::string &targetTriple,
+                   const CompilerSettings &settings) -> bool
+    {
+        const Driver::NativeLinkRequest request{
+            output,
+            std::move(objects),
+            objectFormat,
+            settings.sysroot != nullptr
+                ? std::optional{ std::filesystem::path(settings.sysroot) }
+                : std::nullopt,
+            targetTriple,
+            !settings.staticTalartLibrary
+        };
+        const auto linked = Driver::LinkNativeExecutable(request);
+        if (!linked)
+        {
+            fmt::print(stderr,
+                       "talac: native link failed: {}\n",
+                       linked.diagnostic);
+            return false;
+        }
+        return true;
+    }
+
+    /// What decides an object besides the functions of its source: the
+    /// compiler itself, which can change without its version changing, and
+    /// how it was asked to generate code.
+    [[nodiscard]] auto
+    ObjectContext(const Llvm::Options &options) -> std::string
+    {
+        std::string context
+            = fmt::format("{} {} {} ",
+                          CliVersion(),
+                          options.target_triple,
+                          static_cast<int>(options.optimization));
+        auto program = llvm::sys::fs::getMainExecutable(nullptr, nullptr);
+        std::error_code error;
+        const auto size = std::filesystem::file_size(program, error);
+        const auto time = std::filesystem::last_write_time(program, error);
+        if (!error)
+            context
+                += fmt::format("{} {}", size, time.time_since_epoch().count());
+        return context;
+    }
+
+    /// Builds an executable from one object per source, of which only the
+    /// ones whose source or callees changed are lowered.
+    [[nodiscard]] auto
+    WriteIncrementalExecutable(const char *inputPath,
+                               const tala::xmm::Module &module,
+                               const Llvm::Options &options,
+                               const CompilerSettings &settings) -> bool
+    {
+        const auto output
+            = ArtifactPath(inputPath,
+                           OutputExtension(BuildOutput::kExecutable));
+        auto built
+            = Driver::Incremental::BuildObjects(module,
+                                                options,
+                                                settings.incrementalDirectory,
+                                                ObjectContext(options));
+        if (built.error)
+        {
+            fmt::print(stderr,
+                       "talac: incremental build failed: {}\n",
+                       *built.error);
+            return false;
+        }
+        if (!LinkExecutable(output,
+                            std::move(built.objects),
+                            built.objectFormat,
+                            built.targetTriple,
+                            settings))
+            return false;
+        fmt::print(stderr,
+                   "talac: linked native executable '{}', {} of {} sources "
+                   "recompiled\n",
+                   output.string(),
+                   built.recompiled,
+                   built.sources);
+        return true;
+    }
+
     [[nodiscard]] auto
     WriteExecutable(const char *inputPath,
                     const Llvm::Artifact &artifact,
@@ -330,24 +421,12 @@ namespace
             fmt::print(stderr, "talac: {}: {}\n", error->code, error->message);
             return false;
         }
-        const Driver::NativeLinkRequest request{
-            output,
-            { temporary.Path() },
-            artifact.objectFormat,
-            settings.sysroot != nullptr
-                ? std::optional{ std::filesystem::path(settings.sysroot) }
-                : std::nullopt,
-            artifact.target_triple,
-            !settings.staticTalartLibrary
-        };
-        const auto linked = Driver::LinkNativeExecutable(request);
-        if (!linked)
-        {
-            fmt::print(stderr,
-                       "talac: native link failed: {}\n",
-                       linked.diagnostic);
+        if (!LinkExecutable(output,
+                            { temporary.Path() },
+                            artifact.objectFormat,
+                            artifact.target_triple,
+                            settings))
             return false;
-        }
         fmt::print(stderr,
                    "talac: linked native executable '{}'\n",
                    output.string());
@@ -412,6 +491,12 @@ namespace
                                            || output == BuildOutput::kObject;
         }
 
+        const bool incremental = settings->incrementalDirectory != nullptr
+                                 && output == BuildOutput::kExecutable
+                                 && action != PipelineAction::kCheck;
+        if (incremental)
+            options.stop_after = tala::PipelineStop::Xmm;
+
         auto result
             = inputStage == InputStage::Core
                   ? Progmasoft::Tala::Pipeline::ConsumeCore(bytes, options)
@@ -431,6 +516,11 @@ namespace
                        sourceName);
             return true;
         }
+        if (incremental && result.xmm)
+            return WriteIncrementalExecutable(artifactBasePath,
+                                              *result.xmm,
+                                              options.llvm,
+                                              *settings);
         if (output == BuildOutput::kXpp || output == BuildOutput::kXmm)
             return WriteIntermediate(artifactBasePath, output, result);
         const auto needsLlvm = output == BuildOutput::kExecutable

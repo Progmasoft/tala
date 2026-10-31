@@ -279,6 +279,18 @@ namespace Progmasoft::Tala::Xmm::Wire
     }
 
     auto
+    EncodeFunctions(const std::span<const IR::Function> functions,
+                    const Limits &limits) -> EncodeResult
+    {
+        Common::Writer writer(limits);
+        for (const auto &function : functions)
+            WriteFunction(writer, function, limits);
+        if (writer.Failure())
+            return { {}, writer.Failure() };
+        return { writer.TakeBytes(), std::nullopt };
+    }
+
+    auto
     Decode(std::span<const std::uint8_t> bytes, const Limits &limits)
         -> DecodeResult
     {

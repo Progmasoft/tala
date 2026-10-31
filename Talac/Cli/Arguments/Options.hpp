@@ -109,6 +109,10 @@ struct CompilerSettings
     /// null for the driver's own. It points into the `CliOptions` the
     /// settings were made for.
     const char *sysroot;
+    /// The directory that keeps the object of every source between builds,
+    /// or null to build everything as one object. It points into the
+    /// `CliOptions` the settings were made for.
+    const char *incrementalDirectory;
     /// Link TalaRT from its archive into what the build produces, rather
     /// than from its shared library beside it. It concerns every output
     /// that links: an executable today, and the library types when they
@@ -129,6 +133,8 @@ struct CliOptions
     std::optional<std::string> target;
     /// The system root of the target, for the linker driver.
     std::optional<std::string> sysroot;
+    /// The directory `--incremental` names.
+    std::optional<std::string> incremental;
     /// Arguments handed to LLVM as they were written.
     std::vector<std::string> llvmArguments;
     std::string standard;
