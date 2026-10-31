@@ -202,6 +202,44 @@ jobs:
           llvm_root="$(brew --prefix llvm)"
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
+          echo "LLVM_VERSION=$("$llvm_root/bin/llvm-config" --version)" >> "$GITHUB_ENV"
+
+      # talac links LLD's linkers statically. Homebrew's lld formula has them
+      # only as shared libraries over libLLVM.dylib, which would put a second
+      # LLVM into talac, so their static libraries are built here from the
+      # sources of the same LLVM version, against Homebrew's LLVM, as that
+      # formula builds them; the result is kept per version.
+      - name: Restore LLD's static libraries
+        id: lld-cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ runner.temp }}/lld-static
+          key: lld-static-${{ runner.os }}-${{ runner.arch }}-${{ env.LLVM_VERSION }}
+
+      - name: Build LLD's static libraries
+        if: steps.lld-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          source="llvm-project-${LLVM_VERSION}.src"
+          curl -fsSLo llvm-project.tar.xz \
+            "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${source}.tar.xz"
+          tar -xJf llvm-project.tar.xz "$source/lld" "$source/libunwind/include" "$source/cmake" "$source/llvm/utils/lit"
+          cmake -G Ninja -S "$source/lld" -B lld-build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/lld-static" \
+            -DLLVM_DIR="$LLVM_ROOT/lib/cmake/llvm" \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DLLVM_INCLUDE_TESTS=OFF
+          cmake --build lld-build --target lldCommon lldCOFF lldELF lldMachO
+          mkdir -p "$RUNNER_TEMP/lld-static/lib" "$RUNNER_TEMP/lld-static/include"
+          cp lld-build/lib/liblldCommon.a lld-build/lib/liblldCOFF.a \
+            lld-build/lib/liblldELF.a lld-build/lib/liblldMachO.a "$RUNNER_TEMP/lld-static/lib/"
+          cp -R "$source/lld/include/lld" "$RUNNER_TEMP/lld-static/include/"
+          cp -R lld-build/include/lld/. "$RUNNER_TEMP/lld-static/include/lld/" 2>/dev/null || true
+
+      - name: Use LLD's static libraries
+        shell: bash
+        run: echo "LLD_ROOT=$RUNNER_TEMP/lld-static" >> "$GITHUB_ENV"
 
       - name: Install GHC and Cabal
         uses: haskell/ghcup-setup@269e121e9e7528761aca5a606a53fe9d04cd6658 # v1.2.3

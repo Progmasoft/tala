@@ -88,6 +88,14 @@ namespace Progmasoft::Tala::Driver
     [[nodiscard]] auto
     CrossRuntimeDirectory(std::string_view triple) -> std::filesystem::path;
 
+    /// The linker's command line in what a C compiler driver prints for
+    /// `-###`: the last command it would run whose program is a linker,
+    /// split into its quoted words. LLD inside talac runs it in place of
+    /// that program.
+    [[nodiscard]] auto
+    LinkerCommandOf(std::string_view driverOutput)
+        -> std::optional<std::vector<std::string>>;
+
     /// Choose the linker and its arguments. Nothing is run and no file is
     /// touched, so every target can be planned on every host.
     [[nodiscard]] auto

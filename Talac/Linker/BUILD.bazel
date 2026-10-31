@@ -14,12 +14,35 @@ cc_library(
     ],
 )
 
+# LLD's COFF, ELF and Mach-O linkers, linked into talac so that it links
+# executables itself.
+cc_library(
+    name = "lld",
+    srcs = ["Lld.cpp"],
+    hdrs = ["Lld.hpp"],
+    deps = [
+        "@llvm//:lld",
+        "@llvm//:llvm",
+    ] + select({
+        # The release of LLVM for Windows names zlib, zstd and libxml2 among its
+        # system libraries without shipping them. Elsewhere llvm-config
+        # names the system's.
+        "@platforms//os:windows": [
+            "@libxml2",
+            "@zlib",
+            "@zstd",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 cc_library(
     name = "native_linker",
     srcs = ["NativeLinker.cpp"],
     hdrs = ["NativeLinker.hpp"],
     deps = [
         ":link_plan",
+        ":lld",
         "//Talac/Backend/LLVM:llvm_backend",
     ],
 )

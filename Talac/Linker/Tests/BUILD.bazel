@@ -11,3 +11,17 @@ cc_binary(
         "@catch3//src/Progmasoft:catch3",
     ],
 )
+
+# LLD runs inside this test as it does inside talac. It links a Windows
+# executable from an object LLVM generates, so every host links one, and a
+# Windows host also runs it.
+cc_binary(
+    name = "lld_tests",
+    srcs = ["LldTests.cpp"],
+    deps = [
+        "//Talac/Linker:lld",
+        "@catch3//:catch2_main",
+        "@catch3//src/Progmasoft:catch3",
+        "@llvm//:llvm",
+    ],
+)

@@ -83,13 +83,19 @@ Several sources are one program, and a program is lowered from its entry, so a c
 
 ### Linking for another target
 
-The target, not the host, decides how an executable is linked:
+Talac links executables itself: LLD's COFF, ELF and Mach-O linkers are linked into it. The target, not the host, decides
+how:
 
 | Target | Linker | TalaRT, shared | TalaRT, archive |
 | --- | --- | --- | --- |
-| Windows (`x86_64`, `aarch64`) | `lld-link`, on every host | `talart.dll` | `talart.lib` |
-| the host's own system, architecture and C library | `cc`, the C compiler of the host | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
-| another Linux, macOS or BSD target | `clang --target=<triple> -fuse-ld=lld` | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
+| Windows (`x86_64`, `aarch64`) | LLD's `lld-link`, on every host, with nothing from the host | `talart.dll` | `talart.lib` |
+| the host's own system, architecture and C library | LLD, with the command line `clang` gives for its linker | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
+| another Linux, macOS or BSD target | LLD, with the command line `clang --target=<triple> -fuse-ld=lld` gives | `libtalart.so`, `libtalart.dylib` | `libtalart.a` |
+
+A Linux, macOS or BSD executable needs the start-up objects and the C library of its target, whose places a C compiler
+knows. Talac asks `clang` for the command line of its linker (`-###`), which runs nothing, and runs that command line with
+LLD. When no `clang` is on `PATH`, a target of the host is linked by `cc` and its own linker instead. Import libraries for
+Windows are written by talac too.
 
 TalaRT of the host stands beside talac. TalaRT of another target stands in `runtimes/<triple>/` beside it, under the
 normalized triple, for example `runtimes/aarch64-unknown-linux-gnu/libtalart.so`; a program that calls nothing of TalaRT
@@ -101,7 +107,7 @@ talac Program.tala --entry=Demo.Program --target=x86_64-pc-windows-msvc
 talac Program.tala --entry=Demo.Program --target=aarch64-unknown-linux-gnu --sysroot=/opt/sysroots/arm64
 ```
 
-`lld-link`, `cc` and `clang` are found on `PATH`.
+`clang`, and `cc` where no `clang` is found, are looked up on `PATH`; no linker is.
 
 ### TalaRT
 

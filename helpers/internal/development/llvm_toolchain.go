@@ -25,7 +25,7 @@ import (
 // against the digest recorded here before it is used.
 const (
 	llvmToolchainVersion  = "22.1.6"
-	llvmToolchainRevision = 1
+	llvmToolchainRevision = 2
 )
 
 // llvmToolchainArchitecture is the architecture the archives are chosen
@@ -34,8 +34,8 @@ var llvmToolchainArchitecture = runtime.GOARCH
 
 // llvmToolchainDigests holds the SHA-256 of the archive of each Linux host.
 var llvmToolchainDigests = map[string]string{
-	"ubuntu-26.04": "5e8a4c1f52b7d7eedf155b76bd057cec079e11daa66822d1f6af1109c551694b",
-	"fedora-43":    "5355714911c1d1dcf7f3486d2f2c0b3a468be838314fbe42b49a07b1e86db7b5",
+	"ubuntu-26.04": "ed9bbc64f7230a2f5955b8b433559711ff3fe34499d8aba453425b56c69d4604",
+	"fedora-43":    "1621b84ec14bc0212b9c366df84be4d12d80235c3843402216689e0498c6169d",
 }
 
 // llvmToolchainPlatform names the archive that suits a Linux host.

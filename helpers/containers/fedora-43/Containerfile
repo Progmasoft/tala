@@ -40,8 +40,8 @@ RUN set -eu; \
         *) echo "no LLVM toolchain archive with libc++ for ${TARGETARCH} yet" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /tmp/llvm.tar.zst \
-        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-1/llvm-22.1.6-libcxx-fedora-43-x86_64.tar.zst"; \
-    echo "5355714911c1d1dcf7f3486d2f2c0b3a468be838314fbe42b49a07b1e86db7b5  /tmp/llvm.tar.zst" | sha256sum -c -; \
+        "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-2/llvm-22.1.6-libcxx-fedora-43-x86_64.tar.zst"; \
+    echo "1621b84ec14bc0212b9c366df84be4d12d80235c3843402216689e0498c6169d  /tmp/llvm.tar.zst" | sha256sum -c -; \
     tar --zstd -xf /tmp/llvm.tar.zst -C /opt; \
     mv /opt/llvm-22.1.6-libcxx-fedora-43-x86_64 /opt/llvm-libcxx; \
     rm /tmp/llvm.tar.zst; \

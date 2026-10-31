@@ -116,6 +116,71 @@ namespace Progmasoft::Tala::Driver
     }
 
     auto
+    LinkerCommandOf(const std::string_view driverOutput)
+        -> std::optional<std::vector<std::string>>
+    {
+        std::optional<std::vector<std::string>> found;
+        std::size_t start = 0U;
+        while (start < driverOutput.size())
+        {
+            auto end = driverOutput.find('\n', start);
+            if (end == std::string_view::npos)
+                end = driverOutput.size();
+            auto line = driverOutput.substr(start, end - start);
+            start = end + 1U;
+            // Each command is one line of words in double quotes, with `\`
+            // escaping a quote or a backslash inside one.
+            std::vector<std::string> words;
+            std::size_t index = 0U;
+            bool wellFormed = true;
+            while (index < line.size())
+            {
+                const auto character = line[index];
+                if (character == ' ' || character == '\t' || character == '\r')
+                {
+                    ++index;
+                    continue;
+                }
+                if (character != '"')
+                {
+                    wellFormed = false;
+                    break;
+                }
+                std::string word;
+                ++index;
+                while (index < line.size() && line[index] != '"')
+                {
+                    if (line[index] == '\\' && index + 1U < line.size())
+                        ++index;
+                    word.push_back(line[index]);
+                    ++index;
+                }
+                if (index >= line.size())
+                {
+                    wellFormed = false;
+                    break;
+                }
+                ++index;
+                words.push_back(std::move(word));
+            }
+            if (!wellFormed || words.empty())
+                continue;
+            // The name of the program, on whichever host wrote the path.
+            std::string_view program = words.front();
+            if (const auto slash = program.find_last_of("/\\");
+                slash != std::string_view::npos)
+                program.remove_prefix(slash + 1U);
+            if (program.ends_with(".exe"))
+                program.remove_suffix(4U);
+            if (program == "ld" || program == "ld.lld" || program == "ld64.lld"
+                || program == "ld64" || program == "ld.bfd"
+                || program == "ld.gold")
+                found = std::move(words);
+        }
+        return found;
+    }
+
+    auto
     PlanLink(const LinkPlanRequest &request) -> LinkPlanResult
     {
         const auto target = TripleOf(request.targetTriple);

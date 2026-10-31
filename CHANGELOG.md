@@ -9,11 +9,22 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Linking
 
-- An executable is linked for its target rather than for the host: Windows
-  executables with `lld-link` from any host, for the machine of the target;
-  another Linux, macOS or BSD target with `clang --target=<triple>
-  -fuse-ld=lld`; the host's own target with `cc` as before. The runtime of
-  another target is looked up in `runtimes/<triple>/` beside talac.
+- LLD's COFF, ELF and Mach-O linkers are linked into talac, which links
+  executables itself. A Windows executable needs nothing from the host, and
+  its import libraries are written by LLVM. For Linux, macOS and the BSDs
+  talac takes the command line of the linker from `clang -###`, which knows
+  where the target's C library is, and runs it with LLD; without `clang`, a
+  target of the host is linked by `cc` as before. Building talac needs LLD's
+  static libraries and headers: the LLVM release for Windows has them, the
+  Linux toolchain carries them from revision 2, and on macOS they are built
+  from the LLVM sources against Homebrew's LLVM, because Homebrew's `lld` has
+  only shared libraries; `LLD_ROOT` names them where they are not beside
+  LLVM.
+
+- An executable is linked for its target rather than for the host: a Windows
+  executable for the machine of the target from any host, and another Linux,
+  macOS or BSD target through `clang --target=<triple>`. The runtime of another
+  target is looked up in `runtimes/<triple>/` beside talac.
 
 - `--sysroot=<path>` names the system root the linker driver links against
   on Linux, macOS and the BSDs; it must be a directory. A Windows target

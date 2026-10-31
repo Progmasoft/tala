@@ -3,12 +3,18 @@
 
 #include <cerrno>
 #include <fstream>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FileUtilities.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/Program.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/TargetParser/Triple.h>
 #include <system_error>
 #include <utility>
 
 #include "Talac/Linker/LinkPlan.hpp"
+#include "Talac/Linker/Lld.hpp"
 #include "Talac/Linker/NativeLinker.hpp"
 
 #ifdef _WIN32
@@ -236,6 +242,19 @@ namespace Progmasoft::Tala::Driver
 #endif
         }
 
+        /// The arguments of a host link with the host's triple in front, so
+        /// that clang asked for the command line answers for the target
+        /// the objects were written for.
+        [[nodiscard]] auto
+        WithTarget(const std::string &target,
+                   const std::vector<std::string> &arguments)
+            -> std::vector<std::string>
+        {
+            std::vector<std::string> result{ "--target=" + target };
+            result.insert(result.end(), arguments.begin(), arguments.end());
+            return result;
+        }
+
         [[nodiscard]] auto
         StartFailure(const std::string &program) -> std::string
         {
@@ -323,63 +342,82 @@ namespace Progmasoft::Tala::Driver
             }
         };
 
-        /// Writes the import library of the kernel32 functions the runtime
-        /// uses, for the given machine, beside the output.
+        /// Writes the import library a list of imports describes, for the
+        /// given machine, beside the output.
         ///
         /// A Windows executable is linked without the libraries of a C
         /// runtime or of a Windows SDK, so there is no `kernel32.lib` to
-        /// name. `lld-link` makes an import library from a list of names,
-        /// which is all that is needed to call a function of a system
-        /// library, on any host.
+        /// name, and talart.dll comes with no import library. LLVM writes
+        /// one from a list of names, which is all that is needed to call a
+        /// function of a DLL, on any host.
         [[nodiscard]] auto
-        WriteSystemImports(const std::filesystem::path &output,
-                           const std::string_view imports,
-                           const std::string &linker,
-                           const std::string &machine,
-                           Scratch &scratch,
-                           std::string &diagnostic)
+        WriteImports(const std::filesystem::path &output,
+                     const std::string_view imports,
+                     const std::string &machine,
+                     Scratch &scratch,
+                     std::string &diagnostic)
             -> std::optional<std::filesystem::path>
         {
-            auto definition = output;
-            definition += ".imports.def";
+            // The list is `LIBRARY <dll>`, `EXPORTS` and one name a line.
+            std::string dll;
+            std::vector<std::string> functions;
+            std::size_t start = 0U;
+            while (start < imports.size())
+            {
+                auto end = imports.find('\n', start);
+                if (end == std::string_view::npos)
+                    end = imports.size();
+                auto line = imports.substr(start, end - start);
+                start = end + 1U;
+                while (!line.empty() && line.front() == ' ')
+                    line.remove_prefix(1U);
+                if (line.starts_with("LIBRARY "))
+                    dll = std::string(line.substr(8U));
+                else if (!line.empty() && line != "EXPORTS")
+                    functions.emplace_back(line);
+            }
             auto library = output;
             library += ".imports.lib";
-            scratch.paths.push_back(definition);
             scratch.paths.push_back(library);
-            {
-                std::ofstream stream(definition,
-                                     std::ios::binary | std::ios::trunc);
-                stream.write(imports.data(),
-                             static_cast<std::streamsize>(imports.size()));
-                if (!stream)
-                {
-                    diagnostic = "could not write the list of system imports "
-                                 "for the native link";
-                    return std::nullopt;
-                }
-            }
-            const auto utf8 = [](const std::filesystem::path &path) {
-                const auto text = path.u8string();
-                return std::string(reinterpret_cast<const char *>(text.data()),
-                                   text.size());
-            };
-            const auto status = Run(linker,
-                                    { "/lib",
-                                      "/nologo",
-                                      "/machine:" + machine,
-                                      "/def:" + utf8(definition),
-                                      "/out:" + utf8(library) });
-            if (status != 0)
-            {
-                diagnostic = status == -1
-                                 ? StartFailure(linker)
-                                 : linker
-                                       + " could not make the import library "
-                                         "of the system functions; exit code "
-                                       + std::to_string(status);
+            diagnostic = WriteImportLibrary(library, dll, functions, machine);
+            if (!diagnostic.empty())
                 return std::nullopt;
-            }
             return library;
+        }
+
+        /// The linker's command line a C compiler driver would run for the
+        /// given arguments, which it prints for `-###` without running
+        /// anything. Nothing when the driver cannot be started or prints no
+        /// linker.
+        [[nodiscard]] auto
+        DriverLinkerCommand(const std::string &driver,
+                            const std::vector<std::string> &arguments)
+            -> std::optional<std::vector<std::string>>
+        {
+            auto program = llvm::sys::findProgramByName(driver);
+            if (!program)
+                return std::nullopt;
+            llvm::SmallString<128> output;
+            if (llvm::sys::fs::createTemporaryFile("talac-driver",
+                                                   "txt",
+                                                   output))
+                return std::nullopt;
+            llvm::FileRemover remover(output);
+            std::vector<llvm::StringRef> argv{ *program, "-###" };
+            for (const auto &argument : arguments)
+                argv.emplace_back(argument);
+            const std::optional<llvm::StringRef> redirects[]
+                = { llvm::StringRef(""), llvm::StringRef(""), output.str() };
+            if (llvm::sys::ExecuteAndWait(*program,
+                                          argv,
+                                          std::nullopt,
+                                          redirects)
+                != 0)
+                return std::nullopt;
+            auto text = llvm::MemoryBuffer::getFile(output);
+            if (!text)
+                return std::nullopt;
+            return LinkerCommandOf((*text)->getBuffer());
         }
     } // namespace
 
@@ -443,10 +481,9 @@ namespace Progmasoft::Tala::Driver
             && planRequest.runtimeLibrary)
         {
             std::string importDiagnostic;
-            const auto imports = WriteSystemImports(
+            const auto imports = WriteImports(
                 request.outputPath,
                 planRequest.sharedRuntime ? kRuntimeImports : kSystemImports,
-                planned.plan->program,
                 planned.plan->machine,
                 scratch,
                 importDiagnostic);
@@ -459,7 +496,54 @@ namespace Progmasoft::Tala::Driver
         }
 
         const auto &plan = *planned.plan;
-        const auto status = Run(plan.program, plan.arguments);
+        // LLD inside talac links. A Windows executable needs nothing more
+        // than the plan. Another target needs the start-up objects and the
+        // C library a driver knows the places of: clang prints the command
+        // line of its linker for `-###`, and LLD runs it. Only when no
+        // clang is there to ask is a target of the host linked by its own
+        // C compiler, which runs its own linker.
+        std::optional<LldOutcome> linked;
+        if (plan.linker == Linker::LldLink)
+            linked = RunLld(LldFlavor::Coff, plan.arguments);
+        else
+        {
+            const auto command = DriverLinkerCommand(
+                plan.linker == Linker::CrossDriver ? plan.program
+                                                   : std::string("clang"),
+                plan.linker == Linker::CrossDriver
+                    ? plan.arguments
+                    : WithTarget(target, plan.arguments));
+            if (command)
+                linked = RunLld(TargetObjectFormat(target)
+                                        == Backend::LLVM::ObjectFormat::MachO
+                                    ? LldFlavor::MachO
+                                    : LldFlavor::Elf,
+                                std::vector<std::string>(command->begin() + 1,
+                                                         command->end()));
+            else if (plan.linker == Linker::CrossDriver)
+                return { -1,
+                         "could not ask '" + plan.program + "' how to link for "
+                             + target
+                             + "; an executable for another target needs "
+                               "clang to know where the target's C library "
+                               "is" };
+        }
+        if (linked)
+        {
+            if (linked->exitCode != 0)
+                return { linked->exitCode,
+                         "LLD could not link the executable:\n"
+                             + linked->messages
+                             + (planRequest.runtimeLibrary
+                                    ? std::string()
+                                    : "the Tala runtime library was not found "
+                                      "at "
+                                          + runtime.string()
+                                          + ", and a program that uses "
+                                            "strings, closures, the console or "
+                                            "tests needs it") };
+        }
+        const auto status = linked ? 0 : Run(plan.program, plan.arguments);
         // Waiting is deliberate: success cannot be reported, and `run` cannot
         // begin, until the linker has closed and finalized the image.
         if (status == -1)
