@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 package main
 
@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-const fixtureHeader = "// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>\n// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1\n"
+const fixtureHeader = "// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>\n// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0\n"
 
 func fixture(t *testing.T) string {
 	t.Helper()

@@ -1,0 +1,118 @@
+Progmasoft Linking Exception, Version 2.0
+
+This Exception is an additional permission granted with the Mozilla Public License, version 2.0 ("MPL-2.0"). It keeps MPL-2.0's file-level copyleft for Covered Software and removes doubt about four things: combining Covered Software with other work, what compilers do to code, what programs built with Covered Software tools owe, and the interfaces other work needs in order to use Covered Software. It does not change the text of MPL-2.0. Capitalized terms not defined here have the meanings given in MPL-2.0, and "You" has the meaning given there.
+
+1. Definitions
+
+"Independent Work" means software or other material, in any form, that is neither Covered Software nor a Modification. Sections 3 and 5 say what does not change that.
+
+"Tool" means Covered Software that You run to produce material: a compiler, linker, code generator, build system, package manager, formatter, or similar program.
+
+"Input" means the material You give a Tool to process, other than the Tool's own files.
+
+"Output" means the material a Tool writes when it runs, including source code, intermediate representations, object code, executable code, packages, documentation, reports, diagnostics, formatted text, and analysis results.
+
+"Generated Code" means the part of an Output that a Tool copies, expands, or derives from its own Covered Software in its ordinary operation, rather than from Input. Examples are templates, parser skeletons, entry points, stubs, thunks, tables, metadata, instantiated generics, and project scaffolding.
+
+"Runtime Material" means Covered Software that (a) the copyright holders of a Tool identify, in the documentation they publish, as that Tool's runtime library or standard library, and (b) is compiled, linked, embedded into, or placed beside an Output because the Output uses it when it runs. A license text or other file installed for documentation only is not Runtime Material.
+
+"Interface Material" means declarations, type and data layouts, constants, enumerations, macros, function and method signatures, attributes, wire and file formats, and the short inline definitions that an interface needs in order to be used, to the minimum extent necessary to call, implement, extend, bind to, or interoperate with Covered Software.
+
+2. Larger Works
+
+You may create, reproduce, use, modify, make available, and distribute a Larger Work that combines Covered Software with Independent Work under terms of Your choice, including proprietary terms, provided You comply with MPL-2.0 for the Covered Software as this Exception adjusts it. The combination may be made by any technical means, including static or dynamic linking, loading, embedding, plugins, language bindings, an API, ABI, or FFI boundary, a command-line interface, a protocol, inter-process communication, or a file format. It does not matter whether the works end up in one file, process, address space, archive, image, or deployment. The word "separate" in the definition of Larger Work in MPL-2.0 Section 1.7 refers to Source Code Form.
+
+Your terms may govern the Independent Work and the Larger Work as a whole. They must not limit or alter a recipient's rights in the Source Code Form of the Covered Software.
+
+Neither MPL-2.0 nor this Exception requires You, for a Larger Work, to provide the Source Code Form of Independent Work, to provide object files or anything else that allows relinking, to allow reverse engineering of Independent Work, or to provide installation information, keys, or credentials.
+
+3. What Compilation Does Not Change
+
+The following do not make Independent Work into Covered Software or a Modification, and do not subject its Source Code Form to MPL-2.0:
+
+(a) calling, linking to, loading, subclassing, implementing, or otherwise using Covered Software through its interfaces;
+(b) including, importing, or referring to a Covered Software header, module, or package from a file of Independent Work; and
+(c) macro expansion, template or generic instantiation, specialization, inlining, link-time or whole-program optimization, just-in-time compilation, or any comparable compiler transformation that places Covered Software in the compiled form of Independent Work.
+
+Material placed in a compiled form under (c) is the Executable Form of the Covered Software it came from. Section 4 or Section 5 releases it when it is Generated Code, Runtime Material, or Interface Material. Otherwise MPL-2.0 Section 3.2 applies to it, and Section 7 says how to meet that Section.
+
+If You copy Covered Software in Source Code Form into a file, other than as Section 4 or Section 5 allows, that file is a Modification. Labels, file extensions, build boundaries, or later separation of files do not change that.
+
+4. Generated Code and Programs Built with Tools
+
+4.1 Output is not Covered Software merely because a Tool produced it. Running a Tool over Input does not change the license of the Input, and material in an Output that comes from Input has the same license as that Input.
+
+4.2 You may use, modify, and distribute Generated Code, in any form, under terms of Your choice. MPL-2.0 Sections 3.1 through 3.4 do not apply to it. You need not offer its source, keep its notices, or attribute it.
+
+4.3 You may distribute Runtime Material in Executable Form as part of, or together with, an Output that uses it, under terms of Your choice. MPL-2.0 Sections 3.1 through 3.4 do not apply to that distribution. The Source Code Form of Runtime Material stays under MPL-2.0, and this Section does not permit distributing Runtime Material on its own. This Section covers Runtime Material You have not changed, and a Modification of it only when You make that Modification available under Section 7.
+
+4.4 Limits. This Section 4 does not apply to:
+
+(a) Covered Software given to a Tool as Input, unless it is Runtime Material. Compiling, formatting, or transforming Covered Software with a Tool leaves its obligations in place;
+(b) material that an unmodified Tool would not write for the same Input and options, unless You make the change that causes it available under Section 7. Changing a Tool so that it copies more of its Covered Software into Output does not widen this Section; or
+(c) an Output produced for the purpose of obtaining a Tool's Covered Software rather than for using the Tool. Such material remains subject to MPL-2.0.
+
+4.5 Intermediate representations and every other kind of Output are treated alike. An Output keeps the permissions of this Section after it leaves You. If Your rights in a Tool end, that does not affect Output You have already made or the rights of anyone who received it.
+
+4.6 These permissions lift conditions; they do not end the license. Generated Code and Runtime Material stay licensed to You under MPL-2.0 Section 2, and MPL-2.0 Sections 6 and 7 continue to apply to them.
+
+5. Interface Material and Examples
+
+You may copy Interface Material into Independent Work, and translate it into another language, to the extent needed to use or interoperate with Covered Software. The result is not a Modification, and MPL-2.0 Section 3 does not apply to it, in Source Code Form or in Executable Form. This covers header files, bindings, and declarations in another language. It does not cover the implementation behind an interface.
+
+You may use, copy, and adapt code that the documentation of Covered Software presents as an example or as a starting point for Your own project, under terms of Your choice and without any obligation of MPL-2.0 Section 3.
+
+6. What This Exception Keeps
+
+Except where Sections 4 and 5 say otherwise:
+
+(a) Covered Software in Source Code Form, and every Modification, stay under MPL-2.0 and cannot be relicensed through this Exception;
+(b) distributing Covered Software in Executable Form stays subject to MPL-2.0 Section 3.2, as Section 7 explains;
+(c) notices protected by MPL-2.0 Section 3.4 stay in place in Source Code Form; and
+(d) nothing here allows You to withhold Source Code Form that MPL-2.0 requires You to make available.
+
+7. Telling Recipients How to Obtain Source
+
+For Covered Software You have not changed, You satisfy MPL-2.0 Section 3.2(a) by giving recipients of the Executable Form a notice that names the Covered Software and its version and gives an address where the corresponding Source Code Form is publicly available. You may put that notice in documentation, in an about screen, in a notice file, or in a software bill of materials. The copyright holders' own public release of that version is a sufficient source; You need not host a copy, and You are not in breach if that release later stops being available.
+
+For a Modification, the same notice must give an address where the Source Code Form of the exact version You distributed can be obtained by reasonable means and in a timely manner. An address that follows a branch or otherwise changes over time is not enough.
+
+8. Contributors and Direct Grant
+
+Every Contributor who distributes Covered Software that carries an identification under Section 12 grants this Exception for that Contributor's Contributions.
+
+This Exception is granted directly to every recipient of Covered Software, for the duration of the copyright in it. A distributor need not sublicense it. Distribution through intermediaries does not reduce it, and the end of a distributor's rights does not end rights already received by others.
+
+You may use Covered Software under MPL-2.0 without relying on this Exception. As an exception to MPL-2.0 Section 3.4, You may remove the identification of this Exception from a file You modify; Your version of that file is then offered by You under MPL-2.0 alone. Earlier copies keep this Exception.
+
+9. Termination
+
+This Exception has no termination condition of its own. You may rely on Sections 2, 3, and 5 only while You hold the corresponding rights under MPL-2.0. If those rights end under MPL-2.0 Section 5.1 or 5.2, those permissions end for the affected Covered Software to the same extent, and return if and to the extent those rights are reinstated. This does not reach Independent Work, nor the rights of recipients that MPL-2.0 Section 5.3 preserves, nor Section 4.5.
+
+10. Relationship to MPL-2.0
+
+MPL-2.0 and this Exception are read together. This Exception is a permission from copyright holders and is not a modified version of MPL-2.0. Where the two cannot both be given effect, this Exception controls only as far as needed to give the permissions in Sections 2 through 5 and 7 through 9, and MPL-2.0 controls in every other respect. This Exception continues to apply if You use Covered Software under a later version of the Mozilla Public License as MPL-2.0 Section 10.2 allows.
+
+MPL-2.0 Sections 6, 7, 8, and 9 apply to this Exception. It is provided without warranty.
+
+Nothing here changes whether Covered Software is "Incompatible With Secondary Licenses" or changes the operation of MPL-2.0 Section 3.3 for a work governed by a Secondary License. When You distribute under a Secondary License as that Section allows, the Secondary License governs that distribution.
+
+11. Other Rights
+
+This Exception concerns copyright only. It grants no trademark, trade dress, service mark, publicity, or confidential-information rights, and no patent rights beyond those MPL-2.0 or a separately applicable patent grant provides. Nothing here limits rights that arise independently under exhaustion, fair use, fair dealing, implied license, estoppel, or other applicable law.
+
+12. Applicability and Versions
+
+This Exception applies to Covered Software identified with this SPDX license expression, or an expression that contains it:
+
+MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
+
+The identification may be in the file itself, in a companion license file, in a machine-readable file such as REUSE.toml that assigns the expression to that file, or in a notice of the project that names the file or the directory holding it. A compiled form has the identification of the source it was compiled from and does not need to carry it.
+
+Progmasoft may publish later versions of this Exception. You may use Covered Software under the version that identifies it or under any later version Progmasoft publishes.
+
+Progmasoft also grants this version for its own Contributions in every release it has made under Version 1.0 or Version 1.1 of this Exception. For those releases You may rely on either version.
+
+13. Severability
+
+If any provision of this Exception is held unenforceable, it shall be reformed only to the minimum extent necessary to make it enforceable. If reformation is unavailable, that provision is severed and the remaining provisions continue to the maximum extent permitted by law.

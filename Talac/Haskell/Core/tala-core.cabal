@@ -1,6 +1,6 @@
 cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
--- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 name: tala-core
 version: 0.1.0
 synopsis: Tala Core and CorePrep models, verification, and wire codecs
@@ -11,7 +11,7 @@ description:
     This is an implementation package of the Tala compiler. Its modules may
     change in any release; tools should depend on tala-tooling instead.
     .
-    The source is also offered under the Progmasoft Linking Exception 1.1
+    The source is also offered under the Progmasoft Linking Exception 2.0
     (LICENSE-EXCEPTION), an additional permission to MPL-2.0 for works that
     combine this package with independent code.
 license: MPL-2.0

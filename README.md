@@ -1,6 +1,6 @@
 <!--
 SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 -->
 
 # Tala
@@ -162,8 +162,9 @@ and Java 21. The C# and Java variants are educational comparisons and do not add
 
 ## License
 
-Project-owned source files use `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1`. The exception permits static and
-dynamic linking with independent components under licenses of their choice, including proprietary licenses, without
-removing MPL-2.0 obligations from covered files or modifications to those files. See `LICENSE.txt`,
-`LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt`, `PATENTS`,
+Project-owned source files use `MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0`. The exception permits static and
+dynamic linking with independent work under licenses of your choice, including proprietary licenses, without removing
+MPL-2.0 obligations from covered files or modifications to those files. Programs you build owe nothing for the code talac
+generates or for TalaRT and the standard library that come with it, so a closed-source Tala program needs no notice. See `LICENSE.txt`,
+`LICENSES/AdditionRef-Progmasoft-Exception-2.0.txt`, `PATENTS`,
 `LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt`, and `NOTICE.txt`.

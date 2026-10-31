@@ -1,6 +1,6 @@
 cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
--- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 name: tala-tooling
 version: 0.1.0
 synopsis: The part of the Tala compiler that tools build on
@@ -11,7 +11,7 @@ description:
     that runs every check. Tools depend on this package alone; the other
     compiler packages are its implementation and may change in any release.
     .
-    The source is also offered under the Progmasoft Linking Exception 1.1
+    The source is also offered under the Progmasoft Linking Exception 2.0
     (LICENSE-EXCEPTION), an additional permission to MPL-2.0 for works that
     combine this package with independent code.
 license: MPL-2.0

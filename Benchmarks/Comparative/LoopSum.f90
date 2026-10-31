@@ -1,5 +1,5 @@
 ! SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-! SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+! SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 !
 ! A deliberately small Fortran 2023 benchmark companion. The caller chooses
 ! one of two loop strategies or the arithmetic-series formula. The formula

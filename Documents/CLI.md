@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 # Command-line interfaces
 
@@ -116,6 +116,10 @@ TalaRT, the Tala runtime, has a shared library and an archive. By default what a
 links takes TalaRT from the shared library: talac copies it beside the output, a Windows executable imports it from there,
 and a Linux, macOS or BSD executable finds it there through its run path (`$ORIGIN`, `@executable_path`), so the two move
 together. `--static-talart-library=true` links the archive into the output instead, which then needs no file beside it.
+
+TalaRT and the Tala Standard Library are the runtime library and the standard library of talac in the sense of the
+Progmasoft Linking Exception, Version 2.0: a program may carry them, beside it or inside it, under the terms of the
+program, with no notice.
 An installation that has only the archive links the archive either way.
 
 The option concerns every output the build links: executables today, and `staticlib`, `cdylib` and `talalib` when they

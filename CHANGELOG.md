@@ -1,11 +1,17 @@
 <!--
 SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 -->
 
 # Changelog
 
 ## Unreleased
+
+### Licensing
+
+- Project files move to the Progmasoft Linking Exception, Version 2.0. Code talac
+  generates, TalaRT and the standard library no longer put any duty on a program
+  built with talac. Earlier releases can rely on Version 2.0 too.
 
 ### Incremental builds
 
