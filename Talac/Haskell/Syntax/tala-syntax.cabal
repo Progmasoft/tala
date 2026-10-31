@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 name: tala-syntax
-version: 0.1.0
+version: 0.2.0
 synopsis: Tala source model, lexer, parser, and diagnostics
 description:
     The source model of Tala: source text and positions, the lexer, the

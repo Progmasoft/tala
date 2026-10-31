@@ -17,7 +17,7 @@
 #include "Talac/Cli/Arguments/Options.hpp"
 
 #ifndef TALA_PROJECT_VERSION
-#    define TALA_PROJECT_VERSION "0.1.0"
+#    define TALA_PROJECT_VERSION "0.2.0"
 #endif
 
 namespace

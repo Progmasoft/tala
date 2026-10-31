@@ -2,7 +2,7 @@ cabal-version: 3.12
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 -- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 name: tala-core
-version: 0.1.0
+version: 0.2.0
 synopsis: Tala Core and CorePrep models, verification, and wire codecs
 description:
     The Core and CorePrep intermediate languages of Tala: their models,
@@ -75,7 +75,7 @@ library
         containers >=0.7 && <0.9,
         filepath >=1.5 && <1.6,
         mtl >=2.3 && <2.4,
-        tala-syntax >=0.1.0 && <0.2
+        tala-syntax >=0.2.0 && <0.3
     default-language: GHC2024
 
 benchmark core-benches
@@ -86,8 +86,8 @@ benchmark core-benches
         base >=4.20 && <4.23,
         criterion >=1.6.4 && <1.7,
         deepseq >=1.5 && <1.6,
-        tala-core >=0.1.0 && <0.2,
-        tala-syntax >=0.1.0 && <0.2
+        tala-core >=0.2.0 && <0.3,
+        tala-syntax >=0.2.0 && <0.3
     default-language: GHC2024
     ghc-options: -threaded -rtsopts
 

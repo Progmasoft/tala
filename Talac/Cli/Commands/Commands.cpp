@@ -259,7 +259,7 @@ namespace
     /// not know. Version 1 states what was checked and with which compiler:
     ///
     ///     talameta 1
-    ///     compiler 0.1.0
+    ///     compiler 0.2.0
     ///     entry Demo.Program
     ///     input Main.tala
     ///
