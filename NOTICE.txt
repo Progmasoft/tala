@@ -14,7 +14,7 @@ Progmasoft Catch3 0.2.0 is used by the native compiler test suite and is not a
 shipped compiler or runtime dependency. Its Catch2-derived compatibility engine
 retains the Boost Software License, version 1.0, and Catch2 Authors' notices.
 Progmasoft-authored Catch3 additions carry their own MPL-2.0 WITH
-AdditionRef-Progmasoft-Exception-1.1 SPDX notices at the pinned revision. The source and applicable
+AdditionRef-Progmasoft-Exception-2.0 SPDX notices. The source and applicable
 license texts are retained in `third_party/catch3`.
 
 Google Benchmark 1.9.5 is used by native compiler microbenchmarks and is not a

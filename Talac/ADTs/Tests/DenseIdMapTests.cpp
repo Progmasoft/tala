@@ -105,9 +105,11 @@ TEST_CASE(
             return inserted.inserted && !duplicate.inserted && found != nullptr
                    && *found == id + 1U && values.Size() == 1U;
         },
-        Progmasoft::Catch3::PropertyOptions{
-            .Trials = 256U,
-            .Seed = 0xC3A7C3U,
-            .MaxShrinkSteps = 128U,
-        });
+        [] {
+            Progmasoft::Catch3::PropertyOptions options;
+            options.Trials = 256U;
+            options.Seed = 0xC3A7C3U;
+            options.MaxShrinkSteps = 128U;
+            return options;
+        }());
 }
