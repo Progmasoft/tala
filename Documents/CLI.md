@@ -143,9 +143,9 @@ the functions it calls in other sources, the target, the optimization level and 
 line recompiles nothing, a changed body recompiles its source alone, and a changed signature also recompiles the sources
 that call it. The objects of earlier builds are removed, so one directory serves one program.
 
-The frontend still reads all sources, and symbols are numbered across the program, so a new function can recompile the
-sources after it. LLVM optimizes each source alone: calls between sources are not inlined, so use it for development
-builds rather than for releases.
+A new function recompiles its own source: the objects use symbols made from the source and the name of each function, which
+other functions leave alone. The frontend still reads all sources. LLVM optimizes each source alone: calls between sources
+are not inlined, so use it for development builds rather than for releases.
 
 `--incremental` needs `--emit=executable` and Tala sources.
 

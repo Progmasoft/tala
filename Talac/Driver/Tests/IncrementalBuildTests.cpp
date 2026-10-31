@@ -40,6 +40,7 @@ namespace
             call.opcode = xmm::Opcode::Call;
             xmm::Value target;
             target.kind = xmm::Value::Kind::Function;
+            target.type = core::Type::function({}, core::Type::unit());
             target.symbol = callee;
             call.operands.push_back(target);
             block.instructions.push_back(std::move(call));
@@ -168,6 +169,52 @@ TEST_CASE("sources without a function have objects of their own")
     REQUIRE_FALSE(built.error);
     CHECK(built.recompiled == 3U);
     CHECK(Objects(directory.path) == 4U);
+}
+
+TEST_CASE("a new function recompiles its source, not the sources after it")
+{
+    const Directory directory;
+    Llvm::Options options;
+
+    auto closure = Function(4U, U"$closure4", kSecond);
+    auto program = Program();
+    program.functions.push_back(closure);
+    REQUIRE_FALSE(
+        Incremental::BuildObjects(program, options, directory.path, "").error);
+
+    // Every symbol after the new function moves up, in a spelling too.
+    xmm::Module moved;
+    moved.name = program.name;
+    moved.source_files = program.source_files;
+    closure.symbol = { 5U, U"$closure5" };
+    moved.functions = { Function(1U, U"Main", kFirst, 3U),
+                        Function(2U, U"Extra", kFirst),
+                        Function(3U, U"Helper", kSecond),
+                        Function(4U, U"Other", kThird),
+                        closure };
+    const auto after
+        = Incremental::BuildObjects(moved, options, directory.path, "");
+    REQUIRE_FALSE(after.error);
+    CHECK(after.recompiled == 1U);
+}
+
+TEST_CASE("a call that moves to another function recompiles the caller")
+{
+    const Directory directory;
+    Llvm::Options options;
+
+    // Two functions of one spelling, in the order that names them.
+    auto program = Program();
+    program.functions[1].symbol.spelling = U"Helper";
+    program.functions[2] = Function(3U, U"Helper", kSecond);
+    REQUIRE_FALSE(
+        Incremental::BuildObjects(program, options, directory.path, "").error);
+
+    program.functions[0] = Function(1U, U"Main", kFirst, 3U);
+    const auto after
+        = Incremental::BuildObjects(program, options, directory.path, "");
+    REQUIRE_FALSE(after.error);
+    CHECK(after.recompiled == 1U);
 }
 
 TEST_CASE("only the sources whose key is new are lowered")

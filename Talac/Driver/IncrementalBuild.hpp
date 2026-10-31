@@ -44,12 +44,14 @@ namespace Progmasoft::Tala::Driver::Incremental
               const std::u32string &source,
               std::string_view context) -> std::optional<std::string>;
 
-    /// Makes the objects of [module] in [directory], lowering only the
-    /// sources whose key has no object yet, on several threads. Objects no
+    /// Makes the objects of [program] in [directory], lowering only the
+    /// sources whose key has no object yet, on several threads. The objects
+    /// use symbols of their own, which a new function elsewhere leaves
+    /// alone, so that it recompiles the source it is in. Objects no
     /// source of this build uses are removed, so the directory holds one
     /// program and does not grow.
     [[nodiscard]] auto
-    BuildObjects(const tala::xmm::Module &module,
+    BuildObjects(const tala::xmm::Module &program,
                  const Backend::LLVM::Options &options,
                  const std::filesystem::path &directory,
                  std::string_view context) -> Outcome;

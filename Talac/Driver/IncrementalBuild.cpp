@@ -9,10 +9,13 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/SHA256.h>
 #include <llvm/Support/thread.h>
+#include <llvm/Support/xxhash.h>
+#include <map>
 #include <mutex>
 #include <set>
 #include <system_error>
 #include <thread>
+#include <unordered_map>
 #include <utility>
 
 #include "Progmasoft/Tala/Xmm/Wire.hpp"
@@ -29,6 +32,70 @@ namespace Progmasoft::Tala::Driver::Incremental
         /// What a main thread usually has: LLVM recurses over the code it
         /// lowers, and the default of a thread is far less on some hosts.
         constexpr unsigned kWorkerStackBytes = 8U * 1024U * 1024U;
+
+        /// [spelling] without what the numbering of the program put in it:
+        /// generated names such as `$closure12` carry a symbol id, and `$`
+        /// cannot occur in a source identifier.
+        [[nodiscard]] auto
+        StableSpelling(std::u32string spelling) -> std::u32string
+        {
+            if (spelling.find(U'$') != std::u32string::npos)
+                std::erase_if(spelling, [](const char32_t letter) {
+                    return letter >= U'0' && letter <= U'9';
+                });
+            return spelling;
+        }
+
+        /// [module] with symbols that do not move when another function
+        /// appears. The frontend numbers them across the program and the
+        /// number is in the name of the native symbol, so one new method
+        /// would otherwise change the objects of the sources after it. Here
+        /// a symbol comes from its source, its spelling and which of that
+        /// spelling it is.
+        [[nodiscard]] auto
+        StableSymbols(tala::xmm::Module module) -> tala::xmm::Module
+        {
+            using Value = tala::xmm::Value;
+            std::unordered_map<tala::xpp::SymbolId, tala::xpp::SymbolId> ids;
+            std::set<tala::xpp::SymbolId> taken;
+            std::map<std::u32string, std::uint64_t> seen;
+            for (auto &function : module.functions)
+            {
+                auto spelling
+                    = StableSpelling(std::move(function.symbol.spelling));
+                auto text = function.source_file + U'\0' + spelling + U'\0';
+                const auto index = seen[text]++;
+                const auto digits = std::to_string(index);
+                text.append(digits.begin(), digits.end());
+                auto id = llvm::xxh3_64bits(llvm::ArrayRef<std::uint8_t>(
+                    reinterpret_cast<const std::uint8_t *>(text.data()),
+                    text.size() * sizeof(char32_t)));
+                while (id == 0U || !taken.insert(id).second)
+                    ++id;
+                ids.emplace(function.symbol.id, id);
+                function.symbol = { id, std::move(spelling) };
+            }
+            const auto renameSymbol = [&](tala::xpp::SymbolId &symbol) {
+                if (const auto found = ids.find(symbol); found != ids.end())
+                    symbol = found->second;
+            };
+            const auto renameValue = [&](Value &value) {
+                if (value.kind == Value::Kind::Function)
+                    renameSymbol(value.symbol);
+            };
+            for (auto &function : module.functions)
+                for (auto &block : function.blocks)
+                {
+                    for (auto &instruction : block.instructions)
+                    {
+                        std::ranges::for_each(instruction.operands,
+                                              renameValue);
+                        renameSymbol(instruction.closure_function);
+                    }
+                    renameValue(block.terminator.value);
+                }
+            return module;
+        }
 
         /// The symbols a function refers to, itself not excluded.
         void
@@ -176,7 +243,7 @@ namespace Progmasoft::Tala::Driver::Incremental
     }
 
     auto
-    BuildObjects(const tala::xmm::Module &module,
+    BuildObjects(const tala::xmm::Module &program,
                  const Llvm::Options &options,
                  const std::filesystem::path &directory,
                  const std::string_view context) -> Outcome
@@ -192,6 +259,7 @@ namespace Progmasoft::Tala::Driver::Incremental
             return outcome;
         }
 
+        const auto module = StableSymbols(program);
         const auto sources = Sources(module);
         outcome.sources = sources.size();
 
