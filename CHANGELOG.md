@@ -40,6 +40,9 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
 
 ### Tests
 
+- A class other than the entry may have a `Main`: it is an ordinary method, and
+  no longer stops the build with TAL2008. A test build of a program with a
+  `Main` compiles for the same reason.
 - `talac --test` builds the runner of the `[Fact]` methods of its sources. The
   runner calls every fact in source order, prints `PASS` or `FAIL` with the
   name of each and the totals, and exits with `1` when a test failed.

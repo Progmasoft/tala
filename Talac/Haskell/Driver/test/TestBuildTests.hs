@@ -14,8 +14,9 @@ a line feed.
 module TestBuildTests (testBuildTests) where
 
 import CoreInterpreter
+import Progmasoft.Tala.AST (Identifier (..), QualifiedName (..), ResolvedName (..))
 import Progmasoft.Tala.Compiler
-import Progmasoft.Tala.Core (CoreModule)
+import Progmasoft.Tala.Core (CoreFunction (..), CoreModule (..))
 import Progmasoft.Tala.Diagnostic
 import Progmasoft.Tala.Directives
 
@@ -42,6 +43,21 @@ testBuildTests =
                , ran artifactOptimizedCoreOf helperOnlyInTests == Just "PASS Probe.Uses\n1 test, 1 passed, 0 failed\n"
                )
            , ("an ordinary build compiles a [Fact] method as a method", accepted (compilePlain linux ordinaryWithFact))
+           ,
+               ( "a test build keeps Main for the runner alone"
+               , fmap (mains . projectEntryCore) (compileTests linux programWithFact) == Right 1
+               )
+           ,
+               ( "an entry keeps Main for itself alone"
+               , fmap
+                    (mains . artifactOptimizedCore)
+                    ( compileEntryToCorePrepWith
+                        linux
+                        (QualifiedName [Identifier "Demo", Identifier "Program"])
+                        (CompilerInput "Tests.tala" twoMains)
+                    )
+                    == Right 1
+               )
            , ("test build rejects facts in two namespaces with TAE0020", rejectedWith "TAE0020" twoNamespaces)
            ]
     where
@@ -249,6 +265,40 @@ helperOnlyInTests =
         , "    public static int Helper() { return 1; }"
         , "#endif"
         , "    [Fact] public static void Uses() { #expect Helper() == 1; }"
+        , "}"
+        ]
+
+-- | How many functions of a build are spelled @Main@.
+mains :: CoreModule -> Int
+mains core =
+    length
+        [ ()
+        | function <- coreModuleFunctions core
+        , resolvedSpelling (coreFunctionName function) == Identifier "Main"
+        ]
+
+programWithFact :: String
+programWithFact =
+    unlines
+        [ "namespace Smoke;"
+        , "class Program {"
+        , "    public static int Twice(_ int v) { return v + v; }"
+        , "    public static void Main() { }"
+        , "}"
+        , "class Checks {"
+        , "    [Fact] public static void Doubles() { Program.Main(); #expect Program.Twice(2) == 4; }"
+        , "}"
+        ]
+
+twoMains :: String
+twoMains =
+    unlines
+        [ "namespace Demo;"
+        , "class Program {"
+        , "    public static void Main() { Other.Main(); }"
+        , "}"
+        , "class Other {"
+        , "    public static void Main() { }"
         , "}"
         ]
 
