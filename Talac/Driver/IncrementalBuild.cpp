@@ -8,12 +8,11 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/SHA256.h>
-#include <map>
+#include <llvm/Support/thread.h>
 #include <mutex>
 #include <set>
 #include <system_error>
 #include <thread>
-#include <unordered_set>
 #include <utility>
 
 #include "Progmasoft/Tala/Xmm/Wire.hpp"
@@ -27,6 +26,9 @@ namespace Progmasoft::Tala::Driver::Incremental
 
         constexpr std::string_view kEntryObject = "entry.o";
         constexpr std::string_view kKeyFormat = "tala object key 1";
+        /// What a main thread usually has: LLVM recurses over the code it
+        /// lowers, and the default of a thread is far less on some hosts.
+        constexpr unsigned kWorkerStackBytes = 8U * 1024U * 1024U;
 
         /// The symbols a function refers to, itself not excluded.
         void
@@ -156,11 +158,15 @@ namespace Progmasoft::Tala::Driver::Incremental
         llvm::SHA256 hash;
         hash.update(kKeyFormat);
         hash.update(context);
-        // The module names the symbols of its functions.
-        for (const auto &segment : module.name)
+        const auto text = [&](const std::u32string &value) {
             hash.update(llvm::ArrayRef<std::uint8_t>(
-                reinterpret_cast<const std::uint8_t *>(segment.data()),
-                segment.size() * sizeof(char32_t)));
+                reinterpret_cast<const std::uint8_t *>(value.data()),
+                value.size() * sizeof(char32_t)));
+        };
+        // Sources without a function must not share an object, and the
+        // module names the symbols of its functions.
+        text(source);
+        std::ranges::for_each(module.name, text);
         hash.update(llvm::ArrayRef<std::uint8_t>(ownedBytes.bytes));
         hash.update(llvm::ArrayRef<std::uint8_t>(calledBytes.bytes));
         const auto digest = hash.final();
@@ -250,12 +256,12 @@ namespace Progmasoft::Tala::Driver::Incremental
         const auto threads = std::min<std::size_t>(
             missing.size(),
             std::max(1U, std::thread::hardware_concurrency()));
-        {
-            std::vector<std::jthread> workers;
-            workers.reserve(threads);
-            for (std::size_t index = 0U; index < threads; ++index)
-                workers.emplace_back(work);
-        }
+        std::vector<llvm::thread> workers;
+        workers.reserve(threads);
+        for (std::size_t index = 0U; index < threads; ++index)
+            workers.emplace_back(std::optional{ kWorkerStackBytes }, work);
+        for (auto &worker : workers)
+            worker.join();
         if (outcome.error)
             return outcome;
 

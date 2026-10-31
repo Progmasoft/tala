@@ -149,6 +149,27 @@ TEST_CASE("the key of a source sees how the object is made")
           != Incremental::SourceKey(module, source, "O2"));
 }
 
+TEST_CASE("sources without a function have objects of their own")
+{
+    const Directory directory;
+    xmm::Module program;
+    program.name = { U"Demo" };
+    program.source_files = { std::u32string(kFirst),
+                             std::u32string(kSecond),
+                             std::u32string(kThird) };
+    program.functions = { Function(1U, U"Main", kFirst) };
+
+    CHECK(Key(program, kSecond) != Key(program, kThird));
+
+    const auto built = Incremental::BuildObjects(program,
+                                                 Llvm::Options{},
+                                                 directory.path,
+                                                 "");
+    REQUIRE_FALSE(built.error);
+    CHECK(built.recompiled == 3U);
+    CHECK(Objects(directory.path) == 4U);
+}
+
 TEST_CASE("only the sources whose key is new are lowered")
 {
     const Directory directory;
