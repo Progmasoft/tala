@@ -1,5 +1,5 @@
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
--- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 {- | Private command model shared by the Haskell shared-library boundary and
 the small command-line adapter. It returns owned bytes instead of opening an

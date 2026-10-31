@@ -1,5 +1,5 @@
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
--- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 {- | Vertical tests for loops used as expressions and the value-carrying
 @break@ that supplies their value.

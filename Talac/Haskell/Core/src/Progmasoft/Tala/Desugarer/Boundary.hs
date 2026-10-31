@@ -1,5 +1,5 @@
 -- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
--- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 {- | What crosses from the Typed AST into Core without the lowering state:
 types, literals, patterns, type identities and the source catalog. Each is a

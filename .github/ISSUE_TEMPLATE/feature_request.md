@@ -5,7 +5,7 @@ title: "[Proposal] "
 ---
 
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 Check `Spec/` and existing issues before proposing syntax or semantics. An implementation gap for an already specified feature is usually a bug or implementation task, not a new language design. Public proposals must not cite private internal notes as the language contract.
 

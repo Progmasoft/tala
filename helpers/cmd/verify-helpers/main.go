@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 // Command verify-helpers checks the complete developer module.
 package main
@@ -116,7 +116,7 @@ func inventory(root string) ([]string, int, error) {
 			return err
 		}
 		text := strings.ReplaceAll(string(contents), "\r\n", "\n")
-		if !strings.HasPrefix(text, "// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>\n// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1\n") {
+		if !strings.HasPrefix(text, "// SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>\n// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0\n") {
 			return fmt.Errorf("missing Progmasoft SPDX header: %s", path)
 		}
 		lines := strings.Count(text, "\n")

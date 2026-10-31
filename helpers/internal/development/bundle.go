@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 package development
 
@@ -8,17 +8,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 )
 
 var bundleFiles = []string{
 	"LICENSE.txt",
 	"PATENTS",
-	"LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt",
+	"LICENSES/AdditionRef-Progmasoft-Exception-2.0.txt",
 	"LICENSES/AdditionRef-Progmasoft-Patent-Grant-1.1.txt",
 }
 
@@ -155,10 +157,21 @@ func publishBundleDirectory(repository string, stagingDirectory string, bundleDi
 	if err := os.RemoveAll(target); err != nil {
 		return fmt.Errorf("cannot replace the previous bundle: %w", err)
 	}
-	if err := os.Rename(stagingDirectory, target); err != nil {
+	if err := renameWhenReleased(stagingDirectory, target); err != nil {
 		return fmt.Errorf("cannot publish the verified bundle: %w", err)
 	}
 	return nil
+}
+
+// renameWhenReleased renames a directory whose programs have just run: Windows
+// keeps their files busy for a moment after they exit, and refuses the rename.
+func renameWhenReleased(source, target string) error {
+	err := os.Rename(source, target)
+	for attempt := 0; attempt < 40 && errors.Is(err, fs.ErrPermission); attempt++ {
+		time.Sleep(250 * time.Millisecond)
+		err = os.Rename(source, target)
+	}
+	return err
 }
 
 func copyFile(source string, destination string, mode os.FileMode) error {

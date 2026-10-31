@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+# SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 name: Language Layers
 
@@ -81,7 +81,7 @@ jobs:
         run: |
           foreach ($directory in @("Syntax", "Frontend", "Core", "Driver", "Tooling")) {
             $package = "Talac/Haskell/$directory"
-            foreach ($pair in @(@("LICENSE.txt", "LICENSE"), @("LICENSES/AdditionRef-Progmasoft-Exception-1.1.txt", "LICENSE-EXCEPTION"))) {
+            foreach ($pair in @(@("LICENSE.txt", "LICENSE"), @("LICENSES/AdditionRef-Progmasoft-Exception-2.0.txt", "LICENSE-EXCEPTION"))) {
               $expected = (Get-FileHash $pair[0]).Hash
               $actual = (Get-FileHash (Join-Path $package $pair[1])).Hash
               if ($expected -ne $actual) {

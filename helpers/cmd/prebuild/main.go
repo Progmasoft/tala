@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
-// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1
+// SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 // prebuild installs system tools used to develop Tala. Bazel and Cabal
 // remain the owners of their build graphs after host bootstrap.

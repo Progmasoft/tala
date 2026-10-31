@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 # Building Tala
 
@@ -203,7 +203,7 @@ dist/
     |-- LICENSE.txt
     |-- PATENTS
     |-- LICENSES/
-    |   |-- AdditionRef-Progmasoft-Exception-1.1.txt
+    |   |-- AdditionRef-Progmasoft-Exception-2.0.txt
     |   `-- AdditionRef-Progmasoft-Patent-Grant-1.1.txt
     `-- SHA256SUMS
 ```
@@ -225,8 +225,8 @@ legal payloads. Consumers can use that manifest to
 detect an incomplete or modified local bundle; it is an integrity record, not a code-signing substitute.
 
 The legal payload is intentionally explicit. `LICENSE.txt` contains MPL-2.0, `PATENTS` identifies the applicable patent
-terms, and the two versioned `1.1` files contain the current Progmasoft linking exception and patent grant. Historical
-`1.0` texts in the repository are not staged as the current distribution terms.
+terms, and the two versioned files contain the current Progmasoft linking exception, Version 2.0, and patent grant,
+Version 1.1. Historical texts of earlier versions in the repository are not staged as the current distribution terms.
 
 ## Build configuration
 

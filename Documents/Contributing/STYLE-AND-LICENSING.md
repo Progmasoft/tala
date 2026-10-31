@@ -1,5 +1,5 @@
 <!-- SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com> -->
-<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-1.1 -->
+<!-- SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0 -->
 
 # Source style, comments, and licensing
 
@@ -66,7 +66,7 @@ unless your task created it and you have identified the exact path.
 
 ## Copyright and third-party material
 
-The root repository declares MPL-2.0 with the Progmasoft Linking Exception 1.1 for original source and a separate
+The root repository declares MPL-2.0 with the Progmasoft Linking Exception 2.0 for original source and a separate
 Progmasoft Patent Grant; read [`LICENSE.txt`](../../LICENSE.txt), [`PATENTS`](../../PATENTS), and the exact texts in
 [`LICENSES/`](../../LICENSES/) before changing license-bearing files. Match the SPDX header of nearby project-owned
 files. Public documentation and examples are also source files for attribution purposes.
