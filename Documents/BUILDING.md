@@ -55,7 +55,8 @@ asks GHCup to select recommended GHC and Cabal releases. If Windows SDK or CRT/C
 the Build Tools workload solely for those headers and libraries; Bazel continues to select standalone ClangCL and LLD.
 
 On macOS the bootstrap requires Homebrew, installs the corresponding formulas, requests Xcode
-Command Line Tools when missing, and delegates Haskell versions to GHCup. Homebrew's LLVM formula is keg-only; follow
+Command Line Tools when missing, and delegates Haskell versions to GHCup. Tala needs exactly LLVM 23.1.3, while Homebrew's formula moves to each new LLVM, so install the release of LLVM and
+point `LLVM_ROOT` at it. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
 absolute path into the repository. On Ubuntu, Debian 13 and Fedora, the bootstrap uses apt/dnf for native dependencies and the official
 GHCup bootstrap for Haskell. Installation never edits tracked
@@ -80,7 +81,7 @@ LLVM:
 go run ./helpers/cmd/develop llvm
 ```
 
-It downloads LLVM 22.1.6 built with libc++ for the host from the toolchain release of the repository, refuses the
+It downloads LLVM 23.1.3 built with libc++ for the host from the toolchain release of the repository, refuses the
 archive unless its SHA-256 is the one `helpers/internal/development/llvm_toolchain.go` records, unpacks it below
 `TALA_LLVM_CACHE` (default: `tala/llvm` in the user cache directory) and prints its root. The build, test, sanitize,
 fuzz and bundle commands do the same by themselves when `LLVM_ROOT` is not set, so a Linux checkout needs no LLVM

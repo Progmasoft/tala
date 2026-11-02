@@ -132,7 +132,7 @@ func selectSanitizer(currentHost host, requested string) (sanitizer, error) {
 			config: "asan-macos",
 			// Apple's AddressSanitizer runtime aborts when detect_leaks is set;
 			// address, bounds, and use-after-free diagnostics remain enabled.
-			// The LLVM libraries come from Homebrew without instrumentation.
+			// The LLVM libraries come from the LLVM release without instrumentation.
 			// libc++ annotates a vector only where instrumented code grows it,
 			// so a vector LLVM fills and reads, such as the subtarget features
 			// of the X86 target, reports a container overflow inside its own

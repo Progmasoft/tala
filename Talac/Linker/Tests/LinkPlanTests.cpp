@@ -192,7 +192,7 @@ TEST_CASE("the linker's command line is read from what clang prints for -###")
     // clang prints its version, then each command as quoted words; a
     // backslash escapes a quote or a backslash inside one.
     constexpr std::string_view kLinuxOutput
-        = "clang version 22.1.6\n"
+        = "clang version 23.1.3\n"
           "Target: x86_64-unknown-linux-gnu\n"
           "Thread model: posix\n"
           " \"/usr/bin/ld\" \"-pie\" \"-m\" \"elf_x86_64\" \"-o\" "
@@ -222,7 +222,7 @@ TEST_CASE("the linker's command line is read from what clang prints for -###")
     REQUIRE(Driver::LinkerCommandOf(kMacOutput));
 
     // No linker, or a line that is not a command, gives nothing.
-    CHECK_FALSE(Driver::LinkerCommandOf("clang version 22.1.6\n"));
+    CHECK_FALSE(Driver::LinkerCommandOf("clang version 23.1.3\n"));
     CHECK_FALSE(Driver::LinkerCommandOf(" \"/usr/bin/as\" \"-o\" \"x.o\"\n"));
     CHECK_FALSE(Driver::LinkerCommandOf(" \"/usr/bin/ld\" \"unterminated\n"));
 }

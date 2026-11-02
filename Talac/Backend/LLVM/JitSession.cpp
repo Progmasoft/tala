@@ -281,7 +281,8 @@ namespace Progmasoft::Tala::Backend::LLVM
             // layout". Reserving one contiguous block per object fixes
             // the order: every section is carved from that reservation.
             builder.setObjectLinkingLayerCreator(
-                [](llvm::orc::ExecutionSession &session)
+                [](llvm::orc::ExecutionSession &session,
+                   llvm::jitlink::JITLinkMemoryManager &)
                     -> llvm::Expected<std::unique_ptr<llvm::orc::ObjectLayer>> {
                     auto layer
                         = std::make_unique<llvm::orc::RTDyldObjectLinkingLayer>(

@@ -35,7 +35,7 @@ func macOSFuzzerRuntime(root string) (string, error) {
 	}
 	matches, err := filepath.Glob(filepath.Join(root, "lib", "clang", "*", "lib", "darwin", "libclang_rt.fuzzer_osx.a"))
 	if err != nil || len(matches) != 1 {
-		return "", fmt.Errorf("expected exactly one Homebrew LLVM macOS libFuzzer runtime under %q, found %d", root, len(matches))
+		return "", fmt.Errorf("expected exactly one LLVM macOS libFuzzer runtime under %q, found %d", root, len(matches))
 	}
 	return matches[0], nil
 }
