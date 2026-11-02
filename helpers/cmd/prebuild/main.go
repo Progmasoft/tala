@@ -48,6 +48,9 @@ type bootstrapRunner interface {
 	LookPath(name string) (string, error)
 }
 
+// requiredLLVMVersion is the only release Talac/Build/Bazel/llvm.bzl accepts.
+const requiredLLVMVersion = "23.1.3"
+
 const (
 	ghcupBootstrapCommit       = "69df703e3b1c701f42913740ca48f16e9026fe89"
 	ghcupWindowsBootstrapHash  = "54A83F3A1E63879530A921351FFA6DE0F8E509DE51501E8E7EF0CBBD03AC7405"
@@ -334,6 +337,27 @@ func bootstrapToolAvailable(runner bootstrapRunner, executable string) bool {
 	return err == nil && !information.IsDir()
 }
 
+// wrongLLVMVersion returns the version of the llvm-config that a build would
+// find when it is not the required one. Linux is left out: there the build
+// commands download the required LLVM themselves.
+func wrongLLVMVersion(host bootstrapHost, runner bootstrapRunner) string {
+	if host != bootstrapWindows && host != bootstrapMacOS {
+		return ""
+	}
+	config := "llvm-config"
+	if root := os.Getenv("LLVM_ROOT"); root != "" {
+		config = filepath.Join(root, "bin", config)
+	}
+	version, err := runner.Output(config, "--version")
+	if err != nil {
+		return "of unknown version"
+	}
+	if version = strings.TrimSpace(version); version != requiredLLVMVersion {
+		return version
+	}
+	return ""
+}
+
 func requirementExecutables(host bootstrapHost, requirement toolRequirement) []string {
 	executables := append([]string(nil), requirement.executables...)
 	if requirement.name != "LLVM" {
@@ -359,6 +383,12 @@ func reportBootstrapState(host bootstrapHost, runner bootstrapRunner) error {
 			fmt.Printf("[missing] %s\n", requirement.name)
 		} else {
 			fmt.Printf("[ready]   %s\n", requirement.name)
+		}
+	}
+	if !containsRequirement(missing, "LLVM") {
+		if found := wrongLLVMVersion(host, runner); found != "" {
+			fmt.Printf("[wrong]   LLVM %s; Tala needs exactly %s. Get it from https://github.com/llvm/llvm-project/releases/tag/llvmorg-%s and point LLVM_ROOT at it\n", found, requiredLLVMVersion, requiredLLVMVersion)
+			missing = append(missing, toolRequirement{name: "LLVM " + requiredLLVMVersion})
 		}
 	}
 	if host == bootstrapWindows {

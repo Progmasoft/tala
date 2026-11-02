@@ -22,6 +22,7 @@ type bootstrapFakeRunner struct {
 	invocations [][]string
 	installed   map[string]bool
 	runHook     func(string, []string) error
+	llvmVersion string
 }
 
 func (runner *bootstrapFakeRunner) Run(name string, arguments ...string) error {
@@ -33,6 +34,9 @@ func (runner *bootstrapFakeRunner) Run(name string, arguments ...string) error {
 }
 
 func (runner *bootstrapFakeRunner) Output(name string, arguments ...string) (string, error) {
+	if strings.HasSuffix(name, "llvm-config") && runner.llvmVersion != "" {
+		return runner.llvmVersion + "\n", nil
+	}
 	if name == "winget.exe" && len(arguments) >= 3 && arguments[0] == "list" {
 		packageID := arguments[2]
 		if runner.installed[packageID] {
@@ -140,6 +144,35 @@ func TestMissingToolsRequiresCompleteLLVM(t *testing.T) {
 	runner.paths["lld-link"] = "lld-link"
 	if missing = missingTools(bootstrapWindows, runner); len(missing) != 0 {
 		t.Fatalf("a complete host still misses %#v", missing)
+	}
+}
+
+func TestOnlyTheRequiredLLVMVersionPasses(t *testing.T) {
+	t.Setenv("LLVM_ROOT", "")
+	runner := &bootstrapFakeRunner{llvmVersion: requiredLLVMVersion}
+	if found := wrongLLVMVersion(bootstrapMacOS, runner); found != "" {
+		t.Fatalf("the required version was refused as %q", found)
+	}
+	runner.llvmVersion = "24.1.0"
+	if found := wrongLLVMVersion(bootstrapWindows, runner); found != "24.1.0" {
+		t.Fatalf("found = %q", found)
+	}
+	if found := wrongLLVMVersion(bootstrapUbuntu, runner); found != "" {
+		t.Fatalf("Linux downloads its LLVM, found = %q", found)
+	}
+	runner.llvmVersion = ""
+	if found := wrongLLVMVersion(bootstrapMacOS, runner); found == "" {
+		t.Fatal("an llvm-config that does not answer passed")
+	}
+}
+
+func TestRequiredLLVMVersionMatchesTheBuild(t *testing.T) {
+	rule, err := os.ReadFile("../../../Talac/Build/Bazel/llvm.bzl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(rule), `_LLVM_VERSION = "`+requiredLLVMVersion+`"`) {
+		t.Fatalf("llvm.bzl does not require LLVM %s", requiredLLVMVersion)
 	}
 }
 

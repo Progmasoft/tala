@@ -18,6 +18,12 @@ cc_library(
         "JitSession.cpp",
         "Verifier.cpp",
     ],
+    # The release of LLVM for macOS is built without RTTI, so the type
+    # information of its classes that the error types here need does not exist.
+    copts = select({
+        "@platforms//os:macos": ["-fno-rtti"],
+        "//conditions:default": [],
+    }),
     deps = [
         "//Talac/Codegen/Xmm:xmm",
         "//Talac/Core/Callable:callable",
