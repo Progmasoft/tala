@@ -129,7 +129,7 @@ suite set on macOS.
 Before creating release artifacts, validate the exact cross-build-system version:
 
 ```powershell
-go run ./helpers/cmd/develop version 0.2.0
+go run ./helpers/cmd/develop version 0.2.0.1
 ```
 
 The check compares `MODULE.bazel`, the changelog heading, and the Haskell package using exact
