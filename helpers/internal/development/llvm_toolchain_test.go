@@ -46,7 +46,7 @@ func TestTheLinuxHostsHaveAnArchiveAndADigest(t *testing.T) {
 }
 
 func TestTheArchiveComesFromTheImmutableToolchainRelease(t *testing.T) {
-	want := "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-22.1.6-libcxx-2/llvm-22.1.6-libcxx-fedora-43-x86_64.tar.zst"
+	want := "https://github.com/Progmasoft/tala/releases/download/toolchain-llvm-23.1.3-libcxx-1/llvm-23.1.3-libcxx-fedora-43-x86_64.tar.zst"
 	if got := llvmToolchainURL("fedora-43"); got != want {
 		t.Fatalf("URL = %q, want %q", got, want)
 	}

@@ -1,5 +1,8 @@
 """Discovers an installed LLVM development tree for the C++20 backend and LLD."""
 
+# The one release the backend is built and tested with.
+_LLVM_VERSION = "23.1.3"
+
 # The components of LLVM that LLD's COFF, ELF and Mach-O linkers use, beside
 # those of the backend. They are linked into talac with LLD.
 _LLD_COMPONENTS = [
@@ -105,6 +108,14 @@ def _llvm_repository_impl(repository_ctx):
         config = repository_ctx.which("llvm-config") or repository_ctx.which("llvm-config.exe")
     if config == None:
         fail("LLVM was not found. Set LLVM_ROOT to the LLVM development tree or put llvm-config on PATH.")
+
+    version = repository_ctx.execute([config, "--version"], quiet = True)
+    if version.return_code != 0 or version.stdout.strip() != _LLVM_VERSION:
+        fail("talac builds with LLVM {} exactly; {} reports {}. Set LLVM_ROOT to that release.".format(
+            _LLVM_VERSION,
+            config,
+            version.stdout.strip() or version.stderr.strip(),
+        ))
 
     # Distribution packages do not have to put headers and archives directly
     # below --prefix. Fedora, for example, uses a versioned lib64 LLVM tree.
