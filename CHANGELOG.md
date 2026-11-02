@@ -7,6 +7,8 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 ## Unreleased
 
+## 0.2.0.1 - 2026-11-02
+
 ### Build
 
 - The compiler builds with exactly LLVM 23.1.3 on every platform, and the
