@@ -216,8 +216,8 @@ intentional failures before running the complete native suite set. See
 [Fuzzing](FUZZING.md) for the Windows TSan boundary.
 
 On macOS and Linux, AddressSanitizer runs with `detect_container_overflow=0`.
-Both build with libc++, and their LLVM libraries (from Homebrew on macOS, from
-the toolchain release on Linux) are not instrumented. libc++ annotates a vector
+Both build with libc++, and their LLVM libraries (from the LLVM release on macOS,
+from the toolchain release on Linux) are not instrumented. libc++ annotates a vector
 only where instrumented code grows it, so a vector that LLVM fills and reads
 would be reported as overflowing its own allocation. Out-of-bounds,
 use-after-free and the other address checks stay enabled.

@@ -57,20 +57,24 @@ jobs:
       - name: Restore LLVM development package
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
-          path: ${{ runner.tool_cache }}\llvm-dev-22.1.6
-          key: llvm-dev-22.1.6-x86_64-windows-msvc
+          path: ${{ runner.tool_cache }}\llvm-dev-23.1.3
+          key: llvm-dev-23.1.3-x86_64-windows-msvc
 
       - name: Install LLVM development package
         shell: pwsh
         run: |
-          $llvmRoot = Join-Path $env:RUNNER_TOOL_CACHE "llvm-dev-22.1.6"
+          $llvmRoot = Join-Path $env:RUNNER_TOOL_CACHE "llvm-dev-23.1.3"
           $llvmConfig = Join-Path $llvmRoot "bin\llvm-config.exe"
           if (-not (Test-Path $llvmConfig)) {
             New-Item -ItemType Directory -Force $llvmRoot | Out-Null
             $archive = Join-Path $env:RUNNER_TEMP "llvm-dev.tar.xz"
             curl.exe -L --fail --retry 4 --retry-delay 5 `
               -o $archive `
-              "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.6/clang%2Bllvm-22.1.6-x86_64-pc-windows-msvc.tar.xz"
+              "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/clang%2Bllvm-23.1.3-x86_64-pc-windows-msvc.tar.xz"
+            $digest = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($digest -ne "9ee6a2192fbb30c776415af529927f76ca6b5d1d55699bb1315f9878e610b5b8") {
+              throw "The LLVM archive has SHA-256 $digest"
+            }
             tar.exe -xf $archive -C $llvmRoot --strip-components=1
           }
           if (-not (Test-Path $llvmConfig)) {
@@ -195,20 +199,33 @@ jobs:
           disk-cache: native-${{ matrix.runner }}-clang
           repository-cache: true
 
+      - name: Restore LLVM development package
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ runner.tool_cache }}/llvm-dev-23.1.3
+          key: llvm-dev-23.1.3-arm64-macos
+
+      # The release of LLVM itself rather than a Homebrew formula, which moves
+      # to every new version.
       - name: Install LLVM development package
         shell: bash
         run: |
-          brew list llvm >/dev/null 2>&1 || brew install llvm
-          llvm_root="$(brew --prefix llvm)"
+          llvm_root="$RUNNER_TOOL_CACHE/llvm-dev-23.1.3"
+          if [ ! -x "$llvm_root/bin/llvm-config" ]; then
+            curl -fsSL --retry 4 --retry-delay 5 -o llvm-dev.tar.xz \
+              "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-macOS-ARM64.tar.xz"
+            echo "3dcfd88aec10be204a24037bcb0dc0ad777882e9dbe8ac60e2639060d8a794b1  llvm-dev.tar.xz" | shasum -a 256 -c -
+            mkdir -p "$llvm_root"
+            tar -xJf llvm-dev.tar.xz -C "$llvm_root" --strip-components=1
+            rm llvm-dev.tar.xz
+          fi
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
           echo "LLVM_VERSION=$("$llvm_root/bin/llvm-config" --version)" >> "$GITHUB_ENV"
 
-      # talac links LLD's linkers statically. Homebrew's lld formula has them
-      # only as shared libraries over libLLVM.dylib, which would put a second
-      # LLVM into talac, so their static libraries are built here from the
-      # sources of the same LLVM version, against Homebrew's LLVM, as that
-      # formula builds them; the result is kept per version.
+      # talac links LLD's linkers statically, so their static libraries are
+      # built here from the sources of the same LLVM version, against that
+      # LLVM; the result is kept per version.
       - name: Restore LLD's static libraries
         id: lld-cache
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
@@ -251,7 +268,7 @@ jobs:
         run: |
           # The Command Line Tools SDK can be newer than the linker of the
           # selected Xcode: SDK 27.0 lists arm64e.x1, which ld of Xcode 26
-          # rejects as a malformed file. Homebrew clang's configuration files
+          # rejects as a malformed file. The configuration files of clang
           # and the GHC installation name that SDK by path, which overrides
           # SDKROOT, so every such reference is pointed at the selected SDK.
           sdk="$(xcrun --show-sdk-path)"
@@ -260,7 +277,6 @@ jobs:
           libdir="$(ghc --print-libdir)"
           changed=0
           for file in "$LLVM_ROOT"/etc/clang/*.cfg \
-              "$(brew --prefix)"/etc/clang/*.cfg \
               "$libdir/settings" "$libdir"/package.conf.d/*.conf; do
             if [ -f "$file" ] && grep -Eq "$clt" "$file"; then
               echo "Pinning $sdk in $file"

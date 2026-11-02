@@ -25,5 +25,14 @@ cc_library(
         "//Talac/Headers/Progmasoft/Tala/Backend:llvm_api",
         "//Talac/Headers/Progmasoft/Tala/Core:scalar",
         "@llvm//:llvm",
-    ],
+    ] + select({
+        # LLVM 23 reaches its compression from code the backend links, also
+        # without LLD. As in //Talac/Linker:lld, the release of LLVM for Windows
+        # names these libraries without shipping them.
+        "@platforms//os:windows": [
+            "@zlib",
+            "@zstd",
+        ],
+        "//conditions:default": [],
+    }),
 )
