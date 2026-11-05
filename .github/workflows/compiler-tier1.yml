@@ -173,8 +173,9 @@ jobs:
     if: needs.changes.outputs.native == 'true'
     runs-on: ${{ matrix.runner }}
     # A new LLVM leaves the build cache empty: each of the build, the sanitizer
-    # and the ThreadSanitizer steps then compiles everything once.
-    timeout-minutes: 240
+    # and the ThreadSanitizer steps then compiles everything once; on main, which
+    # cannot use the caches of pull requests, that took over four hours.
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
