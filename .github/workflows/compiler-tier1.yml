@@ -231,12 +231,26 @@ jobs:
             for archive in "$llvm_root"/lib/libLLVM*.a; do
               rm -rf "$work" && mkdir -p "$work" && cd "$work"
               "$llvm_root/bin/llvm-ar" t "$archive" > members
-              if [ -n "$(sort members | uniq -d)" ]; then
-                echo "$archive has members of the same name" >&2
-                exit 1
+              if [ -z "$(sort members | uniq -d)" ]; then
+                "$llvm_root/bin/llvm-ar" x "$archive"
+                cp members files
+              else
+                # Members of the same name are taken one by one, each by its
+                # instance, and numbered so that they stay apart.
+                : > files
+                index=0
+                while IFS= read -r member; do
+                  index=$((index + 1))
+                  instance=$(head -n "$index" members | grep -cxF -- "$member")
+                  mkdir "instance-$index"
+                  (cd "instance-$index" &&
+                    "$llvm_root/bin/llvm-ar" xN "$instance" "$archive" "$member")
+                  mv "instance-$index/$member" "$index-$member"
+                  rmdir "instance-$index"
+                  echo "$index-$member" >> files
+                done < members
               fi
-              "$llvm_root/bin/llvm-ar" x "$archive"
-              tr '\n' '\0' < members | xargs -0 -P "$jobs" -I{} sh -c '
+              tr '\n' '\0' < files | xargs -0 -P "$jobs" -I{} sh -c '
                 # Raw bitcode, or bitcode inside the wrapper of the Apple tools.
                 case "$(head -c 4 "$1" | od -An -tx1 | tr -d " ")" in
                 4243c0de | dec0170b)
@@ -250,9 +264,9 @@ jobs:
                   echo "$member of $archive is not a Mach-O object" >&2
                   exit 1
                 fi
-              done < members
+              done < files
               rm "$archive"
-              tr '\n' '\0' < members | xargs -0 "$llvm_root/bin/llvm-ar" qcS "$archive"
+              tr '\n' '\0' < files | xargs -0 "$llvm_root/bin/llvm-ar" qcS "$archive"
               "$llvm_root/bin/llvm-ar" s "$archive"
               cd "$GITHUB_WORKSPACE"
             done
