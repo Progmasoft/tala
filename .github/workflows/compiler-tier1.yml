@@ -172,10 +172,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.native == 'true'
     runs-on: ${{ matrix.runner }}
-    # A new LLVM leaves the build cache empty: each of the build, the sanitizer
-    # and the ThreadSanitizer steps then compiles everything once; on main, which
-    # cannot use the caches of pull requests, that took over four hours.
-    timeout-minutes: 360
+    # Room for a cold build after a new LLVM, including compiling its libraries
+    # to native code once (see "Install LLVM development package").
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -206,10 +205,15 @@ jobs:
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ runner.tool_cache }}/llvm-dev-23.1.3
-          key: llvm-dev-23.1.3-arm64-macos
+          key: llvm-dev-23.1.3-arm64-macos-native
 
       # The release of LLVM itself rather than a Homebrew formula, which moves
-      # to every new version.
+      # to every new version. Its static libraries are built with ThinLTO, so
+      # they hold LLVM bitcode rather than machine code, and every link of a
+      # program against them optimized and compiled LLVM again: each link took
+      # 10 to 20 minutes and a run about four hours. The libraries of LLVM are
+      # compiled to machine code once here, for the triple the release built
+      # them for, and kept in the cache with the package.
       - name: Install LLVM development package
         shell: bash
         run: |
@@ -221,6 +225,52 @@ jobs:
             mkdir -p "$llvm_root"
             tar -xJf llvm-dev.tar.xz -C "$llvm_root" --strip-components=1
             rm llvm-dev.tar.xz
+
+            jobs="$(sysctl -n hw.ncpu)"
+            work="$RUNNER_TEMP/llvm-native"
+            for archive in "$llvm_root"/lib/libLLVM*.a; do
+              rm -rf "$work" && mkdir -p "$work" && cd "$work"
+              "$llvm_root/bin/llvm-ar" t "$archive" > members
+              if [ -z "$(sort members | uniq -d)" ]; then
+                "$llvm_root/bin/llvm-ar" x "$archive"
+                cp members files
+              else
+                # Members of the same name are taken one by one, each by its
+                # instance, and numbered so that they stay apart.
+                : > files
+                index=0
+                while IFS= read -r member; do
+                  index=$((index + 1))
+                  instance=$(head -n "$index" members | grep -cxF -- "$member")
+                  mkdir "instance-$index"
+                  (cd "instance-$index" &&
+                    "$llvm_root/bin/llvm-ar" xN "$instance" "$archive" "$member")
+                  mv "instance-$index/$member" "$index-$member"
+                  rmdir "instance-$index"
+                  echo "$index-$member" >> files
+                done < members
+              fi
+              tr '\n' '\0' < files | xargs -0 -P "$jobs" -I{} sh -c '
+                # Raw bitcode, or bitcode inside the wrapper of the Apple tools.
+                case "$(head -c 4 "$1" | od -An -tx1 | tr -d " ")" in
+                4243c0de | dec0170b)
+                  "$2/bin/clang" -c -O2 -Wno-override-module \
+                    --target=arm64-apple-macosx14.0.0 -x ir "$1" -o "$1.native" &&
+                    mv "$1.native" "$1"
+                  ;;
+                esac' sh {} "$llvm_root"
+              while IFS= read -r member; do
+                if [ "$(head -c 4 "$member" | od -An -tx1 | tr -d " ")" != "cffaedfe" ]; then
+                  echo "$member of $archive is not a Mach-O object" >&2
+                  exit 1
+                fi
+              done < files
+              rm "$archive"
+              tr '\n' '\0' < files | xargs -0 "$llvm_root/bin/llvm-ar" qcS "$archive"
+              "$llvm_root/bin/llvm-ar" s "$archive"
+              cd "$GITHUB_WORKSPACE"
+            done
+            rm -rf "$work"
           fi
           echo "LLVM_ROOT=$llvm_root" >> "$GITHUB_ENV"
           echo "$llvm_root/bin" >> "$GITHUB_PATH"
