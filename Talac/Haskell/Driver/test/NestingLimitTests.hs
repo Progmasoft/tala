@@ -129,6 +129,10 @@ statementTests =
            , ("40 nested counting loops compute their value", valuesOf (method (countingLoops 40)) 1 == [Just 1, Just 1])
            , ("3 nested counting loops compute their value", valuesOf (method (countingLoops 3)) 4 == [Just 64, Just 64])
            , ("a statement far beyond the limit is still reported once", codesOf (method (nest 2000 ifOpen "} " ++ "return total;")) == ["TAP0039"])
+           , -- The parser itself has no depth limit; it runs on the stack of
+             -- GHC, which grows on the heap, so a nest far deeper than any
+             -- limit is parsed and then rejected, and does not overflow.
+             ("100000 levels of blocks are parsed and reported once", codesOf (method (nest 100000 "{ " "} " ++ "return total;")) == ["TAP0039"])
            , ("every function reports its own excess", codesOf twoDeepFunctions == ["TAP0039", "TAP0039"])
            , ("a deep function does not hide an accepted one", codesOf oneDeepFunction == ["TAP0039"])
            ]
@@ -235,6 +239,8 @@ expressionTests =
       ("1023 nested calls are accepted", accepted (withTwice ("return " ++ calls (limit - 1) ++ ";")))
     , ("1024 nested calls are rejected", codesOf (withTwice ("return " ++ calls limit ++ ";")) == ["TAP0040"])
     , ("an expression far beyond the limit is reported once", codesOf (method ("return " ++ rightNested 5000 ++ ";")) == ["TAP0040"])
+    , ("100000 additions nested to the right are parsed and reported once", codesOf (method ("return " ++ rightNested 100000 ++ ";")) == ["TAP0040"])
+    , ("100000 nested calls are parsed and reported once", codesOf (withTwice ("return " ++ calls 100000 ++ ";")) == ["TAP0040"])
     ,
         ( "many separate expressions at the limit are accepted"
         , accepted (method ("int a = " ++ sumOf limit ++ "; int b = " ++ sumOf limit ++ "; return a + b;"))
