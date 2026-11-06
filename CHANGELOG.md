@@ -7,6 +7,13 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 ## Unreleased
 
+### Incremental builds
+
+- `--threads=<count>` sets the most threads talac works on at once; `0`, the
+  default, is one per hardware thread. `--incremental` lowers its sources on
+  that many threads, so a build system can share the processors between
+  several compilers.
+
 ## 0.2.0.1 - 2026-11-02
 
 ### Build

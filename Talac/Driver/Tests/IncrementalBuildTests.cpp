@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <optional>
 #include <string>
 #include <system_error>
 
@@ -106,6 +108,16 @@ namespace
             count += entry.path().extension() == ".o" ? 1U : 0U;
         return count;
     }
+
+    /// The contents of [file], or nothing when it cannot be read.
+    [[nodiscard]] auto
+    Bytes(const std::filesystem::path &file) -> std::optional<std::string>
+    {
+        auto buffer = llvm::MemoryBuffer::getFile(file.string());
+        if (!buffer)
+            return std::nullopt;
+        return (*buffer)->getBuffer().str();
+    }
 } // namespace
 
 TEST_CASE("the key of a source follows its own functions")
@@ -169,6 +181,27 @@ TEST_CASE("sources without a function have objects of their own")
     REQUIRE_FALSE(built.error);
     CHECK(built.recompiled == 3U);
     CHECK(Objects(directory.path) == 4U);
+}
+
+TEST_CASE("one thread builds the same objects as many")
+{
+    const Directory many;
+    const Directory one;
+    const auto program = Program();
+    const auto parallel
+        = Incremental::BuildObjects(program, Llvm::Options{}, many.path, "");
+    const auto serial
+        = Incremental::BuildObjects(program, Llvm::Options{}, one.path, "", 1U);
+    REQUIRE_FALSE(parallel.error);
+    REQUIRE_FALSE(serial.error);
+    CHECK(serial.recompiled == parallel.recompiled);
+    CHECK(Objects(one.path) == Objects(many.path));
+    for (const auto &object : parallel.objects)
+    {
+        const auto bytes = Bytes(object);
+        REQUIRE(bytes);
+        CHECK(bytes == Bytes(one.path / object.filename()));
+    }
 }
 
 TEST_CASE("a new function recompiles its source, not the sources after it")

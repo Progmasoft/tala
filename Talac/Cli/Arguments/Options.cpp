@@ -47,6 +47,7 @@ namespace
         Test,
         Sysroot,
         Incremental,
+        Threads,
         StaticTalartLibrary,
         Count,
     };
@@ -187,6 +188,12 @@ namespace
           "<path>",
           "keep an object per source here and lower only what changed",
           "off" },
+        { Option::Threads,
+          "threads",
+          '\0',
+          "<count>",
+          "work on at most this many threads; 0 for one per hardware thread",
+          "0" },
         { Option::StaticTalartLibrary,
           "static-talart-library",
           '\0',
@@ -261,8 +268,31 @@ namespace
         .llvmLto = LlvmLto::kNone,
         .sysroot = nullptr,
         .incrementalDirectory = nullptr,
+        .threads = 0U,
         .staticTalartLibrary = false,
     };
+
+    /// The most `--threads` accepts, far beyond any host, so that a typo
+    /// cannot ask for millions of threads.
+    constexpr unsigned kMaximumThreads = 4096U;
+
+    /// A thread count written in decimal digits, without sign or spaces.
+    [[nodiscard]] std::optional<unsigned>
+    ThreadCount(std::string_view value)
+    {
+        if (value.empty() || value.size() > 4U)
+            return std::nullopt;
+        unsigned count = 0U;
+        for (const char digit : value)
+        {
+            if (digit < '0' || digit > '9')
+                return std::nullopt;
+            count = count * 10U + static_cast<unsigned>(digit - '0');
+        }
+        if (count > kMaximumThreads)
+            return std::nullopt;
+        return count;
+    }
 
     template<typename Value, std::size_t Size>
     [[nodiscard]] std::optional<Value>
@@ -544,6 +574,13 @@ namespace
                     return false;
                 options.incremental = std::string(value);
                 return true;
+            case Option::Threads:
+                if (const auto parsed = ThreadCount(value))
+                {
+                    options.compiler.threads = *parsed;
+                    return true;
+                }
+                return false;
             case Option::Version:
             case Option::Help:
             case Option::Count:

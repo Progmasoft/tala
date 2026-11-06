@@ -380,7 +380,8 @@ namespace
             = Driver::Incremental::BuildObjects(module,
                                                 options,
                                                 settings.incrementalDirectory,
-                                                ObjectContext(options));
+                                                ObjectContext(options),
+                                                settings.threads);
         if (built.error)
         {
             fmt::print(stderr,

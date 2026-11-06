@@ -246,7 +246,8 @@ namespace Progmasoft::Tala::Driver::Incremental
     BuildObjects(const tala::xmm::Module &program,
                  const Llvm::Options &options,
                  const std::filesystem::path &directory,
-                 const std::string_view context) -> Outcome
+                 const std::string_view context,
+                 const unsigned threads) -> Outcome
     {
         Outcome outcome;
         std::error_code created;
@@ -321,12 +322,13 @@ namespace Progmasoft::Tala::Driver::Incremental
                 }
             }
         };
-        const auto threads = std::min<std::size_t>(
-            missing.size(),
-            std::max(1U, std::thread::hardware_concurrency()));
+        const auto allowed
+            = threads != 0U ? threads
+                            : std::max(1U, std::thread::hardware_concurrency());
+        const auto count = std::min<std::size_t>(missing.size(), allowed);
         std::vector<llvm::thread> workers;
-        workers.reserve(threads);
-        for (std::size_t index = 0U; index < threads; ++index)
+        workers.reserve(count);
+        for (std::size_t index = 0U; index < count; ++index)
             workers.emplace_back(std::optional{ kWorkerStackBytes }, work);
         for (auto &worker : workers)
             worker.join();

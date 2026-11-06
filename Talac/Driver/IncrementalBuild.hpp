@@ -45,7 +45,8 @@ namespace Progmasoft::Tala::Driver::Incremental
               std::string_view context) -> std::optional<std::string>;
 
     /// Makes the objects of [program] in [directory], lowering only the
-    /// sources whose key has no object yet, on several threads. The objects
+    /// sources whose key has no object yet, on at most [threads] threads, or
+    /// one per hardware thread when it is 0. The objects
     /// use symbols of their own, which a new function elsewhere leaves
     /// alone, so that it recompiles the source it is in. Objects no
     /// source of this build uses are removed, so the directory holds one
@@ -54,5 +55,6 @@ namespace Progmasoft::Tala::Driver::Incremental
     BuildObjects(const tala::xmm::Module &program,
                  const Backend::LLVM::Options &options,
                  const std::filesystem::path &directory,
-                 std::string_view context) -> Outcome;
+                 std::string_view context,
+                 unsigned threads = 0U) -> Outcome;
 } // namespace Progmasoft::Tala::Driver::Incremental
