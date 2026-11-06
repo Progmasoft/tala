@@ -47,6 +47,7 @@ Names and values are case-sensitive.
 | `--target=`, `-t` | an LLVM target triple | the target of the host |
 | `--sysroot=` | the system root of the target, for what the build links | the linker's |
 | `--incremental=` | a directory that keeps an object per source between builds | off |
+| `--threads=` | the most threads that work at once, from `0` to `4096`; `0` is one per hardware thread | `0` |
 | `--static-talart-library=` | `true`, `false`: link TalaRT into the output instead of beside it | `false` |
 | `--warnings-as-errors=` | `true`, `false` | `false` |
 | `--warnings=` | `none`, `low`, `medium`, `all`, and `shadow` | `medium` |
@@ -151,7 +152,9 @@ A new function recompiles its own source: the objects use symbols made from the 
 other functions leave alone. The frontend still reads all sources. LLVM optimizes each source alone: calls between sources
 are not inlined, so use it for development builds rather than for releases.
 
-`--incremental` needs `--emit=executable` and Tala sources.
+`--incremental` needs `--emit=executable` and Tala sources. It lowers the sources it recompiles in parallel, on one thread
+per hardware thread or on at most as many as `--threads=<count>` says; a build system that runs several compilers at once
+passes its share, such as `--threads=2`. The objects are the same for every count.
 
 ### System root
 

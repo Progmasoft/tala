@@ -498,3 +498,26 @@ TEST_CASE("--incremental names where an executable keeps its objects")
     CHECK(Parse({ "P.tala", "--emit=metadata", "--incremental=o" }).result
           != CliParseResult::kReady);
 }
+
+TEST_CASE("--threads bounds the threads, and 0 means one per hardware thread")
+{
+    CHECK(Ready({ "P.tala", "--entry=A.B" }).compiler.threads == 0U);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "--threads=3" }).compiler.threads
+          == 3U);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "--threads=0" }).compiler.threads
+          == 0U);
+    CHECK(Ready({ "P.tala", "--entry=A.B", "--threads=4096" }).compiler.threads
+          == 4096U);
+    for (const auto *value : { "--threads=",
+                               "--threads=4097",
+                               "--threads=-1",
+                               "--threads=+2",
+                               "--threads=2x",
+                               "--threads= 2",
+                               "--threads=99999" })
+        CHECK(Parse({ "P.tala", "--entry=A.B", value }).result
+              == CliParseResult::kError);
+    CHECK(
+        Parse({ "P.tala", "--entry=A.B", "--threads=2", "--threads=3" }).result
+        == CliParseResult::kError);
+}

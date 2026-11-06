@@ -113,6 +113,9 @@ struct CompilerSettings
     /// or null to build everything as one object. It points into the
     /// `CliOptions` the settings were made for.
     const char *incrementalDirectory;
+    /// The most threads that work at once on what can run in parallel, the
+    /// objects of an incremental build; 0 for one per hardware thread.
+    unsigned threads;
     /// Link TalaRT from its archive into what the build produces, rather
     /// than from its shared library beside it. It concerns every output
     /// that links: an executable today, and the library types when they
