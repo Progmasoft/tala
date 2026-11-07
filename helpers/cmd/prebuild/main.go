@@ -27,8 +27,8 @@ import (
 const prebuildUsage = `Tala development-host bootstrap
 
 Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
-Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
-toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Git, Podman, and the
+Fedora 43 (N-1 as of September 2026), Debian 13, and Arch Linux as a
+development host that no CI job tests. The installed toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Git, Podman, and the
 platform link resources. Tala uses ClangCL/LLD on Windows, not MSVC.`
 
 type bootstrapHost int
@@ -513,9 +513,15 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 		return fmt.Errorf("%s is required on %s", manager, bootstrapHostName(host))
 	}
 	// apt installs from the package lists it has, on Ubuntu and on Debian.
+	// pacman refreshes its databases only together with the whole system,
+	// because Arch does not support a partial upgrade.
 	if host == bootstrapUbuntu || host == bootstrapDebian {
 		if err := runLinuxPackageManager(runner, manager, []string{"update"}); err != nil {
 			return err
+		}
+	} else if host == bootstrapArch {
+		if err := runLinuxPackageManager(runner, manager, archUpgradeArguments()); err != nil {
+			return fmt.Errorf("cannot upgrade Arch Linux before installing: %w", err)
 		}
 	}
 	if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(host, base)); err != nil {
@@ -556,13 +562,20 @@ func linuxRequirementPackages(host bootstrapHost, requirement toolRequirement) [
 }
 
 // linuxInstallArguments are the arguments that install packages without a
-// question. pacman is not told to refresh its databases: installing from refreshed databases without
-// upgrading the rest is a partial upgrade, which Arch does not support.
+// question. On Arch they run after the whole system was upgraded with
+// pacman -Syu: installing from refreshed databases without upgrading the
+// rest would be a partial upgrade, which Arch does not support.
 func linuxInstallArguments(host bootstrapHost, packages []string) []string {
 	if host == bootstrapArch {
 		return append([]string{"-S", "--needed", "--noconfirm"}, packages...)
 	}
 	return append([]string{"install", "-y"}, packages...)
+}
+
+// archUpgradeArguments refresh the pacman databases and upgrade every
+// installed package, the only refresh Arch supports.
+func archUpgradeArguments() []string {
+	return []string{"-Syu", "--noconfirm"}
 }
 
 func runLinuxPackageManager(runner bootstrapRunner, manager string, arguments []string) error {

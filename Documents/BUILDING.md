@@ -63,8 +63,8 @@ Command Line Tools when missing, and delegates Haskell versions to GHCup. Tala n
 point `LLVM_ROOT` at it. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
 absolute path into the repository. On Ubuntu, Debian 13, Fedora and Arch Linux, the bootstrap uses apt, dnf or pacman for native dependencies and the
-official GHCup bootstrap for Haskell. pacman installs from the databases it has and never refreshes them, since
-refreshing without upgrading is a partial upgrade; upgrade the system first. Installation never edits tracked
+official GHCup bootstrap for Haskell. On Arch, pacman upgrades the whole system (`pacman -Syu`) before it installs,
+since refreshing the databases without upgrading is a partial upgrade. Installation never edits tracked
 build configuration.
 
 After the host package manager finishes, start a new terminal and run both `prebuild.go check` and `develop.go doctor`.

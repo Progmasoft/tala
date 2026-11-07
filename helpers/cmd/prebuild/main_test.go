@@ -441,3 +441,31 @@ func TestEveryLinuxPackageRequirementHasAnArchPackage(t *testing.T) {
 		}
 	}
 }
+
+func TestArchUpgradesTheWholeSystemOnceBeforeInstalling(t *testing.T) {
+	runner := &bootstrapFakeRunner{paths: map[string]string{"pacman": "/usr/bin/pacman", "sudo": "/usr/bin/sudo"}}
+	var git toolRequirement
+	for _, requirement := range bootstrapTools {
+		if requirement.name == "Git" {
+			git = requirement
+		}
+	}
+	if err := installLinuxTools(bootstrapArch, runner, []toolRequirement{git}); err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, invocation := range runner.invocations {
+		if invocation[0] == "sudo" {
+			invocation = invocation[1:]
+		}
+		got = append(got, strings.Join(invocation, " "))
+	}
+	want := []string{
+		"pacman -Syu --noconfirm",
+		"pacman -S --needed --noconfirm curl xz gmp libffi ncurses",
+		"pacman -S --needed --noconfirm git",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Arch commands = %#v, want %#v", got, want)
+	}
+}

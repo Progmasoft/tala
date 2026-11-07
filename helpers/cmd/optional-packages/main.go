@@ -114,9 +114,9 @@ func linuxManager(platform string) string {
 }
 
 // linuxInstallArguments are the arguments that install packages without a
-// question. pacman is not
-// told to refresh its databases: installing from refreshed databases without
-// upgrading the rest is a partial upgrade, which Arch does not support.
+// question. On Arch they run after the whole system was upgraded with
+// pacman -Syu: installing from refreshed databases without upgrading the
+// rest would be a partial upgrade, which Arch does not support.
 func linuxInstallArguments(platform string, packages ...string) []string {
 	if platform == platformArch {
 		return append([]string{"-S", "--needed", "--noconfirm"}, packages...)
@@ -468,13 +468,21 @@ func installOptionalPackagesForOS(runner packageRunner, goos string) error {
 	}
 
 	// apt installs from the package lists it has; they are refreshed once,
-	// before the first package that is actually installed.
-	listsRefreshed := !usesApt(goos)
+	// before the first package that is actually installed. pacman refreshes
+	// its databases only together with the whole system, because Arch does
+	// not support a partial upgrade.
+	listsRefreshed := !usesApt(goos) && goos != platformArch
 	refreshLists := func() error {
 		if listsRefreshed {
 			return nil
 		}
 		listsRefreshed = true
+		if goos == platformArch {
+			if err := runLinuxManager(runner, goos, "-Syu", "--noconfirm"); err != nil {
+				return fmt.Errorf("cannot upgrade Arch Linux before installing: %w", err)
+			}
+			return nil
+		}
 		if err := runLinuxManager(runner, goos, "update"); err != nil {
 			return fmt.Errorf("cannot refresh the apt package lists: %w", err)
 		}
@@ -546,6 +554,13 @@ func packageAlreadyInstalled(runner packageRunner, item optionalPackage, goos st
 			return false
 		}
 		_, err := runner.output("rpm", "--query", name)
+		return err == nil
+	case platformArch:
+		name := linuxPackage(item, goos)
+		if name == "" || len(runner.lookPaths("pacman")) == 0 {
+			return false
+		}
+		_, err := runner.output("pacman", "--query", name)
 		return err == nil
 	default:
 		return false

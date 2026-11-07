@@ -309,7 +309,7 @@ func TestLinuxAddsComponentsToAnExistingToolchainOnly(t *testing.T) {
 	}
 }
 
-func TestArchInstallsWithPacmanWithoutRefreshingItsDatabases(t *testing.T) {
+func TestArchInstallsWithPacmanAfterOneSystemUpgrade(t *testing.T) {
 	runner := &fakePackageRunner{paths: map[string][]string{"pacman": {"pacman"}, "sudo": {"sudo"}}}
 	if err := installOneForOS(runner, optionalPackages[1], platformArch); err != nil {
 		t.Fatal(err)
@@ -318,4 +318,43 @@ func TestArchInstallsWithPacmanWithoutRefreshingItsDatabases(t *testing.T) {
 	if want := elevated("pacman", "-S", "--needed", "--noconfirm", "gcc-fortran"); len(lines) != 1 || lines[0] != want {
 		t.Fatalf("Arch install commands = %#v, want %q", lines, want)
 	}
+}
+
+func TestArchUpgradesOnceAndLeavesInstalledPackagesAlone(t *testing.T) {
+	runner := readyPackageRunner()
+	runner.paths["pacman"] = []string{"pacman"}
+	runner.paths["sudo"] = []string{"sudo"}
+	delete(runner.paths, "just")
+	delete(runner.paths, "jq")
+	// jq is installed although its command is not visible: pacman says so.
+	queried := &pacmanQueryRunner{fakePackageRunner: runner, installed: map[string]bool{"jq": true}}
+	if err := installOptionalPackagesForOS(queried, platformArch); err != nil {
+		t.Fatalf("install returned error: %v", err)
+	}
+	want := []string{
+		elevated("pacman", "-Syu", "--noconfirm"),
+		elevated("pacman", "-S", "--needed", "--noconfirm", "just"),
+	}
+	if got := commandLines(runner); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("ran %v, want %v", got, want)
+	}
+	if packageAlreadyInstalled(&fakePackageRunner{}, optionalPackages[2], platformArch) {
+		t.Error("Arch claimed a package is installed without asking pacman")
+	}
+}
+
+// pacmanQueryRunner answers pacman --query for the installed packages alone.
+type pacmanQueryRunner struct {
+	*fakePackageRunner
+	installed map[string]bool
+}
+
+func (runner *pacmanQueryRunner) output(name string, args ...string) (string, error) {
+	if name == "pacman" && len(args) == 2 && args[0] == "--query" {
+		if runner.installed[args[1]] {
+			return args[1] + " 1.0-1", nil
+		}
+		return "", errors.New("was not found")
+	}
+	return runner.fakePackageRunner.output(name, args...)
 }

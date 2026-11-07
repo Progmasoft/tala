@@ -10,7 +10,8 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 ### Build
 
 - The helpers build on Arch Linux, as a development host without a workflow:
-  `prebuild` installs with pacman and the LLVM toolchain of Ubuntu 26.04 is used.
+  `prebuild` and `optional-packages` upgrade the system with `pacman -Syu`, then
+  install with pacman, and the LLVM toolchain of Ubuntu 26.04 is used.
 
 ## 0.2.0.1 - 2026-11-02
 
