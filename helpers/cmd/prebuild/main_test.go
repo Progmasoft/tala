@@ -82,6 +82,7 @@ func TestClassifyBootstrapLinuxUsesPinnedTierReleases(t *testing.T) {
 		{`ID=debian` + "\n" + `VERSION_ID="13"`, bootstrapDebian},
 		{`PRETTY_NAME="Debian GNU/Linux 13 (trixie)"` + "\n" + `ID=debian` + "\n" + `VERSION_ID="13"` + "\n" + `VERSION_CODENAME=trixie`, bootstrapDebian},
 		{`ID=fedora` + "\n" + `VERSION_ID=43`, bootstrapFedora},
+		{`NAME="Arch Linux"` + "\n" + `ID=arch` + "\n" + `BUILD_ID=rolling`, bootstrapArch},
 	} {
 		got, err := classifyBootstrapLinux(test.release)
 		if err != nil || got != test.want {
@@ -90,6 +91,9 @@ func TestClassifyBootstrapLinuxUsesPinnedTierReleases(t *testing.T) {
 	}
 	if _, err := classifyBootstrapLinux("ID=fedora\nVERSION_ID=44"); err == nil {
 		t.Fatal("Fedora N was accepted as the Fedora N-1 tier")
+	}
+	if _, err := classifyBootstrapLinux("ID=manjaro\nID_LIKE=arch"); err == nil {
+		t.Fatal("a distribution like Arch was accepted as Arch")
 	}
 }
 
@@ -103,7 +107,7 @@ func TestLLVMRequirementIsHostSpecific(t *testing.T) {
 	if !reflect.DeepEqual(macOS, []string{"llvm-config", "clang++"}) {
 		t.Fatalf("macOS LLVM tools = %#v", macOS)
 	}
-	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora, bootstrapDebian} {
+	for _, host := range []bootstrapHost{bootstrapUbuntu, bootstrapFedora, bootstrapDebian, bootstrapArch} {
 		if got := requirementExecutables(host, llvm); !reflect.DeepEqual(got, []string{"clang++", "zstd"}) {
 			t.Fatalf("Linux LLVM tools = %#v", got)
 		}
@@ -119,12 +123,20 @@ func TestLinuxPackageMappingsKeepClangAndLLVMDevelopmentLibraries(t *testing.T) 
 		{bootstrapUbuntu, "libc++-dev"},
 		{bootstrapDebian, "libc++-dev"},
 		{bootstrapFedora, "libcxx-devel"},
+		{bootstrapArch, "libc++"},
 	} {
 		packages := linuxRequirementPackages(test.host, llvm)
 		if !strings.Contains(strings.Join(packages, ","), test.want) {
 			t.Fatalf("LLVM packages for %v = %#v", test.host, packages)
 		}
-		if got := linuxInstallArguments(packages); len(got) < 3 || got[0] != "install" || got[1] != "-y" {
+		got := linuxInstallArguments(test.host, packages)
+		if test.host == bootstrapArch {
+			if len(got) < 4 || got[0] != "-S" || got[1] != "--needed" || got[2] != "--noconfirm" {
+				t.Fatalf("pacman arguments = %#v", got)
+			}
+			continue
+		}
+		if len(got) < 3 || got[0] != "install" || got[1] != "-y" {
 			t.Fatalf("package manager arguments = %#v", got)
 		}
 	}
@@ -185,7 +197,8 @@ func TestPodmanIsARequiredToolOnEveryHost(t *testing.T) {
 	}
 	if podman.wingetPackageID != "RedHat.Podman" || podman.homebrewFormula != "podman" ||
 		len(podman.aptPackages) != 1 || podman.aptPackages[0] != "podman" ||
-		len(podman.dnfPackages) != 1 || podman.dnfPackages[0] != "podman" {
+		len(podman.dnfPackages) != 1 || podman.dnfPackages[0] != "podman" ||
+		len(podman.pacmanPackages) != 1 || podman.pacmanPackages[0] != "podman" {
 		t.Fatalf("Podman requirement = %#v", podman)
 	}
 	// Everything but Podman is present: it is the one tool reported.
@@ -418,5 +431,41 @@ func TestHomebrewInstallsFormulas(t *testing.T) {
 	llvm := toolRequirement{name: "LLVM", homebrewFormula: "llvm"}
 	if got := homebrewInstallArguments(llvm); !reflect.DeepEqual(got, []string{"install", "llvm"}) {
 		t.Fatalf("LLVM arguments = %#v", got)
+	}
+}
+
+func TestEveryLinuxPackageRequirementHasAnArchPackage(t *testing.T) {
+	for _, requirement := range bootstrapTools {
+		if len(requirement.aptPackages) != 0 && len(requirement.pacmanPackages) == 0 {
+			t.Fatalf("%s has apt packages and no pacman package", requirement.name)
+		}
+	}
+}
+
+func TestArchUpgradesTheWholeSystemOnceBeforeInstalling(t *testing.T) {
+	runner := &bootstrapFakeRunner{paths: map[string]string{"pacman": "/usr/bin/pacman", "sudo": "/usr/bin/sudo"}}
+	var git toolRequirement
+	for _, requirement := range bootstrapTools {
+		if requirement.name == "Git" {
+			git = requirement
+		}
+	}
+	if err := installLinuxTools(bootstrapArch, runner, []toolRequirement{git}); err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, invocation := range runner.invocations {
+		if invocation[0] == "sudo" {
+			invocation = invocation[1:]
+		}
+		got = append(got, strings.Join(invocation, " "))
+	}
+	want := []string{
+		"pacman -Syu --noconfirm",
+		"pacman -S --needed --noconfirm curl xz gmp libffi ncurses",
+		"pacman -S --needed --noconfirm git",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Arch commands = %#v, want %#v", got, want)
 	}
 }

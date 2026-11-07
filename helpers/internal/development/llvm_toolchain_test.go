@@ -25,6 +25,7 @@ func TestTheLinuxHostsHaveAnArchiveAndADigest(t *testing.T) {
 	}{
 		{host{kind: hostLinux, name: "Ubuntu 26.04 LTS", version: "26.04"}, "ubuntu-26.04"},
 		{host{kind: hostLinux, name: "Fedora 43 (N-1)", version: "43"}, "fedora-43"},
+		{host{kind: hostLinux, name: "Arch Linux", version: "rolling", developmentOnly: true}, "ubuntu-26.04"},
 	} {
 		platform, err := llvmToolchainPlatform(example.host)
 		if err != nil || platform != example.platform {

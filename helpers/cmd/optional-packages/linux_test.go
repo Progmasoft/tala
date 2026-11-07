@@ -55,6 +55,7 @@ func TestThePlatformsAreThoseOfPrebuild(t *testing.T) {
 		{"linux", ubuntu, platformUbuntu},
 		{"linux", "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nID=debian\nVERSION_ID=\"13\"\n", platformDebian},
 		{"linux", fedora, platformFedora},
+		{"linux", "NAME=\"Arch Linux\"\nID=arch\nBUILD_ID=rolling\n", platformArch},
 	}
 	for _, entry := range cases {
 		got, err := optionalPlatform(entry.goos, release(entry.release))
@@ -69,12 +70,12 @@ func TestOtherHostsAreRefusedWithTheHostsThatAreSupported(t *testing.T) {
 		"an older Ubuntu":      release("ID=ubuntu\nVERSION_ID=\"24.04\"\n"),
 		"an older Debian":      release("ID=debian\nVERSION_ID=\"12\"\n"),
 		"a newer Fedora":       release("ID=fedora\nVERSION_ID=44\n"),
-		"another distribution": release("ID=arch\nBUILD_ID=rolling\n"),
+		"another distribution": release("ID=manjaro\nID_LIKE=arch\n"),
 		"an empty description": release(""),
 	}
 	for name, read := range refused {
 		_, err := optionalPlatform("linux", read)
-		if err == nil || !strings.Contains(err.Error(), "Ubuntu 26.04 LTS, Fedora 43, and Debian 13") {
+		if err == nil || !strings.Contains(err.Error(), "Ubuntu 26.04 LTS, Fedora 43, Debian 13, and Arch Linux (development only)") {
 			t.Errorf("%s: error = %v, want one that lists the supported hosts", name, err)
 		}
 	}
@@ -89,14 +90,15 @@ func TestOtherHostsAreRefusedWithTheHostsThatAreSupported(t *testing.T) {
 
 func TestEveryPackageHasANameOnEveryPlatform(t *testing.T) {
 	for _, item := range optionalPackages {
-		if item.wingetID == "" || item.homebrewFormula == "" || item.aptPackage == "" || item.dnfPackage == "" {
+		if item.wingetID == "" || item.homebrewFormula == "" || item.aptPackage == "" || item.dnfPackage == "" || item.pacmanPackage == "" {
 			t.Errorf("%s lacks a package on a supported platform: %+v", item.name, item)
 		}
-		if linuxPackage(item, platformUbuntu) != item.aptPackage || linuxPackage(item, platformFedora) != item.dnfPackage {
+		if linuxPackage(item, platformUbuntu) != item.aptPackage || linuxPackage(item, platformFedora) != item.dnfPackage ||
+			linuxPackage(item, platformArch) != item.pacmanPackage {
 			t.Errorf("%s is not installed by its own package on Linux", item.name)
 		}
 	}
-	if linuxManager(platformUbuntu) != "apt-get" || linuxManager(platformFedora) != "dnf" {
+	if linuxManager(platformUbuntu) != "apt-get" || linuxManager(platformFedora) != "dnf" || linuxManager(platformArch) != "pacman" {
 		t.Error("a Linux platform has the wrong package manager")
 	}
 }
@@ -305,4 +307,54 @@ func TestLinuxAddsComponentsToAnExistingToolchainOnly(t *testing.T) {
 	if len(without.commands) != 0 {
 		t.Fatalf("a host without a toolchain ran %v", without.commands)
 	}
+}
+
+func TestArchInstallsWithPacmanAfterOneSystemUpgrade(t *testing.T) {
+	runner := &fakePackageRunner{paths: map[string][]string{"pacman": {"pacman"}, "sudo": {"sudo"}}}
+	if err := installOneForOS(runner, optionalPackages[1], platformArch); err != nil {
+		t.Fatal(err)
+	}
+	lines := commandLines(runner)
+	if want := elevated("pacman", "-S", "--needed", "--noconfirm", "gcc-fortran"); len(lines) != 1 || lines[0] != want {
+		t.Fatalf("Arch install commands = %#v, want %q", lines, want)
+	}
+}
+
+func TestArchUpgradesOnceAndLeavesInstalledPackagesAlone(t *testing.T) {
+	runner := readyPackageRunner()
+	runner.paths["pacman"] = []string{"pacman"}
+	runner.paths["sudo"] = []string{"sudo"}
+	delete(runner.paths, "just")
+	delete(runner.paths, "jq")
+	// jq is installed although its command is not visible: pacman says so.
+	queried := &pacmanQueryRunner{fakePackageRunner: runner, installed: map[string]bool{"jq": true}}
+	if err := installOptionalPackagesForOS(queried, platformArch); err != nil {
+		t.Fatalf("install returned error: %v", err)
+	}
+	want := []string{
+		elevated("pacman", "-Syu", "--noconfirm"),
+		elevated("pacman", "-S", "--needed", "--noconfirm", "just"),
+	}
+	if got := commandLines(runner); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("ran %v, want %v", got, want)
+	}
+	if packageAlreadyInstalled(&fakePackageRunner{}, optionalPackages[2], platformArch) {
+		t.Error("Arch claimed a package is installed without asking pacman")
+	}
+}
+
+// pacmanQueryRunner answers pacman --query for the installed packages alone.
+type pacmanQueryRunner struct {
+	*fakePackageRunner
+	installed map[string]bool
+}
+
+func (runner *pacmanQueryRunner) output(name string, args ...string) (string, error) {
+	if name == "pacman" && len(args) == 2 && args[0] == "--query" {
+		if runner.installed[args[1]] {
+			return args[1] + " 1.0-1", nil
+		}
+		return "", errors.New("was not found")
+	}
+	return runner.fakePackageRunner.output(name, args...)
 }

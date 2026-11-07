@@ -27,8 +27,8 @@ import (
 const prebuildUsage = `Tala development-host bootstrap
 
 Supported hosts are Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS,
-Fedora 43 (N-1 as of September 2026), and Debian 13. The installed
-toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Git, Podman, and the
+Fedora 43 (N-1 as of September 2026), Debian 13, and Arch Linux as a
+development host that no CI job tests. The installed toolchain includes LLVM, Bazelisk, GHCup/GHC/Cabal, Go, Git, Podman, and the
 platform link resources. Tala uses ClangCL/LLD on Windows, not MSVC.`
 
 type bootstrapHost int
@@ -40,6 +40,7 @@ const (
 	bootstrapUbuntu
 	bootstrapFedora
 	bootstrapDebian
+	bootstrapArch
 )
 
 type bootstrapRunner interface {
@@ -188,15 +189,16 @@ type toolRequirement struct {
 	homebrewFormula string
 	aptPackages     []string
 	dnfPackages     []string
+	pacmanPackages  []string
 }
 
 var bootstrapTools = []toolRequirement{
-	{name: "Go", executables: []string{"go"}, wingetPackageID: "GoLang.Go", homebrewFormula: "go", aptPackages: []string{"golang-go"}, dnfPackages: []string{"golang"}},
-	{name: "Git", executables: []string{"git"}, wingetPackageID: "Git.Git", homebrewFormula: "git", aptPackages: []string{"git"}, dnfPackages: []string{"git"}},
+	{name: "Go", executables: []string{"go"}, wingetPackageID: "GoLang.Go", homebrewFormula: "go", aptPackages: []string{"golang-go"}, dnfPackages: []string{"golang"}, pacmanPackages: []string{"go"}},
+	{name: "Git", executables: []string{"git"}, wingetPackageID: "Git.Git", homebrewFormula: "git", aptPackages: []string{"git"}, dnfPackages: []string{"git"}, pacmanPackages: []string{"git"}},
 	{name: "Bazelisk", executables: []string{"bazelisk"}, wingetPackageID: "Bazel.Bazelisk", homebrewFormula: "bazelisk"},
-	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "libc++-dev", "libc++abi-dev", "zstd", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "libcxx-devel", "libcxxabi-devel", "zstd", "libzstd-devel", "libxml2-devel", "zlib-devel"}},
+	{name: "LLVM", executables: []string{"llvm-config"}, wingetPackageID: "LLVM.LLVM", homebrewFormula: "llvm", aptPackages: []string{"clang", "lld", "libc++-dev", "libc++abi-dev", "zstd", "libzstd-dev", "libxml2-dev", "zlib1g-dev"}, dnfPackages: []string{"clang", "lld", "libcxx-devel", "libcxxabi-devel", "zstd", "libzstd-devel", "libxml2-devel", "zlib-devel"}, pacmanPackages: []string{"clang", "lld", "libc++", "zstd", "libxml2", "zlib"}},
 	{name: "GHCup", executables: []string{"ghcup"}, homebrewFormula: "ghcup"},
-	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}},
+	{name: "Podman", executables: []string{"podman"}, wingetPackageID: "RedHat.Podman", homebrewFormula: "podman", aptPackages: []string{"podman"}, dnfPackages: []string{"podman"}, pacmanPackages: []string{"podman"}},
 }
 
 func main() {
@@ -296,8 +298,10 @@ func classifyBootstrapLinux(release string) (bootstrapHost, error) {
 		return bootstrapFedora, nil
 	case fields["ID"] == "debian" && fields["VERSION_ID"] == "13":
 		return bootstrapDebian, nil
+	case fields["ID"] == "arch":
+		return bootstrapArch, nil
 	default:
-		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS, Fedora 43 (N-1) or Debian 13", fields["ID"], fields["VERSION_ID"])
+		return bootstrapUnsupported, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS, Fedora 43 (N-1), Debian 13 or Arch Linux (development only)", fields["ID"], fields["VERSION_ID"])
 	}
 }
 
@@ -376,7 +380,11 @@ func requirementExecutables(host bootstrapHost, requirement toolRequirement) []s
 }
 
 func reportBootstrapState(host bootstrapHost, runner bootstrapRunner) error {
-	fmt.Printf("Official host: %s\n", bootstrapHostName(host))
+	if host == bootstrapArch {
+		fmt.Printf("Development host: %s\n", bootstrapHostName(host))
+	} else {
+		fmt.Printf("Official host: %s\n", bootstrapHostName(host))
+	}
 	missing := missingTools(host, runner)
 	for _, requirement := range bootstrapTools {
 		if containsRequirement(missing, requirement.name) {
@@ -497,17 +505,26 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 	if host == bootstrapFedora {
 		manager = "dnf"
 		base = []string{"curl", "xz", "gmp-devel", "libffi-devel", "ncurses-devel"}
+	} else if host == bootstrapArch {
+		manager = "pacman"
+		base = []string{"curl", "xz", "gmp", "libffi", "ncurses"}
 	}
 	if _, err := runner.LookPath(manager); err != nil {
 		return fmt.Errorf("%s is required on %s", manager, bootstrapHostName(host))
 	}
 	// apt installs from the package lists it has, on Ubuntu and on Debian.
+	// pacman refreshes its databases only together with the whole system,
+	// because Arch does not support a partial upgrade.
 	if host == bootstrapUbuntu || host == bootstrapDebian {
 		if err := runLinuxPackageManager(runner, manager, []string{"update"}); err != nil {
 			return err
 		}
+	} else if host == bootstrapArch {
+		if err := runLinuxPackageManager(runner, manager, archUpgradeArguments()); err != nil {
+			return fmt.Errorf("cannot upgrade Arch Linux before installing: %w", err)
+		}
 	}
-	if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(base)); err != nil {
+	if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(host, base)); err != nil {
 		return fmt.Errorf("cannot install Linux bootstrap prerequisites: %w", err)
 	}
 	for _, requirement := range missing {
@@ -526,7 +543,7 @@ func installLinuxTools(host bootstrapHost, runner bootstrapRunner, missing []too
 			if len(arguments) == 0 {
 				return fmt.Errorf("no %s package is defined for %s", requirement.name, bootstrapHostName(host))
 			}
-			if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(arguments)); err != nil {
+			if err := runLinuxPackageManager(runner, manager, linuxInstallArguments(host, arguments)); err != nil {
 				return fmt.Errorf("cannot install %s: %w", requirement.name, err)
 			}
 		}
@@ -538,11 +555,27 @@ func linuxRequirementPackages(host bootstrapHost, requirement toolRequirement) [
 	if host == bootstrapFedora {
 		return requirement.dnfPackages
 	}
+	if host == bootstrapArch {
+		return requirement.pacmanPackages
+	}
 	return requirement.aptPackages
 }
 
-func linuxInstallArguments(packages []string) []string {
+// linuxInstallArguments are the arguments that install packages without a
+// question. On Arch they run after the whole system was upgraded with
+// pacman -Syu: installing from refreshed databases without upgrading the
+// rest would be a partial upgrade, which Arch does not support.
+func linuxInstallArguments(host bootstrapHost, packages []string) []string {
+	if host == bootstrapArch {
+		return append([]string{"-S", "--needed", "--noconfirm"}, packages...)
+	}
 	return append([]string{"install", "-y"}, packages...)
+}
+
+// archUpgradeArguments refresh the pacman databases and upgrade every
+// installed package, the only refresh Arch supports.
+func archUpgradeArguments() []string {
+	return []string{"-Syu", "--noconfirm"}
 }
 
 func runLinuxPackageManager(runner bootstrapRunner, manager string, arguments []string) error {
@@ -745,6 +778,10 @@ func bootstrapHostName(host bootstrapHost) string {
 		// The workflows build on Ubuntu; Debian shares Ubuntu's
 		// packages and is prepared the same way, without a tier of its own.
 		return "Debian 13"
+	case bootstrapArch:
+		// A rolling release, newer than the pinned hosts; it builds with the
+		// LLVM toolchain of Ubuntu 26.04 and no workflow runs on it.
+		return "Arch Linux (development only, not tested by CI)"
 	default:
 		return "unsupported"
 	}

@@ -27,6 +27,9 @@ type host struct {
 	name       string
 	version    string
 	executable string
+	// developmentOnly marks a host the helpers build on although no CI job
+	// runs there, such as a rolling release with no version to pin.
+	developmentOnly bool
 }
 
 type sanitizer struct {
@@ -105,8 +108,12 @@ func classifyLinuxHost(release string) (host, error) {
 		return host{kind: hostLinux, name: "Ubuntu 26.04 LTS", version: "26.04"}, nil
 	case fields["ID"] == "fedora" && fields["VERSION_ID"] == "43":
 		return host{kind: hostLinux, name: "Fedora 43 (N-1)", version: "43"}, nil
+	case fields["ID"] == "arch":
+		// A rolling release: newer than the pinned hosts, so it builds with the
+		// toolchain of Ubuntu 26.04, but no CI job runs there.
+		return host{kind: hostLinux, name: "Arch Linux", version: "rolling", developmentOnly: true}, nil
 	default:
-		return host{}, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS or Fedora 43 (N-1)", fields["ID"], fields["VERSION_ID"])
+		return host{}, fmt.Errorf("unsupported Linux release %q %q; expected Ubuntu 26.04 LTS, Fedora 43 (N-1) or Arch Linux (development only)", fields["ID"], fields["VERSION_ID"])
 	}
 }
 
@@ -180,7 +187,11 @@ func selectSanitizer(currentHost host, requested string) (sanitizer, error) {
 }
 
 func runDoctor(currentHost host, runner commandRunner) error {
-	fmt.Printf("Official host: %s\n", currentHost.name)
+	if currentHost.developmentOnly {
+		fmt.Printf("Development host: %s (no CI job runs on it)\n", currentHost.name)
+	} else {
+		fmt.Printf("Official host: %s\n", currentHost.name)
+	}
 	if currentHost.version != "" {
 		fmt.Printf("Detected version: %s\n", currentHost.version)
 	}
