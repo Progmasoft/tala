@@ -102,20 +102,21 @@ func TestSelectAddressSanitizerUsesHostSpecificProfile(t *testing.T) {
 	}
 }
 
-func TestClassifyLinuxHostAcceptsThePinnedTierReleases(t *testing.T) {
+func TestClassifyLinuxHostAcceptsThePinnedTierReleasesAndArch(t *testing.T) {
 	for _, test := range []struct {
 		release string
 		name    string
 	}{
 		{`ID=ubuntu` + "\n" + `VERSION_ID="26.04"`, "Ubuntu 26.04 LTS"},
 		{`ID=fedora` + "\n" + `VERSION_ID=43`, "Fedora 43 (N-1)"},
+		{`ID=arch` + "\n" + `BUILD_ID=rolling`, "Arch Linux"},
 	} {
 		got, err := classifyLinuxHost(test.release)
 		if err != nil || got.kind != hostLinux || got.name != test.name {
 			t.Fatalf("classifyLinuxHost(%q) = %#v, %v", test.release, got, err)
 		}
 	}
-	for _, release := range []string{`ID=ubuntu` + "\n" + `VERSION_ID=24.04`, `ID=fedora` + "\n" + `VERSION_ID=44`, `ID=arch`} {
+	for _, release := range []string{`ID=ubuntu` + "\n" + `VERSION_ID=24.04`, `ID=fedora` + "\n" + `VERSION_ID=44`, `ID=manjaro`} {
 		if _, err := classifyLinuxHost(release); err == nil {
 			t.Fatalf("unsupported release %q was accepted", release)
 		}
@@ -466,5 +467,16 @@ func TestCleanGeneratedPathsRejectsRepositoryEscape(t *testing.T) {
 	repository := t.TempDir()
 	if err := cleanGeneratedPaths(repository, []string{"../outside"}); err == nil {
 		t.Fatal("cleanup accepted a path outside the repository")
+	}
+}
+
+func TestOnlyArchIsADevelopmentHost(t *testing.T) {
+	arch, err := classifyLinuxHost(`ID=arch`)
+	if err != nil || !arch.developmentOnly {
+		t.Fatalf("Arch must be a development host: %#v, %v", arch, err)
+	}
+	ubuntu, err := classifyLinuxHost(`ID=ubuntu` + "\n" + `VERSION_ID="26.04"`)
+	if err != nil || ubuntu.developmentOnly {
+		t.Fatalf("Ubuntu 26.04 must be an official host: %#v, %v", ubuntu, err)
 	}
 }

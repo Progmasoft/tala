@@ -23,8 +23,9 @@ import (
 const optionalPackagesUsage = `Optional Tala developer packages
 
 Supported hosts are those of prebuild: Windows 10/11, macOS 15/26, Ubuntu
-26.04 LTS, Fedora 43, and Debian 13. Windows uses WinGet defaults, macOS uses
-Homebrew, Ubuntu and Debian use apt and Fedora uses dnf. Debian's own
+26.04 LTS, Fedora 43, Debian 13, and Arch Linux (development only). Windows uses
+WinGet defaults, macOS uses Homebrew, Ubuntu and Debian use apt, Fedora uses
+dnf and Arch uses pacman. Debian's own
 repositories have no .NET SDK; it is reported there and not installed.
 Package managers choose their recommended
 installation scope. Rustup may manage components only for an
@@ -39,9 +40,10 @@ const (
 	platformUbuntu  = "ubuntu"
 	platformFedora  = "fedora"
 	platformDebian  = "debian"
+	platformArch    = "arch"
 )
 
-const supportedPlatformsText = "Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, Fedora 43, and Debian 13"
+const supportedPlatformsText = "Windows 10/11, macOS 15/26, Ubuntu 26.04 LTS, Fedora 43, Debian 13, and Arch Linux (development only)"
 
 // optionalPlatform names the host the way the installers select by. Windows
 // and macOS are their operating system; a Linux host is its distribution,
@@ -71,6 +73,8 @@ func optionalPlatform(goos string, release func() (string, error)) (string, erro
 			return platformFedora, nil
 		case fields["ID"] == "debian" && fields["VERSION_ID"] == "13":
 			return platformDebian, nil
+		case fields["ID"] == "arch":
+			return platformArch, nil
 		}
 		return "", fmt.Errorf("unsupported Linux release %q %q; supported hosts are %s",
 			fields["ID"], fields["VERSION_ID"], supportedPlatformsText)
@@ -90,7 +94,7 @@ func unsupportedPlatform(platform string) error {
 
 func supportedPlatform(platform string) bool {
 	switch platform {
-	case platformWindows, platformMacOS, platformUbuntu, platformFedora, platformDebian:
+	case platformWindows, platformMacOS, platformUbuntu, platformFedora, platformDebian, platformArch:
 		return true
 	default:
 		return false
@@ -99,10 +103,25 @@ func supportedPlatform(platform string) bool {
 
 // linuxManager is the package manager of a Linux platform.
 func linuxManager(platform string) string {
-	if platform == platformFedora {
+	switch platform {
+	case platformFedora:
 		return "dnf"
+	case platformArch:
+		return "pacman"
+	default:
+		return "apt-get"
 	}
-	return "apt-get"
+}
+
+// linuxInstallArguments are the arguments that install packages without a
+// question. pacman is not
+// told to refresh its databases: installing from refreshed databases without
+// upgrading the rest is a partial upgrade, which Arch does not support.
+func linuxInstallArguments(platform string, packages ...string) []string {
+	if platform == platformArch {
+		return append([]string{"-S", "--needed", "--noconfirm"}, packages...)
+	}
+	return append([]string{"install", "-y"}, packages...)
 }
 
 // linuxPackage is the distribution's package of an item, or nothing when the
@@ -110,6 +129,9 @@ func linuxManager(platform string) string {
 func linuxPackage(item optionalPackage, platform string) string {
 	if platform == platformFedora {
 		return item.dnfPackage
+	}
+	if platform == platformArch {
+		return item.pacmanPackage
 	}
 	if platform == platformDebian && item.absentFromDebian {
 		return ""
@@ -124,7 +146,7 @@ func usesApt(platform string) bool {
 
 // isLinux reports whether a platform is one of the Linux distributions.
 func isLinux(platform string) bool {
-	return usesApt(platform) || platform == platformFedora
+	return usesApt(platform) || platform == platformFedora || platform == platformArch
 }
 
 // runLinuxManager runs the distribution's package manager, through sudo when
@@ -151,6 +173,7 @@ type optionalPackage struct {
 	homebrewFormula string
 	aptPackage      string
 	dnfPackage      string
+	pacmanPackage   string
 	// absentFromDebian marks an apt package Ubuntu has and Debian's own
 	// repositories do not.
 	absentFromDebian    bool
@@ -166,7 +189,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "Microsoft .NET 10 SDK", executable: "dotnet",
 		wingetID: "Microsoft.DotNet.SDK.10", homebrewFormula: "dotnet@10",
-		aptPackage: "dotnet-sdk-10.0", dnfPackage: "dotnet-sdk-10.0",
+		aptPackage: "dotnet-sdk-10.0", dnfPackage: "dotnet-sdk-10.0", pacmanPackage: "dotnet-sdk-10.0",
 		absentFromDebian: true,
 		versionArgs:      []string{"--list-sdks"},
 		versionPattern:   regexp.MustCompile(`(?m)^10\.[0-9]+\.[0-9]+`),
@@ -176,7 +199,7 @@ var optionalPackages = []optionalPackage{
 		name: "GNU Fortran", executable: "gfortran",
 		wingetID:        "BrechtSanders.WinLibs.POSIX.UCRT",
 		homebrewFormula: "gcc",
-		aptPackage:      "gfortran", dnfPackage: "gcc-gfortran",
+		aptPackage:      "gfortran", dnfPackage: "gcc-gfortran", pacmanPackage: "gcc-fortran",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?i)GNU Fortran.*(14\.[1-9]|14\.[1-9][0-9]+|1[5-9]\.[0-9]+|[2-9][0-9]\.[0-9]+)`),
 		versionNote:    "GNU Fortran 14.1+ with Fortran 2023 mode",
@@ -184,7 +207,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "just", executable: "just",
 		wingetID: "Casey.Just", homebrewFormula: "just",
-		aptPackage: "just", dnfPackage: "just",
+		aptPackage: "just", dnfPackage: "just", pacmanPackage: "just",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^just\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:    "just recipe runner",
@@ -192,7 +215,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "ripgrep", executable: "rg",
 		wingetID: "BurntSushi.ripgrep.MSVC", homebrewFormula: "ripgrep",
-		aptPackage: "ripgrep", dnfPackage: "ripgrep",
+		aptPackage: "ripgrep", dnfPackage: "ripgrep", pacmanPackage: "ripgrep",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^ripgrep\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:    "ripgrep search tool",
@@ -200,7 +223,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "jq", executable: "jq",
 		wingetID: "jqlang.jq", homebrewFormula: "jq",
-		aptPackage: "jq", dnfPackage: "jq",
+		aptPackage: "jq", dnfPackage: "jq", pacmanPackage: "jq",
 		versionArgs:    []string{"--version"},
 		versionPattern: regexp.MustCompile(`(?m)^jq-[0-9]+\.[0-9]+(?:\.[0-9]+)?`),
 		versionNote:    "jq JSON processor",
@@ -208,7 +231,7 @@ var optionalPackages = []optionalPackage{
 	{
 		name: "rustup, rustc, and rust-std", executable: "rustup",
 		wingetID: "Rustlang.Rustup", homebrewFormula: "rustup",
-		aptPackage: "rustup", dnfPackage: "rustup",
+		aptPackage: "rustup", dnfPackage: "rustup", pacmanPackage: "rustup",
 		versionArgs:         []string{"--version"},
 		versionPattern:      regexp.MustCompile(`(?i)^rustup\s+[0-9]+\.[0-9]+\.[0-9]+`),
 		versionNote:         "rustup manager with rustc and host rust-std installed on the active toolchain",
@@ -563,7 +586,7 @@ func installRustComponentsForOS(runner packageRunner, item optionalPackage, goos
 				return fmt.Errorf("cannot install the rustup manager: %w", err)
 			}
 		} else {
-			if err := runLinuxManager(runner, goos, "install", "-y", linuxPackage(item, goos)); err != nil {
+			if err := runLinuxManager(runner, goos, linuxInstallArguments(goos, linuxPackage(item, goos))...); err != nil {
 				return fmt.Errorf("cannot install the rustup manager: %w", err)
 			}
 			// Some distributions package the installer of rustup and not
@@ -645,7 +668,7 @@ func installOneForOS(runner packageRunner, item optionalPackage, goos string) er
 		if name == "" {
 			return fmt.Errorf("no %s package is defined for %s", item.name, goos)
 		}
-		return runLinuxManager(runner, goos, "install", "-y", name)
+		return runLinuxManager(runner, goos, linuxInstallArguments(goos, name)...)
 	} else if goos != "darwin" {
 		return unsupportedPlatform(goos)
 	}

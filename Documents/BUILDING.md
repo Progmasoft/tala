@@ -19,6 +19,10 @@ macOS 15 Sequoia, macOS on Intel and Fedora 43 are no longer tested by the workf
 (`develop`, `prebuild` and `develop llvm` keep their setup for Fedora 43), so a build there may work, but it is not an
 official host.
 
+Arch Linux is a development host too. The helpers recognize it, install its packages with pacman and build with the
+Ubuntu 26.04 archive of LLVM, which links there because Arch has a newer glibc and libc++ keeps its ABI; install
+`libc++` (`prebuild install` does). No workflow runs on Arch, and it is not an official host.
+
 Bazel chooses `windows`, `macos`, or `linux` settings automatically. A developer does not pass an OS-specific `--config`.
 Visual Studio-bundled compilers are not part of the Windows toolchain, and the full Xcode IDE is not a
 macOS prerequisite.
@@ -58,8 +62,9 @@ On macOS the bootstrap requires Homebrew, installs the corresponding formulas, r
 Command Line Tools when missing, and delegates Haskell versions to GHCup. Tala needs exactly LLVM 23.1.3, while Homebrew's formula moves to each new LLVM, so install the release of LLVM and
 point `LLVM_ROOT` at it. Homebrew's LLVM formula is keg-only; follow
 Homebrew's printed shell guidance, open a new terminal, and use `LLVM_ROOT` for LLVM discovery rather than writing an
-absolute path into the repository. On Ubuntu, Debian 13 and Fedora, the bootstrap uses apt/dnf for native dependencies and the official
-GHCup bootstrap for Haskell. Installation never edits tracked
+absolute path into the repository. On Ubuntu, Debian 13, Fedora and Arch Linux, the bootstrap uses apt, dnf or pacman for native dependencies and the
+official GHCup bootstrap for Haskell. pacman installs from the databases it has and never refreshes them, since
+refreshing without upgrading is a partial upgrade; upgrade the system first. Installation never edits tracked
 build configuration.
 
 After the host package manager finishes, start a new terminal and run both `prebuild.go check` and `develop.go doctor`.

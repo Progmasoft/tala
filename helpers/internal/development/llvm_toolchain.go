@@ -51,6 +51,11 @@ func llvmToolchainPlatform(currentHost host) (string, error) {
 		return "ubuntu-26.04", nil
 	case strings.HasPrefix(currentHost.name, "Fedora") && currentHost.version == "43":
 		return "fedora-43", nil
+	case strings.HasPrefix(currentHost.name, "Arch") && currentHost.developmentOnly:
+		// Arch is newer than Ubuntu 26.04 in glibc and libc++, and libc++ keeps
+		// its ABI, so the Ubuntu archive links there. Arch ships libc++ as the
+		// separate package libc++.
+		return "ubuntu-26.04", nil
 	default:
 		return "", fmt.Errorf("no LLVM toolchain archive exists for %s %s", currentHost.name, currentHost.version)
 	}

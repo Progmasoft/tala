@@ -29,4 +29,5 @@ vcpkg_installed/
 /bazel-out
 /bazel-testlogs
 /bazel-xsharp
+/bazel-XSharp
 /bazel-tala
