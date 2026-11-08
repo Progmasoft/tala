@@ -33,7 +33,7 @@ namespace Progmasoft::Tala::Runtime::Testing
         {
             char32_t scalars[64];
             std::size_t count = 0U;
-            while (text[count] != '\0' && count < 64U)
+            while (count < 64U && text[count] != '\0')
             {
                 scalars[count] = static_cast<char32_t>(text[count]);
                 ++count;
