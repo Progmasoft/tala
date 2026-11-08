@@ -13,6 +13,13 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
   `prebuild` and `optional-packages` upgrade the system with `pacman -Syu`, then
   install with pacman, and the LLVM toolchain of Ubuntu 26.04 is used.
 
+### Examples
+
+- `LoopControl` counts down with `countdown -= 1`; `countdown--` started a
+  comment, since Tala has no decrement operator.
+- `Examples/README.md` says which Tala programs talac compiles, and CI compiles
+  every program with the staged talac to keep that column true.
+
 ## 0.2.0.1 - 2026-11-02
 
 ### Build

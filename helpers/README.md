@@ -22,7 +22,7 @@ helpers/
 │   ├── repo-info/          read-only checkout and tool availability report
 │   ├── verify-helpers/     module-wide developer-tool quality gates
 │   ├── verify-docs/        strict Doxygen and Haddock API documentation checks
-│   ├── verify-examples/    example inventory and source-file contracts
+│   ├── verify-examples/    example inventory, source-file contracts, talac compilation
 │   ├── verify-abi/         the ABI manifest against the sources it describes
 │   └── verify-benchmarks/  benchmark report/index consistency
 ├── containers/             the images of the cross-platform targets
@@ -63,7 +63,7 @@ go run ./helpers/cmd/cross-platform-test run --target ubuntu-26.04 --suite nativ
 Every command of this module defines its command line with Cobra: generated
 `--help` / `-h`, typed flags, and argument validation. None parses `os.Args`
 itself. `verify-benchmarks` and `verify-examples` take the checkout as
-`--root`; their earlier `-Root` is rejected. `prebuild` and `optional-packages` take `check` or
+`--root`; their earlier `-Root` is rejected. `verify-examples --talac=<talac>` also compiles every Tala example. `prebuild` and `optional-packages` take `check` or
 `install` as a command, spelled in lower case, and print their help when no
 command is given. An invocation a command does not understand fails before
 it reads, probes or installs anything; each command has tests that hold that.

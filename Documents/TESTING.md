@@ -52,6 +52,10 @@ go run ./helpers/cmd/verify-abi --root .
 go run ./helpers/cmd/verify-benchmarks --root .
 ```
 
+After `develop bundle`, `go run ./helpers/cmd/verify-examples --talac=dist/<bundle>/talac` also compiles every
+Tala example to Core and fails unless the "Compiles with talac" column of `Examples/README.md` matches: a program
+marked yes must compile, one marked no must still be rejected. CI runs it on every compiler host.
+
 ## Other platforms from one machine
 
 `cross-platform-test` answers one question before a pull request exists: does this branch work on the platforms the

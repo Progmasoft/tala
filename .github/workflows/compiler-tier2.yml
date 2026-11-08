@@ -95,6 +95,14 @@ jobs:
         shell: bash
         run: go run ./helpers/cmd/develop bundle
 
+      # Compiles every Tala example with the staged talac; the "Compiles with
+      # talac" column of Examples/README.md must say which ones it accepts.
+      - name: Compile the Tala examples
+        shell: bash
+        run: |
+          talac=$(ls -d dist/tala-*/talac | head -n 1)
+          go run ./helpers/cmd/verify-examples --talac "$talac"
+
       - name: Exercise wire decoder mutations
         shell: bash
         run: |
