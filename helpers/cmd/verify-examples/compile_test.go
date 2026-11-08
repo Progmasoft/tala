@@ -12,7 +12,8 @@ import (
 )
 
 // fakeTalacVariable makes the test binary act as talac: it rejects a source
-// that contains REJECT and prints the entry it was given.
+// that contains REJECT with a diagnostic that names the entry it was given,
+// and fails without one, as a crash would, on a source that contains CRASH.
 const fakeTalacVariable = "VERIFY_EXAMPLES_FAKE_TALAC"
 
 func TestMain(m *testing.M) {
@@ -32,8 +33,12 @@ func fakeTalac(arguments []string) int {
 		fmt.Println(err)
 		return 2
 	}
+	if strings.Contains(string(source), "CRASH") {
+		fmt.Println("talac: internal error")
+		return 1
+	}
 	if strings.Contains(string(source), "REJECT") {
-		fmt.Println("rejected", arguments[1])
+		fmt.Printf("%s:7:9: TAP0006: rejected %s\n", filepath.Base(arguments[0]), arguments[1])
 		return 1
 	}
 	// talac writes its output next to the input; the check must not let
@@ -50,6 +55,10 @@ func tala(class string, rejected bool) string {
 	if rejected {
 		body = "REJECT"
 	}
+	return source(class, body)
+}
+
+func source(class, body string) string {
 	return "-- comment\r\nnamespace Examples.Fixture;\r\n\r\npublic class Helper {\r\n}\r\n\r\npublic class " + class +
 		" {\r\n    public static void Main() {\r\n        " + body + "\r\n    }\r\n}\r\n"
 }
@@ -159,5 +168,30 @@ func TestTheRepositoryCatalogHasTheTalacColumn(t *testing.T) {
 	}
 	if !expectations["HelloWorld"].compiles {
 		t.Fatal("HelloWorld, the smoke-test program, is not marked yes")
+	}
+}
+
+func TestACrashIsNotTheRejectionANoCellExpects(t *testing.T) {
+	root := compileFixture(t, map[string]string{"Beta": "no: fields"}, nil)
+	path := filepath.Join(root, "Examples", "Beta", "Beta.tala")
+	if err := os.WriteFile(path, []byte(source("Beta", "CRASH")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := compileExamples(root, testBinary(t))
+	if err == nil || !strings.Contains(err.Error(), "Beta: talac failed without a diagnostic of the program") {
+		t.Fatalf("a crash passed for a rejection: %v", err)
+	}
+}
+
+func TestEntryPointSkipsCommentsStringsAndOtherMainMethods(t *testing.T) {
+	text := "namespace Examples.Fixture;\n-- class Fake\npublic class Helper {\n    static void Main() {}\n" +
+		"    String note = \"class Quoted\";\n}\n\npublic class Program {\n    public static void Main() {}\n}\n"
+	entry, err := entryPoint(text)
+	if err != nil || entry != "Examples.Fixture.Program" {
+		t.Fatalf("entryPoint = %q, %v", entry, err)
+	}
+	twice := "namespace A;\npublic class B {\n    public static void Main() {}\n}\npublic class C {\n    public static void Main() {}\n}\n"
+	if _, err := entryPoint(twice); err == nil {
+		t.Fatal("two entry points were accepted")
 	}
 }
