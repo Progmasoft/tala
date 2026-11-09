@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Progmasoft <support@progmasoft.com>
 // SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
+#include <cstddef>
+
 #include "Platform.hpp"
 #include "Progmasoft/Tala/Runtime/AARC.h"
 #include "Progmasoft/Tala/Runtime/AARC.hpp"
@@ -27,17 +29,20 @@ namespace Progmasoft::Tala::Runtime::Testing
         std::uint64_t failedTests = 0U;
         // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
-        /// Write ASCII text, which is its own scalars, to standard output.
+        /// Write an ASCII literal, which is its own scalars, to standard
+        /// output. The length comes from the array type, so nothing scans
+        /// for the terminator: the runtime library links without the C
+        /// library on Windows, where that scan would be a call to strlen.
+        template<std::size_t Size>
         void
-        Write(const char *text, const bool line) noexcept
+        Write(const char (&text)[Size], const bool line) noexcept
         {
-            char32_t scalars[64];
-            std::size_t count = 0U;
-            while (text[count] != '\0' && count < 64U)
-            {
-                scalars[count] = static_cast<char32_t>(text[count]);
-                ++count;
-            }
+            static_assert(Size >= 2U && Size <= 65U,
+                          "a reporter message holds 1 to 64 characters");
+            constexpr std::size_t count = Size - 1U;
+            char32_t scalars[count];
+            for (std::size_t index = 0U; index < count; ++index)
+                scalars[index] = static_cast<char32_t>(text[index]);
             auto *string = Aarc::MakeString(scalars, count);
             if (string == nullptr)
                 Platform::Fail();
@@ -98,9 +103,10 @@ extern "C"
             tala_console_write(name, TALA_CONSOLE_OUTPUT);
             Write(" (", false);
             WriteCount(currentFailures);
-            Write(currentFailures == 1U ? " failed expectation)"
-                                        : " failed expectations)",
-                  true);
+            if (currentFailures == 1U)
+                Write(" failed expectation)", true);
+            else
+                Write(" failed expectations)", true);
         }
         currentFailures = 0U;
     }
@@ -110,7 +116,10 @@ extern "C"
     {
         using namespace Progmasoft::Tala::Runtime::Testing;
         WriteCount(passedTests + failedTests);
-        Write(passedTests + failedTests == 1U ? " test, " : " tests, ", false);
+        if (passedTests + failedTests == 1U)
+            Write(" test, ", false);
+        else
+            Write(" tests, ", false);
         WriteCount(passedTests);
         Write(" passed, ", false);
         WriteCount(failedTests);

@@ -20,6 +20,13 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 - `Examples/README.md` says which Tala programs talac compiles, and CI compiles
   every program with the staged talac to keep that column true.
 
+### Security
+
+- The helpers use golang.org/x/text 0.43.0, which fixes CVE-2026-56851 and
+  CVE-2026-56852. No helper reached the affected code.
+- The runtime's test reporter takes the length of each message from its
+  literal instead of reading up to 64 characters in search of the terminator.
+
 ## 0.2.0.1 - 2026-11-02
 
 ### Build
