@@ -44,7 +44,7 @@ func TestVerifyExamplesReportsCatalogDriftAndWrongSourceName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read fixture README: %v", err)
 	}
-	content = append(content, []byte("| `CatalogOnly` | missing program |\n")...)
+	content = append(content, []byte("| `CatalogOnly` | missing program | yes |\n")...)
 	if err := os.WriteFile(readme, content, 0o600); err != nil {
 		t.Fatalf("add stale README row: %v", err)
 	}
@@ -94,9 +94,9 @@ func makeExampleFixture(t *testing.T, programs ...string) string {
 	t.Helper()
 	root := t.TempDir()
 	var rows strings.Builder
-	rows.WriteString("# Comparative examples\n\n| Program | Surface |\n| --- | --- |\n")
+	rows.WriteString("# Comparative examples\n\n| Program | Surface | Compiles with talac |\n| --- | --- | --- |\n")
 	for _, program := range programs {
-		rows.WriteString("| `" + program + "` | fixture |\n")
+		rows.WriteString("| `" + program + "` | fixture | yes |\n")
 		programRoot := filepath.Join(root, "Examples", program)
 		if err := os.MkdirAll(programRoot, 0o700); err != nil {
 			t.Fatalf("create %s: %v", program, err)

@@ -155,6 +155,14 @@ jobs:
         shell: pwsh
         run: go run ./helpers/cmd/develop bundle
 
+      # Compiles every Tala example with the staged talac; the "Compiles with
+      # talac" column of Examples/README.md must say which ones it accepts.
+      - name: Compile the Tala examples
+        shell: pwsh
+        run: |
+          $bundle = Get-ChildItem dist -Directory -Filter "tala-*" | Select-Object -First 1
+          go run ./helpers/cmd/verify-examples --talac (Join-Path $bundle.FullName "talac.exe")
+
       - name: Verify ASan and UBSan runtimes and native suites
         shell: pwsh
         run: go run ./helpers/cmd/develop sanitize address-undefined
@@ -370,6 +378,14 @@ jobs:
       - name: Stage and smoke-test the host distribution
         shell: bash
         run: go run ./helpers/cmd/develop bundle
+
+      # Compiles every Tala example with the staged talac; the "Compiles with
+      # talac" column of Examples/README.md must say which ones it accepts.
+      - name: Compile the Tala examples
+        shell: bash
+        run: |
+          talac=$(ls -d dist/tala-*/talac | head -n 1)
+          go run ./helpers/cmd/verify-examples --talac "$talac"
 
       - name: Exercise native wire decoder mutations
         shell: bash

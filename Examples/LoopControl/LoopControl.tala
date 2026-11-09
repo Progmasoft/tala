@@ -23,7 +23,7 @@ public class LoopControl {
         int countdown = 3;
         do {
             total = total + countdown;
-            countdown--;
+            countdown -= 1;
         } while (countdown > 0);
 
         for (int index = 0; index < 4; index++) {
