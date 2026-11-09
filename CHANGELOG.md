@@ -13,12 +13,19 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
   `prebuild` and `optional-packages` upgrade the system with `pacman -Syu`, then
   install with pacman, and the LLVM toolchain of Ubuntu 26.04 is used.
 
+### Examples
+
+- `LoopControl` counts down with `countdown -= 1`; `countdown--` started a
+  comment, since Tala has no decrement operator.
+- `Examples/README.md` says which Tala programs talac compiles, and CI compiles
+  every program with the staged talac to keep that column true.
+
 ### Security
 
 - The helpers use golang.org/x/text 0.43.0, which fixes CVE-2026-56851 and
   CVE-2026-56852. No helper reached the affected code.
-- The runtime's test reporter checks the 64-scalar bound before it reads the
-  next character of a message, not after.
+- The runtime's test reporter takes the length of each message from its
+  literal instead of reading up to 64 characters in search of the terminator.
 
 ## 0.2.0.1 - 2026-11-02
 

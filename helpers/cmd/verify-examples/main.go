@@ -32,6 +32,7 @@ func main() {
 // that an invalid invocation reads nothing.
 func newCommand(output, errorOutput io.Writer) *cobra.Command {
 	root := "."
+	talac := ""
 	command := &cobra.Command{
 		Use:   "verify-examples",
 		Short: "Verify the comparative Tala example catalogue.",
@@ -39,7 +40,13 @@ func newCommand(output, errorOutput io.Writer) *cobra.Command {
 
 The check compares the program names in Examples/README.md with the immediate
 program directories under Examples/ and requires matching .tala, .cs, .cpp,
-.java, and .rs source files in every program directory.`,
+.java, and .rs source files in every program directory. Its "Compiles with talac"
+column says for every program whether talac compiles it: "yes", or "no:" and
+what talac lacks.
+
+With --talac, every Tala program is also compiled to Core, and the outcome must
+match that column: a program marked yes must compile, and one marked no must
+still be rejected, so the column is updated when talac gains what it needed.`,
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -50,10 +57,18 @@ program directories under Examples/ and requires matching .tala, .cs, .cpp,
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Verified %d comparative programs across %d source languages.\n",
 				count, len(comparativeSourceExtensions))
+			if talac != "" {
+				compiled, err := compileExamples(root, talac)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "talac compiled the %d programs marked yes and rejected the others.\n", compiled)
+			}
 			return nil
 		},
 	}
 	command.Flags().StringVar(&root, "root", ".", "repository root containing Examples/ and Examples/README.md")
+	command.Flags().StringVar(&talac, "talac", "", "talac executable that compiles every Tala program to Core")
 	command.SetOut(output)
 	command.SetErr(errorOutput)
 	command.CompletionOptions.DisableDefaultCmd = true
@@ -111,6 +126,8 @@ func verifyExamples(repositoryRoot string) (int, error) {
 	} else {
 		catalogPrograms, catalogFailures := readCatalogPrograms(string(catalog))
 		failures = append(failures, catalogFailures...)
+		_, compileFailures := readCompileExpectations(string(catalog))
+		failures = append(failures, compileFailures...)
 		failures = append(failures, compareProgramSets(programs, catalogPrograms)...)
 	}
 
