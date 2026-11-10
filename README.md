@@ -5,6 +5,13 @@ SPDX-License-Identifier: MPL-2.0 WITH AdditionRef-Progmasoft-Exception-2.0
 
 # Tala
 
+> [!IMPORTANT]
+> Tala is no longer developed as of 2026-11-10, together with the rest of Tala: the language, the compiler Talac,
+> talafmt, talalint and tala-analyzer. Progmasoft puts its work into [Tazel](https://tazel.net), which becomes a build
+> system for C, C++, Objective-C, Objective-C++ and Zig. The Tala name goes on with OpenTala, a kernel, and TalaOS,
+> for which tala.run is being prepared. This repository is archived: it is read-only, and its code, history and releases
+> stay available.
+
 Tala is an experimental native programming language and compiler project. This repository contains the compiler,
 runtime components, language examples, tests, and supporting developer tools.
 
